@@ -18,6 +18,7 @@ recomendaciones respaldadas por evidencia, con supervisión humana.
 - [Instalación](#instalación)
 - [Configuración](#configuración)
 - [Ejecución](#ejecución)
+- [Base de datos](#base-de-datos)
 - [Pruebas](#pruebas)
 - [Estructura](#estructura)
 - [Calidad y CI](#calidad-y-ci)
