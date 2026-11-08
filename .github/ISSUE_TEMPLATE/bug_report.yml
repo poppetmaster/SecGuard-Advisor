@@ -1,0 +1,89 @@
+name: "Reporte de bug"
+description: "Reporta un comportamiento inesperado, un fallo o una regresión."
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de continuar, revisa que no exista un issue similar y consulta `CONSTITUTION.md`
+        en el repositorio.
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: "Descripción del problema"
+      description: "Explica de forma clara y concisa qué está fallando."
+      placeholder: "Al ejecutar `uv run ...` el sistema ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: "Pasos para reproducir"
+      description: "Pasos mínimos y deterministas que permitan reproducir el fallo."
+      placeholder: |
+        1. Ejecutar `uv sync --locked`
+        2. Ejecutar `...`
+        3. Observar `...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: "Comportamiento esperado"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Comportamiento actual"
+      description: "Incluye el mensaje de error si aplica."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: componente
+    attributes:
+      label: "Componente afectado"
+      options:
+        - "Backend / API"
+        - "Interfaz / frontend"
+        - "Datos / procesamiento"
+        - "Modelos / evaluación"
+        - "Entorno / tooling"
+        - "Documentación"
+        - "Otro"
+      multiple: true
+    validations:
+      required: false
+
+  - type: input
+    id: entorno
+    attributes:
+      label: "Entorno"
+      description: "Sistema operativo, versión de Python y versión de uv."
+      placeholder: "macOS · Python 3.14.6 · uv 0.13.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: "Evidencia / logs"
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmaciones
+    attributes:
+      label: "Confirmaciones"
+      options:
+        - label: "Busqué issues existentes y no encontré un duplicado."
+          required: true
+        - label: "El fallo es reproducible con el estado actual de `main`."
+          required: true

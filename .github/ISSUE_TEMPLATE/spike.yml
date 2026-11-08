@@ -1,0 +1,37 @@
+name: "Investigación (spike)"
+description: "Investiga una incertidumbre técnica acotada en el tiempo."
+title: "[Spike]: "
+labels: ["spike"]
+body:
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: "Pregunta a responder"
+      description: "Una pregunta concreta y verificable."
+    validations:
+      required: true
+
+  - type: textarea
+    id: contexto
+    attributes:
+      label: "Contexto"
+      description: "Por qué esta incertidumbre bloquea o condiciona el trabajo."
+    validations:
+      required: true
+
+  - type: input
+    id: timebox
+    attributes:
+      label: "Timebox"
+      description: "Tiempo máximo dedicado a la investigación."
+      placeholder: "2 horas"
+    validations:
+      required: true
+
+  - type: textarea
+    id: salida
+    attributes:
+      label: "Criterio de salida"
+      description: "Qué evidencia o decisión debe producir la investigación."
+    validations:
+      required: true
