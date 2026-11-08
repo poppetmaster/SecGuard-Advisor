@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold">{{ document.title }}</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Evidencia del caso · Cargado: {{ document.created_at[:10] }}
+    </p>
+  </div>
+  <a class="text-sm text-blue-700 hover:underline" href="/cases/{{ case_id }}">Volver al caso</a>
+</div>
+
+{% if latest and latest.status in ("failed", "no_usable_text") %}
+<form class="mt-4" method="post" action="/cases/{{ case_id }}/documents/{{ document.id }}/retry">
+  <button class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" type="submit">
+    Reintentar procesamiento
+  </button>
+</form>
+{% endif %}
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Versiones</h2>
+  <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Versión</th>
+          <th class="px-4 py-3">Estado</th>
+          <th class="px-4 py-3">Páginas</th>
+          <th class="px-4 py-3">Detalle</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for version in versions %}
+        <tr>
+          <td class="px-4 py-3">v{{ version.version_number }}</td>
+          <td class="px-4 py-3">{{ version.status }}</td>
+          <td class="px-4 py-3">{{ version.page_count if version.page_count is not none else "—" }}</td>
+          <td class="px-4 py-3 text-slate-600">
+            {{ version.error_message or version.original_filename }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Fragmentos de la última versión</h2>
+  {% if chunks %}
+  <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">#</th>
+          <th class="px-4 py-3">Ubicación</th>
+          <th class="px-4 py-3">Tokens</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for chunk in chunks %}
+        <tr>
+          <td class="px-4 py-3">{{ chunk.chunk_index }}</td>
+          <td class="px-4 py-3">{{ chunk.locator }}</td>
+          <td class="px-4 py-3">{{ chunk.token_count }}</td>
+          <td class="px-4 py-3 text-right">
+            <a class="text-blue-700 hover:underline" href="/cases/{{ case_id }}/documents/{{ document.id }}/versions/{{ latest.id }}/fragments/{{ chunk.id }}">Ver fragmento</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No hay fragmentos disponibles para esta versión.</p>
+  {% endif %}
+</section>
+{% endblock %}

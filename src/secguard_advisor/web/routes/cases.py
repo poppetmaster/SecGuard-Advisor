@@ -12,6 +12,7 @@ from secguard_advisor.cases.service import (
     list_cases,
 )
 from secguard_advisor.db.transaction import unit_of_work
+from secguard_advisor.documents.service import documents_overview
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -116,6 +117,7 @@ def detail_case_view(request: Request, case_id: str):
             scope = resolve_case_scope(session, case_id)
             case = get_case(session, scope)
             assets = [asset.name for asset in list_assets(session, case.id)]
+            documents = documents_overview(session, case.id)
             view = {
                 "id": case.id,
                 "title": case.title,
@@ -138,5 +140,5 @@ def detail_case_view(request: Request, case_id: str):
     return _templates(request).TemplateResponse(
         request=request,
         name="cases/detail.html",
-        context={"case": view},
+        context={"case": view, "case_id": view["id"], "documents": documents, "errors": {}},
     )

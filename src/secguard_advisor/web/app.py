@@ -15,8 +15,10 @@ from sqlalchemy import text
 from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
+from secguard_advisor.documents.embedding import OllamaEmbeddingClient
+from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.web.errors import AppError, error_response
-from secguard_advisor.web.routes import cases
+from secguard_advisor.web.routes import cases, documents
 
 _WEB_DIR = Path(__file__).parent
 _ALLOWED_HOSTS = {"127.0.0.1", "localhost", "testserver"}
@@ -41,10 +43,23 @@ def _origin_is_allowed(request: Request) -> bool:
 def create_app(
     settings: Settings | None = None,
     ollama_probe: Callable[[], bool] | None = None,
+    embedder_factory: Callable[[], object] | None = None,
+    index_factory: Callable[[], object] | None = None,
 ) -> FastAPI:
     """Construye la aplicación con sus dependencias."""
     resolved = settings or get_settings()
     probe = ollama_probe or (lambda: _default_ollama_probe(resolved))
+
+    def default_embedder():
+        return OllamaEmbeddingClient(
+            base_url=resolved.ollama_base_url,
+            model=resolved.ollama_embedding_model,
+            dimension=resolved.embedding_dim,
+            context_tokens=resolved.embedding_context_tokens,
+        )
+
+    def default_index():
+        return ChromaIndex(resolved.chroma_dir)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -65,9 +80,12 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.ollama_probe = probe
+    app.state.embedder_factory = embedder_factory or default_embedder
+    app.state.index_factory = index_factory or default_index
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(cases.router)
+    app.include_router(documents.router)
 
     @app.get("/")
     def root():
