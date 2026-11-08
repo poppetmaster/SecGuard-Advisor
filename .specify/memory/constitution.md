@@ -402,6 +402,8 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-08 | Python 3.14.6 verificado con `uv sync` | Parámetro | II | 133 paquetes resueltos sin error; stack del incremento 3 también resuelve |
 | 2026-11-08 | EmbeddingGemma 1: 768 dimensiones, 2048 tokens, prefijos de tarea oficiales | Parámetro | V | Modelo instalado; la versión 2 no está instalada |
 | 2026-11-08 | Qwen3.5 9B como generador inicial; Gemma 4 de 7,5B Q4_K_M como comparación | Parámetro | IV | Candidatos definidos en el brief; selección final pendiente de medición |
+| 2026-11-08 | Razonamiento desactivado en el generador configurado (`reasoning=False`) | Parámetro | IV | Con razonamiento activo la salida estructurada no se producía dentro del presupuesto (400 tokens, 29 s, contenido vacío); desactivado respondió en 2,7 s |
+| 2026-11-08 | Umbral de recuperación por similitud coseno en 0,35 | Parámetro | V, X | Datos de humo con corpus real: preguntas pertinentes ≥ 0,58; fuera de dominio ≤ 0,05. Filtra candidatos débiles, no prueba ausencia de evidencia |
 | Pendiente | Política P1–P4: significado, condiciones, excepciones, datos mínimos y ejemplos | Pendiente | IX, X | Bloquea el entrenamiento del incremento 3 |
 | Pendiente | Formato CSV de Qualys a soportar | Pendiente | XII | Bloquea el adaptador del incremento 2 |
 | Pendiente | Generador definitivo tras la comparación | Pendiente | IV | Requiere evidencia de calidad, herramientas, fundamentación, memoria y latencia |

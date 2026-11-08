@@ -8,9 +8,9 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica, US1 y US2 (cortes T001–T051). La aplicación arranca con `/healthz`,
-casos y documentos; todavía no hay RAG, consulta generativa, conversación, herramientas ni revisión
-humana.
+**Estado actual**: base técnica, US1, US2 y US3 (cortes T001–T068). La aplicación arranca con
+`/healthz`, casos, documentos, consulta documental con citas y revisión humana del respaldo. Todavía
+no hay memoria por caso, herramienta de hallazgos, traza real ni recorrido de aceptación.
 
 La verdad normativa vive en [`CONSTITUTION.md`](./CONSTITUTION.md), que es un enlace simbólico a
 `.specify/memory/constitution.md`. Se edita únicamente el archivo real; nunca se mantienen dos
@@ -45,11 +45,12 @@ make format             # Ruff format
 make test               # pruebas rápidas, sin integración
 make test-integration   # pruebas reales con Ollama y Chroma
 make check              # lint + formato + pruebas
-make dev                # servidor con casos y documentos, un worker
+make dev                # servidor con casos, documentos y consulta, un worker
 make corpus             # descarga y verifica el corpus oficial
 make corpus-ingest      # ingesta el corpus verificado
 make seed-demo          # dataset sintético; requiere el esquema migrado
 uv run alembic upgrade head  # crea/actualiza el esquema
+SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declarada
 ```
 
 Los targets `demo` y `corpus` informan «no implementado» hasta sus tareas. `seed-demo` requiere el
@@ -75,6 +76,11 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
 - No se publica repositorio, no se hace push ni se despliega nada sin autorización explícita.
 - No se modifica la configuración global de Git. La identidad local del repositorio ya está
   definida.
+- `SECGUARD_REVIEWER_NAME` es una identidad local declarada para la revisión humana; no es
+  autenticación. Sin esa variable no se escribe ninguna revisión.
+- El umbral de recuperación es un filtro de candidatos débiles; una recuperación vacía no demuestra
+  ausencia de evidencia. El generador configurado es `qwen3.5:9b`, con razonamiento desactivado.
+- No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit
 

@@ -36,9 +36,9 @@ una persona.
 
 ## Estado del proyecto
 
-**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T051: base técnica,
-US1 (casos) y US2 (documentos, corpus e índice). Las historias de consulta, memoria y hallazgos
-siguen pendientes.
+**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T068: base técnica,
+US1 (casos), US2 (documentos, corpus e índice) y US3 (consulta con citas y revisión humana). Las
+historias de memoria y hallazgos siguen pendientes.
 
 ### Implementado
 
@@ -57,19 +57,20 @@ siguen pendientes.
 - **US2: carga de PDF textual y Markdown, validación, extracción, estados, deduplicación,
   versiones, fragmentos localizables, embeddings locales e índice Chroma; adquisición e ingesta
   del corpus público con manifiesto verificable.**
+- **US3: consulta documental en español con recuperación fusionada del corpus público y del caso,
+  respuestas estructuradas, control automático de citas, abstención ante evidencia insuficiente,
+  reintento de turnos fallidos, permiso global de generación y revisión humana del respaldo
+  semántico.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Casos con contexto y activos.
-- Ingesta de PDF textual y Markdown con procedencia, deduplicación y versiones.
-- Recuperación con citas localizables y abstención ante falta de evidencia.
 - Conversación con memoria persistente por caso.
 - Herramienta de lectura de hallazgos sintéticos.
-- Evidencia de ejecución y trazas reales con LangSmith.
-- Revisión humana del respaldo semántico de las citas.
+- Trazas reales con LangSmith y confirmación de la traza observada.
+- Interfaz integrada y recorrido de aceptación completo.
 
 El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
 [las tareas](specs/001-consulta-documental/tasks.md).
@@ -81,18 +82,20 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 1. **Implementado:** crear un caso con contexto educativo y reabrirlo tras reiniciar.
 2. **Implementado:** cargar PDF textuales y Markdown, conocer su estado y versiones; el corpus
    público se adquiere e ingesta por separado.
-3. **Previsto:** preguntar en español y recibir respuestas con citas localizables.
+3. **Implementado:** preguntar en español y recibir respuestas con citas localizables, con
+   abstención explícita cuando la evidencia no alcanza.
 4. **Previsto:** continuar la conversación con memoria separada por caso.
 5. **Previsto:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
-6. **Previsto:** revisar la evidencia de ejecución, las herramientas usadas y la traza.
+6. **Parcial:** la ejecución ya muestra modelo, duración, pasos, fuentes y errores; la traza real
+   con LangSmith queda pendiente.
 
-La creación y consulta de casos y la ingesta documental están implementadas. Las capacidades 3 a 6
-siguen pendientes.
+La creación de casos, la ingesta documental y la consulta con citas están implementadas. Las
+capacidades 4 a 6 siguen pendientes.
 
 ## Arquitectura
 
 Monolito modular en un solo proceso. La interfaz y el dominio se separan por paquetes; SQLite
-conserva el estado y la procedencia, y Chroma será un índice derivado y reconstruible.
+conserva el estado y la procedencia, y Chroma es un índice derivado y reconstruible.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -162,16 +165,31 @@ Nunca se versionan secretos ni se muestran en registros o respuestas.
 
 ## Ejecución
 
-`make dev` arranca la base de la aplicación en `127.0.0.1` con **un solo worker**. Expone
-`/healthz`, `/cases` y `/cases/new`; la ingesta, el RAG y el agente todavía no existen.
+`make dev` arranca la aplicación en `127.0.0.1` con **un solo worker**. Expone `/healthz`,
+casos, documentos, conversación y evidencia de ejecución.
 
 ```bash
-make dev            # servidor base con casos y documentos
+make dev            # servidor con casos, documentos y consulta
 make corpus         # descarga y verifica el corpus oficial
 make corpus-ingest  # ingesta el corpus verificado en SQLite y Chroma
 make seed-demo      # carga el dataset sintético; requiere el esquema migrado
-make demo           # no implementado: requiere el recorrido de consulta (US3+)
+make demo           # no implementado: requiere el recorrido de aceptación
 ```
+
+### Consulta y revisión humana
+
+1. `uv run alembic upgrade head` y `make corpus && make corpus-ingest`.
+2. Con Ollama activo y `qwen3.5:9b` instalado, `make dev`.
+3. Creá un caso, abrí su detalle y usá el panel **Consulta documental**: la respuesta indica si es
+   un borrador, muestra las citas con su control automático y lista los fragmentos recuperados con
+   su procedencia y si fueron citados.
+4. Exportá `SECGUARD_REVIEWER_NAME="Nombre Apellido"` antes de arrancar si querés registrar la
+   revisión humana. Sin esa variable la revisión se rechaza con `409` y no se escribe.
+5. Cada cita válida abre el fragmento exacto; la revisión humana es por cita y no adjudica
+   prioridades P1–P4 ni aprueba informes.
+
+El umbral de recuperación (`retrieval_min_score`, 0,35 por defecto) filtra candidatos débiles con
+datos de humo; no demuestra que no exista evidencia.
 
 ## Base de datos
 
@@ -257,10 +275,15 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación implementa US1 (casos) y US2 (documentos, corpus e índice); el RAG, la consulta
-  generativa, la conversación, las herramientas y la revisión humana siguen sin implementar. `demo`
-  sigue sin implementar.
+- La aplicación implementa US1, US2 y US3; la memoria por caso, la herramienta de hallazgos,
+  la traza real con LangSmith y el recorrido de aceptación siguen sin implementar. `demo` sigue sin
+  implementar.
 - No hay OCR: los PDF escaneados se reportan como «sin texto utilizable».
+- El umbral de recuperación está calibrado con datos de humo; una pregunta sin candidatos no
+  demuestra por sí sola que la evidencia no exista.
+- La revisión humana del respaldo semántico es por cita y requiere `SECGUARD_REVIEWER_NAME`; es una
+  identidad local declarada, no autenticación.
+- Revisión visual en navegador pendiente: no hay navegador automatizado disponible.
 
 ## Contribución
 

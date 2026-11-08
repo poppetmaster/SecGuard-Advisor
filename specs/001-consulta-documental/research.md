@@ -143,6 +143,14 @@ bloquear la ruta de hallazgos, que por definición no tiene citas documentales.
 **Alternativas consideradas**: cortar en recuperación vacía; habría hecho inalcanzable H5. Dejar
 que el modelo decida si se abstiene; no es verificable.
 
+**Calibración observada (2026-11-08, datos de humo, no conjunto final)**: con el corpus oficial
+ingerido y EmbeddingGemma, dos preguntas pertinentes obtuvieron similitudes de 0,58 a 0,68 y dos
+preguntas fuera de dominio, de 0,05 a -0,01. Se fijó `retrieval_min_score = 0.35`, que separa ambos
+grupos sin presentar la recuperación vacía como prueba de ausencia. El generador configurado
+(`qwen3.5:9b`) es un modelo de razonamiento: con razonamiento activo la salida estructurada no se
+producía dentro del presupuesto (400 tokens, 29 s, contenido vacío); con `reasoning=False` respondió
+en 2,7 s. La desactivación es una decisión de implementación, no un cambio de modelo.
+
 ## R9. Topología del grafo
 
 **Decisión**: un solo nodo de generación con herramientas, rodeado de nodos deterministas:
