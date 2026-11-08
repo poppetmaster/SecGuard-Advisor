@@ -31,9 +31,8 @@ corpus: ## Descarga y verifica el corpus oficial (no implementado)
 	@echo "no implementado: requiere T045"
 	@exit 1
 
-seed-demo: ## Carga los datos sintéticos de demostración (no implementado)
-	@echo "no implementado: requiere T024"
-	@exit 1
+seed-demo: ## Carga los datos sintéticos de demostración
+	uv run python scripts/seed_demo.py
 
 lint: ## Ejecuta Ruff (lint)
 	uv run ruff check .
