@@ -23,7 +23,7 @@ dev: ## Servidor local en 127.0.0.1 con un worker
 	uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1 --reload
 
 demo: ## Servidor con datos de demostración (no implementado)
-	@echo "no implementado: requiere T019 (aplicación) y T024 (seed)"
+	@echo "no implementado: la interfaz llega con T028+"
 	@echo "previsto: uvicorn --factory secguard_advisor.web.app:create_app --workers 1"
 	@exit 1
 
