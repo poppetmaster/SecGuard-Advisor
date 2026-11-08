@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-08T21:09:11.955257+00:00",
+  "sources": [
+    {
+      "id": "csf2",
+      "title": "The NIST Cybersecurity Framework (CSF) 2.0",
+      "publisher": "NIST",
+      "published_at": "2024-02-26",
+      "doi": "10.6028/NIST.CSWP.29",
+      "url": "https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.29.pdf",
+      "license": "U.S. Government work",
+      "version_label": "NIST CSWP 29",
+      "retrieved_at": "2026-11-08T21:04:06.856124+00:00",
+      "sha256": "3c31f46fee98cac0c4323453e5109291a213b4de7fef8c058af9bf67f717433c",
+      "bytes": 1518858,
+      "page_count": 32,
+      "status": "verified",
+      "notes": null
+    },
+    {
+      "id": "airmf",
+      "title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+      "publisher": "NIST",
+      "published_at": "2023-01-26",
+      "doi": "10.6028/NIST.AI.100-1",
+      "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+      "license": "U.S. Government work",
+      "version_label": "NIST AI 100-1",
+      "retrieved_at": "2026-11-08T21:04:07.782080+00:00",
+      "sha256": "7576edb531d9848825814ee88e28b1795d3a84b435b4b797d3670eafdc4a89f1",
+      "bytes": 1946127,
+      "page_count": 48,
+      "status": "verified",
+      "notes": null
+    },
+    {
+      "id": "ai6001",
+      "title": "AI RMF: Generative Artificial Intelligence Profile",
+      "publisher": "NIST",
+      "published_at": "2024-07-26",
+      "doi": "10.6028/NIST.AI.600-1",
+      "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+      "license": "U.S. Government work",
+      "version_label": "NIST AI 600-1",
+      "retrieved_at": "2026-11-08T21:04:09.120914+00:00",
+      "sha256": "6e73620ab6b64e90ef2c04bf0e0d6246185a2f4b1b13cab0df494496cff89b6a",
+      "bytes": 1174643,
+      "page_count": 64,
+      "status": "verified",
+      "notes": null
+    },
+    {
+      "id": "owasp-llm-2025",
+      "title": "OWASP Top 10 for LLM Applications 2025",
+      "publisher": "OWASP GenAI Security Project",
+      "published_at": "2024-11-17",
+      "doi": null,
+      "url": "https://genai.owasp.org/download/43299/?tmstv=1731900559",
+      "license": "CC BY-SA 4.0",
+      "version_label": "OWASP Top 10 for LLM Applications 2025",
+      "retrieved_at": "2026-11-08T21:04:12.359021+00:00",
+      "sha256": "eee39216f0e6750fe08f11d17beb1b7e132557db3ed87dcd389cd3d035c4a4c1",
+      "bytes": 8768341,
+      "page_count": 45,
+      "status": "verified",
+      "notes": null
+    }
+  ]
+}
