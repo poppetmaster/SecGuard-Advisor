@@ -1,0 +1,39 @@
+default_language_version:
+  python: python3.14
+
+minimum_pre_commit_version: "3.7.0"
+fail_fast: false
+exclude: ^\.agents/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: end-of-file-fixer
+        exclude: ^src/secguard_advisor/web/static/(css/app\.css|js/.*\.min\.js)$
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+        exclude: ^src/secguard_advisor/web/static/(css/app\.css|js/.*\.min\.js)$
+      - id: mixed-line-ending
+        exclude: ^src/secguard_advisor/web/static/(css/app\.css|js/.*\.min\.js)$
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.4
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.13.0
+    hooks:
+      - id: uv-lock

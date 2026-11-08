@@ -1,7 +1,7 @@
 [project]
 name = "secguard-advisor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agente consultor defensivo de ciberseguridad empresarial y seguridad de aplicaciones de IA"
 readme = "README.md"
 requires-python = ">=3.14.6"
 dependencies = [
@@ -38,3 +38,28 @@ dev = [
     "pytest-asyncio>=1.4.1.post1",
     "ruff>=0.17.4",
 ]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = [".agents", ".opencode", ".specify", ".venv", "build", "dist", "node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: pruebas que requieren Ollama, embeddings y recuperación reales",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
