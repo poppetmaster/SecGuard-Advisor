@@ -96,3 +96,29 @@ class FakeIndex:
 
     def count(self) -> int:
         return len(self.chunks)
+
+
+class ScriptedGenerator:
+    """Generador guionizado: devuelve respuestas en orden o falla."""
+
+    model = "fake-generator"
+    digest = "digest-fake"
+
+    def __init__(self, payloads=None, *, error: Exception | None = None) -> None:
+        from secguard_advisor.conversation.llm import AnswerPayload
+
+        self.payloads = list(payloads or [AnswerPayload(answer="respuesta", claims=[])])
+        self.error = error
+        self.calls = 0
+        self.prompts: list[str] = []
+
+    def generate(self, *, system: str, user: str):
+        self.calls += 1
+        self.prompts.append(user)
+        if self.error is not None:
+            raise self.error
+        if not self.payloads:
+            from secguard_advisor.conversation.llm import AnswerPayload
+
+            return AnswerPayload(answer="respuesta", claims=[])
+        return self.payloads.pop(0)
