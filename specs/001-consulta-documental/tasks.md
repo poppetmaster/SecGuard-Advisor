@@ -293,6 +293,58 @@ ejecución mínima. Bloquea todas las historias.
 
 **Checkpoint**: US3 funcional; flujo documental con evidencia y revisión humana.
 
+### Ajuste de experiencia de usuario (post-US3, 2026-11-08)
+
+**Alcance**: indicador visible de progreso, bloqueo de envíos duplicados y contraste del botón de
+revisión. No renumera tareas, no cambia rutas, contratos, concurrencia, reintentos ni persistencia.
+
+**Formularios ajustados**:
+
+- Consulta documental (`chat/panel.html`): «Consultando las fuentes y preparando la respuesta…».
+- Carga de documentos (`documents/list.html`): «Enviando y procesando el documento…».
+- Reintento de procesamiento (`documents/detail.html`): «Reintentando el procesamiento del documento…».
+- Reintento de consulta (`chat/panel.html`): «Reintentando la consulta…».
+- Registro de revisión (`chat/_citation.html`): «Guardando revisión…».
+
+**Comportamiento**:
+
+- `static/js/forms.js` (propio, sin dependencias) marca el formulario con `aria-busy="true"`, muestra
+  el indicador con `role="status"` y `aria-live="polite"`, y deshabilita el botón de envío.
+- Un formulario ocupado ignora nuevos envíos por `submit` en fase de captura: cubre doble clic y
+  Enter repetido. El bloqueo visual complementa la exclusión por caso y el permiso global del
+  servidor; no los sustituye.
+- HTMX descarta por defecto los cuerpos 4xx/5xx. Se habilita el reemplazo solo cuando el cuerpo es
+  el fragmento del propio destino (mismo `id` que el objetivo), de modo que 409, 422, 429, 503 y 504
+  muestran su motivo sin inyectar páginas completas en un panel.
+- Los valores de texto se conservan tras un error. La selección de archivo no puede restaurarse por
+  seguridad del navegador; el panel lo indica y pide volver a seleccionarlo.
+- `run_timeout` e `invalid_model_output` no tenían mensaje propio y caían en «Ocurrió un error
+  interno»; se añadieron mensajes específicos sin cambiar estados HTTP ni rutas.
+- La región viva permanece en el DOM y se alternan spinner y texto, para que el anuncio sea fiable.
+- `prefers-reduced-motion` detiene la animación del spinner (`motion-reduce:animate-none`).
+- El espacio del indicador está reservado (`min-h-6`) para evitar saltos de diseño.
+
+**Contraste de «Registrar revisión»**: la causa observada fue que `app.css` no se había recompilado
+tras añadir las plantillas de conversación, por lo que las clases de Tailwind del botón no existían.
+Se recompiló el CSS y se fijaron estilos explícitos: `bg-slate-900` con texto blanco (contraste
+17,85:1), hover negro (21:1) y estado deshabilitado `bg-slate-400` con `text-slate-900` (6,96:1).
+
+**Evidencia**:
+
+- `tests/contract/test_pending_ui.py`: 7 pruebas en verde (marcado pendiente en consulta, documentos
+  y revisión; motivo visible sin `SECGUARD_REVIEWER_NAME`; raíces de fragmento para 422 y 415;
+  fragmento de cita en 409; script servido).
+- `make check`: 204 pruebas rápidas en verde (6 de integración deseleccionadas); Ruff y formato
+  correctos. `make test-integration`: 6 en verde.
+- Servidor real con almacenamiento temporal: panel de consulta con `data-form-key`, `role="status"`,
+  `aria-live`, mensaje y clases deshabilitadas; panel de documentos con su mensaje; 422 del chat con
+  raíz `<section id="chat-panel">`; 415 de documentos con raíz `<section id="documents-panel">`;
+  `/static/js/forms.js` servido como `text/javascript`; `app.css` con `disabled:bg-slate-400`.
+- `npm run build`: CSS recompilado con las clases nuevas; sin cambios en recursos vendorizados.
+- Verificación visual en navegador: pendiente; no hay navegador automatizado disponible. El
+  comportamiento de JavaScript (aparición inmediata, bloqueo de doble envío, restauración) no queda
+  acreditado por las pruebas de HTML.
+
 ---
 
 ## Phase 6: User Story 4 - Continuar la conversación (Priority: P2)

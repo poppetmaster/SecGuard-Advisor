@@ -188,6 +188,11 @@ make demo           # no implementado: requiere el recorrido de aceptación
 5. Cada cita válida abre el fragmento exacto; la revisión humana es por cita y no adjudica
    prioridades P1–P4 ni aprueba informes.
 
+Los formularios muestran un indicador con texto mientras la solicitud está pendiente, deshabilitan el
+envío para evitar duplicados y conservan los valores de texto cuando hay que corregir. Los errores del
+servidor (`409`, `429`, `503`, `504`) se muestran dentro del panel afectado. La selección de archivo no
+puede restaurarse tras un error: hay que volver a elegirla.
+
 El umbral de recuperación (`retrieval_min_score`, 0,35 por defecto) filtra candidatos débiles con
 datos de humo; no demuestra que no exista evidencia.
 

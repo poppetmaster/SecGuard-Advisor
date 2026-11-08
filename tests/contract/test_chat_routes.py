@@ -210,6 +210,8 @@ def test_active_case_returns_409_without_new_run(context) -> None:
         response = _ask(client, case_id)
 
     assert response.status_code == 409
+    assert response.text.lstrip().startswith('<section id="chat-panel"')
+    assert "consulta en curso" in response.text
     assert generator.calls == 0
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(Run)) == 1
@@ -228,6 +230,8 @@ def test_global_saturation_returns_429_without_run(context) -> None:
         slot.release()
 
     assert response.status_code == 429
+    assert response.text.lstrip().startswith('<section id="chat-panel"')
+    assert "El sistema está ocupado" in response.text
     assert generator.calls == 0
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(Run)) == 0
@@ -243,6 +247,8 @@ def test_model_unavailable_returns_503(context) -> None:
         response = _ask(client, case_id)
 
     assert response.status_code == 503
+    assert response.text.lstrip().startswith('<section id="chat-panel"')
+    assert "El modelo local no responde" in response.text
     with factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == case_id))
         assert run.status == "failed"
@@ -259,6 +265,8 @@ def test_model_timeout_returns_504(context) -> None:
         response = _ask(client, case_id)
 
     assert response.status_code == 504
+    assert response.text.lstrip().startswith('<section id="chat-panel"')
+    assert "excedió el tiempo" in response.text
     with factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == case_id))
         assert run.status == "timeout"

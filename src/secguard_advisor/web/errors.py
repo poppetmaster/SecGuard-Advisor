@@ -28,6 +28,14 @@ ERRORS: dict[str, ErrorSpec] = {
     ),
     "model_unavailable": ErrorSpec("model_unavailable", 503, "El modelo local no responde."),
     "timeout": ErrorSpec("timeout", 504, "La consulta excedió el tiempo de espera."),
+    "run_timeout": ErrorSpec(
+        "run_timeout", 504, "La consulta excedió el tiempo de espera del turno."
+    ),
+    "invalid_model_output": ErrorSpec(
+        "invalid_model_output",
+        500,
+        "El modelo devolvió una respuesta que no se pudo interpretar.",
+    ),
     "internal_error": ErrorSpec("internal_error", 500, "Ocurrió un error interno."),
 }
 

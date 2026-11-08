@@ -6,9 +6,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from secguard_advisor.cases.scope import CaseNotFoundError, resolve_case_scope
+from secguard_advisor.cases.scope import CaseNotFoundError, CaseScope, resolve_case_scope
 from secguard_advisor.conversation.views import citation_view, conversation_view
+from secguard_advisor.db.models import Conversation, Message, MessageCitation
 from secguard_advisor.retrieval.review import (
     CitationNotFound,
     ReviewNotAllowed,
@@ -33,6 +36,50 @@ def _not_found(request: Request):
         name="errors/404.html",
         context={"message": "No encontrado en este caso."},
         status_code=404,
+    )
+
+
+def _find_citation_view(
+    session: Session,
+    scope: CaseScope,
+    message_id: str,
+    citation_id: str,
+) -> dict | None:
+    message = session.get(Message, message_id)
+    if message is None:
+        return None
+    conversation = session.get(Conversation, message.conversation_id)
+    if conversation is None or conversation.case_id != scope.case_id:
+        return None
+    citation = session.scalar(
+        select(MessageCitation).where(
+            MessageCitation.id == citation_id,
+            MessageCitation.message_id == message.id,
+        )
+    )
+    if citation is None:
+        return None
+    return citation_view(session, scope.case_id, citation)
+
+
+def _citation_response(
+    request: Request,
+    case_id: str,
+    view: dict,
+    *,
+    status_code: int,
+    error: str | None = None,
+):
+    return _templates(request).TemplateResponse(
+        request=request,
+        name="chat/_citation.html",
+        context={
+            "case_id": case_id,
+            "citation": view,
+            "reviewer_configured": bool(request.app.state.settings.reviewer_name),
+            "error": error,
+        },
+        status_code=status_code,
     )
 
 
@@ -90,29 +137,23 @@ def review_view(
             )
             session.commit()
             view = citation_view(session, case_id, citation)
-        except ReviewNotConfigured as exc:
-            session.rollback()
-            return _page(request, case_id, notice=str(exc), status_code=409)
         except CitationNotFound:
             session.rollback()
             return _not_found(request)
-        except ReviewNotAllowed as exc:
+        except (ReviewNotConfigured, ReviewNotAllowed, ValueError) as exc:
             session.rollback()
-            return _page(request, case_id, notice=str(exc), status_code=409)
-        except ValueError as exc:
-            session.rollback()
-            return _page(request, case_id, notice=str(exc), status_code=422)
+            view = _find_citation_view(session, scope, message_id, citation_id)
+            if view is None:
+                return _not_found(request)
+            return _citation_response(
+                request,
+                case_id,
+                view,
+                status_code=422 if isinstance(exc, ValueError) else 409,
+                error=str(exc),
+            )
 
     if not _is_htmx(request):
         return _page(request, case_id, notice="Revisión registrada.", status_code=200)
 
-    return _templates(request).TemplateResponse(
-        request=request,
-        name="chat/_citation.html",
-        context={
-            "case_id": case_id,
-            "citation": view,
-            "reviewer_configured": True,
-        },
-        status_code=200,
-    )
+    return _citation_response(request, case_id, view, status_code=200)

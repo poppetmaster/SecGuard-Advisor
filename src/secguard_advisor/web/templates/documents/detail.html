@@ -3,6 +3,7 @@
 {% block title %}{{ document.title }} — SecGuard Advisor{% endblock %}
 
 {% block content %}
+{% from "components/pending.html" import pending %}
 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
   <div>
     <h1 class="text-2xl font-semibold">{{ document.title }}</h1>
@@ -14,10 +15,19 @@
 </div>
 
 {% if latest and latest.status in ("failed", "no_usable_text") %}
-<form class="mt-4" method="post" action="/cases/{{ case_id }}/documents/{{ document.id }}/retry">
-  <button class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" type="submit">
+<form
+  class="mt-4"
+  method="post"
+  action="/cases/{{ case_id }}/documents/{{ document.id }}/retry"
+  data-form-key="document-retry"
+>
+  <button
+    class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-800"
+    type="submit"
+  >
     Reintentar procesamiento
   </button>
+  {{ pending("Reintentando el procesamiento del documento…") }}
 </form>
 {% endif %}
 
