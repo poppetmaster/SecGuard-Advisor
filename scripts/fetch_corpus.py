@@ -14,10 +14,19 @@ def main() -> int:
         action="store_true",
         help="Solo verifica los originales y el manifiesto existentes.",
     )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Fuerza una nueva descarga aunque el original local coincida.",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
-    report = acquire_corpus(settings, verify_only=args.verify_only)
+    report = acquire_corpus(
+        settings,
+        verify_only=args.verify_only,
+        force_refresh=args.refresh,
+    )
 
     for source in report.sources:
         print(

@@ -147,11 +147,11 @@ def _load_manifest(path: Path) -> dict:
 
 def _write_manifest(path: Path, manifest: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    rendered = json.dumps(manifest, indent=2, ensure_ascii=False) + "\n"
+    if path.exists() and path.read_text(encoding="utf-8") == rendered:
+        return
     temporary = path.with_name(f"{path.name}.tmp")
-    temporary.write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    temporary.write_text(rendered, encoding="utf-8")
     temporary.replace(path)
 
 
@@ -160,6 +160,7 @@ def acquire_corpus(
     *,
     client: httpx.Client | None = None,
     verify_only: bool = False,
+    force_refresh: bool = False,
 ) -> CorpusReport:
     """Descarga, verifica y registra el corpus sin inventar hashes."""
     corpus_dir = settings.corpus_dir
@@ -209,6 +210,15 @@ def acquire_corpus(
                     }
                     failed += 1
                 entries.append(entry)
+                continue
+
+            if (
+                not force_refresh
+                and old.get("status") == "verified"
+                and target.exists()
+                and old.get("sha256") == _sha256(target.read_bytes())
+            ):
+                entries.append({**old, "status": "verified"})
                 continue
 
             try:
@@ -286,11 +296,13 @@ def acquire_corpus(
         if owns_client:
             http.close()
 
+    unchanged = manifest.get("sources") == entries
+    generated_at = manifest.get("generated_at") if unchanged else None
     _write_manifest(
         manifest_path,
         {
             "schema_version": MANIFEST_SCHEMA_VERSION,
-            "generated_at": _now(),
+            "generated_at": generated_at or _now(),
             "sources": entries,
         },
     )

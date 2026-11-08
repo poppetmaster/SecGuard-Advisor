@@ -235,7 +235,7 @@ ejecución mínima. Bloquea todas las historias.
 - `pytest -m integration`: 2 pruebas reales con EmbeddingGemma y Chroma.
 - `pytest tests/integration/test_prompt_injection.py`: 1.
 - `make check`: 135 pruebas en verde, 2 deseleccionadas; Ruff y formato correctos.
-- `make corpus`: cuatro fuentes verificadas con SHA-256 y páginas reales (csf2 32, airmf 48, ai6001 64, owasp 45); `--verify-only` repetido sin cambios.
+- `make corpus`: cuatro fuentes verificadas con SHA-256 y páginas reales (csf2 32, airmf 48, ai6001 64, owasp 45); `--verify-only` repetido sin cambios. Una segunda ejecución reutiliza el original local verificado sin descargar ni reescribir el manifiesto; `--refresh` fuerza la descarga.
 - `make corpus-ingest`: 4 documentos públicos, 4 versiones disponibles, 193 fragmentos; máximo de 1440 tokens por fragmento; colección pública de Chroma con 193 vectores; segunda ejecución devuelve «duplicate» para las cuatro fuentes.
 - Consulta real del índice con EmbeddingGemma: devuelve fragmentos del CSF 2.0 con distancias y localizadores.
 - Servidor real con almacenamiento temporal: caso 303, carga de PDF 201 «Disponible», detalle 200 «Versiones»; reinicio del servidor y caso 200 con el documento.
