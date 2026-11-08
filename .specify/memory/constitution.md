@@ -1,12 +1,11 @@
 <!--
 Sync Impact Report
 ==================
-Versión: 1.0.2 → 1.0.3
-Tipo de cambio: PATCH — registro de decisiones resueltas, sin cambios de principios
+Versión: 1.0.3 → 1.0.4
+Tipo de cambio: PATCH — registro de una decisión de parámetros, sin cambios de principios
 Principios modificados: ninguno
 Secciones modificadas:
-  - Registro de decisiones: dos controles de concurrencia, identidad del revisor y cierre
-    transaccional de la ejecución
+  - Registro de decisiones: versiones fijadas de los recursos de interfaz y Node 22 en CI
 Secciones añadidas: ninguna
 Secciones eliminadas: ninguna
 Plantillas dependientes: sin cambios; leen esta constitución en tiempo de ejecución
@@ -412,7 +411,8 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-08 | Dos controles distintos: exclusión por caso con índice único y semáforo global de una generación; un proceso y un worker | Permanente | IV, XI | Evita generaciones simultáneas entre casos y bloqueos de escritura |
 | 2026-11-08 | `SECGUARD_REVIEWER_NAME` como identidad local declarada del revisor; sin valor no se guarda revisión; no es autenticación | Permanente | VIII, IX | El autor no puede inventarse; el incremento no incluye autenticación |
 | 2026-11-08 | Respuesta, citas, telemetría y cierre de ejecución en una sola transacción; reintento solo sin respuesta persistida | Permanente | VIII | Evita respuestas visibles con ejecución abierta y respuestas duplicadas |
+| 2026-11-08 | Recursos de interfaz fijados: Tailwind 3.4.17, Flowbite 2.5.2, HTMX 2.0.4; Node 22 en CI; CSS y JS vendorizados con hashes | Parámetro | III | Build reproducible desde `package-lock.json`; hashes en `MANIFEST.md` |
 | Pendiente | Destino GitHub y autorización de publicación | Pendiente | Flujo de trabajo | Sin repo no hay badges de CI verificables |
 | Pendiente | Presupuesto aprobado para DeepSeek (proveedor externo opcional) | Pendiente | XI | No se activan llamadas pagadas sin aprobación |
 
-**Version**: 1.0.3 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-08
+**Version**: 1.0.4 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-08

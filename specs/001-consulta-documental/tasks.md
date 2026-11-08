@@ -95,18 +95,31 @@ incremento; la prioridad ordena el trabajo, no permite omitir ninguna.
 
 **Purpose**: repositorio, calidad y estructura base. Sin esto no hay verificación posible.
 
-- [ ] T001 Crear la rama `001-consulta-documental` y el commit inicial — `git switch -c 001-consulta-documental`; incluir `docs/`, `specs/`, `.specify/`, `CONSTITUTION.md`, `README.md` mínimo con sección «Estado», `.env.example`, `.gitignore` (con `data/corpus/originals/`), `.agents/`, `.opencode/`, `skills-lock.json`, `pyproject.toml`, `uv.lock`, `.python-version`; excluir `.env`, `.atl/`, `storage/` · Dep: ninguna · Check: `git check-ignore .env data/corpus/originals/x.pdf` y `git log --oneline -1` · Evidence: rama, hash y verificación de ignorados
-- [ ] T002 [P] Completar metadatos y calidad en `pyproject.toml` — descripción real, `requires-python`, Ruff (lint + format), pytest (`testpaths`, marcador `integration`, sin fallar por colección vacía) · Dep: T001 · Check: `uv sync` y `uv run ruff check .` · Evidence: salida de ambos
-- [ ] T003 [P] Crear `Makefile` — `help`, `install`, `assets`, `corpus`, `seed-demo`, `dev`, `demo`, `lint`, `format`, `test`, `test-integration`, `check`, `clean`; `dev` y `demo` fijan `--workers 1`; los targets sin script informan «no implementado» y salen con código distinto de cero · Dep: T001 · Check: `make help`, `make corpus` informa y `make -n dev` muestra `--workers 1` · Evidence: salidas
-- [ ] T004 [P] Añadir `.editorconfig`, `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` y `AGENTS.md` · Dep: T001 · Check: archivos presentes y coherentes con el estándar · Evidence: revisión de contenido
-- [ ] T005 [P] Configurar `.pre-commit-config.yaml` — higiene, Ruff, `uv-lock` · Dep: T002 · Check: `uv run pre-commit run --all-files` · Evidence: salida del hook
-- [ ] T006 [P] Crear el esqueleto en `src/secguard_advisor/` — `__init__.py` con `__version__`, `__main__.py`, subpaquetes de `plan.md` § Source Code · Dep: T001 · Check: `uv run python -c "import secguard_advisor"` · Evidence: import exitoso
-- [ ] T007 [P] Preparar recursos de interfaz — `package.json` con Tailwind/Flowbite fijados, `package-lock.json` generado y versionado, `tailwind.config.js`, `htmx.min.js` y `flowbite.min.js` vendorizados, `static/vendor/MANIFEST.md` con versión, licencia y SHA-256 reales · Dep: T006 · Check: `npm ci` y compilación de `static/css/app.css` · Evidence: lockfile, CSS y manifiesto con hashes calculados
-- [ ] T008 [P] Implementar logging en `src/secguard_advisor/logging.py` — formato con `run_id`, `case_id`, `event`; sin secretos · Dep: T006 · Check: `tests/unit/test_logging.py` · Evidence: test en verde
-- [ ] T009 [P] Crear el arnés de pruebas en `tests/conftest.py` — base SQLite temporal, directorio de almacenamiento temporal, marcador `integration`; **sin** fábrica de aplicación · Dep: T006 · Check: `uv run pytest --collect-only` · Evidence: colección correcta
-- [ ] T010 [P] Añadir prueba de humo en `tests/unit/test_package_smoke.py` — importación del paquete y `__version__` · Dep: T006 · Check: `uv run pytest tests/unit/test_package_smoke.py` · Evidence: test en verde
-- [ ] T011 Crear gobernanza de GitHub en `.github/` — PR con verificación de constitución, issues, `labels.yml`, `dependabot.yml`, `ci.yml` con paridad a `make check` · Dep: T002, T003, T010 · Check: `make check` ejecutado localmente antes de declarar CI · Evidence: workflow y salida local
-- [ ] T012 Escribir `README.md` profesional con secciones «Implementado» y «Previsto» — propósito, funcionalidades, arquitectura, instalación, configuración, ejecución, pruebas, estructura y licencia; badges solo verificables (Python, licencia); sin badge de CI hasta definir repositorio · Dep: T002, T004 · Check: revisión de enlaces y de que nada previsto se presenta como implementado · Evidence: README revisado
+- [X] T001 Crear la rama `001-consulta-documental` y el commit inicial — `git switch -c 001-consulta-documental`; incluir `docs/`, `specs/`, `.specify/`, `CONSTITUTION.md`, `README.md` mínimo con sección «Estado», `.env.example`, `.gitignore` (con `data/corpus/originals/`), `.agents/`, `.opencode/`, `skills-lock.json`, `pyproject.toml`, `uv.lock`, `.python-version`; excluir `.env`, `.atl/`, `storage/` · Dep: ninguna · Check: `git check-ignore .env data/corpus/originals/x.pdf` y `git log --oneline -1` · Evidence: rama, hash y verificación de ignorados
+- [X] T002 [P] Completar metadatos y calidad en `pyproject.toml` — descripción real, `requires-python`, Ruff (lint + format), pytest (`testpaths`, marcador `integration`, sin fallar por colección vacía) · Dep: T001 · Check: `uv sync` y `uv run ruff check .` · Evidence: salida de ambos
+- [X] T003 [P] Crear `Makefile` — `help`, `install`, `assets`, `corpus`, `seed-demo`, `dev`, `demo`, `lint`, `format`, `test`, `test-integration`, `check`, `clean`; `dev` y `demo` fijan `--workers 1`; los targets sin script informan «no implementado» y salen con código distinto de cero · Dep: T001 · Check: `make help`, `make corpus` informa y `make -n dev` muestra `--workers 1` · Evidence: salidas
+- [X] T004 [P] Añadir `.editorconfig`, `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` y `AGENTS.md` · Dep: T001 · Check: archivos presentes y coherentes con el estándar · Evidence: revisión de contenido
+- [X] T005 [P] Configurar `.pre-commit-config.yaml` — higiene, Ruff, `uv-lock` · Dep: T002 · Check: `uv run pre-commit run --all-files` · Evidence: salida del hook
+- [X] T006 [P] Crear el esqueleto en `src/secguard_advisor/` — `__init__.py` con `__version__`, `__main__.py`, subpaquetes de `plan.md` § Source Code · Dep: T001 · Check: `uv run python -c "import secguard_advisor"` · Evidence: import exitoso
+- [X] T007 [P] Preparar recursos de interfaz — `package.json` con Tailwind/Flowbite fijados, `package-lock.json` generado y versionado, `tailwind.config.js`, `htmx.min.js` y `flowbite.min.js` vendorizados, `static/vendor/MANIFEST.md` con versión, licencia y SHA-256 reales · Dep: T006 · Check: `npm ci` y compilación de `static/css/app.css` · Evidence: lockfile, CSS y manifiesto con hashes calculados
+- [X] T008 [P] Implementar logging en `src/secguard_advisor/logging.py` — formato con `run_id`, `case_id`, `event`; sin secretos · Dep: T006 · Check: `tests/unit/test_logging.py` · Evidence: test en verde
+- [X] T009 [P] Crear el arnés de pruebas en `tests/conftest.py` — base SQLite temporal, directorio de almacenamiento temporal, marcador `integration`; **sin** fábrica de aplicación · Dep: T006 · Check: `uv run pytest --collect-only` · Evidence: colección correcta
+- [X] T010 [P] Añadir prueba de humo en `tests/unit/test_package_smoke.py` — importación del paquete y `__version__` · Dep: T006 · Check: `uv run pytest tests/unit/test_package_smoke.py` · Evidence: test en verde
+- [X] T011 Crear gobernanza de GitHub en `.github/` — PR con verificación de constitución, issues, `labels.yml`, `dependabot.yml`, `ci.yml` con paridad a `make check` · Dep: T002, T003, T010 · Check: `make check` ejecutado localmente antes de declarar CI · Evidence: workflow y salida local
+- [X] T012 Escribir `README.md` profesional con secciones «Implementado» y «Previsto» — propósito, funcionalidades, arquitectura, instalación, configuración, ejecución, pruebas, estructura y licencia; badges solo verificables (Python, licencia); sin badge de CI hasta definir repositorio · Dep: T002, T004 · Check: revisión de enlaces y de que nada previsto se presenta como implementado · Evidence: README revisado
+
+
+**Evidencia del corte (2026-11-08)**
+
+- `uv sync --locked`: 133 paquetes resueltos, 131 comprobados, sin error.
+- `make check`: Ruff sin hallazgos, formato correcto y 4 pruebas ejecutadas en verde.
+- `uv run pytest -q`: 4 passed.
+- `npm ci` y `npm run build`: exit 0; `git diff --exit-code -- src/secguard_advisor/web/static` sin cambios.
+- `git check-ignore`: `.env`, `data/corpus/originals/` y `.atl/` ignorados.
+- `uv run pre-commit run --all-files`: todos los hooks en verde.
+- `make -n dev`: muestra `--workers 1`.
+- `make corpus`: informa «no implementado: requiere T045» y sale con error.
+- CI: workflow preparado; no ejecutado en GitHub por falta de remoto.
 
 ---
 
