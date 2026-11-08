@@ -30,3 +30,69 @@ class FakeLLM:
 
     def invoke(self, _messages: object) -> str:
         return self.response
+
+
+class FakeEmbedder:
+    """Embeddings deterministas con conteo de tokens controlado."""
+
+    model = "fake-embedding"
+    dimension = 4
+
+    def __init__(
+        self,
+        *,
+        token_count: int = 10,
+        fail: bool = False,
+        too_long_over: int | None = None,
+    ) -> None:
+        self.token_count = token_count
+        self.fail = fail
+        self.too_long_over = too_long_over
+
+    def embed_one(self, text: str, *, kind: str = "document", title: str | None = None):
+        from secguard_advisor.documents.embedding import (
+            EmbeddingError,
+            EmbeddingResult,
+            EmbeddingTooLong,
+        )
+
+        if self.fail:
+            raise EmbeddingError("fallo simulado de embeddings")
+        if self.too_long_over is not None and len(text) > self.too_long_over:
+            raise EmbeddingTooLong("entrada demasiado larga")
+        digest = hashlib.sha256(text.encode("utf-8")).digest()
+        vector = [byte / 255 for byte in digest[: self.dimension]]
+        return EmbeddingResult(
+            vector=vector,
+            token_count=min(self.token_count, 2048),
+            model=self.model,
+            dimension=self.dimension,
+            prompt=text,
+        )
+
+    def close(self) -> None:
+        return None
+
+
+class FakeIndex:
+    """Índice en memoria para pruebas rápidas."""
+
+    def __init__(self, *, fail: bool = False) -> None:
+        self.chunks: dict[str, object] = {}
+        self.deleted_versions: set[str] = set()
+        self.fail = fail
+
+    def upsert(self, scope, model: str, dimension: int, chunks) -> None:
+        if self.fail:
+            raise RuntimeError("fallo simulado del índice")
+        for chunk in chunks:
+            self.chunks[chunk.chunk_id] = chunk
+
+    def delete_version(self, scope, model: str, dimension: int, version_id: str) -> None:
+        self.deleted_versions.add(version_id)
+        for chunk_id, chunk in list(self.chunks.items()):
+            if chunk.version_id == version_id:
+                del self.chunks[chunk_id]
+
+    def count(self) -> int:
+        return len(self.chunks)
