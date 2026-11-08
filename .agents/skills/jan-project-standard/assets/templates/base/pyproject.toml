@@ -1,0 +1,56 @@
+[project]
+name = "{{PROJECT_SLUG}}"
+version = "0.1.0"
+description = "{{DESCRIPTION}}"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">={{PYTHON_VERSION}}"
+keywords = []
+authors = [
+    { name = "{{AUTHOR}}", email = "{{AUTHOR_EMAIL}}" },
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: {{PYTHON_VERSION}}",
+{{#if PACKAGE}}    "Typing :: Typed",
+{{/if}}]
+dependencies = []
+
+[project.urls]
+Homepage = "{{REPO_URL}}"
+Repository = "{{REPO_URL}}"
+Issues = "{{REPO_URL}}/issues"
+
+{{#if PACKAGE}}[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
+
+{{/if}}[dependency-groups]
+dev = [
+    "pre-commit>=3.7",
+    "pytest>=8.0",
+    "ruff>=0.6",
+{{#if TYPES}}    "ty>=0.0.1",
+{{/if}}]
+
+[tool.ruff]
+line-length = 100
+target-version = "py{{PYTHON_VERSION_NO_DOT}}"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "C4"]
+
+{{#if PACKAGE}}[tool.ruff.lint.isort]
+known-first-party = ["{{PACKAGE_NAME}}"]
+
+{{/if}}[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+{{#unless PACKAGE}}pythonpath = ["."]
+{{/unless}}

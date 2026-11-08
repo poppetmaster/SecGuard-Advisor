@@ -1,0 +1,388 @@
+---
+
+description: "Task list for feature 001 implementation"
+---
+
+# Tasks: Consulta documental con evidencias, memoria por caso y hallazgos
+
+**Input**: Diseño de `specs/001-consulta-documental/` (spec, plan, research, data-model, contracts,
+quickstart)
+
+**Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
+
+**Tests**: Incluidas. La constitución exige test-first por defecto y el encargo pide pruebas por
+historia. Cada bloque de pruebas se escribe y se observa en rojo antes de su implementación.
+
+**Organization**: Fases por historia de usuario. Las seis historias son necesarias para aceptar el
+incremento; la prioridad ordena el trabajo, no permite omitir ninguna.
+
+## Reconciliación aplicada
+
+### Primera ronda (correcciones del plan)
+
+1. **FR-020** se limitó a evidencias privadas. El corpus público es compartido y no pertenece a
+   ningún caso.
+2. **SC-003** se separó en control automático y revisión humana registrada. Se añadieron FR-065 y
+   FR-066.
+3. **Abstención**: la recuperación vacía no corta el turno; el agente se ejecuta con la herramienta
+   y la abstención se decide después. El umbral es un filtro calibrable.
+4. **Persistencia**: 16 tablas justificadas; se eliminaron `corpus_sources` y
+   `vector_collections`.
+
+### Segunda ronda (revisión de consistencia)
+
+| Hallazgo | Resolución en este archivo |
+|---|---|
+| C1 gobierno diferido | Cada commit significativo actualiza constitución y decisiones; T093 solo verifica |
+| I1 reintento duplicaba mensajes | T063: intento nuevo, misma pregunta, sin mensaje duplicado; FR-067/SC-013 |
+| I2 409 sin mecanismo | T059: guardián por caso con índice único parcial y liberación; FR-068/SC-014 |
+| I3 transacción durante la generación | T022: unidad de trabajo de transacción corta; ninguna sesión abierta durante el modelo |
+| I4 `case_id` expuesto al modelo | T076: resultado sin `case_id`; traza interna en `run_tool_calls` |
+| O1 `runs` llegaba tarde | T027: servicio mínimo de ejecución en la fase fundacional; T082 expone las consultas de evidencia |
+| O2 corpus con dependencias incompletas | T045–T046 reordenadas después de extracción, embeddings, índice y orquestación |
+| G1 FR-065/066/SC-003 sin tarea | T064: revisión humana mínima; T085 muestra ambos controles; T068 la prueba |
+| I5 originales no ignorados | `.gitignore` corregido; T001 lo verifica |
+| I6 CI en rojo sin pruebas | T010 prueba de humo antes de T011 |
+| I7 `npm ci` sin lockfile | T007 genera y versiona `package-lock.json` |
+| I8 `AGENTS.md` inexistente | T004 lo crea |
+| I9 sin guardia de referencias | T026 cubre `docs/referencias`, constitución e instrucciones |
+| I10 fallo a mitad de turno | T074 prueba consistencia mensajes/checkpoint/ejecución |
+| U1 ejecución no mostraba ambos controles | T085 muestra control automático y revisión humana |
+| O3 arnés dependía de la fábrica | T009 solo fixtures de base; el fixture de app llega en T019 |
+| O4 pruebas sin dependencia de corpus | T065, T066 y T090 declaran T046 |
+| O5 paralelismo mal anotado | Sección de paralelismo corregida |
+| D1 T088 podía duplicar plantillas | T088 acotada a layout y navegación |
+| A1 `verified` vs `confirmed` | `confirmed` es el único estado; «verificada» solo como prosa |
+| U2 fragmentos recuperados implícitos | T061 exige mostrar fragmentos usados y su procedencia |
+| I11 README con funciones no implementadas | T012 separa «Implementado» y «Previsto» |
+| I12 README vacío en el primer commit | T001 commitea un README mínimo con estado |
+| I13 | targets sin script | T003 hace que los targets informen «no implementado» |
+
+### Tercera ronda (revisión posterior)
+
+| Hallazgo | Resolución en este archivo |
+|---|---|
+| N1 límite global no aplicado | T059: semáforo global de una generación, separado de la exclusión por caso; T061 responde `429` |
+| N2 autor de revisión sin fuente | T013 configura `SECGUARD_REVIEWER_NAME`; T064 rechaza sin identidad; T068 lo prueba |
+| N3 respuesta y cierre no atómicos | T027 expone el cierre transaccional; T061 persiste respuesta, citas, telemetría y cierre en una transacción; T063 exige ausencia de respuesta para reintentar |
+| N4 proceso/worker | T003 fija `--workers 1`; T011 CI y T012 lo documentan |
+| N5 alcance de mensajes y citas | T064 y T068 validan `message_id` y `citation_id` dentro del caso |
+| N6 desconexión del cliente | T059 prueba que la liberación no ocurre antes del cierre real |
+| N7 confirmación de traza | T091 usa `scripts/confirm_trace.py` con verificación por API de lectura |
+| N8 tres tipos de solicitud | T063 distingue pregunta nueva, reintento y envío duplicado |
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: puede ejecutarse en paralelo (archivos distintos, sin dependencias pendientes)
+- **[Story]**: historia a la que pertenece la tarea
+- Cada tarea declara `Dep`, `Check` y `Evidence`
+
+## Cortes funcionales
+
+| Corte | Fases | Contenido |
+|---|---|---|
+| 1. Base, configuración y calidad | 1 y 2 | Repositorio, tooling, configuración, persistencia, seed |
+| 2. Caso y seed | 2 y 3 | Esquema, alcance, caso, datos sintéticos, ejecución mínima |
+| 3. Corpus, ingesta e índice | 4 | Adquisición, extracción, fragmentación, embeddings, Chroma |
+| 4. Consulta con recuperación y citas | 5 | Recuperación, generación, citas, revisión humana, abstención |
+| 5. Memoria y herramienta | 6 y 7 | Checkpoints, aislamiento, herramienta de hallazgos |
+| 6. Interfaz integrada y errores | 8 y 9 | Evidencia de ejecución, navegación, estados |
+| 7. Aceptación y demo | 9 | Recorrido completo, integración real, documentación |
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: repositorio, calidad y estructura base. Sin esto no hay verificación posible.
+
+- [ ] T001 Crear la rama `001-consulta-documental` y el commit inicial — `git switch -c 001-consulta-documental`; incluir `docs/`, `specs/`, `.specify/`, `CONSTITUTION.md`, `README.md` mínimo con sección «Estado», `.env.example`, `.gitignore` (con `data/corpus/originals/`), `.agents/`, `.opencode/`, `skills-lock.json`, `pyproject.toml`, `uv.lock`, `.python-version`; excluir `.env`, `.atl/`, `storage/` · Dep: ninguna · Check: `git check-ignore .env data/corpus/originals/x.pdf` y `git log --oneline -1` · Evidence: rama, hash y verificación de ignorados
+- [ ] T002 [P] Completar metadatos y calidad en `pyproject.toml` — descripción real, `requires-python`, Ruff (lint + format), pytest (`testpaths`, marcador `integration`, sin fallar por colección vacía) · Dep: T001 · Check: `uv sync` y `uv run ruff check .` · Evidence: salida de ambos
+- [ ] T003 [P] Crear `Makefile` — `help`, `install`, `assets`, `corpus`, `seed-demo`, `dev`, `demo`, `lint`, `format`, `test`, `test-integration`, `check`, `clean`; `dev` y `demo` fijan `--workers 1`; los targets sin script informan «no implementado» y salen con código distinto de cero · Dep: T001 · Check: `make help`, `make corpus` informa y `make -n dev` muestra `--workers 1` · Evidence: salidas
+- [ ] T004 [P] Añadir `.editorconfig`, `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` y `AGENTS.md` · Dep: T001 · Check: archivos presentes y coherentes con el estándar · Evidence: revisión de contenido
+- [ ] T005 [P] Configurar `.pre-commit-config.yaml` — higiene, Ruff, `uv-lock` · Dep: T002 · Check: `uv run pre-commit run --all-files` · Evidence: salida del hook
+- [ ] T006 [P] Crear el esqueleto en `src/secguard_advisor/` — `__init__.py` con `__version__`, `__main__.py`, subpaquetes de `plan.md` § Source Code · Dep: T001 · Check: `uv run python -c "import secguard_advisor"` · Evidence: import exitoso
+- [ ] T007 [P] Preparar recursos de interfaz — `package.json` con Tailwind/Flowbite fijados, `package-lock.json` generado y versionado, `tailwind.config.js`, `htmx.min.js` y `flowbite.min.js` vendorizados, `static/vendor/MANIFEST.md` con versión, licencia y SHA-256 reales · Dep: T006 · Check: `npm ci` y compilación de `static/css/app.css` · Evidence: lockfile, CSS y manifiesto con hashes calculados
+- [ ] T008 [P] Implementar logging en `src/secguard_advisor/logging.py` — formato con `run_id`, `case_id`, `event`; sin secretos · Dep: T006 · Check: `tests/unit/test_logging.py` · Evidence: test en verde
+- [ ] T009 [P] Crear el arnés de pruebas en `tests/conftest.py` — base SQLite temporal, directorio de almacenamiento temporal, marcador `integration`; **sin** fábrica de aplicación · Dep: T006 · Check: `uv run pytest --collect-only` · Evidence: colección correcta
+- [ ] T010 [P] Añadir prueba de humo en `tests/unit/test_package_smoke.py` — importación del paquete y `__version__` · Dep: T006 · Check: `uv run pytest tests/unit/test_package_smoke.py` · Evidence: test en verde
+- [ ] T011 Crear gobernanza de GitHub en `.github/` — PR con verificación de constitución, issues, `labels.yml`, `dependabot.yml`, `ci.yml` con paridad a `make check` · Dep: T002, T003, T010 · Check: `make check` ejecutado localmente antes de declarar CI · Evidence: workflow y salida local
+- [ ] T012 Escribir `README.md` profesional con secciones «Implementado» y «Previsto» — propósito, funcionalidades, arquitectura, instalación, configuración, ejecución, pruebas, estructura y licencia; badges solo verificables (Python, licencia); sin badge de CI hasta definir repositorio · Dep: T002, T004 · Check: revisión de enlaces y de que nada previsto se presenta como implementado · Evidence: README revisado
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: configuración, persistencia, alcance, arranque, transacciones, datos sintéticos y
+ejecución mínima. Bloquea todas las historias.
+
+**⚠️ CRITICAL**: ninguna historia comienza hasta completar esta fase.
+
+- [ ] T013 Implementar configuración en `src/secguard_advisor/config.py` — `pydantic-settings`, `SecretStr`, rutas, modelos, `num_ctx`, límites de turno y archivo, umbral de recuperación, `SECGUARD_REVIEWER_NAME` y `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` · Dep: T006 · Check: `tests/unit/test_config.py` (incluye identidad de revisor vacía y espera acotada) · Evidence: test en verde
+- [ ] T014 Crear `src/secguard_advisor/db/base.py` y `engine.py` — Base, engine SQLite, `foreign_keys=ON`, WAL, `busy_timeout`, fábrica de sesiones · Dep: T013 · Check: `tests/unit/test_db_engine.py` · Evidence: PRAGMAs verificados
+- [ ] T015 Definir las 16 tablas en `src/secguard_advisor/db/models.py` — según `data-model.md`, con `UNIQUE(scope_key, sha256)`, `UNIQUE(version_id, chunk_index)`, `UNIQUE(question_message_id, attempt_no)` e índice único parcial `runs(case_id) WHERE status='running'` · Dep: T014 · Check: `tests/unit/test_schema.py` (restricciones rechazan filas inválidas y segunda ejecución activa) · Evidence: test en verde
+- [ ] T016 Configurar Alembic en `alembic/` y migración inicial · Dep: T015 · Check: `alembic upgrade head` y `alembic downgrade base` · Evidence: migración reversible
+- [ ] T017 Implementar `CaseScope` en `src/secguard_advisor/cases/scope.py` — desde la ruta, valida existencia, no acepta `case_id` por cuerpo ni consulta · Dep: T016 · Check: `tests/unit/test_case_scope.py` · Evidence: test en verde
+- [ ] T018 Implementar reconciliación de arranque en `src/secguard_advisor/db/recovery.py` — `runs.running → interrupted` (libera el caso), `ingestion_jobs.running → interrupted`, `document_versions.processing → failed(interrupted)` · Dep: T016 · Check: `tests/unit/test_startup_recovery.py` · Evidence: test en verde
+- [ ] T019 Crear la fábrica en `src/secguard_advisor/web/app.py` — routers, estáticos, manejadores de error, validación de origen, loopback, `/healthz`; añadir el fixture de aplicación en `tests/conftest.py` · Dep: T013, T017, T009 · Check: `tests/contract/test_app_shell.py` (404, 403 de origen, `/healthz`) · Evidence: test en verde
+- [ ] T020 Crear plantillas base en `src/secguard_advisor/web/templates/base.html` y parciales de error — español, navegación, recursos locales · Dep: T007, T019 · Check: `tests/contract/test_templates.py` (sin URLs externas) · Evidence: test en verde
+- [ ] T021 Implementar taxonomía de errores en `src/secguard_advisor/web/errors.py` — código, estado HTTP y mensaje en español; sin trazas internas · Dep: T019 · Check: `tests/unit/test_error_messages.py` · Evidence: test en verde
+- [ ] T022 Implementar la unidad de trabajo en `src/secguard_advisor/db/transaction.py` — transacción corta, cierre explícito y aserción de que no hay transacción activa antes de llamar al modelo · Dep: T014 · Check: `tests/unit/test_transaction_scope.py` · Evidence: test en verde
+- [ ] T023 Implementar generación determinista de datos sintéticos en `src/secguard_advisor/seed/demo.py` — caso de demostración, activos y hallazgos con semilla fija, checksum SHA-256, `is_synthetic` · Dep: T015 · Check: `tests/unit/test_seed_demo.py` (mismo checksum en dos ejecuciones) · Evidence: checksum idéntico
+- [ ] T024 Crear `scripts/seed_demo.py` y el target `make seed-demo` · Dep: T023 · Check: ejecución doble idempotente · Evidence: conteos antes y después
+- [ ] T025 Crear dobles de prueba en `tests/fixtures/` — embeddings falsos deterministas, generador falso con JSON controlado, PDFs (textual, escaneado, corrupto) y Markdown con instrucciones incrustadas · Dep: T009 · Check: usados por pruebas unitarias · Evidence: pruebas que los usan
+- [ ] T026 Extender la guardia de aislamiento — `data/eval/final/` reservado y ninguna referencia, desde `src/secguard_advisor`, a `docs/referencias/`, `CONSTITUTION.md`, instrucciones de agentes ni respuestas esperadas de pruebas · Dep: T006 · Check: `tests/unit/test_corpus_isolation.py` · Evidence: test en verde
+- [ ] T027 Implementar el ciclo de vida mínimo de ejecución en `src/secguard_advisor/evidence/runs.py` — crear `runs` (`running`, `attempt_no`), cierre transaccional que participa en una transacción existente (respuesta, citas, telemetría y cierre), cierre en éxito/error/timeout, marcar interrumpida, mapear la violación del índice único a «consulta en curso» · Dep: T015, T022 · Check: `tests/unit/test_run_lifecycle.py` (el cierre no confirma por sí solo y no deja respuesta sin cierre) · Evidence: test en verde
+
+**Checkpoint**: fundación lista; las historias pueden comenzar.
+
+---
+
+## Phase 3: User Story 1 - Crear y recuperar un caso (Priority: P1) 🎯 MVP
+
+**Goal**: caso con contexto, campos desconocidos explícitos y persistencia tras reinicio.
+
+**Independent Test**: crear un caso con dos campos vacíos, reiniciar y reabrirlo; el contexto coincide y los vacíos siguen marcados como desconocidos.
+
+### Tests for User Story 1
+
+- [ ] T028 [P] [US1] Pruebas unitarias del servicio en `tests/unit/test_cases_service.py` — título obligatorio, campos desconocidos, activos, marca sintética · Dep: T017 · Check: fallan antes de T030 · Evidence: rojo y verde
+- [ ] T029 [P] [US1] Pruebas de contrato en `tests/contract/test_cases_routes.py` — listado, formulario, creación, detalle, 422 sin título, 404 de caso ajeno · Dep: T019 · Check: fallan antes de T031 · Evidence: rojo y verde
+
+### Implementation for User Story 1
+
+- [ ] T030 [US1] Implementar esquemas y servicio en `src/secguard_advisor/cases/schemas.py` y `service.py` — crear, listar, abrir; nunca completar vacíos · Dep: T028 · Check: T028 en verde · Evidence: test en verde
+- [ ] T031 [US1] Implementar rutas y plantillas en `src/secguard_advisor/web/routes/cases.py` y `templates/cases/` · Dep: T029, T030 · Check: T029 en verde · Evidence: test en verde
+- [ ] T032 [US1] Prueba de persistencia tras reinicio en `tests/integration/test_case_persistence.py` — base en archivo, reapertura · Dep: T030 · Check: caso y activos intactos · Evidence: test en verde
+- [ ] T033 [US1] Mostrar marca educativa y campos desconocidos en `templates/cases/detail.html` · Dep: T031 · Check: aserciones sobre HTML · Evidence: test en verde
+
+**Checkpoint**: US1 funcional y verificable por separado.
+
+---
+
+## Phase 4: User Story 2 - Incorporar documentos (Priority: P1)
+
+**Goal**: corpus público adquirido y verificado, documentos de caso validados, procesados, deduplicados, versionados e indexados con procedencia.
+
+**Independent Test**: cargar un PDF textual, un Markdown, un PDF escaneado y un archivo corrupto; verificar estados y que solo los dos primeros sean consultables.
+
+### Tests for User Story 2
+
+- [ ] T034 [P] [US2] Pruebas de validación en `tests/unit/test_document_validation.py` — extensión, magic bytes, tamaño, extensión falsa · Dep: T025 · Check: fallan antes de T039 · Evidence: rojo y verde
+- [ ] T035 [P] [US2] Pruebas de extracción en `tests/unit/test_extraction.py` — PDF textual, escaneado, Markdown, páginas no legibles · Dep: T025 · Check: fallan antes de T040 · Evidence: rojo y verde
+- [ ] T036 [P] [US2] Pruebas de fragmentación en `tests/unit/test_chunking.py` — presupuesto, solape, página y sección, sin truncamiento · Dep: T025 · Check: fallan antes de T041 · Evidence: rojo y verde
+- [ ] T037 [P] [US2] Pruebas de deduplicación y versiones en `tests/unit/test_document_versions.py` — mismo `sha256` no duplica, contenido distinto crea versión, anterior superada · Dep: T015 · Check: fallan antes de T044 · Evidence: rojo y verde
+- [ ] T038 [P] [US2] Pruebas de contrato en `tests/contract/test_documents_routes.py` — carga, 409, 413, 415, detalle, reintento · Dep: T019 · Check: fallan antes de T048 · Evidence: rojo y verde
+
+### Implementation for User Story 2
+
+- [ ] T039 [US2] Implementar validación y almacenamiento en `src/secguard_advisor/documents/validation.py` y `storage.py` — tipo real, tamaño, hash en streaming, originales content-addressed · Dep: T034 · Check: T034 en verde · Evidence: test en verde
+- [ ] T040 [US2] Implementar extracción en `src/secguard_advisor/documents/extraction.py` — pypdf por página, Markdown por sección, `unreadable_pages`, `no_usable_text` · Dep: T035 · Check: T035 en verde · Evidence: test en verde
+- [ ] T041 [US2] Implementar fragmentación en `src/secguard_advisor/documents/chunking.py` — unidades por página/sección, presupuesto conservador, offsets y locator · Dep: T036 · Check: T036 en verde · Evidence: test en verde
+- [ ] T042 [US2] Implementar el adaptador de embeddings en `src/secguard_advisor/documents/embedding.py` — `/api/embed` con `truncate: false`, **una entrada por petición**, `prompt_eval_count` como `token_count`, prefijos oficiales · Dep: T013 · Check: `tests/unit/test_embedding_adapter.py` con transporte falso · Evidence: test en verde y `token_count_source`
+- [ ] T043 [US2] Implementar colecciones e índice en `src/secguard_advisor/retrieval/collections.py` e `index.py` — nombres derivados del alcance autorizado, validación de formato, `upsert` por `chunk_id`, reconstrucción · Dep: T019, T042 · Check: `tests/unit/test_collections.py` y `tests/integration/test_index_rebuild.py` · Evidence: test en verde
+- [ ] T044 [US2] Implementar la orquestación de ingesta en `src/secguard_advisor/documents/service.py` — estados, trabajo, deduplicación, versión, idempotencia por `(version_id, chunk_index)` · Dep: T037, T039, T040, T041, T043 · Check: T037 en verde · Evidence: test en verde
+- [ ] T045 [US2] Implementar adquisición del corpus en `src/secguard_advisor/corpus/acquire.py` y `scripts/fetch_corpus.py` — descarga oficial, SHA-256 y bytes calculados al descargar, manifiesto, verificación de páginas con texto; sin hashes inventados · Dep: T039, T040 · Check: `make corpus` sobre las cuatro fuentes y segunda ejecución idempotente · Evidence: manifiesto con hashes reales
+- [ ] T046 [US2] Implementar la ingesta del corpus público en `src/secguard_advisor/corpus/ingest.py` — alta como `public_corpus` sin caso, `source_id` validado contra el manifiesto · Dep: T044, T045 · Check: documentos públicos sin `case_id` y citables · Evidence: consulta a la base
+- [ ] T047 [US2] Implementar reintento e interrupción de ingesta en `documents/service.py` y `POST /cases/{case_id}/documents/{document_id}/retry` — reutiliza texto, no duplica, nunca deja `available` a medias · Dep: T044, T018 · Check: `tests/unit/test_ingestion_recovery.py` · Evidence: test en verde
+- [ ] T048 [US2] Implementar rutas y plantillas de documentos en `src/secguard_advisor/web/routes/documents.py` y `templates/documents/` — estados, versiones, reintento, visor de fragmento · Dep: T038, T044 · Check: T038 en verde · Evidence: test en verde
+- [ ] T049 [US2] Prueba de ingesta real en `tests/integration/test_ingestion_real.py` — EmbeddingGemma, tokens por fragmento ≤ 2048 medidos individualmente, índice poblado · Dep: T042, T043, T044 · Check: `make test-integration` · Evidence: salida con conteos reales
+- [ ] T050 [US2] Pruebas de reimportación y versiones en `tests/integration/test_reimport_versions.py` — idéntico no duplica; modificado crea versión; cita antigua resuelve · Dep: T047 · Check: conteos y resolución · Evidence: test en verde
+- [ ] T051 [US2] Prueba de instrucciones maliciosas en `tests/integration/test_prompt_injection.py` — no altera comportamiento ni produce acciones · Dep: T040 · Check: respuesta sin efecto · Evidence: test en verde
+
+**Checkpoint**: US2 funcional; corpus e ingesta verificables.
+
+---
+
+## Phase 5: User Story 3 - Preguntar y comprobar fuentes (Priority: P1)
+
+**Goal**: respuesta en español con citas verificables, distinción hecho/recomendación/insuficiencia, revisión humana del respaldo y abstención cuando no hay respaldo.
+
+**Independent Test**: preguntar algo cubierto por los documentos y comprobar que la cita abre el fragmento; preguntar algo sin respaldo y comprobar la abstención.
+
+### Tests for User Story 3
+
+- [ ] T052 [P] [US3] Pruebas del validador de citas en `tests/unit/test_citation_validator.py` — existencia, versión, cita literal, página/sección, rechazo con motivo · Dep: T015 · Check: fallan antes de T056 · Evidence: rojo y verde
+- [ ] T053 [P] [US3] Pruebas de recuperación en `tests/unit/test_retrieval.py` — fusión público/caso, umbral como filtro, vacío no concluyente, sin mezcla · Dep: T043 · Check: fallan antes de T055 · Evidence: rojo y verde
+- [ ] T054 [P] [US3] Pruebas de contrato del chat en `tests/contract/test_chat_routes.py` — 200 con citas, 422 vacía, 409 activa, **429 por saturación global o espera agotada**, 503 modelo, 504 timeout · Dep: T019 · Check: fallan antes de T061 · Evidence: rojo y verde
+
+### Implementation for User Story 3
+
+- [ ] T055 [US3] Implementar recuperación en `src/secguard_advisor/retrieval/search.py` — prefijo de consulta, colección pública + del caso, fusión por score, umbral calibrable, estado `empty` · Dep: T053 · Check: T053 en verde · Evidence: test en verde
+- [ ] T056 [US3] Implementar citas en `src/secguard_advisor/retrieval/citations.py` — construcción, validación automática, motivos, locator · Dep: T052 · Check: T052 en verde · Evidence: test en verde
+- [ ] T057 [US3] Implementar el cliente de generación en `src/secguard_advisor/conversation/llm.py` — `ChatOllama` con JSON Schema, `seed`, `temperature`, `num_ctx`, `num_predict`, timeout; sin fallback · Dep: T013 · Check: `tests/unit/test_llm_client.py` · Evidence: test en verde
+- [ ] T058 [US3] Redactar el prompt v1 en `src/secguard_advisor/conversation/prompts.py` — español, hechos/recomendaciones/insuficiencia, sin cifras inventadas, sin certificar, ignorar instrucciones incrustadas · Dep: T057 · Check: revisión y test de ausencia de secretos · Evidence: prompt `chat-v1`
+- [ ] T059 [US3] Implementar los dos controles de concurrencia en `src/secguard_advisor/conversation/concurrency.py` — exclusión por caso (índice único) y semáforo global de una generación con espera `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` (segundos), adquirido antes de crear la ejecución y liberado en `finally` · Dep: T027 · Check: `tests/unit/test_concurrency_guard.py` (mismo caso, dos casos, espera agotada, **desconexión del cliente que no libera ni permite otra generación**, finalización real que libera; los tres eventos se distinguen) · Evidence: test en verde
+- [ ] T060 [US3] Implementar el grafo base en `src/secguard_advisor/conversation/graph.py` y `nodes.py` — `load_scope → retrieve → agent → validate → (repair) → persist`, `abstain` sin cita ni herramienta, usando el ciclo de vida de T027 · Dep: T055, T056, T057, T058, T027 · Check: `tests/unit/test_graph_routing.py` · Evidence: rutas ejercitadas
+- [ ] T061 [US3] Implementar rutas y plantillas de conversación en `src/secguard_advisor/web/routes/chat.py` y `templates/chat/` — pregunta, respuesta, citas, **fragmentos recuperados con procedencia**, visor, marca de borrador; `409` por caso activo, `429` por generación global ocupada, `503`/`504`; respuesta, citas, telemetría y cierre en **una sola transacción** · Dep: T054, T059, T060, T027 · Check: T054 en verde · Evidence: test en verde
+- [ ] T062 [US3] Implementar abstención en `src/secguard_advisor/conversation/nodes.py` — plantilla, `outcome`, distinción entre falta documental y respuesta por herramienta · Dep: T060 · Check: `tests/unit/test_abstention.py` · Evidence: test en verde
+- [ ] T063 [US3] Implementar reintento de turno en `src/secguard_advisor/conversation/retry.py` y `web/routes/chat.py` — reutiliza la pregunta, crea intento nuevo (`attempt_no`, `retry_of_run_id`), sin mensaje duplicado; solo para `failed`/`timeout`/`interrupted` y **sin respuesta persistida**; distingue pregunta nueva, reintento y envío duplicado; **429 por saturación global o espera agotada**, coherente con T061 · Dep: T061, T027 · Check: `tests/unit/test_turn_retry.py` (los tres casos, rechazo con respuesta y **429 por saturación global o espera agotada**) · Evidence: test en verde
+- [ ] T064 [US3] Implementar revisión humana del respaldo en `src/secguard_advisor/retrieval/review.py` y `web/routes/review.py` — estados, autor desde `SECGUARD_REVIEWER_NAME`, fecha y observación; rechaza con `409` si la identidad no está configurada; valida `message_id` y `citation_id` dentro del caso; sin P1–P4 ni aprobación de informes · Dep: T056, T061 · Check: `tests/unit/test_citation_review.py` (incluye identidad vacía y recurso ajeno) · Evidence: test en verde
+- [ ] T065 [US3] Prueba de respuesta real en `tests/integration/test_answer_real.py` — corpus ingerido, cita válida, fragmento localizable · Dep: T061, T046 · Check: `make test-integration` · Evidence: salida con cita y locator
+- [ ] T066 [US3] Prueba de ausencia de evidencia en `tests/integration/test_no_evidence.py` — abstención, cero citas inventadas · Dep: T062, T046 · Check: `outcome=insufficient_evidence` · Evidence: test en verde
+- [ ] T067 [US3] Prueba de cita inválida en `tests/integration/test_citation_rejection.py` — fragmento inexistente o paráfrasis; se rechaza y registra · Dep: T056, T061 · Check: cita ausente y motivo registrado · Evidence: test en verde
+- [ ] T068 [US3] Prueba del flujo de revisión en `tests/integration/test_citation_review_flow.py` — pendiente → respaldada/no respaldada, autor desde configuración, fecha y observación; sin identidad configurada devuelve `409`; mensaje o cita de otro caso devuelve `404`; una cita `valid` sin revisión no se presenta como fundamentada · Dep: T064 · Check: estados visibles y persistidos · Evidence: test en verde
+
+**Checkpoint**: US3 funcional; flujo documental con evidencia y revisión humana.
+
+---
+
+## Phase 6: User Story 4 - Continuar la conversación (Priority: P2)
+
+**Goal**: memoria persistente por caso, separada entre casos y consistente tras reinicio o fallo.
+
+**Independent Test**: dos turnos dependientes, reinicio, y dos casos sin contaminación cruzada.
+
+### Tests for User Story 4
+
+- [ ] T069 [P] [US4] Pruebas de memoria en `tests/unit/test_memory.py` — `thread_id` correcto, reconstrucción desde mensajes, rechazo de checkpoint ajeno · Dep: T019 · Check: fallan antes de T070 · Evidence: rojo y verde
+
+### Implementation for User Story 4
+
+- [ ] T070 [US4] Configurar el checkpointer en `src/secguard_advisor/conversation/memory.py` — `storage/checkpoints.sqlite`, `SqliteSaver`, `thread_id = conversation_id`, verificación de identidad · Dep: T069 · Check: T069 en verde · Evidence: test en verde
+- [ ] T071 [US4] Implementar persistencia de conversación en `src/secguard_advisor/conversation/service.py` — conversación única por caso, `seq`, reutilización de la pregunta en reintentos, reconciliación del checkpoint desde `messages` (recortar si está adelantado, reconstruir si falta), sin prometer atomicidad entre bases · Dep: T070, T027 · Check: `tests/unit/test_conversation_persistence.py` · Evidence: test en verde
+- [ ] T072 [US4] Integrar memoria en el grafo y el historial visible en `graph.py` y `templates/chat/history.html` · Dep: T071, T060 · Check: `tests/integration/test_memory_followup.py` · Evidence: test en verde
+- [ ] T073 [US4] Prueba de reinicio y aislamiento en `tests/integration/test_memory_restart_isolation.py` — conversación intacta; dos casos sin fuga · Dep: T072, T018 · Check: historial y contexto separados · Evidence: test en verde
+- [ ] T074 [US4] Prueba de fallo a mitad de turno en `tests/integration/test_midturn_failure.py` — fallo de la transacción final: sin mensaje asistente ni citas, ejecución `failed` o `interrupted`, reintento permitido; checkpoint adelantado: se recorta desde `messages`; sin duplicados · Dep: T073, T063 · Check: estado consistente y conteo de mensajes · Evidence: test en verde
+
+**Checkpoint**: US4 funcional.
+
+---
+
+## Phase 7: User Story 5 - Consultar hallazgos mediante una herramienta (Priority: P2)
+
+**Goal**: herramienta de lectura acotada al caso, conteos recalculables y origen de la invocación visible.
+
+**Independent Test**: preguntar un conteo, recalcularlo de forma independiente y comparar; preguntar por otro caso y comprobar la negativa.
+
+### Tests for User Story 5
+
+- [ ] T075 [P] [US5] Pruebas de la herramienta en `tests/unit/test_findings_tool.py` — argumentos, filtros, conteos vs recálculo, límite, caso ajeno, caso sin hallazgos y **ausencia de `case_id` en el resultado** · Dep: T023, T015 · Check: fallan antes de T076 · Evidence: rojo y verde
+
+### Implementation for User Story 5
+
+- [ ] T076 [US5] Implementar la herramienta en `src/secguard_advisor/tools/findings.py` — alcance en clausura, esquema sin `case_id`, ORM parametrizado, `COUNT(*)`, resultado sin identificador de caso · Dep: T075 · Check: T075 en verde · Evidence: test en verde
+- [ ] T077 [US5] Vincular la herramienta al grafo en `conversation/graph.py` — máximo 2 llamadas, `origin=model_requested`, error de argumentos al modelo, traza interna en `run_tool_calls` · Dep: T076, T060 · Check: `tests/unit/test_tool_binding.py` · Evidence: test en verde
+- [ ] T078 [US5] Prueba de pregunta solo-herramienta en `tests/integration/test_tool_only_question.py` — sin candidatos documentales, la herramienta responde y no se abstiene · Dep: T077 · Check: `outcome=answered` con evidencia estructurada · Evidence: test en verde
+- [ ] T079 [US5] Prueba de aislamiento y vacío en `tests/integration/test_findings_isolation.py` — caso ajeno sin datos; caso sin hallazgos `total=0` · Dep: T077 · Check: cero filas ajenas · Evidence: test en verde
+- [ ] T080 [US5] Mostrar resultado de la herramienta y etiqueta sintética en `templates/chat/message.html` · Dep: T077 · Check: aserciones sobre HTML · Evidence: test en verde
+
+**Checkpoint**: US5 funcional; memoria y herramienta completas.
+
+---
+
+## Phase 8: User Story 6 - Verificar la ejecución (Priority: P2)
+
+**Goal**: evidencia de ejecución completa, límites, intentos y trazas honestas.
+
+**Independent Test**: ejecutar con y sin LangSmith disponible y comprobar el registro local y el estado de traza en ambos casos.
+
+### Tests for User Story 6
+
+- [ ] T081 [P] [US6] Pruebas de la evidencia de ejecución en `tests/unit/test_run_states.py` — transiciones persistidas, `attempt_no`, una activa por caso, `confirmed` nunca escrito por la aplicación y serialización de pasos, fuentes y herramientas · Dep: T027 · Check: fallan antes de T082 · Evidence: rojo y verde
+
+### Implementation for User Story 6
+
+- [ ] T082 [US6] Implementar las consultas de evidencia en `src/secguard_advisor/evidence/runs.py` — lectura y serialización de pasos, fuentes, herramientas e intentos, con `origin` determinista o del modelo; la escritura y el cierre ya viven en T027 · Dep: T027, T081 · Check: T081 en verde · Evidence: test en verde
+- [ ] T083 [US6] Implementar trazas en `src/secguard_advisor/evidence/tracing.py` — envoltura, metadatos, `flush`, `trace_status` (`disabled`/`submitted`/`failed`), nunca `confirmed` · Dep: T013 · Check: `tests/unit/test_tracing_status.py` · Evidence: test en verde
+- [ ] T084 [US6] Implementar límites y errores en `conversation/graph.py` — 8 pasos, 2 herramientas, 1 reparación, 120 s de turno, 90 s por llamada; mapeo a `model_unavailable`, `model_timeout`, `step_limit`, `tool_call_limit` · Dep: T060, T027 · Check: `tests/unit/test_limits.py` · Evidence: test en verde
+- [ ] T085 [US6] Implementar ruta y plantilla de evidencia en `src/secguard_advisor/web/routes/runs.py` y `templates/runs/` — modelo, duración, estado, fuentes, herramientas, intentos, error, traza y **ambos controles de cita** (automático y revisión humana) · Dep: T082, T083 · Check: `tests/contract/test_runs_routes.py` · Evidence: test en verde
+- [ ] T086 [US6] Prueba de integración de traza y caída en `tests/integration/test_trace_and_fallback.py` — traza `submitted`; LangSmith no disponible; consulta local completa · Dep: T083, T085 · Check: ejecución con y sin credenciales · Evidence: salida de ambos escenarios
+- [ ] T087 [US6] Prueba de secretos en `tests/unit/test_no_secrets.py` — ni clave ni rutas absolutas en respuestas, registros ni plantillas · Dep: T085 · Check: test en verde · Evidence: test en verde
+
+**Checkpoint**: US6 funcional; las seis historias quedan cubiertas.
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns
+
+**Purpose**: interfaz integrada, recorrido de aceptación, integración real, documentación y evidencia.
+
+- [ ] T088 Integrar navegación y layout del caso en `src/secguard_advisor/web/templates/` — una página con contexto, documentos y conversación; estados vacíos y errores; **no reescribir** las plantillas ya cubiertas por pruebas de US1–US6 · Dep: T033, T048, T061, T080, T085 · Check: prueba de navegación y ausencia de duplicación de plantillas · Evidence: test en verde
+- [ ] T089 Escribir la suite de aceptación en `tests/acceptance/test_journey.py` — recorrido con dobles rápidos: caso, documentos, pregunta, seguimiento, hallazgos, abstención, reinicio, dos casos, pregunta nueva, reintento, envío duplicado, generación global ocupada y revisión · Dep: T088 · Check: `make test` · Evidence: recorrido en verde sin Ollama
+- [ ] T090 Ejecutar el recorrido real en `tests/acceptance/test_journey_real.py` — Ollama, embeddings, recuperación y herramienta; registrar resultados observados · Dep: T089, T046 · Check: `make test-integration` · Evidence: reporte con fecha y salidas reales
+- [ ] T091 Confirmar la traza observada con `scripts/confirm_trace.py` — responsabilidad de la persona que ejecuta la aceptación; recibe `run_id` y `trace_id`, verifica por API de lectura que la traza existe en `secguard-advisor-dev` y solo entonces registra `confirmed`; registra su identidad, la fecha y la evidencia (salida del comando e identificador) · Dep: T086, T090 · Check: el script rechaza una traza inexistente y no confirma solo por invocar el SDK · Evidence: salida del comando, identidad y fecha en el reporte de aceptación
+- [ ] T092 Validar `quickstart.md` de punta a punta y corregir divergencias · Dep: T090 · Check: cada paso produce el resultado descrito · Evidence: notas por paso
+- [ ] T093 Verificar coherencia documental y de gobierno — README («Implementado»/«Previsto»), `AGENTS.md`, arquitectura y registro de decisiones de `CONSTITUTION.md`; **verificar**, no concentrar actualizaciones: cada commit significativo ya actualizó lo suyo · Dep: T088 · Check: revisión de que cada cambio tiene su actualización en el mismo commit · Evidence: lista de commits y documentos
+- [ ] T094 Ejecutar `make check` y `make test-integration` y registrar el resultado real · Dep: T093 · Check: salida completa sin ocultar fallos · Evidence: salida con fecha
+- [ ] T095 Preparar el paquete de evidencia de la demo — recorrido, citas, revisiones, ejecuciones, traza y límites declarados · Dep: T091, T092, T094 · Check: cada afirmación tiene evidencia · Evidence: `docs/evidencia/demo-001.md`
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Fase 1 (Setup)**: sin dependencias. T001 primero; el resto según sus `Dep`.
+- **Fase 2 (Foundational)**: depende de Fase 1. **Bloquea todas las historias.**
+- **Fase 3 (US1)**: depende de Fase 2.
+- **Fase 4 (US2)**: depende de US1 y de Fase 2.
+- **Fase 5 (US3)**: depende de US2 (fragmentos indexados) y de T027/T059.
+- **Fase 6 (US4)**: depende de US3 (grafo y rutas).
+- **Fase 7 (US5)**: depende de US3. Comparte `conversation/graph.py`, por lo que **no** es paralela
+  con US4.
+- **Fase 8 (US6)**: depende de US3 y US5.
+- **Fase 9 (Polish)**: depende de todas las historias.
+
+### Critical path
+
+`T001 → T013..T027 → T030..T033 → T039..T049 → T055..T065 → T070..T074 → T076..T080 → T082..T086 → T088..T095`
+
+El camino crítico pasa por la ingesta real (T045–T049) y la respuesta citada (T055–T065): son los
+puntos donde un fallo de diseño obliga a rehacer trabajo posterior.
+
+### Parallel opportunities
+
+- Fase 1: T002, T003, T004 y T006 en paralelo tras T001. Luego T005, T007, T008, T009 y T010.
+  T011 espera a T010; T012 espera a T002 y T004.
+- Fase 2: tras T013 va T014; tras T014, T015 y T022; tras T015, T016, T023 y T027; tras T016,
+  T017 y T018; tras T019, T020 y T021. T025 depende de T009; T026 de T006.
+- US2: T034–T038 en paralelo. T039–T042 en paralelo tras sus pruebas; T043 tras T042; T044 tras
+  T039–T043; T045 tras T039 y T040; T046 tras T044 y T045.
+- US3: T052–T054 en paralelo.
+- **No paralelizar US4 y US5**: ambas modifican `conversation/graph.py`.
+- Fase 8: T081 primero; T082 y T083 en paralelo; T084–T085 después.
+
+---
+
+## Implementation Strategy
+
+### MVP mínimo verificable
+
+1. Fases 1 y 2 completas.
+2. US1 (caso) y US2 (documentos) con ingesta real.
+3. US3 (consulta con citas y revisión humana).
+4. Detenerse y validar el recorrido documental.
+
+El MVP **no** acepta el incremento: H4, H5 y H6 son obligatorias para la aceptación completa.
+
+### Entrega incremental
+
+1. Fundación → US1 → US2 → US3: flujo documental con evidencia.
+2. US4: memoria.
+3. US5: herramienta.
+4. US6: evidencia, intentos y trazas.
+5. Polish: interfaz integrada, aceptación real y documentación.
+
+### Gobierno de commits
+
+Cada commit que cambie arquitectura, tecnología o proceso **actualiza la constitución y el registro
+de decisiones en el mismo commit**. T093 solo verifica que eso ocurrió; no concentra las
+actualizaciones.
+
+---
+
+## Notes
+
+- [P] solo cuando los archivos son distintos y no hay dependencia pendiente.
+- Exclusión por caso (índice único) y semáforo global de generación son controles distintos: uno
+  protege el caso, el otro protege la máquina. No se sustituyen entre sí.
+- Respuesta, citas, telemetría y cierre de ejecución comparten una transacción; ninguna transacción
+  queda abierta durante la inferencia.
+- `SECGUARD_REVIEWER_NAME` es una identidad local declarada, no autenticación. Sin valor no se
+  guarda ninguna revisión.
+- Ninguna prueba de `data/eval/final/` se usa para calibrar el umbral ni para elegir configuración.
+- Un conteo agregado de Ollama nunca se presenta como validación individual de todos los fragmentos.
+- El estado `confirmed` de traza solo lo escribe `scripts/confirm_trace.py` tras verificar la traza
+  en LangSmith.
+- No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
+- Los originales del corpus viven fuera de Git; el manifiesto es la fuente de procedencia.

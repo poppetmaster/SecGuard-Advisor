@@ -1,0 +1,51 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+.venv/
+.uv/
+
+# Testing / linting caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Entorno y secretos (NUNCA versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Artefactos pesados / datos (revisar caso a caso)
+data/raw/
+data/processed/
+artifacts/
+*.h5
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.sqlite
+*.db
+
+# Sistema operativo / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Slidev (si aplica)
+node_modules/
+.slidev/
+*.png.tmp
+
+# Índice de tgrep
+.tgrep/

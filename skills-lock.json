@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "jan-project-standard": {
+      "source": "hamsomp3/jan_skills_repository",
+      "sourceType": "github",
+      "skillPath": "skills/jan-project-standard/SKILL.md",
+      "computedHash": "ea9940a164404a323156c028ecae45512410a410981781099c909415206034bf"
+    }
+  }
+}
