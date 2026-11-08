@@ -205,27 +205,42 @@ ejecución mínima. Bloquea todas las historias.
 
 ### Tests for User Story 2
 
-- [ ] T034 [P] [US2] Pruebas de validación en `tests/unit/test_document_validation.py` — extensión, magic bytes, tamaño, extensión falsa · Dep: T025 · Check: fallan antes de T039 · Evidence: rojo y verde
-- [ ] T035 [P] [US2] Pruebas de extracción en `tests/unit/test_extraction.py` — PDF textual, escaneado, Markdown, páginas no legibles · Dep: T025 · Check: fallan antes de T040 · Evidence: rojo y verde
-- [ ] T036 [P] [US2] Pruebas de fragmentación en `tests/unit/test_chunking.py` — presupuesto, solape, página y sección, sin truncamiento · Dep: T025 · Check: fallan antes de T041 · Evidence: rojo y verde
-- [ ] T037 [P] [US2] Pruebas de deduplicación y versiones en `tests/unit/test_document_versions.py` — mismo `sha256` no duplica, contenido distinto crea versión, anterior superada · Dep: T015 · Check: fallan antes de T044 · Evidence: rojo y verde
-- [ ] T038 [P] [US2] Pruebas de contrato en `tests/contract/test_documents_routes.py` — carga, 409, 413, 415, detalle, reintento · Dep: T019 · Check: fallan antes de T048 · Evidence: rojo y verde
+- [X] T034 [P] [US2] Pruebas de validación en `tests/unit/test_document_validation.py` — extensión, magic bytes, tamaño, extensión falsa · Dep: T025 · Check: fallan antes de T039 · Evidence: rojo y verde
+- [X] T035 [P] [US2] Pruebas de extracción en `tests/unit/test_extraction.py` — PDF textual, escaneado, Markdown, páginas no legibles · Dep: T025 · Check: fallan antes de T040 · Evidence: rojo y verde
+- [X] T036 [P] [US2] Pruebas de fragmentación en `tests/unit/test_chunking.py` — presupuesto, solape, página y sección, sin truncamiento · Dep: T025 · Check: fallan antes de T041 · Evidence: rojo y verde
+- [X] T037 [P] [US2] Pruebas de deduplicación y versiones en `tests/unit/test_document_versions.py` — mismo `sha256` no duplica, contenido distinto crea versión, anterior superada · Dep: T015 · Check: fallan antes de T044 · Evidence: rojo y verde
+- [X] T038 [P] [US2] Pruebas de contrato en `tests/contract/test_documents_routes.py` — carga, 409, 413, 415, detalle, reintento · Dep: T019 · Check: fallan antes de T048 · Evidence: rojo y verde
 
 ### Implementation for User Story 2
 
-- [ ] T039 [US2] Implementar validación y almacenamiento en `src/secguard_advisor/documents/validation.py` y `storage.py` — tipo real, tamaño, hash en streaming, originales content-addressed · Dep: T034 · Check: T034 en verde · Evidence: test en verde
-- [ ] T040 [US2] Implementar extracción en `src/secguard_advisor/documents/extraction.py` — pypdf por página, Markdown por sección, `unreadable_pages`, `no_usable_text` · Dep: T035 · Check: T035 en verde · Evidence: test en verde
-- [ ] T041 [US2] Implementar fragmentación en `src/secguard_advisor/documents/chunking.py` — unidades por página/sección, presupuesto conservador, offsets y locator · Dep: T036 · Check: T036 en verde · Evidence: test en verde
-- [ ] T042 [US2] Implementar el adaptador de embeddings en `src/secguard_advisor/documents/embedding.py` — `/api/embed` con `truncate: false`, **una entrada por petición**, `prompt_eval_count` como `token_count`, prefijos oficiales · Dep: T013 · Check: `tests/unit/test_embedding_adapter.py` con transporte falso · Evidence: test en verde y `token_count_source`
-- [ ] T043 [US2] Implementar colecciones e índice en `src/secguard_advisor/retrieval/collections.py` e `index.py` — nombres derivados del alcance autorizado, validación de formato, `upsert` por `chunk_id`, reconstrucción · Dep: T019, T042 · Check: `tests/unit/test_collections.py` y `tests/integration/test_index_rebuild.py` · Evidence: test en verde
-- [ ] T044 [US2] Implementar la orquestación de ingesta en `src/secguard_advisor/documents/service.py` — estados, trabajo, deduplicación, versión, idempotencia por `(version_id, chunk_index)` · Dep: T037, T039, T040, T041, T043 · Check: T037 en verde · Evidence: test en verde
-- [ ] T045 [US2] Implementar adquisición del corpus en `src/secguard_advisor/corpus/acquire.py` y `scripts/fetch_corpus.py` — descarga oficial, SHA-256 y bytes calculados al descargar, manifiesto, verificación de páginas con texto; sin hashes inventados · Dep: T039, T040 · Check: `make corpus` sobre las cuatro fuentes y segunda ejecución idempotente · Evidence: manifiesto con hashes reales
-- [ ] T046 [US2] Implementar la ingesta del corpus público en `src/secguard_advisor/corpus/ingest.py` — alta como `public_corpus` sin caso, `source_id` validado contra el manifiesto · Dep: T044, T045 · Check: documentos públicos sin `case_id` y citables · Evidence: consulta a la base
-- [ ] T047 [US2] Implementar reintento e interrupción de ingesta en `documents/service.py` y `POST /cases/{case_id}/documents/{document_id}/retry` — reutiliza texto, no duplica, nunca deja `available` a medias · Dep: T044, T018 · Check: `tests/unit/test_ingestion_recovery.py` · Evidence: test en verde
-- [ ] T048 [US2] Implementar rutas y plantillas de documentos en `src/secguard_advisor/web/routes/documents.py` y `templates/documents/` — estados, versiones, reintento, visor de fragmento · Dep: T038, T044 · Check: T038 en verde · Evidence: test en verde
-- [ ] T049 [US2] Prueba de ingesta real en `tests/integration/test_ingestion_real.py` — EmbeddingGemma, tokens por fragmento ≤ 2048 medidos individualmente, índice poblado · Dep: T042, T043, T044 · Check: `make test-integration` · Evidence: salida con conteos reales
-- [ ] T050 [US2] Pruebas de reimportación y versiones en `tests/integration/test_reimport_versions.py` — idéntico no duplica; modificado crea versión; cita antigua resuelve · Dep: T047 · Check: conteos y resolución · Evidence: test en verde
-- [ ] T051 [US2] Prueba de instrucciones maliciosas en `tests/integration/test_prompt_injection.py` — no altera comportamiento ni produce acciones · Dep: T040 · Check: respuesta sin efecto · Evidence: test en verde
+- [X] T039 [US2] Implementar validación y almacenamiento en `src/secguard_advisor/documents/validation.py` y `storage.py` — tipo real, tamaño, hash en streaming, originales content-addressed · Dep: T034 · Check: T034 en verde · Evidence: test en verde
+- [X] T040 [US2] Implementar extracción en `src/secguard_advisor/documents/extraction.py` — pypdf por página, Markdown por sección, `unreadable_pages`, `no_usable_text` · Dep: T035 · Check: T035 en verde · Evidence: test en verde
+- [X] T041 [US2] Implementar fragmentación en `src/secguard_advisor/documents/chunking.py` — unidades por página/sección, presupuesto conservador, offsets y locator · Dep: T036 · Check: T036 en verde · Evidence: test en verde
+- [X] T042 [US2] Implementar el adaptador de embeddings en `src/secguard_advisor/documents/embedding.py` — `/api/embed` con `truncate: false`, **una entrada por petición**, `prompt_eval_count` como `token_count`, prefijos oficiales · Dep: T013 · Check: `tests/unit/test_embedding_adapter.py` con transporte falso · Evidence: test en verde y `token_count_source`
+- [X] T043 [US2] Implementar colecciones e índice en `src/secguard_advisor/retrieval/collections.py` e `index.py` — nombres derivados del alcance autorizado, validación de formato, `upsert` por `chunk_id`, reconstrucción · Dep: T019, T042 · Check: `tests/unit/test_collections.py` y `tests/integration/test_index_rebuild.py` · Evidence: test en verde
+- [X] T044 [US2] Implementar la orquestación de ingesta en `src/secguard_advisor/documents/service.py` — estados, trabajo, deduplicación, versión, idempotencia por `(version_id, chunk_index)` · Dep: T037, T039, T040, T041, T043 · Check: T037 en verde · Evidence: test en verde
+- [X] T045 [US2] Implementar adquisición del corpus en `src/secguard_advisor/corpus/acquire.py` y `scripts/fetch_corpus.py` — descarga oficial, SHA-256 y bytes calculados al descargar, manifiesto, verificación de páginas con texto; sin hashes inventados · Dep: T039, T040 · Check: `make corpus` sobre las cuatro fuentes y segunda ejecución idempotente · Evidence: manifiesto con hashes reales
+- [X] T046 [US2] Implementar la ingesta del corpus público en `src/secguard_advisor/corpus/ingest.py` — alta como `public_corpus` sin caso, `source_id` validado contra el manifiesto · Dep: T044, T045 · Check: documentos públicos sin `case_id` y citables · Evidence: consulta a la base
+- [X] T047 [US2] Implementar reintento e interrupción de ingesta en `documents/service.py` y `POST /cases/{case_id}/documents/{document_id}/retry` — reutiliza texto, no duplica, nunca deja `available` a medias · Dep: T044, T018 · Check: `tests/unit/test_ingestion_recovery.py` · Evidence: test en verde
+- [X] T048 [US2] Implementar rutas y plantillas de documentos en `src/secguard_advisor/web/routes/documents.py` y `templates/documents/` — estados, versiones, reintento, visor de fragmento · Dep: T038, T044 · Check: T038 en verde · Evidence: test en verde
+- [X] T049 [US2] Prueba de ingesta real en `tests/integration/test_ingestion_real.py` — EmbeddingGemma, tokens por fragmento ≤ 2048 medidos individualmente, índice poblado · Dep: T042, T043, T044 · Check: `make test-integration` · Evidence: salida con conteos reales
+- [X] T050 [US2] Pruebas de reimportación y versiones en `tests/integration/test_reimport_versions.py` — idéntico no duplica; modificado crea versión; cita antigua resuelve · Dep: T047 · Check: conteos y resolución · Evidence: test en verde
+- [X] T051 [US2] Prueba de instrucciones maliciosas en `tests/integration/test_prompt_injection.py` — no altera comportamiento ni produce acciones · Dep: T040 · Check: respuesta sin efecto · Evidence: test en verde
+
+
+**Evidencia de US2 (2026-11-08)**
+
+- `pytest` unitario: validación 10, extracción 6, fragmentación 4, embeddings 6, colecciones 6, versiones 9, corpus 4; índice 2.
+- `pytest` de contrato de documentos: 9.
+- `pytest -m integration`: 2 pruebas reales con EmbeddingGemma y Chroma.
+- `pytest tests/integration/test_prompt_injection.py`: 1.
+- `make check`: 135 pruebas en verde, 2 deseleccionadas; Ruff y formato correctos.
+- `make corpus`: cuatro fuentes verificadas con SHA-256 y páginas reales (csf2 32, airmf 48, ai6001 64, owasp 45); `--verify-only` repetido sin cambios.
+- `make corpus-ingest`: 4 documentos públicos, 4 versiones disponibles, 193 fragmentos; máximo de 1440 tokens por fragmento; colección pública de Chroma con 193 vectores; segunda ejecución devuelve «duplicate» para las cuatro fuentes.
+- Consulta real del índice con EmbeddingGemma: devuelve fragmentos del CSF 2.0 con distancias y localizadores.
+- Servidor real con almacenamiento temporal: caso 303, carga de PDF 201 «Disponible», detalle 200 «Versiones»; reinicio del servidor y caso 200 con el documento.
+- `npm run build`: CSS regenerado y reproducible.
+- Revisión visual en navegador: pendiente; no hay navegador disponible.
 
 **Checkpoint**: US2 funcional; corpus e ingesta verificables.
 

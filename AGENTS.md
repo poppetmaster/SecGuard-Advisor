@@ -8,8 +8,8 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica y US1 (cortes T001–T033). La aplicación arranca con `/healthz`,
-`/cases` y `/cases/new`; todavía no hay ingesta, RAG, conversación, herramientas ni revisión
+**Estado actual**: base técnica, US1 y US2 (cortes T001–T051). La aplicación arranca con `/healthz`,
+casos y documentos; todavía no hay RAG, consulta generativa, conversación, herramientas ni revisión
 humana.
 
 La verdad normativa vive en [`CONSTITUTION.md`](./CONSTITUTION.md), que es un enlace simbólico a
@@ -42,10 +42,12 @@ make install            # uv sync --locked + hooks + npm ci
 make assets             # compila Tailwind y copia recursos vendorizados
 make lint               # Ruff
 make format             # Ruff format
-make test               # pruebas rápidas
-make test-integration   # pruebas con Ollama y recuperación reales
+make test               # pruebas rápidas, sin integración
+make test-integration   # pruebas reales con Ollama y Chroma
 make check              # lint + formato + pruebas
-make dev                # servidor base con /healthz y estáticos, un worker
+make dev                # servidor con casos y documentos, un worker
+make corpus             # descarga y verifica el corpus oficial
+make corpus-ingest      # ingesta el corpus verificado
 make seed-demo          # dataset sintético; requiere el esquema migrado
 uv run alembic upgrade head  # crea/actualiza el esquema
 ```
@@ -65,7 +67,9 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
 - Conventional Commits. Sin atribución de IA.
 - No se versionan secretos, `.env`, `storage/` ni `data/corpus/originals/`.
 - No se descarga corpus, no se cargan modelos grandes ni se ejecutan APIs pagadas sin una tarea que
-  lo autorice.
+  lo autorice. `make corpus` y `make corpus-ingest` son las vías autorizadas para el corpus.
+- Los originales del corpus no se versionan; el manifiesto `data/corpus/manifest.json` sí.
+- No hay OCR: un PDF escaneado se reporta como «sin texto utilizable».
 - Un solo proceso y un worker. El semáforo global de generación y la reconciliación de arranque lo
   asumen.
 - No se publica repositorio, no se hace push ni se despliega nada sin autorización explícita.
