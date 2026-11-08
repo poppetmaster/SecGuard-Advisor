@@ -46,7 +46,9 @@ class Settings(BaseSettings):
     max_tool_calls: int = 2
 
     retrieval_top_k: int = 6
-    retrieval_min_score: float = 0.0
+    # Calibrado con datos de humo: preguntas pertinentes >= 0.58, fuera de dominio <= 0.05.
+    # Es un filtro de candidatos débiles, no una prueba de ausencia de evidencia.
+    retrieval_min_score: float = 0.35
 
     generation_queue_timeout_seconds: float = Field(
         default=5.0,
