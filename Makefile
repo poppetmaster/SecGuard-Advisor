@@ -23,13 +23,15 @@ dev: ## Servidor local en 127.0.0.1 con un worker
 	uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1 --reload
 
 demo: ## Servidor con datos de demostración (no implementado)
-	@echo "no implementado: la interfaz llega con T028+"
+	@echo "no implementado: requiere el recorrido de consulta (US3+)"
 	@echo "previsto: uvicorn --factory secguard_advisor.web.app:create_app --workers 1"
 	@exit 1
 
-corpus: ## Descarga y verifica el corpus oficial (no implementado)
-	@echo "no implementado: requiere T045"
-	@exit 1
+corpus: ## Descarga y verifica el corpus oficial
+	uv run python scripts/fetch_corpus.py
+
+corpus-ingest: ## Ingesta el corpus verificado en SQLite y Chroma
+	uv run python scripts/ingest_corpus.py
 
 seed-demo: ## Carga los datos sintéticos de demostración
 	uv run python scripts/seed_demo.py
@@ -43,8 +45,8 @@ format: ## Formatea el código con Ruff
 format-check: ## Verifica el formato sin modificarlo
 	uv run ruff format --check .
 
-test: ## Ejecuta las pruebas rápidas
-	uv run pytest
+test: ## Ejecuta las pruebas rápidas (sin integración)
+	uv run pytest -m "not integration"
 
 test-integration: ## Ejecuta las pruebas de integración reales
 	uv run pytest -m integration
