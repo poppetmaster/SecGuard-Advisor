@@ -22,6 +22,7 @@ Está prohibido usar `pip` o `requirements.txt`. Toda gestión de dependencias p
 uv sync --locked
 npm ci
 uv run pre-commit install
+uv run alembic upgrade head
 make check
 ```
 

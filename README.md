@@ -34,15 +34,23 @@ una persona.
 
 ## Estado del proyecto
 
-**Base técnica en construcción.** Este repositorio contiene el corte T001–T012: estructura,
-tooling, recursos de interfaz y gobernanza. La funcionalidad 001 todavía no está implementada.
+**Base técnica en construcción.** Este repositorio contiene los cortes T001–T027: estructura,
+tooling, persistencia, configuración, arranque base y datos sintéticos. La funcionalidad 001
+todavía no está implementada.
 
 ### Implementado en este corte
 
 - Estructura del paquete con src-layout y `uv_build`.
 - Configuración de Ruff, pytest, pre-commit y Makefile.
 - Recursos de interfaz locales: CSS compilado con Tailwind, HTMX y Flowbite vendorizados.
-- Prueba de humo ejecutable.
+- Configuración tipada con secretos protegidos.
+- SQLite con 16 tablas, restricciones e índices, y migraciones con Alembic.
+- Alcance por caso y reconciliación de estado al arrancar.
+- Fábrica FastAPI, `/healthz`, manejo de errores y plantillas base.
+- Unidad de trabajo de transacción corta.
+- Dataset sintético determinista e idempotente para la demostración.
+- Ciclo de vida mínimo de las ejecuciones.
+- Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
@@ -146,16 +154,25 @@ Nunca se versionan secretos ni se muestran en registros o respuestas.
 
 ## Ejecución
 
-La aplicación todavía no arranca. Los targets de ejecución informan su estado:
+`make dev` arranca la base de la aplicación en `127.0.0.1` con **un solo worker**. Expone
+`/healthz` y los recursos estáticos; las rutas de producto todavía no existen.
 
 ```bash
-make dev        # no implementado: la aplicación llega en T019
-make demo       # no implementado: requiere T019 y T024
+make dev        # servidor base con /healthz y estáticos
+make seed-demo  # carga el dataset sintético; requiere el esquema migrado
+make demo       # no implementado: requiere la interfaz (T028+)
 make corpus     # no implementado: requiere T045
-make seed-demo  # no implementado: requiere T024
 ```
 
-Cuando exista la aplicación, se ejecutará en `127.0.0.1` con **un solo worker**.
+## Base de datos
+
+El esquema se crea y evoluciona solo con Alembic. La aplicación no crea tablas al arrancar; al
+iniciar reconcilia el estado de las operaciones que quedaron abiertas.
+
+```bash
+uv run alembic upgrade head
+uv run alembic downgrade base
+```
 
 ## Pruebas
 
@@ -165,8 +182,9 @@ make test-integration  # pruebas con Ollama y recuperación reales
 make check             # lint + formato + pruebas
 ```
 
-Estado actual: la prueba de humo y las pruebas de logging se ejecutan con `make check`. Las pruebas
-de integración se incorporarán con los cortes de ingesta y consulta.
+Estado actual: la base cubre configuración, motor y esquema, alcance, arranque, transacciones,
+seed, fixtures y ciclo de vida de ejecuciones. Las pruebas de integración se incorporarán con la
+ingesta y la consulta.
 
 ## Estructura
 
@@ -217,8 +235,8 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación todavía no arranca. Los targets `dev`, `demo`, `corpus` y `seed-demo` informan su
-  estado.
+- La aplicación arranca con `/healthz` y estáticos; las rutas de producto, la ingesta y el agente
+  todavía no existen. `demo` y `corpus` siguen sin implementar.
 
 ## Contribución
 

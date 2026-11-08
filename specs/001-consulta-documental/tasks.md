@@ -130,23 +130,36 @@ ejecución mínima. Bloquea todas las historias.
 
 **⚠️ CRITICAL**: ninguna historia comienza hasta completar esta fase.
 
-- [ ] T013 Implementar configuración en `src/secguard_advisor/config.py` — `pydantic-settings`, `SecretStr`, rutas, modelos, `num_ctx`, límites de turno y archivo, umbral de recuperación, `SECGUARD_REVIEWER_NAME` y `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` · Dep: T006 · Check: `tests/unit/test_config.py` (incluye identidad de revisor vacía y espera acotada) · Evidence: test en verde
-- [ ] T014 Crear `src/secguard_advisor/db/base.py` y `engine.py` — Base, engine SQLite, `foreign_keys=ON`, WAL, `busy_timeout`, fábrica de sesiones · Dep: T013 · Check: `tests/unit/test_db_engine.py` · Evidence: PRAGMAs verificados
-- [ ] T015 Definir las 16 tablas en `src/secguard_advisor/db/models.py` — según `data-model.md`, con `UNIQUE(scope_key, sha256)`, `UNIQUE(version_id, chunk_index)`, `UNIQUE(question_message_id, attempt_no)` e índice único parcial `runs(case_id) WHERE status='running'` · Dep: T014 · Check: `tests/unit/test_schema.py` (restricciones rechazan filas inválidas y segunda ejecución activa) · Evidence: test en verde
-- [ ] T016 Configurar Alembic en `alembic/` y migración inicial · Dep: T015 · Check: `alembic upgrade head` y `alembic downgrade base` · Evidence: migración reversible
-- [ ] T017 Implementar `CaseScope` en `src/secguard_advisor/cases/scope.py` — desde la ruta, valida existencia, no acepta `case_id` por cuerpo ni consulta · Dep: T016 · Check: `tests/unit/test_case_scope.py` · Evidence: test en verde
-- [ ] T018 Implementar reconciliación de arranque en `src/secguard_advisor/db/recovery.py` — `runs.running → interrupted` (libera el caso), `ingestion_jobs.running → interrupted`, `document_versions.processing → failed(interrupted)` · Dep: T016 · Check: `tests/unit/test_startup_recovery.py` · Evidence: test en verde
-- [ ] T019 Crear la fábrica en `src/secguard_advisor/web/app.py` — routers, estáticos, manejadores de error, validación de origen, loopback, `/healthz`; añadir el fixture de aplicación en `tests/conftest.py` · Dep: T013, T017, T009 · Check: `tests/contract/test_app_shell.py` (404, 403 de origen, `/healthz`) · Evidence: test en verde
-- [ ] T020 Crear plantillas base en `src/secguard_advisor/web/templates/base.html` y parciales de error — español, navegación, recursos locales · Dep: T007, T019 · Check: `tests/contract/test_templates.py` (sin URLs externas) · Evidence: test en verde
-- [ ] T021 Implementar taxonomía de errores en `src/secguard_advisor/web/errors.py` — código, estado HTTP y mensaje en español; sin trazas internas · Dep: T019 · Check: `tests/unit/test_error_messages.py` · Evidence: test en verde
-- [ ] T022 Implementar la unidad de trabajo en `src/secguard_advisor/db/transaction.py` — transacción corta, cierre explícito y aserción de que no hay transacción activa antes de llamar al modelo · Dep: T014 · Check: `tests/unit/test_transaction_scope.py` · Evidence: test en verde
-- [ ] T023 Implementar generación determinista de datos sintéticos en `src/secguard_advisor/seed/demo.py` — caso de demostración, activos y hallazgos con semilla fija, checksum SHA-256, `is_synthetic` · Dep: T015 · Check: `tests/unit/test_seed_demo.py` (mismo checksum en dos ejecuciones) · Evidence: checksum idéntico
-- [ ] T024 Crear `scripts/seed_demo.py` y el target `make seed-demo` · Dep: T023 · Check: ejecución doble idempotente · Evidence: conteos antes y después
-- [ ] T025 Crear dobles de prueba en `tests/fixtures/` — embeddings falsos deterministas, generador falso con JSON controlado, PDFs (textual, escaneado, corrupto) y Markdown con instrucciones incrustadas · Dep: T009 · Check: usados por pruebas unitarias · Evidence: pruebas que los usan
-- [ ] T026 Extender la guardia de aislamiento — `data/eval/final/` reservado y ninguna referencia, desde `src/secguard_advisor`, a `docs/referencias/`, `CONSTITUTION.md`, instrucciones de agentes ni respuestas esperadas de pruebas · Dep: T006 · Check: `tests/unit/test_corpus_isolation.py` · Evidence: test en verde
-- [ ] T027 Implementar el ciclo de vida mínimo de ejecución en `src/secguard_advisor/evidence/runs.py` — crear `runs` (`running`, `attempt_no`), cierre transaccional que participa en una transacción existente (respuesta, citas, telemetría y cierre), cierre en éxito/error/timeout, marcar interrumpida, mapear la violación del índice único a «consulta en curso» · Dep: T015, T022 · Check: `tests/unit/test_run_lifecycle.py` (el cierre no confirma por sí solo y no deja respuesta sin cierre) · Evidence: test en verde
+- [X] T013 Implementar configuración en `src/secguard_advisor/config.py` — `pydantic-settings`, `SecretStr`, rutas, modelos, `num_ctx`, límites de turno y archivo, umbral de recuperación, `SECGUARD_REVIEWER_NAME` y `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` · Dep: T006 · Check: `tests/unit/test_config.py` (incluye identidad de revisor vacía y espera acotada) · Evidence: test en verde
+- [X] T014 Crear `src/secguard_advisor/db/base.py` y `engine.py` — Base, engine SQLite, `foreign_keys=ON`, WAL, `busy_timeout`, fábrica de sesiones · Dep: T013 · Check: `tests/unit/test_db_engine.py` · Evidence: PRAGMAs verificados
+- [X] T015 Definir las 16 tablas en `src/secguard_advisor/db/models.py` — según `data-model.md`, con `UNIQUE(scope_key, sha256)`, `UNIQUE(version_id, chunk_index)`, `UNIQUE(question_message_id, attempt_no)` e índice único parcial `runs(case_id) WHERE status='running'` · Dep: T014 · Check: `tests/unit/test_schema.py` (restricciones rechazan filas inválidas y segunda ejecución activa) · Evidence: test en verde
+- [X] T016 Configurar Alembic en `alembic/` y migración inicial · Dep: T015 · Check: `alembic upgrade head` y `alembic downgrade base` · Evidence: migración reversible
+- [X] T017 Implementar `CaseScope` en `src/secguard_advisor/cases/scope.py` — desde la ruta, valida existencia, no acepta `case_id` por cuerpo ni consulta · Dep: T016 · Check: `tests/unit/test_case_scope.py` · Evidence: test en verde
+- [X] T018 Implementar reconciliación de arranque en `src/secguard_advisor/db/recovery.py` — `runs.running → interrupted` (libera el caso), `ingestion_jobs.running → interrupted`, `document_versions.processing → failed(interrupted)` · Dep: T016 · Check: `tests/unit/test_startup_recovery.py` · Evidence: test en verde
+- [X] T019 Crear la fábrica en `src/secguard_advisor/web/app.py` — routers, estáticos, manejadores de error, validación de origen, loopback, `/healthz`; añadir el fixture de aplicación en `tests/conftest.py` · Dep: T013, T017, T009 · Check: `tests/contract/test_app_shell.py` (404, 403 de origen, `/healthz`) · Evidence: test en verde
+- [X] T020 Crear plantillas base en `src/secguard_advisor/web/templates/base.html` y parciales de error — español, navegación, recursos locales · Dep: T007, T019 · Check: `tests/contract/test_templates.py` (sin URLs externas) · Evidence: test en verde
+- [X] T021 Implementar taxonomía de errores en `src/secguard_advisor/web/errors.py` — código, estado HTTP y mensaje en español; sin trazas internas · Dep: T019 · Check: `tests/unit/test_error_messages.py` · Evidence: test en verde
+- [X] T022 Implementar la unidad de trabajo en `src/secguard_advisor/db/transaction.py` — transacción corta, cierre explícito y aserción de que no hay transacción activa antes de llamar al modelo · Dep: T014 · Check: `tests/unit/test_transaction_scope.py` · Evidence: test en verde
+- [X] T023 Implementar generación determinista de datos sintéticos en `src/secguard_advisor/seed/demo.py` — caso de demostración, activos y hallazgos con semilla fija, checksum SHA-256, `is_synthetic` · Dep: T015 · Check: `tests/unit/test_seed_demo.py` (mismo checksum en dos ejecuciones) · Evidence: checksum idéntico
+- [X] T024 Crear `scripts/seed_demo.py` y el target `make seed-demo` · Dep: T023 · Check: ejecución doble idempotente · Evidence: conteos antes y después
+- [X] T025 Crear dobles de prueba en `tests/fixtures/` — embeddings falsos deterministas, generador falso con JSON controlado, PDFs (textual, escaneado, corrupto) y Markdown con instrucciones incrustadas · Dep: T009 · Check: usados por pruebas unitarias · Evidence: pruebas que los usan
+- [X] T026 Extender la guardia de aislamiento — `data/eval/final/` reservado y ninguna referencia, desde `src/secguard_advisor`, a `docs/referencias/`, `CONSTITUTION.md`, instrucciones de agentes ni respuestas esperadas de pruebas · Dep: T006 · Check: `tests/unit/test_corpus_isolation.py` · Evidence: test en verde
+- [X] T027 Implementar el ciclo de vida mínimo de ejecución en `src/secguard_advisor/evidence/runs.py` — crear `runs` (`running`, `attempt_no`), cierre transaccional que participa en una transacción existente (respuesta, citas, telemetría y cierre), cierre en éxito/error/timeout, marcar interrumpida, mapear la violación del índice único a «consulta en curso» · Dep: T015, T022 · Check: `tests/unit/test_run_lifecycle.py` (el cierre no confirma por sí solo y no deja respuesta sin cierre) · Evidence: test en verde
 
 **Checkpoint**: fundación lista; las historias pueden comenzar.
+
+
+**Evidencia del corte (2026-11-08)**
+
+- `uv sync --locked`: 133 paquetes resueltos, 131 comprobados, sin error.
+- `uv run alembic upgrade head` y `downgrade base` sobre almacenamiento temporal: 16 tablas de aplicación y `alembic_version`; el índice parcial `ux_runs_one_active_per_case` existe; el downgrade deja solo `alembic_version`.
+- `uv run pytest -q`: 55 pruebas en verde.
+- `make check`: Ruff sin hallazgos, formato correcto y 55 pruebas.
+- `uv run pre-commit run --all-files`: todos los hooks en verde.
+- `make seed-demo` dos veces con esquema migrado: «creado» y «ya existía»; 1 caso, 3 activos, 12 hallazgos, 1 dataset.
+- Servidor real con `uvicorn --factory ... --workers 1`: `GET /healthz` → 200 `{"status":"ok","database":"ok","ollama":"ok"}`; `/static/css/app.css` → 200.
+- `npm ci` y `npm run build`: exit 0; recursos reproducibles sin cambios.
+- `git check-ignore`: `.env`, `data/corpus/originals/` y `.atl/` ignorados.
 
 ---
 
