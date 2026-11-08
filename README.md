@@ -79,8 +79,8 @@ El detalle está en [la especificación](specs/001-consulta-documental/spec.md) 
 La funcionalidad 001 se construye por incrementos verificables. El producto final permitirá:
 
 1. **Implementado:** crear un caso con contexto educativo y reabrirlo tras reiniciar.
-2. **Implementado:** cargar PDF textuales y Markdown, conocer su estado y distinguir guías públicas
-   de evidencias.
+2. **Implementado:** cargar PDF textuales y Markdown, conocer su estado y versiones; el corpus
+   público se adquiere e ingesta por separado.
 3. **Previsto:** preguntar en español y recibir respuestas con citas localizables.
 4. **Previsto:** continuar la conversación con memoria separada por caso.
 5. **Previsto:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
