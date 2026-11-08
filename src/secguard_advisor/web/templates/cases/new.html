@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo caso — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-semibold">Nuevo caso</h1>
+  <p class="mt-1 text-sm text-slate-600">
+    Registrá el contexto del caso. Los campos que dejes vacíos se guardan como
+    <strong>desconocidos</strong> y no se completan automáticamente.
+  </p>
+</div>
+
+{% include "cases/form.html" %}
+{% endblock %}

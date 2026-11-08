@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 import httpx
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
@@ -16,6 +16,7 @@ from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.web.errors import AppError, error_response
+from secguard_advisor.web.routes import cases
 
 _WEB_DIR = Path(__file__).parent
 _ALLOWED_HOSTS = {"127.0.0.1", "localhost", "testserver"}
@@ -66,6 +67,11 @@ def create_app(
     app.state.ollama_probe = probe
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
+    app.include_router(cases.router)
+
+    @app.get("/")
+    def root():
+        return RedirectResponse(url="/cases", status_code=303)
 
     @app.middleware("http")
     async def origin_guard(request: Request, call_next):

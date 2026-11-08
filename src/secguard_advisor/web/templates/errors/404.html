@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}No encontrado — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold">No encontrado</h1>
+<div class="mt-4">
+  {% include "partials/error.html" %}
+</div>
+<a class="mt-4 inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" href="/cases">
+  Volver a casos
+</a>
+{% endblock %}

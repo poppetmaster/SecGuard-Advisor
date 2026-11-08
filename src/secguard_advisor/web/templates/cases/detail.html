@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ case.title }} — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold">{{ case.title }}</h1>
+    <p class="mt-1 text-sm text-slate-500">Creado: {{ case.created_at[:10] }}</p>
+  </div>
+  <a class="text-sm text-blue-700 hover:underline" href="/cases">Volver a casos</a>
+</div>
+
+<div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+  <p class="font-medium text-amber-900">Escenario educativo sintético</p>
+  <p class="mt-1 text-sm text-amber-800">{{ case.synthetic_notice }}</p>
+</div>
+
+<dl class="mt-6 grid gap-5 md:grid-cols-2">
+  <div>
+    <dt class="text-sm font-medium text-slate-600">Descripción</dt>
+    <dd class="mt-1 whitespace-pre-line text-slate-900">
+      {% if case.description %}{{ case.description }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
+    </dd>
+  </div>
+  <div>
+    <dt class="text-sm font-medium text-slate-600">Aplicación de IA analizada</dt>
+    <dd class="mt-1 whitespace-pre-line text-slate-900">
+      {% if case.ai_application %}{{ case.ai_application }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
+    </dd>
+  </div>
+  <div>
+    <dt class="text-sm font-medium text-slate-600">Datos tratados</dt>
+    <dd class="mt-1 whitespace-pre-line text-slate-900">
+      {% if case.data_processed %}{{ case.data_processed }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
+    </dd>
+  </div>
+  <div>
+    <dt class="text-sm font-medium text-slate-600">Restricciones conocidas</dt>
+    <dd class="mt-1 whitespace-pre-line text-slate-900">
+      {% if case.restrictions %}{{ case.restrictions }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
+    </dd>
+  </div>
+</dl>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Activos relevantes</h2>
+  {% if case.assets %}
+  <ul class="mt-2 flex flex-wrap gap-2">
+    {% for asset in case.assets %}
+    <li class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800">{{ asset }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="mt-2 text-slate-500">Sin activos registrados</p>
+  {% endif %}
+</section>
+{% endblock %}
