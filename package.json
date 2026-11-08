@@ -1,0 +1,16 @@
+{
+  "name": "secguard-advisor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Recursos de interfaz locales de SecGuard Advisor",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/secguard_advisor/web/static/css/input.css -o ./src/secguard_advisor/web/static/css/app.css --minify",
+    "copy:vendor": "node scripts/copy-vendor.mjs",
+    "build": "npm run copy:vendor && npm run build:css"
+  },
+  "devDependencies": {
+    "flowbite": "2.5.2",
+    "htmx.org": "2.0.4",
+    "tailwindcss": "3.4.17"
+  }
+}
