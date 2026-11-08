@@ -11,7 +11,7 @@ primera contribución: define el stack, las decisiones y las reglas que un cambi
 |---|---|---|
 | Python | 3.14.6 | Fijada en `.python-version` |
 | uv | Última estable | Gestión de dependencias y entornos |
-| Node.js + npm | Node 20 o superior | Solo para compilar CSS y copiar recursos |
+| Node.js + npm | 26.11.1 | Fijada en `.nvmrc`; solo para compilar CSS y copiar recursos |
 | Git | Última estable | Control de versiones |
 
 Está prohibido usar `pip` o `requirements.txt`. Toda gestión de dependencias pasa por `uv`.

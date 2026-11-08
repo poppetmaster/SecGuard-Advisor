@@ -110,7 +110,7 @@ La constitución completa las decisiones de arquitectura, seguridad y calidad:
 
 - Python 3.14.6.
 - `uv`.
-- Node.js 20 o superior y npm, solo para compilar CSS y copiar recursos.
+- Node.js 26.11.1, fijado en `.nvmrc`, y npm, solo para compilar CSS y copiar recursos.
 - Ollama y los modelos, solo para las pruebas de integración y la futura ejecución del agente.
 
 ## Instalación
@@ -209,6 +209,16 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
 - [Contratos](specs/001-consulta-documental/contracts/) — rutas, herramienta, citas y corpus.
 - [Quickstart](specs/001-consulta-documental/quickstart.md) — recorrido de validación.
 - [Tareas](specs/001-consulta-documental/tasks.md) — plan de implementación.
+
+## Limitaciones conocidas
+
+- **Cuatro vulnerabilidades bajas de npm** en la cadena de construcción de Flowbite:
+  `flowbite` → `flowbite-datepicker` → `@rollup/plugin-node-resolve` → `deepmerge`. Son
+  dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
+  la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
+  pendiente explícito y no se usa `npm audit fix --force`.
+- La aplicación todavía no arranca. Los targets `dev`, `demo`, `corpus` y `seed-demo` informan su
+  estado.
 
 ## Contribución
 
