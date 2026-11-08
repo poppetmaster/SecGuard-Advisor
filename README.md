@@ -35,11 +35,11 @@ una persona.
 
 ## Estado del proyecto
 
-**Base técnica en construcción.** Este repositorio contiene los cortes T001–T027: estructura,
-tooling, persistencia, configuración, arranque base y datos sintéticos. La funcionalidad 001
-todavía no está implementada.
+**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T033: base técnica y
+US1 (crear y recuperar un caso). Las historias de documentos, consulta, memoria y hallazgos siguen
+pendientes.
 
-### Implementado en este corte
+### Implementado
 
 - Estructura del paquete con src-layout y `uv_build`.
 - Configuración de Ruff, pytest, pre-commit y Makefile.
@@ -51,6 +51,8 @@ todavía no está implementada.
 - Unidad de trabajo de transacción corta.
 - Dataset sintético determinista e idempotente para la demostración.
 - Ciclo de vida mínimo de las ejecuciones.
+- **US1: creación, listado, detalle y recuperación de casos con contexto, activos, campos
+  desconocidos explícitos y persistencia tras reiniciar.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
@@ -70,17 +72,17 @@ El detalle está en [la especificación](specs/001-consulta-documental/spec.md) 
 
 ## Funcionalidades
 
-La funcionalidad 001 se construirá por incrementos verificables. El producto final de este
-incremento permitirá:
+La funcionalidad 001 se construye por incrementos verificables. El producto final permitirá:
 
-1. Crear un caso con contexto educativo y reabrirlo tras reiniciar.
-2. Cargar PDF textuales y Markdown, conocer su estado y distinguir guías públicas de evidencias.
-3. Preguntar en español y recibir respuestas con citas localizables.
-4. Continuar la conversación con memoria separada por caso.
-5. Consultar hallazgos sintéticos mediante una herramienta acotada al caso.
-6. Revisar la evidencia de ejecución, las herramientas usadas y la traza.
+1. **Implementado:** crear un caso con contexto educativo y reabrirlo tras reiniciar.
+2. **Previsto:** cargar PDF textuales y Markdown, conocer su estado y distinguir guías públicas de
+   evidencias.
+3. **Previsto:** preguntar en español y recibir respuestas con citas localizables.
+4. **Previsto:** continuar la conversación con memoria separada por caso.
+5. **Previsto:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
+6. **Previsto:** revisar la evidencia de ejecución, las herramientas usadas y la traza.
 
-Ninguna de estas capacidades está implementada todavía.
+La creación y consulta de casos está implementada. Las capacidades 2 a 6 siguen pendientes.
 
 ## Arquitectura
 
@@ -156,7 +158,7 @@ Nunca se versionan secretos ni se muestran en registros o respuestas.
 ## Ejecución
 
 `make dev` arranca la base de la aplicación en `127.0.0.1` con **un solo worker**. Expone
-`/healthz` y los recursos estáticos; las rutas de producto todavía no existen.
+`/healthz`, `/cases` y `/cases/new`; la ingesta, el RAG y el agente todavía no existen.
 
 ```bash
 make dev        # servidor base con /healthz y estáticos
@@ -184,8 +186,8 @@ make check             # lint + formato + pruebas
 ```
 
 Estado actual: la base cubre configuración, motor y esquema, alcance, arranque, transacciones,
-seed, fixtures y ciclo de vida de ejecuciones. Las pruebas de integración se incorporarán con la
-ingesta y la consulta.
+seed, fixtures, ciclo de vida de ejecuciones y casos (servicio, rutas y persistencia). Las pruebas
+de integración con Ollama se incorporarán con la ingesta y la consulta.
 
 ## Estructura
 
@@ -236,8 +238,9 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación arranca con `/healthz` y estáticos; las rutas de producto, la ingesta y el agente
-  todavía no existen. `demo` y `corpus` siguen sin implementar.
+- La aplicación implementa US1 (casos) además de `/healthz` y estáticos; la ingesta, el RAG, la
+  conversación, las herramientas y la revisión humana siguen sin implementar. `demo` y `corpus`
+  siguen sin implementar.
 
 ## Contribución
 

@@ -171,15 +171,27 @@ ejecución mínima. Bloquea todas las historias.
 
 ### Tests for User Story 1
 
-- [ ] T028 [P] [US1] Pruebas unitarias del servicio en `tests/unit/test_cases_service.py` — título obligatorio, campos desconocidos, activos, marca sintética · Dep: T017 · Check: fallan antes de T030 · Evidence: rojo y verde
-- [ ] T029 [P] [US1] Pruebas de contrato en `tests/contract/test_cases_routes.py` — listado, formulario, creación, detalle, 422 sin título, 404 de caso ajeno · Dep: T019 · Check: fallan antes de T031 · Evidence: rojo y verde
+- [X] T028 [P] [US1] Pruebas unitarias del servicio en `tests/unit/test_cases_service.py` — título obligatorio, campos desconocidos, activos, marca sintética · Dep: T017 · Check: fallan antes de T030 · Evidence: rojo y verde
+- [X] T029 [P] [US1] Pruebas de contrato en `tests/contract/test_cases_routes.py` — listado, formulario, creación, detalle, 422 sin título, 404 de caso ajeno · Dep: T019 · Check: fallan antes de T031 · Evidence: rojo y verde
 
 ### Implementation for User Story 1
 
-- [ ] T030 [US1] Implementar esquemas y servicio en `src/secguard_advisor/cases/schemas.py` y `service.py` — crear, listar, abrir; nunca completar vacíos · Dep: T028 · Check: T028 en verde · Evidence: test en verde
-- [ ] T031 [US1] Implementar rutas y plantillas en `src/secguard_advisor/web/routes/cases.py` y `templates/cases/` · Dep: T029, T030 · Check: T029 en verde · Evidence: test en verde
-- [ ] T032 [US1] Prueba de persistencia tras reinicio en `tests/integration/test_case_persistence.py` — base en archivo, reapertura · Dep: T030 · Check: caso y activos intactos · Evidence: test en verde
-- [ ] T033 [US1] Mostrar marca educativa y campos desconocidos en `templates/cases/detail.html` · Dep: T031 · Check: aserciones sobre HTML · Evidence: test en verde
+- [X] T030 [US1] Implementar esquemas y servicio en `src/secguard_advisor/cases/schemas.py` y `service.py` — crear, listar, abrir; nunca completar vacíos · Dep: T028 · Check: T028 en verde · Evidence: test en verde
+- [X] T031 [US1] Implementar rutas y plantillas en `src/secguard_advisor/web/routes/cases.py` y `templates/cases/` · Dep: T029, T030 · Check: T029 en verde · Evidence: test en verde
+- [X] T032 [US1] Prueba de persistencia tras reinicio en `tests/integration/test_case_persistence.py` — base en archivo, reapertura · Dep: T030 · Check: caso y activos intactos · Evidence: test en verde
+- [X] T033 [US1] Mostrar marca educativa y campos desconocidos en `templates/cases/detail.html` · Dep: T031 · Check: aserciones sobre HTML · Evidence: test en verde
+
+
+**Evidencia de US1 (2026-11-08)**
+
+- `uv run pytest tests/unit/test_cases_service.py`: 9 pruebas en verde.
+- `uv run pytest tests/contract/test_cases_routes.py`: 11 pruebas en verde.
+- `uv run pytest tests/contract/test_case_detail.py`: 2 pruebas en verde.
+- `uv run pytest tests/integration/test_case_persistence.py`: 1 prueba en verde.
+- `make check`: 78 pruebas en verde, Ruff y formato correctos.
+- Servidor real (uvicorn, un worker, almacenamiento temporal): `POST /cases` → 303; `GET /cases/{id}` → 200 con título, contexto, activos y campo desconocido; reinicio del servidor → `GET /cases/{id}` → 200 con título y activos intactos.
+- `npm run build`: CSS regenerado y reproducible.
+- Revisión visual en navegador: pendiente; no hay navegador disponible. Se verificó estructura HTML, clases locales, escape de contenido y estados vacíos.
 
 **Checkpoint**: US1 funcional y verificable por separado.
 

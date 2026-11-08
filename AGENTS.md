@@ -8,8 +8,9 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica (cortes T001–T027). La aplicación arranca con `/healthz` y
-recursos estáticos; todavía no hay agente, RAG, ingesta ni rutas de producto.
+**Estado actual**: base técnica y US1 (cortes T001–T033). La aplicación arranca con `/healthz`,
+`/cases` y `/cases/new`; todavía no hay ingesta, RAG, conversación, herramientas ni revisión
+humana.
 
 La verdad normativa vive en [`CONSTITUTION.md`](./CONSTITUTION.md), que es un enlace simbólico a
 `.specify/memory/constitution.md`. Se edita únicamente el archivo real; nunca se mantienen dos
