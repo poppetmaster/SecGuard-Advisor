@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Ejecución {{ run.id }} — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold">Evidencia de ejecución</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Intento {{ run.attempt_no }} · {{ run.status_label }}{% if run.outcome_label %} · {{ run.outcome_label }}{% endif %}
+    </p>
+  </div>
+  <a class="text-sm text-blue-700 hover:underline" href="/cases/{{ case_id }}/chat">Volver a la conversación</a>
+</div>
+
+{% if run.error_message %}
+<div class="mt-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">
+  <p>{{ run.error_message }}</p>
+  {% if run.error_code %}<p class="mt-1 text-xs">Código: {{ run.error_code }}</p>{% endif %}
+</div>
+{% endif %}
+
+{% if run.question %}
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Pregunta</h2>
+  <p class="mt-1 whitespace-pre-wrap text-sm text-slate-800">{{ run.question }}</p>
+</section>
+{% endif %}
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Modelo y configuración</h2>
+  <dl class="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-500">Generador</dt><dd>{{ run.generator_model }}</dd></div>
+    <div><dt class="text-slate-500">Digest</dt><dd>{{ run.generator_digest or "no informado" }}</dd></div>
+    <div><dt class="text-slate-500">Contexto</dt><dd>{{ run.generator_num_ctx }} tokens</dd></div>
+    <div><dt class="text-slate-500">Temperatura / semilla</dt><dd>{{ run.generator_temperature }} / {{ run.generator_seed }}</dd></div>
+    <div><dt class="text-slate-500">Embeddings</dt><dd>{{ run.embedding_model }} ({{ run.embedding_dim }} dimensiones)</dd></div>
+    <div><dt class="text-slate-500">Prompt</dt><dd>{{ run.prompt_version }}</dd></div>
+    <div><dt class="text-slate-500">Inicio</dt><dd>{{ run.started_at }}</dd></div>
+    <div><dt class="text-slate-500">Duración</dt><dd>{{ run.duration_ms or 0 }} ms</dd></div>
+    <div><dt class="text-slate-500">Traza</dt><dd>{{ run.trace_status }}</dd></div>
+  </dl>
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Pasos</h2>
+  {% if run.steps %}
+  <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-2">#</th>
+          <th class="px-4 py-2">Paso</th>
+          <th class="px-4 py-2">Origen</th>
+          <th class="px-4 py-2">Estado</th>
+          <th class="px-4 py-2">Duración</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for step in run.steps %}
+        <tr>
+          <td class="px-4 py-2">{{ step.seq }}</td>
+          <td class="px-4 py-2">{{ step.name }}</td>
+          <td class="px-4 py-2">{{ step.origin }}</td>
+          <td class="px-4 py-2">{{ step.status }}</td>
+          <td class="px-4 py-2">{{ step.duration_ms or 0 }} ms</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se registraron pasos para esta ejecución.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Fuentes recuperadas</h2>
+  {% if run.sources %}
+  <ul class="mt-2 space-y-1 text-sm text-slate-700">
+    {% for source in run.sources %}
+    <li>
+      <span class="font-medium">{{ source.rank }}.</span> {{ source.title }} · {{ source.origin_label }}
+      {% if source.page %}· página {{ source.page }}{% endif %}
+      {% if source.section %}· {{ source.section }}{% endif %}
+      · similitud {{ source.score }}
+      · {% if source.used_in_answer %}citado en la respuesta{% else %}no citado{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se recuperaron fuentes documentales.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -13,12 +13,14 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
 from secguard_advisor.config import Settings, get_settings
+from secguard_advisor.conversation.concurrency import GenerationSlot
+from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
 from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.web.errors import AppError, error_response
-from secguard_advisor.web.routes import cases, documents
+from secguard_advisor.web.routes import cases, chat, documents, review
 
 _WEB_DIR = Path(__file__).parent
 _ALLOWED_HOSTS = {"127.0.0.1", "localhost", "testserver"}
@@ -45,6 +47,8 @@ def create_app(
     ollama_probe: Callable[[], bool] | None = None,
     embedder_factory: Callable[[], object] | None = None,
     index_factory: Callable[[], object] | None = None,
+    llm_factory: Callable[[], object] | None = None,
+    generation_slot: GenerationSlot | None = None,
 ) -> FastAPI:
     """Construye la aplicación con sus dependencias."""
     resolved = settings or get_settings()
@@ -60,6 +64,20 @@ def create_app(
 
     def default_index():
         return ChromaIndex(resolved.chroma_dir)
+
+    def default_llm():
+        generator = OllamaGenerator(
+            GenerationConfig(
+                base_url=resolved.ollama_base_url,
+                model=resolved.ollama_model,
+                num_ctx=resolved.generator_num_ctx,
+                temperature=resolved.generator_temperature,
+                seed=resolved.generator_seed,
+                timeout_seconds=resolved.llm_timeout_seconds,
+            )
+        )
+        generator.digest = generator.resolve_digest()
+        return generator
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -82,10 +100,16 @@ def create_app(
     app.state.ollama_probe = probe
     app.state.embedder_factory = embedder_factory or default_embedder
     app.state.index_factory = index_factory or default_index
+    app.state.llm_factory = llm_factory or default_llm
+    app.state.generation_slot = generation_slot or GenerationSlot(
+        resolved.generation_queue_timeout_seconds
+    )
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(cases.router)
     app.include_router(documents.router)
+    app.include_router(chat.router)
+    app.include_router(review.router)
 
     @app.get("/")
     def root():

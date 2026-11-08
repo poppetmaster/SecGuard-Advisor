@@ -57,4 +57,8 @@
 </section>
 
 {% include "documents/list.html" %}
+
+{% with messages = chat.messages, reviewer_configured = chat.reviewer_configured, notice = None, failure = None %}
+{% include "chat/panel.html" %}
+{% endwith %}
 {% endblock %}

@@ -11,6 +11,7 @@ from secguard_advisor.cases.service import (
     list_assets,
     list_cases,
 )
+from secguard_advisor.conversation.views import conversation_view
 from secguard_advisor.db.transaction import unit_of_work
 from secguard_advisor.documents.service import documents_overview
 
@@ -118,6 +119,11 @@ def detail_case_view(request: Request, case_id: str):
             case = get_case(session, scope)
             assets = [asset.name for asset in list_assets(session, case.id)]
             documents = documents_overview(session, case.id)
+            conversation = conversation_view(
+                session,
+                scope,
+                reviewer_configured=bool(request.app.state.settings.reviewer_name),
+            )
             view = {
                 "id": case.id,
                 "title": case.title,
@@ -140,5 +146,11 @@ def detail_case_view(request: Request, case_id: str):
     return _templates(request).TemplateResponse(
         request=request,
         name="cases/detail.html",
-        context={"case": view, "case_id": view["id"], "documents": documents, "errors": {}},
+        context={
+            "case": view,
+            "case_id": view["id"],
+            "documents": documents,
+            "errors": {},
+            "chat": conversation,
+        },
     )
