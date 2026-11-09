@@ -221,8 +221,10 @@ incluye `tests/acceptance/test_journey.py` con dobles.
 Migraciones: `alembic upgrade head` sobre almacenamiento vacío aplicó `d2fac73b7c90` →
 `8a1c2f3d4e5f` → `9c3e4f5a6b7d`, con `trace_url` y la auditoría de confirmación.
 
-`make install`, `make assets`, `make corpus`, `make corpus-ingest` y `make demo` se ejecutaron sin
-error. `make demo` sirvió `/healthz` con base y Ollama disponibles y el caso sintético de 12 hallazgos.
+`make install`, `make assets`, `make corpus` y `make demo` se ejecutaron sin error. `make demo` sirvió
+`/healthz` con base y Ollama disponibles, 4 documentos públicos, 193 fragmentos, 12 hallazgos
+sintéticos y los casos de revisión SC-003 en `storage/demo`. La ingesta y el seed de la aceptación
+real se hicieron en un almacenamiento temporal separado, no en `storage/demo`.
 
 ## 8. Evidencia visual
 
