@@ -14,6 +14,6 @@
   "devDependencies": {
     "flowbite": "2.5.2",
     "htmx.org": "2.0.4",
-    "tailwindcss": "3.4.17"
+    "tailwindcss": "4.3.5"
   }
 }
