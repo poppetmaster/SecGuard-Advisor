@@ -6,8 +6,8 @@ import json
 
 from secguard_advisor.retrieval.search import RetrievedChunk
 
-PROMPT_VERSION = "chat-v5"
-DECISION_PROMPT_VERSION = "decide-v2"
+PROMPT_VERSION = "chat-v6"
+DECISION_PROMPT_VERSION = "decide-v3"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad y seguridad de aplicaciones de IA.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
@@ -44,6 +44,22 @@ Reglas obligatorias:
 10. Los resultados de `findings_query` son evidencia estructurada calculada en SQLite, no citas
     documentales. No inventes citas para ellos ni los presentes como fragmentos del RAG. Indicá
     origen e instantánea cuando corresponda.
+11. Distinguí siempre el origen: los registros sintéticos y los importados de Qualys no comparten
+    escala ni etiquetas y no se mezclan. Si la respuesta combina orígenes, presentá cada bloque por
+    separado con su total.
+12. La severidad importada usa la escala del proyecto de 1 a 5: 1 Informativa, 2 Baja, 3 Media,
+    4 Alta y 5 Crítica. No la equipares con CVSS, QDS, TruRisk ni con prioridades P1-P4.
+13. Los estados importados se agrupan en pendientes conocidos (Active, New, Re-Opened), Fixed y
+    revisión manual (estado desconocido). Un estado desconocido no es un indicador indeterminado.
+    Fixed no se presenta como remediación pendiente y un registro ausente de otra instantánea no se
+    convierte en Fixed.
+14. Explotabilidad y malware son distribuciones independientes: positivo, negativo/no informado e
+    indeterminado. La prioridad conjunta solo aplica cuando ambos son positivos y no se suman
+    categorías solapadas. Un único indicador positivo no crea prioridad conjunta. Fixed con ambos
+    positivos es un antecedente prioritario, no una remediación pendiente.
+15. Cuando consultes una instantánea concreta, respondé por esa instantánea y no por la última. Si
+    el servidor fija el snapshot del turno, reutilizalo. No inventes cifras: usá los totales,
+    conteos y grupos devueltos; un total cero no demuestra ausencia de vulnerabilidades.
 
 """
 
@@ -148,17 +164,24 @@ agrupaciones o detalles de hallazgos del caso. Devolvé {"use_findings": false, 
 en cualquier otro caso.
 Argumentos válidos y sus tipos:
 - origin: all, synthetic o imported. Usá imported para registros Qualys y synthetic para el
-  dataset educativo.
+  dataset educativo. Con origin=all solo se admite status_group=all.
 - snapshot_id: identificador opcional de una instantánea confirmada; sin él se usa la última
-  confirmada.
+  confirmada. Requiere origin=imported.
+- status_group: pending_known, fixed, manual_review o all (solo imported; por defecto
+  pending_known). No apliques status_group a datos sintéticos.
 - asset: texto (nombre del activo).
 - severity: Critical, High, Medium, Low o Info (solo datos sintéticos).
+- severity_level: entero de 1 a 5 (solo datos importados).
+- priority: booleano para la prioridad conjunta de explotabilidad y malware (solo importados).
+- exploitability: positive, negative_no_info o indeterminate (solo importados).
+- malware: positive, negative_no_info o indeterminate (solo importados).
 - qid: dígitos.
 - cve: CVE-AAAA-NNNN.
-- group_by: severity o asset.
+- group_by: severity, severity_level, asset, status, priority u origin según el origen.
 - detail: booleano true/false (solo para listar filas; no lo uses para conteos).
-- limit: entero de 1 a 100.
-No incluyas case_id ni inventes valores.
+- limit: entero de 1 a 100; no reduce los totales.
+No incluyas case_id ni inventes valores. Si un filtro no aplica al origen, corregí origin o el
+filtro en lugar de mezclar escalas.
 La primera resolución de una instantánea fija el snapshot del turno; no cambies snapshot_id después.
 Si el servidor devuelve snapshot_locked, reutilizá la instantánea fijada.
 Si un intento anterior devolvió un error de argumentos, corregí los argumentos.

@@ -51,9 +51,16 @@ class FindingsArguments(BaseModel):
     snapshot_id: str | None = Field(default=None, max_length=32)
     asset: str | None = Field(default=None, max_length=120)
     severity: Literal["Critical", "High", "Medium", "Low", "Info"] | None = None
+    severity_level: int | None = Field(default=None, ge=1, le=5)
+    status_group: Literal["pending_known", "fixed", "manual_review", "all"] | None = None
+    priority: bool | None = None
+    exploitability: Literal["positive", "negative_no_info", "indeterminate"] | None = None
+    malware: Literal["positive", "negative_no_info", "indeterminate"] | None = None
     qid: str | None = Field(default=None, pattern=r"^[0-9]{1,10}$")
     cve: str | None = Field(default=None, pattern=r"^CVE-[0-9]{4}-[0-9]{4,7}$")
-    group_by: Literal["severity", "asset"] | None = None
+    group_by: (
+        Literal["severity", "severity_level", "asset", "status", "priority", "origin"] | None
+    ) = None
     detail: bool = False
     limit: int = Field(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT)
 
@@ -63,6 +70,11 @@ def _translate(error: ValidationError) -> ToolArgumentError:
     field = str(first.get("loc", ("",))[0])
     code = {
         "severity": "invalid_severity",
+        "severity_level": "invalid_severity_level",
+        "status_group": "invalid_status_group",
+        "priority": "invalid_priority",
+        "exploitability": "invalid_exploitability",
+        "malware": "invalid_malware",
         "qid": "invalid_qid",
         "cve": "invalid_cve",
         "limit": "limit_out_of_range",
@@ -223,7 +235,11 @@ class FindingsQuery:
         result = {
             "origin": origin,
             "total": total,
-            "groups": self._groups(session, arguments, filters),
+            "groups": (
+                [{"key": origin, "count": total}]
+                if arguments.group_by == "origin"
+                else self._groups(session, arguments, filters)
+            ),
             "dataset": self._dataset(session, filters),
             "severity_scale": "synthetic_labels",
             "truncated": False,
@@ -252,46 +268,94 @@ class FindingsQuery:
             )
         synthetic_exists = has_synthetic(session, self._scope.case_id)
         imported_exists = has_confirmed_imports(session, self._scope.case_id)
+        group_by = arguments.group_by
+
+        imported_only_filters = (
+            arguments.snapshot_id,
+            arguments.priority,
+            arguments.exploitability,
+            arguments.malware,
+        )
+        if (
+            any(value is not None for value in imported_only_filters)
+            and arguments.origin != "imported"
+        ):
+            raise ToolArgumentError(
+                "filter_not_applicable",
+                "snapshot_id, prioridad e indicadores requieren origin=imported.",
+            )
+        if arguments.status_group is not None:
+            if arguments.origin == "synthetic":
+                raise ToolArgumentError(
+                    "filter_not_applicable", "status_group no aplica a registros sintéticos."
+                )
+            if arguments.origin == "all" and arguments.status_group != "all":
+                raise ToolArgumentError(
+                    "origin_required_for_status_filter",
+                    "Con origin=all solo se admite status_group=all.",
+                )
+        if arguments.severity is not None and arguments.origin == "imported":
+            raise ToolArgumentError(
+                "filter_not_applicable", "severity sintética no aplica a registros importados."
+            )
+        if arguments.severity_level is not None and arguments.origin == "synthetic":
+            raise ToolArgumentError(
+                "filter_not_applicable", "severity_level no aplica a registros sintéticos."
+            )
+        if arguments.origin == "all":
+            if arguments.severity is not None:
+                if synthetic_exists and imported_exists:
+                    raise ToolArgumentError(
+                        "ambiguous_severity_filter",
+                        "El caso contiene ambos orígenes; indicá origin antes de filtrar por "
+                        "severidad.",
+                    )
+                if not synthetic_exists:
+                    raise ToolArgumentError(
+                        "filter_not_applicable",
+                        "severity sintética no aplica sin registros sintéticos.",
+                    )
+            if arguments.severity_level is not None:
+                if synthetic_exists and imported_exists:
+                    raise ToolArgumentError(
+                        "ambiguous_severity_filter",
+                        "El caso contiene ambos orígenes; indicá origin antes de filtrar por "
+                        "severidad.",
+                    )
+                if not imported_exists:
+                    raise ToolArgumentError(
+                        "filter_not_applicable",
+                        "severity_level no aplica sin registros importados.",
+                    )
+            if group_by in {"severity_level", "status", "priority"} and synthetic_exists:
+                raise ToolArgumentError(
+                    "filter_not_applicable",
+                    "La agrupación solicitada no aplica a registros sintéticos.",
+                )
 
         if arguments.origin == "synthetic":
-            if arguments.snapshot_id is not None:
+            if group_by in {"severity_level", "status", "priority"}:
                 raise ToolArgumentError(
-                    "filter_not_applicable", "snapshot_id solo aplica a registros importados."
+                    "filter_not_applicable",
+                    "La agrupación solicitada no aplica a registros sintéticos.",
                 )
             return self._synthetic_result(session, arguments, origin="synthetic")
 
         if arguments.origin == "imported":
-            if arguments.severity is not None:
-                raise ToolArgumentError(
-                    "filter_not_applicable", "severity sintética no aplica a registros importados."
-                )
+            status_group = arguments.status_group or "pending_known"
+            if status_group == "all":
+                status_group = None
             try:
                 return imported_result(
                     session,
                     self._scope.case_id,
                     arguments,
-                    status_group="pending_known",
+                    status_group=status_group,
                     snapshot_id=fixed_snapshot_id,
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc
 
-        if arguments.snapshot_id is not None:
-            raise ToolArgumentError(
-                "filter_not_applicable", "snapshot_id requiere origin=imported."
-            )
-        if arguments.severity is not None:
-            if synthetic_exists and imported_exists:
-                raise ToolArgumentError(
-                    "ambiguous_severity_filter",
-                    "El caso contiene ambos orígenes; indicá origin antes de filtrar por "
-                    "severidad.",
-                )
-            if not synthetic_exists:
-                raise ToolArgumentError(
-                    "filter_not_applicable",
-                    "severity sintética no aplica sin registros sintéticos.",
-                )
         if synthetic_exists and imported_exists:
             synthetic = self._synthetic_result(session, arguments, origin="synthetic")
             try:
@@ -304,15 +368,21 @@ class FindingsQuery:
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc
-            return {
+            result = {
                 "origin": "all",
                 "origins": [synthetic, imported],
                 "total": synthetic["total"] + imported["total"],
                 "truncated": False,
             }
+            if group_by == "origin":
+                result["groups"] = [
+                    {"key": "synthetic", "count": synthetic["total"]},
+                    {"key": "imported", "count": imported["total"]},
+                ]
+            return result
         if imported_exists:
             try:
-                return imported_result(
+                result = imported_result(
                     session,
                     self._scope.case_id,
                     arguments,
@@ -321,4 +391,10 @@ class FindingsQuery:
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc
-        return self._synthetic_result(session, arguments, origin="synthetic")
+            if group_by == "origin":
+                result["groups"] = [{"key": "imported", "count": result["total"]}]
+            return result
+        result = self._synthetic_result(session, arguments, origin="synthetic")
+        if group_by == "origin":
+            result["groups"] = [{"key": "synthetic", "count": result["total"]}]
+        return result

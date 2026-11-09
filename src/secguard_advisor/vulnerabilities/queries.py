@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from secguard_advisor.db.models import (
@@ -106,11 +105,20 @@ def _filters(
                 )
             )
         )
+    if getattr(arguments, "severity_level", None) is not None:
+        filters.append(QualysVulnerability.severity_level == arguments.severity_level)
+    if getattr(arguments, "priority", None) is not None:
+        filters.append(QualysVulnerability.priority_flag == arguments.priority)
+    if getattr(arguments, "exploitability", None) is not None:
+        filters.append(QualysVulnerability.exploitability_eval == arguments.exploitability)
+    if getattr(arguments, "malware", None) is not None:
+        filters.append(QualysVulnerability.malware_eval == arguments.malware)
     return filters
 
 
 def _groups(session: Session, arguments: Any, filters: list) -> list[dict]:
-    if getattr(arguments, "group_by", None) == "asset":
+    group_by = getattr(arguments, "group_by", None)
+    if group_by == "asset":
         rows = session.execute(
             select(QualysVulnerability.asset_label, func.count())
             .where(*filters)
@@ -118,6 +126,30 @@ def _groups(session: Session, arguments: Any, filters: list) -> list[dict]:
             .order_by(QualysVulnerability.asset_label)
         ).all()
         return [{"key": key, "count": count} for key, count in rows]
+    if group_by == "status":
+        rows = session.execute(
+            select(QualysVulnerability.status_group, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.status_group)
+            .order_by(QualysVulnerability.status_group)
+        ).all()
+        return [{"key": key, "count": count} for key, count in rows]
+    if group_by == "priority":
+        rows = session.execute(
+            select(QualysVulnerability.priority_flag, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.priority_flag)
+            .order_by(QualysVulnerability.priority_flag.desc())
+        ).all()
+        return [
+            {"key": "priority" if flag else "not_priority", "count": count} for flag, count in rows
+        ]
+    if group_by == "origin":
+        total = (
+            session.scalar(select(func.count()).select_from(QualysVulnerability).where(*filters))
+            or 0
+        )
+        return [{"key": "imported", "count": total}]
     rows = session.execute(
         select(
             QualysVulnerability.severity_level,
@@ -201,14 +233,72 @@ def imported_result(
             "status_group": status_group or "pending_known",
             "total": 0,
             "groups": [],
+            "status_counts": {},
+            "severity_counts": {},
+            "exploitability_counts": {},
+            "malware_counts": {},
+            "priority_counts": {"both_positive": 0},
+            "manual_review_rows": 0,
             "severity_scale": "project_1_5",
-            "priority_counts": {},
             "truncated": False,
             "empty_reason": "no_confirmed_import",
         }
     filters = _filters(case_id, snapshot, arguments, status_group)
     total = (
         session.scalar(select(func.count()).select_from(QualysVulnerability).where(*filters)) or 0
+    )
+    status_counts = dict(
+        session.execute(
+            select(QualysVulnerability.status_raw, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.status_raw)
+            .order_by(QualysVulnerability.status_raw)
+        ).all()
+    )
+    severity_counts = dict(
+        session.execute(
+            select(QualysVulnerability.severity_level, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.severity_level)
+            .order_by(QualysVulnerability.severity_level)
+        ).all()
+    )
+    exploitability_counts = dict(
+        session.execute(
+            select(QualysVulnerability.exploitability_eval, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.exploitability_eval)
+        ).all()
+    )
+    malware_counts = dict(
+        session.execute(
+            select(QualysVulnerability.malware_eval, func.count())
+            .where(*filters)
+            .group_by(QualysVulnerability.malware_eval)
+        ).all()
+    )
+    both_positive = (
+        session.scalar(
+            select(func.count())
+            .select_from(QualysVulnerability)
+            .where(*filters, QualysVulnerability.priority_flag.is_(True))
+        )
+        or 0
+    )
+    manual_review_rows = (
+        session.scalar(
+            select(func.count())
+            .select_from(QualysVulnerability)
+            .where(
+                *filters,
+                or_(
+                    QualysVulnerability.status_group == "manual_review",
+                    QualysVulnerability.exploitability_eval == "indeterminate",
+                    QualysVulnerability.malware_eval == "indeterminate",
+                ),
+            )
+        )
+        or 0
     )
     result = {
         "origin": "imported",
@@ -222,8 +312,13 @@ def imported_result(
         "status_group": status_group or "all",
         "total": total,
         "groups": _groups(session, arguments, filters),
+        "status_counts": {str(key): count for key, count in status_counts.items()},
+        "severity_counts": {str(key): count for key, count in severity_counts.items()},
+        "exploitability_counts": exploitability_counts,
+        "malware_counts": malware_counts,
+        "priority_counts": {"both_positive": both_positive},
+        "manual_review_rows": manual_review_rows,
         "severity_scale": "project_1_5",
-        "priority_counts": json.loads(snapshot.priority_counts_json),
         "truncated": False,
     }
     if getattr(arguments, "detail", False):

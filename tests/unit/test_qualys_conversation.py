@@ -82,6 +82,15 @@ def test_imported_tool_definition_and_budget() -> None:
     assert "origin" in DECISION_SYSTEM_PROMPT
     assert "snapshot_id" in DECISION_SYSTEM_PROMPT
     assert "imported" in DECISION_SYSTEM_PROMPT
+    for argument in (
+        "status_group",
+        "severity_level",
+        "priority",
+        "exploitability",
+        "malware",
+        "group_by",
+    ):
+        assert argument in DECISION_SYSTEM_PROMPT
 
     tool_result = {
         "tool": "findings_query",
@@ -90,15 +99,19 @@ def test_imported_tool_definition_and_budget() -> None:
         "result": {
             "origin": "imported",
             "snapshot": {"id": "a" * 32, "sequence": 1},
-            "status_group": "pending_known",
+            "status_group": "all",
             "total": 3,
             "groups": [{"key": "4", "count": 2, "label": "Alta"}],
+            "status_counts": {"Active": 2, "Fixed": 1},
+            "severity_counts": {"4": 2, "2": 1},
+            "exploitability_counts": {"positive": 1, "indeterminate": 2},
+            "malware_counts": {"positive": 1, "negative_no_info": 2},
             "priority_counts": {"both_positive": 1},
             "truncated": False,
         },
     }
     plan = plan_prompt(
-        question="¿Cuántos registros importados hay?",
+        question="¿Cuántos registros importados hay por estado?",
         hits=(),
         history=(),
         settings=Settings(_env_file=None),
@@ -106,5 +119,48 @@ def test_imported_tool_definition_and_budget() -> None:
         tool_results=(tool_result,),
     )
     assert "snapshot" in plan.user
+    for rendered in (
+        "status_counts",
+        "severity_counts",
+        "exploitability_counts",
+        "malware_counts",
+        "both_positive",
+    ):
+        assert rendered in plan.user
     assert "Results" not in plan.user
+    assert plan.admitted_tokens <= plan.prompt_limit
+
+
+def test_expanded_tool_result_is_measured_by_generator_counter() -> None:
+    class StrictCounter(FakeTokenCounter):
+        def __init__(self) -> None:
+            super().__init__()
+            self.calls = 0
+
+        def count(self, system: str, user: str) -> int:
+            self.calls += 1
+            assert "status_counts" not in system
+            return super().count(system, user)
+
+    tool_result = {
+        "tool": "findings_query",
+        "status": "ok",
+        "result": {
+            "origin": "imported",
+            "total": 1,
+            "status_counts": {"Active": 1},
+            "priority_counts": {"both_positive": 0},
+        },
+    }
+    counter = StrictCounter()
+    plan = plan_prompt(
+        question="¿Cuántos registros activos hay?",
+        hits=(),
+        history=(),
+        settings=Settings(_env_file=None),
+        counter=counter,
+        tool_results=(tool_result,),
+    )
+    assert counter.calls > 0
+    assert "status_counts" in plan.user
     assert plan.admitted_tokens <= plan.prompt_limit

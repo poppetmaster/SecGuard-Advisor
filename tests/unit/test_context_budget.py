@@ -91,7 +91,7 @@ def test_plan_keeps_everything_when_it_fits() -> None:
 
 
 def test_history_is_reduced_oldest_first_with_whole_turns() -> None:
-    settings = _settings(generator_num_ctx=4200)
+    settings = _settings(generator_num_ctx=5000)
     history = _history(5, size=1500)
     hits = (_hit(1, "fuente corta"),)
 
@@ -115,7 +115,7 @@ def test_history_is_reduced_oldest_first_with_whole_turns() -> None:
 
 
 def test_sources_are_reduced_after_history_by_rank() -> None:
-    settings = _settings(generator_num_ctx=4200)
+    settings = _settings(generator_num_ctx=5000)
     history = _history(2, size=1500)
     hits = tuple(_hit(index, "texto " + "f" * 3000) for index in range(1, 5))
 
@@ -137,7 +137,7 @@ def test_sources_are_reduced_after_history_by_rank() -> None:
 
 
 def test_repair_plan_also_respects_the_budget() -> None:
-    settings = _settings(generator_num_ctx=4200)
+    settings = _settings(generator_num_ctx=5000)
     hits = tuple(_hit(index, "texto " + "f" * 3000) for index in range(1, 5))
 
     plan = plan_prompt(
@@ -194,7 +194,7 @@ def test_oversized_question_is_reported_without_calling_the_model() -> None:
 
 
 def test_planning_does_not_mutate_the_received_history_or_sources() -> None:
-    settings = _settings(generator_num_ctx=4200)
+    settings = _settings(generator_num_ctx=5000)
     history = _history(3, size=1500)
     hits = tuple(_hit(index, "texto " + "f" * 3000) for index in range(1, 4))
 
