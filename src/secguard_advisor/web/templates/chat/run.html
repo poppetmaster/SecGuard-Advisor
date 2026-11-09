@@ -72,6 +72,16 @@
 </section>
 
 <section class="mt-6">
+  <h2 class="text-lg font-semibold">Herramientas</h2>
+  {% if run.tool_calls %}
+  {% set tool_calls = run.tool_calls %}
+  {% include "chat/_tool_calls.html" %}
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se consultaron herramientas en esta ejecución.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6">
   <h2 class="text-lg font-semibold">Fuentes recuperadas</h2>
   {% if run.sources %}
   <ul class="mt-2 space-y-1 text-sm text-slate-700">

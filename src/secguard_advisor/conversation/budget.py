@@ -82,6 +82,24 @@ def prompt_limit(settings: Settings) -> int:
     )
 
 
+def check_prompt(*, system: str, user: str, settings: Settings, counter) -> int:
+    """Mide un prompt fijo (por ejemplo, la decisión de herramienta) sin reducirlo."""
+    limit = prompt_limit(settings)
+    if limit <= 0:
+        raise ContextBudgetExceeded(
+            "La configuración del generador no deja espacio para el prompt."
+        )
+    try:
+        admitted = counter.count(system, user)
+    except Exception as exc:
+        raise ContextBudgetUnavailable(
+            "No se pudo cargar el tokenizador del generador para medir el prompt."
+        ) from exc
+    if admitted > limit:
+        raise ContextBudgetExceeded("La consulta excede el presupuesto de contexto del turno.")
+    return admitted
+
+
 def _drop_oldest_turn(history: list[HistoryTurn]) -> int:
     """Quita el turno más antiguo completo y devuelve cuántos mensajes quitó."""
     if len(history) >= 2 and history[0].role == "user" and history[1].role == "assistant":
@@ -103,6 +121,7 @@ def plan_prompt(
     settings: Settings,
     counter,
     repair_reasons: list[str] | None = None,
+    tool_results=(),
 ) -> PromptPlan:
     """Construye el prompt y lo reduce hasta que el tokenizador lo admita.
 
@@ -130,10 +149,16 @@ def plan_prompt(
 
     while True:
         if repair_reasons is None:
-            user_prompt = build_user_prompt(question, tuple(kept_hits), tuple(kept_history))
+            user_prompt = build_user_prompt(
+                question, tuple(kept_hits), tuple(kept_history), tool_results
+            )
         else:
             user_prompt = build_repair_prompt(
-                question, tuple(kept_hits), repair_reasons, tuple(kept_history)
+                question,
+                tuple(kept_hits),
+                repair_reasons,
+                tuple(kept_history),
+                tool_results,
             )
         try:
             admitted = counter.count(SYSTEM_PROMPT, user_prompt)

@@ -104,13 +104,31 @@ class ScriptedGenerator:
     model = "fake-generator"
     digest = "digest-fake"
 
-    def __init__(self, payloads=None, *, error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        payloads=None,
+        *,
+        error: Exception | None = None,
+        decisions=None,
+    ) -> None:
         from secguard_advisor.conversation.llm import AnswerPayload
 
         self.payloads = list(payloads or [AnswerPayload(answer="respuesta", claims=[])])
         self.error = error
+        self.decisions = list(decisions or [])
         self.calls = 0
+        self.decision_calls = 0
         self.prompts: list[str] = []
+        self.decision_prompts: list[str] = []
+
+    def decide(self, *, system: str, user: str):
+        from secguard_advisor.conversation.llm import ToolDecision
+
+        self.decision_calls += 1
+        self.decision_prompts.append(user)
+        if self.decisions:
+            return self.decisions.pop(0)
+        return ToolDecision(use_findings=False, arguments={})
 
     def generate(self, *, system: str, user: str):
         self.calls += 1

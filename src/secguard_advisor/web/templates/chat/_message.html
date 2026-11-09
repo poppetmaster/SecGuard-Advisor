@@ -53,6 +53,9 @@
   </details>
   {% endif %}
 
+  {% set tool_calls = message.tool_calls %}
+  {% include "chat/_tool_calls.html" %}
+
   {% if message.run_id %}
   <a class="mt-3 inline-block text-xs text-blue-700 hover:underline" href="/cases/{{ case_id }}/runs/{{ message.run_id }}">
     Ver ejecución

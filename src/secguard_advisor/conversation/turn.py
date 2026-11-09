@@ -28,6 +28,7 @@ from secguard_advisor.conversation.persistence import StepRecord, fail_run
 from secguard_advisor.conversation.prompts import PROMPT_VERSION
 from secguard_advisor.db.models import utc_now_iso
 from secguard_advisor.evidence.runs import ActiveRunConflict, create_run
+from secguard_advisor.tools.findings import ToolExecutionError, ToolTimeout
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +101,24 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     """Ejecuta el grafo y clasifica el cierre de la ejecución."""
     try:
         state = run_turn_graph(context, memory)
+    except ToolTimeout:
+        _fail(
+            context,
+            status="timeout",
+            code="tool_timeout",
+            message="La consulta de hallazgos excedió el tiempo de espera.",
+            step_name="tools",
+        )
+        return TurnResult("timeout", "error", 504, "tool_timeout")
+    except ToolExecutionError:
+        _fail(
+            context,
+            status="failed",
+            code="tool_failed",
+            message="No se pudieron consultar los hallazgos del caso.",
+            step_name="tools",
+        )
+        return TurnResult("failed", "error", 500, "tool_failed")
     except ContextBudgetUnavailable as exc:
         _fail(
             context,
@@ -158,7 +177,9 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     return TurnResult("succeeded", outcome, 200, None)
 
 
-def _fail(context: TurnContext, *, status: str, code: str, message: str) -> None:
+def _fail(
+    context: TurnContext, *, status: str, code: str, message: str, step_name: str = "agent"
+) -> None:
     duration = elapsed_ms(context.started_perf)
     fail_run(
         context.factory,
@@ -169,7 +190,7 @@ def _fail(context: TurnContext, *, status: str, code: str, message: str) -> None
         duration_ms=duration,
         steps=(
             StepRecord(
-                name="agent",
+                name=step_name,
                 origin="model",
                 status="error",
                 duration_ms=duration,

@@ -98,6 +98,7 @@ def _page(request: Request, case_id: str, *, notice: str | None, status_code: in
             session,
             scope,
             reviewer_configured=bool(settings.reviewer_name),
+            factory=request.app.state.session_factory,
         )
         case_title = case.title
     return _templates(request).TemplateResponse(

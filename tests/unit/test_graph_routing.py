@@ -57,7 +57,7 @@ def test_valid_first_attempt_goes_straight_to_persist(tmp_path: Path) -> None:
     with env.factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == env.case_id))
         assert run.status == "succeeded"
-        assert run.steps_count == 6
+        assert run.steps_count == 7
         names = [
             step.name
             for step in session.scalars(
@@ -68,6 +68,7 @@ def test_valid_first_attempt_goes_straight_to_persist(tmp_path: Path) -> None:
             "load_scope",
             "load_memory",
             "retrieve",
+            "decide",
             "agent",
             "validate",
             "persist",

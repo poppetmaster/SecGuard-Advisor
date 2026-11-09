@@ -58,6 +58,7 @@ def _panel_context(
             session,
             CaseScope(case_id=case_id),
             reviewer_configured=bool(settings.reviewer_name),
+            factory=request.app.state.session_factory,
         )
         case_title = case.title
     return {
@@ -267,7 +268,7 @@ def run_evidence_view(request: Request, case_id: str, run_id: str):
 
     with request.app.state.session_factory() as session:
         case = require_case(session, scope)
-        view = run_view(session, scope, run_id)
+        view = run_view(session, scope, run_id, factory=request.app.state.session_factory)
         case_title = case.title
     if view is None:
         return _not_found(request)

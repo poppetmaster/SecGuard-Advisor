@@ -43,6 +43,11 @@ class ScriptedGenerator:
         self.error = error
         self.calls = 0
 
+    def decide(self, *, system: str, user: str):
+        from secguard_advisor.conversation.llm import ToolDecision
+
+        return ToolDecision(use_findings=False, arguments={})
+
     def generate(self, *, system: str, user: str) -> AnswerPayload:
         self.calls += 1
         if self.error is not None:

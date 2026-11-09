@@ -1,0 +1,101 @@
+{% if tool_calls %}
+<div class="mt-4 space-y-3">
+  {% for call in tool_calls %}
+  <section class="rounded-lg border border-slate-300 bg-white p-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-sm font-semibold text-slate-900">
+        Herramienta consultada: <span class="font-mono text-xs">{{ call.tool_name }}</span>
+      </p>
+      <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900">
+        Datos educativos sintéticos
+      </span>
+    </div>
+
+    {% if call.arguments %}
+    <p class="mt-2 text-xs text-slate-600">
+      Filtros:
+      {% for key, value in call.arguments.items() %}
+      <span class="mr-2 inline-flex rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">{{ key }}={{ value }}</span>
+      {% endfor %}
+    </p>
+    {% else %}
+    <p class="mt-2 text-xs text-slate-600">Sin filtros: todos los hallazgos del caso.</p>
+    {% endif %}
+
+    {% if call.status != "ok" %}
+    <p class="mt-2 text-sm text-red-700" role="alert">
+      {{ call.status_label }}{% if call.error_code %} ({{ call.error_code }}){% endif %}.
+      No se generó un resultado para esta consulta.
+    </p>
+    {% elif call.summary %}
+    <p class="mt-2 text-sm text-slate-900">
+      <span class="font-semibold">Total:</span>
+      <span class="font-mono">{{ call.summary.total }}</span> hallazgo{{ "" if call.summary.total == 1 else "s" }}
+    </p>
+    {% if call.summary.groups %}
+    <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
+      {% for group in call.summary.groups %}
+      <li><span class="font-medium">{{ group.key }}</span>: <span class="font-mono">{{ group.count }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if call.summary.truncated %}
+    <p class="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-900">
+      Detalle limitado a {{ call.summary.items_count }} filas; los conteos no se limitan.
+    </p>
+    {% endif %}
+    {% if call.detail_error %}
+    <p class="mt-2 text-xs text-slate-600">{{ call.detail_error }}</p>
+    {% elif call.detail_items %}
+    <div class="mt-2 overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-xs">
+        <thead class="bg-slate-50 text-left uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-2 py-1">Activo</th>
+            <th class="px-2 py-1">Severidad</th>
+            <th class="px-2 py-1">Título</th>
+            <th class="px-2 py-1">QID</th>
+            <th class="px-2 py-1">CVE</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for item in call.detail_items %}
+          <tr>
+            <td class="px-2 py-1">{{ item.asset }}</td>
+            <td class="px-2 py-1">{{ item.severity_label }}</td>
+            <td class="px-2 py-1">{{ item.title }}</td>
+            <td class="px-2 py-1 font-mono">{{ item.qid or "—" }}</td>
+            <td class="px-2 py-1 font-mono">{{ item.cves|join(", ") if item.cves else "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if call.summary.dataset and call.summary.dataset.name %}
+    <p class="mt-2 text-xs text-slate-600">
+      Procedencia: <span class="font-mono">{{ call.summary.dataset.name }}</span>
+      v{{ call.summary.dataset.version }} ·
+      {{ call.summary.dataset.checksum[:12] }}… · datos sintéticos, no una importación de Qualys.
+    </p>
+    {% else %}
+    <p class="mt-2 text-xs text-slate-600">
+      Sin dataset asociado: no hay hallazgos registrados para esta consulta.
+    </p>
+    {% endif %}
+    {% if call.summary.total == 0 %}
+    <p class="mt-2 text-xs text-slate-600" role="note">
+      La ausencia de hallazgos en esta consulta no demuestra ausencia de vulnerabilidades ni un
+      riesgo bajo.
+    </p>
+    {% endif %}
+    {% endif %}
+
+    {% if call.duration_ms is not none %}
+    <p class="mt-2 text-[11px] text-slate-500">Duración: {{ call.duration_ms }} ms</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}

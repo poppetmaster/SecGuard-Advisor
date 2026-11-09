@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     run_timeout_seconds: float = 120.0
     max_graph_steps: int = 8
     max_tool_calls: int = 2
+    tool_timeout_seconds: float = 5.0
 
     retrieval_top_k: int = 6
     # Presupuesto de evidencia por turno: tokens exactos medidos al ingerir.

@@ -7,7 +7,7 @@ from typing import Any
 
 from secguard_advisor.cases.scope import require_case
 from secguard_advisor.conversation import service
-from secguard_advisor.conversation.budget import plan_prompt
+from secguard_advisor.conversation.budget import check_prompt, plan_prompt
 from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
@@ -18,11 +18,21 @@ from secguard_advisor.conversation.llm import (
 from secguard_advisor.conversation.persistence import (
     CitationDraft,
     StepRecord,
+    ToolCallRecord,
     fail_run,
     persist_turn,
 )
+from secguard_advisor.conversation.prompts import (
+    DECISION_SYSTEM_PROMPT,
+    build_decision_prompt,
+)
 from secguard_advisor.retrieval.citations import check_citation
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
+from secguard_advisor.tools.findings import (
+    TOOL_NAME,
+    FindingsQuery,
+    ToolArgumentError,
+)
 
 INSUFFICIENT_EVIDENCE_TEXT = (
     "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del "
@@ -168,6 +178,7 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
         history=state.get("history", ()),
         settings=context.deps.settings,
         counter=context.deps.token_counter,
+        tool_results=state.get("tool_results", ()),
     )
     payload = context.deps.generator.generate(system=plan.system, user=plan.user)
     usage = getattr(context.deps.generator, "last_usage", None) or {}
@@ -175,6 +186,7 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
     return {
         "payload": payload,
         "hits": plan.hits,
+        "tool_budget": context.deps.settings.max_tool_calls,
         "steps": record_step(
             state,
             "agent",
@@ -186,6 +198,151 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
                 **plan.detail(),
                 "observed_prompt_tokens": usage.get("prompt_tokens"),
             },
+        ),
+    }
+
+
+def _tool_summary(result: dict) -> dict:
+    return {
+        "total": result["total"],
+        "groups": result["groups"],
+        "dataset": result["dataset"],
+        "truncated": result["truncated"],
+        "items_count": len(result.get("items", [])),
+    }
+
+
+def decide(state: dict[str, Any], config) -> dict[str, Any]:
+    """El modelo decide, con un esquema propio, si necesita findings_query."""
+    started = time.perf_counter()
+    context = runtime_of(config)
+    settings = context.deps.settings
+    if state.get("tool_calls", 0) >= settings.max_tool_calls:
+        return {
+            "decision": {"use_findings": False, "arguments": {}},
+            "steps": record_step(
+                state,
+                "decide",
+                "model",
+                "ok",
+                started,
+                {"use_findings": False, "reason": "tool_call_limit"},
+            ),
+        }
+
+    user_prompt = build_decision_prompt(
+        context.question,
+        state.get("history", ()),
+        tuple(state.get("tool_results", ())),
+    )
+    admitted = check_prompt(
+        system=DECISION_SYSTEM_PROMPT,
+        user=user_prompt,
+        settings=settings,
+        counter=context.deps.token_counter,
+    )
+    decision = context.deps.generator.decide(system=DECISION_SYSTEM_PROMPT, user=user_prompt)
+    usage = getattr(context.deps.generator, "last_usage", None) or {}
+    _check_turn_deadline(context)
+    return {
+        "decision": decision.model_dump(),
+        "steps": record_step(
+            state,
+            "decide",
+            "model",
+            "ok",
+            started,
+            {
+                "use_findings": decision.use_findings,
+                "admitted_tokens": admitted,
+                "observed_prompt_tokens": usage.get("prompt_tokens"),
+            },
+        ),
+    }
+
+
+def route_after_decide(state: dict[str, Any]) -> str:
+    decision = state.get("decision") or {}
+    if decision.get("use_findings"):
+        return "tools"
+    return "agent"
+
+
+def tools(state: dict[str, Any], config) -> dict[str, Any]:
+    """Ejecuta la llamada solicitada por la decisión del modelo."""
+    started = time.perf_counter()
+    context = runtime_of(config)
+    settings = context.deps.settings
+    decision = state.get("decision") or {}
+    arguments = decision.get("arguments") or {}
+    query = FindingsQuery(
+        context.factory,
+        context.scope,
+        timeout_seconds=settings.tool_timeout_seconds,
+    )
+    results = list(state.get("tool_results", ()))
+    records = list(state.get("tool_records", ()))
+    call_started = time.perf_counter()
+    status = "ok"
+
+    try:
+        result = query.execute(arguments)
+    except ToolArgumentError as exc:
+        duration = elapsed_ms(call_started)
+        records.append(
+            ToolCallRecord(
+                tool_name=TOOL_NAME,
+                origin="model_requested",
+                arguments=arguments,
+                summary=None,
+                status="invalid_arguments",
+                error_code=exc.code,
+                duration_ms=duration,
+            )
+        )
+        results.append(
+            {
+                "tool": TOOL_NAME,
+                "status": "invalid_arguments",
+                "arguments": arguments,
+                "error": {"code": exc.code, "message": exc.message},
+            }
+        )
+        status = "invalid_arguments"
+    else:
+        duration = elapsed_ms(call_started)
+        records.append(
+            ToolCallRecord(
+                tool_name=TOOL_NAME,
+                origin="model_requested",
+                arguments=arguments,
+                summary=_tool_summary(result),
+                status="ok",
+                error_code=None,
+                duration_ms=duration,
+            )
+        )
+        results.append(
+            {
+                "tool": TOOL_NAME,
+                "status": "ok",
+                "arguments": arguments,
+                "result": result,
+            }
+        )
+
+    return {
+        "tool_results": tuple(results),
+        "tool_records": tuple(records),
+        "tool_calls": state.get("tool_calls", 0) + 1,
+        "decision": {"use_findings": False, "arguments": {}},
+        "steps": record_step(
+            state,
+            "tools",
+            "deterministic",
+            "ok",
+            started,
+            {"status": status},
         ),
     }
 
@@ -322,7 +479,12 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
 def route_after_validate(state: dict[str, Any]) -> str:
     if state.get("citations"):
         return "persist"
-    if state.get("hits") and not state.get("repaired"):
+    payload = state.get("payload")
+    claims = payload.claims if payload is not None else []
+    tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
+    if not claims and tool_evidence:
+        return "persist"
+    if (state.get("hits") or claims) and not state.get("repaired"):
         return "repair"
     return "abstain"
 
@@ -411,7 +573,14 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
-    outcome = state.get("outcome") or ("answered" if citations else "insufficient_evidence")
+    claims = payload.claims if payload is not None else []
+    tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
+    if state.get("outcome"):
+        outcome = state["outcome"]
+    elif citations or (tool_evidence and not claims):
+        outcome = "answered"
+    else:
+        outcome = "insufficient_evidence"
     if not answer_text:
         answer_text = ABSTAINED_CITATIONS_TEXT
         outcome = "abstained_invalid_citations" if state.get("hits") else "insufficient_evidence"
@@ -423,6 +592,7 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
         answer_text=answer_text,
         citations=citations,
         rejected=state.get("rejected", ()),
+        tool_calls=state.get("tool_records", ()),
         hits=state.get("hits", ()),
         steps=record_step(state, "persist", "deterministic", "ok", started),
         outcome=outcome,
@@ -469,6 +639,7 @@ def failure_step(state: dict[str, Any], name: str, code: str) -> tuple[StepRecor
 __all__ = [
     "abstain",
     "agent",
+    "decide",
     "fail_run",
     "load_memory",
     "load_scope",
@@ -476,6 +647,8 @@ __all__ = [
     "repair",
     "resolve_source_id",
     "retrieve",
+    "route_after_decide",
     "route_after_validate",
+    "tools",
     "validate",
 ]

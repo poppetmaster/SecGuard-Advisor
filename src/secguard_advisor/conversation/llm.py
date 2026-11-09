@@ -41,6 +41,15 @@ class Claim(BaseModel):
     )
 
 
+class ToolDecision(BaseModel):
+    """Decisión estructurada del modelo sobre usar findings_query."""
+
+    use_findings: bool = Field(
+        description="Verdadero si la pregunta necesita datos de hallazgos del caso"
+    )
+    arguments: dict = Field(default_factory=dict, description="Argumentos de findings_query")
+
+
 class AnswerPayload(BaseModel):
     """Respuesta estructurada del agente documental."""
 
@@ -107,10 +116,17 @@ class OllamaGenerator:
             client_kwargs={"timeout": self.config.timeout_seconds},
         )
 
+    def decide(self, *, system: str, user: str) -> ToolDecision:
+        """Pide al modelo la decisión estructurada sobre findings_query."""
+        return self._structured(system=system, user=user, schema=ToolDecision)
+
     def generate(self, *, system: str, user: str) -> AnswerPayload:
         """Genera la respuesta estructurada o falla con un error clasificado."""
+        return self._structured(system=system, user=user, schema=AnswerPayload)
+
+    def _structured(self, *, system: str, user: str, schema):
         structured = self._chat().with_structured_output(
-            AnswerPayload, method="json_schema", include_raw=True
+            schema, method="json_schema", include_raw=True
         )
         try:
             result = structured.invoke([("system", system), ("human", user)])
@@ -137,11 +153,11 @@ class OllamaGenerator:
 
         if parse_error is not None:
             raise InvalidModelOutput("La salida del modelo no cumple el esquema esperado.")
-        if isinstance(parsed, AnswerPayload):
+        if isinstance(parsed, schema):
             return parsed
         if isinstance(parsed, dict):
             try:
-                return AnswerPayload.model_validate(parsed)
+                return schema.model_validate(parsed)
             except Exception as exc:
                 raise InvalidModelOutput(
                     "La salida del modelo no cumple el esquema esperado."

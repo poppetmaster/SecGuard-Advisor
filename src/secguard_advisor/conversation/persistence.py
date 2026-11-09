@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -13,6 +14,7 @@ from secguard_advisor.db.models import (
     Run,
     RunSource,
     RunStep,
+    RunToolCall,
     utc_now_iso,
 )
 from secguard_advisor.evidence.runs import close_run
@@ -31,6 +33,19 @@ class CitationDraft:
     locator: str
     check_status: str
     check_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ToolCallRecord:
+    """Invocación de herramienta lista para persistir."""
+
+    tool_name: str
+    origin: str
+    arguments: dict
+    summary: dict | None
+    status: str
+    error_code: str | None
+    duration_ms: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,8 +77,6 @@ def _write_steps(session: Session, run_id: str, steps: tuple[StepRecord, ...]) -
 def _json_detail(detail: dict | None) -> str | None:
     if not detail:
         return None
-    import json
-
     return json.dumps(detail, ensure_ascii=False)
 
 
@@ -74,6 +87,7 @@ def persist_turn(
     answer_text: str,
     citations: tuple[CitationDraft, ...],
     rejected: tuple[CitationDraft, ...] = (),
+    tool_calls: tuple[ToolCallRecord, ...] = (),
     hits: tuple = (),
     steps: tuple[StepRecord, ...],
     outcome: str,
@@ -131,6 +145,25 @@ def persist_turn(
                 )
             )
 
+        for position, record in enumerate(tool_calls, start=1):
+            session.add(
+                RunToolCall(
+                    run_id=run.id,
+                    seq=position,
+                    tool_name=record.tool_name,
+                    origin=record.origin,
+                    arguments_json=json.dumps(record.arguments, ensure_ascii=False),
+                    result_summary_json=(
+                        json.dumps(record.summary, ensure_ascii=False)
+                        if record.summary is not None
+                        else None
+                    ),
+                    status=record.status,
+                    error_code=record.error_code,
+                    duration_ms=record.duration_ms,
+                )
+            )
+
         _write_steps(session, run.id, steps)
         close_run(
             session,
@@ -141,7 +174,7 @@ def persist_turn(
             answer_message_id=message.id,
         )
         run.steps_count = len(steps)
-        run.tool_calls_count = 0
+        run.tool_calls_count = len(tool_calls)
         session.commit()
         return message.id
 

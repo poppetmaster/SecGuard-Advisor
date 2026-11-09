@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
+
 from secguard_advisor.retrieval.search import RetrievedChunk
 
-PROMPT_VERSION = "chat-v2"
+PROMPT_VERSION = "chat-v4"
+DECISION_PROMPT_VERSION = "decide-v1"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad y seguridad de aplicaciones de IA.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
@@ -18,6 +21,7 @@ Devolvés SIEMPRE un objeto JSON con esta forma exacta:
   "missing_info": [],
   "recommendations": []
 }
+
 
 Reglas obligatorias:
 1. `claims` nunca puede quedar vacío si `answer` afirma algo. Cada afirmación normativa va en su
@@ -36,7 +40,9 @@ Reglas obligatorias:
 8. Usá solo los identificadores de fuente entregados; no inventes identificadores.
 9. La conversación previa ayuda a interpretar la pregunta, pero no es evidencia documental: no
    cites respuestas anteriores. Para cada afirmación, citá únicamente las fuentes recuperadas en
-   este turno."""
+   este turno.
+
+"""
 
 _ORIGIN_LABELS = {
     "public_corpus": "corpus público",
@@ -74,6 +80,19 @@ def format_history(history) -> str:
     return "\n".join(lines)
 
 
+def _tool_results_block(tool_results) -> str:
+    if not tool_results:
+        return ""
+    rendered = json.dumps(list(tool_results), ensure_ascii=False, sort_keys=True)
+    return (
+        "Resultados de herramientas (calculados en SQLite para este caso; no son citas "
+        f"documentales):\n{rendered}\n"
+        "Usá estos resultados como evidencia estructurada para las cifras: incluí los totales y "
+        "grupos exactos en `answer`, no los repitas como claims y no te abstengas por falta de "
+        "fuentes documentales.\n\n"
+    )
+
+
 def _history_block(history) -> str:
     if not history:
         return ""
@@ -83,12 +102,15 @@ def _history_block(history) -> str:
     )
 
 
-def build_user_prompt(question: str, hits: tuple[RetrievedChunk, ...], history=()) -> str:
+def build_user_prompt(
+    question: str, hits: tuple[RetrievedChunk, ...], history=(), tool_results=()
+) -> str:
     """Construye el mensaje de usuario con la pregunta, el historial y las fuentes."""
     return (
         _history_block(history)
         + f"Pregunta actual:\n{question}\n\n"
         + f"Fuentes recuperadas para esta pregunta:\n{format_sources(hits)}\n\n"
+        + _tool_results_block(tool_results)
         + "Respondé con el JSON acordado. Cada afirmación necesita su claim con una cita literal. "
         "En `claims[].chunk_ids` usá la etiqueta S1, S2, etc. o el `id` exacto de la fuente."
     )
@@ -99,6 +121,7 @@ def build_repair_prompt(
     hits: tuple[RetrievedChunk, ...],
     reasons: list[str],
     history=(),
+    tool_results=(),
 ) -> str:
     """Pide una única reparación indicando por qué se rechazaron las citas."""
     detail = "\n".join(f"- {reason}" for reason in reasons) or "- cita ausente"
@@ -106,9 +129,44 @@ def build_repair_prompt(
         _history_block(history)
         + f"Pregunta actual:\n{question}\n\n"
         + f"Fuentes recuperadas para esta pregunta:\n{format_sources(hits)}\n\n"
-        "Tu respuesta anterior no superó el control automático de citas:\n"
+        + _tool_results_block(tool_results)
+        + "Tu respuesta anterior no superó el control automático de citas:\n"
         f"{detail}\n\n"
         "Volvé a responder con el JSON acordado. Cada afirmación debe traer una cita copiada "
         "literalmente de una fuente y la etiqueta exacta de esa fuente. Si ninguna fuente sostiene "
         "la afirmación, dejá `answer` y `claims` vacíos y explicá en `missing_info`."
     )
+
+
+DECISION_SYSTEM_PROMPT = """Sos un clasificador de consultas de un asesor de ciberseguridad.
+Decidí si la pregunta necesita consultar los hallazgos sintéticos del caso.
+Devolvé {"use_findings": true, "arguments": {...}} si la pregunta pide conteos, filtros,
+agrupaciones o detalles de hallazgos del caso. Devolvé {"use_findings": false, "arguments": {}}
+en cualquier otro caso.
+Argumentos válidos y sus tipos:
+- asset: texto (nombre del activo).
+- severity: Critical, High, Medium, Low o Info.
+- qid: dígitos.
+- cve: CVE-AAAA-NNNN.
+- group_by: severity o asset.
+- detail: booleano true/false (solo para listar filas; no lo uses para conteos).
+- limit: entero de 1 a 100.
+No incluyas case_id ni inventes valores.
+Si un intento anterior devolvió un error de argumentos, corregí los argumentos.
+Si un intento anterior ya devolvió un resultado para esta pregunta, no repitas la misma consulta."""
+
+
+def build_decision_prompt(question: str, history=(), previous=()) -> str:
+    """Prompt breve para decidir si se usa findings_query."""
+    previous_question = next(
+        (turn.content for turn in reversed(history) if turn.role == "user"), None
+    )
+    parts = [f"Pregunta actual:\n{question}"]
+    if previous_question and previous_question != question:
+        parts.append(f"Pregunta anterior del caso:\n{previous_question}")
+    if previous:
+        parts.append(
+            "Intentos previos de la herramienta:\n"
+            + json.dumps(list(previous), ensure_ascii=False, sort_keys=True)
+        )
+    return "\n\n".join(parts)

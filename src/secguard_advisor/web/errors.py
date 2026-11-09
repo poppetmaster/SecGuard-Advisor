@@ -31,6 +31,16 @@ ERRORS: dict[str, ErrorSpec] = {
     "run_timeout": ErrorSpec(
         "run_timeout", 504, "La consulta excedió el tiempo de espera del turno."
     ),
+    "tool_failed": ErrorSpec(
+        "tool_failed",
+        500,
+        "No se pudieron consultar los hallazgos del caso.",
+    ),
+    "tool_timeout": ErrorSpec(
+        "tool_timeout",
+        504,
+        "La consulta de hallazgos excedió el tiempo de espera.",
+    ),
     "context_budget_unavailable": ErrorSpec(
         "context_budget_unavailable",
         503,

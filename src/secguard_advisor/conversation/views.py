@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from urllib.parse import quote as url_quote
 
 from sqlalchemy import select
@@ -18,7 +19,9 @@ from secguard_advisor.db.models import (
     Run,
     RunSource,
     RunStep,
+    RunToolCall,
 )
+from secguard_advisor.tools.findings import FindingsQuery
 
 ORIGIN_LABELS = {
     "public_corpus": "Corpus público",
@@ -98,6 +101,54 @@ def citation_view(session: Session, case_id: str, citation: MessageCitation) -> 
     }
 
 
+TOOL_STATUS_LABELS = {
+    "ok": "Consulta completada",
+    "invalid_arguments": "Argumentos inválidos",
+    "error": "Error de la herramienta",
+}
+
+
+def tool_calls_view(
+    session: Session,
+    run_id: str,
+    *,
+    factory=None,
+    scope=None,
+) -> list[dict]:
+    """Resume las invocaciones registradas; recalcula el detalle si hace falta."""
+    rows = list(
+        session.scalars(
+            select(RunToolCall).where(RunToolCall.run_id == run_id).order_by(RunToolCall.seq)
+        )
+    )
+    views: list[dict] = []
+    for row in rows:
+        arguments = json.loads(row.arguments_json) if row.arguments_json else {}
+        summary = json.loads(row.result_summary_json) if row.result_summary_json else None
+        items = None
+        detail_error = None
+        if summary and arguments.get("detail") and factory is not None and scope is not None:
+            try:
+                items = FindingsQuery(factory, scope).execute(arguments).get("items", [])
+            except Exception:
+                detail_error = "No se pudo recalcular el detalle de la consulta."
+        views.append(
+            {
+                "tool_name": row.tool_name,
+                "status": row.status,
+                "status_label": TOOL_STATUS_LABELS.get(row.status, row.status),
+                "error_code": row.error_code,
+                "duration_ms": row.duration_ms,
+                "arguments": arguments,
+                "summary": summary,
+                "detail_items": items,
+                "detail_error": detail_error,
+                "is_synthetic": True,
+            }
+        )
+    return views
+
+
 def _sources_view(session: Session, run_id: str) -> list[dict]:
     rows = list(
         session.scalars(
@@ -134,7 +185,13 @@ def _message_run(session: Session, message: Message) -> Run | None:
     return None
 
 
-def conversation_view(session: Session, scope: CaseScope, *, reviewer_configured: bool) -> dict:
+def conversation_view(
+    session: Session,
+    scope: CaseScope,
+    *,
+    reviewer_configured: bool,
+    factory=None,
+) -> dict:
     """Historial del caso con citas válidas, fuentes y ejecuciones."""
     conversation = session.scalar(select(Conversation).where(Conversation.case_id == scope.case_id))
     if conversation is None:
@@ -169,6 +226,9 @@ def conversation_view(session: Session, scope: CaseScope, *, reviewer_configured
                 "run_status_label": RUN_STATUS_LABELS.get(run.status if run else ""),
                 "citations": citations,
                 "sources": _sources_view(session, run.id) if run else [],
+                "tool_calls": (
+                    tool_calls_view(session, run.id, factory=factory, scope=scope) if run else []
+                ),
             }
         )
     return {
@@ -191,7 +251,7 @@ def latest_failed_run(session: Session, scope: CaseScope) -> Run | None:
     )
 
 
-def run_view(session: Session, scope: CaseScope, run_id: str) -> dict | None:
+def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -> dict | None:
     """Evidencia de ejecución completa, siempre dentro del alcance del caso."""
     run = session.get(Run, run_id)
     if run is None or run.case_id != scope.case_id:
@@ -234,4 +294,5 @@ def run_view(session: Session, scope: CaseScope, run_id: str) -> dict | None:
             for step in steps
         ],
         "sources": _sources_view(session, run.id),
+        "tool_calls": tool_calls_view(session, run.id, factory=factory, scope=scope),
     }
