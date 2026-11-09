@@ -39,6 +39,10 @@ EXPECTED_TABLES = {
     "run_tool_calls",
     "runs",
     "synthetic_datasets",
+    "qualys_import_issues",
+    "qualys_imports",
+    "qualys_vulnerabilities",
+    "qualys_vulnerability_cves",
 }
 
 
@@ -144,7 +148,7 @@ def _chunk(session, version: DocumentVersion) -> DocumentChunk:
     return chunk
 
 
-def test_creates_the_sixteen_tables(session) -> None:
+def test_creates_the_expected_tables(session) -> None:
     assert set(Base.metadata.tables) == EXPECTED_TABLES
 
 

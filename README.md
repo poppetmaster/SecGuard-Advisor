@@ -44,13 +44,18 @@ US6 (evidencia de ejecución, límites y trazas). La aceptación local está doc
 SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
 ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
 
+**Funcionalidad 002 — corte 1 implementado.** El módulo `vulnerabilities` incorpora lectura y
+validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables,
+verificación de manifiesto y posibles repeticiones. El formulario, las rutas y la consulta importada
+todavía no están disponibles; la aceptación integral T039 sigue pendiente.
+
 ### Implementado
 
 - Estructura del paquete con src-layout y `uv_build`.
 - Configuración de Ruff, pytest, pre-commit y Makefile.
 - Recursos de interfaz locales: CSS compilado con Tailwind, HTMX y Flowbite vendorizados.
 - Configuración tipada con secretos protegidos.
-- SQLite con 16 tablas, restricciones e índices, y migraciones con Alembic.
+- SQLite con 20 tablas, restricciones e índices, y migraciones con Alembic.
 - Alcance por caso y reconciliación de estado al arrancar.
 - Fábrica FastAPI, `/healthz`, manejo de errores y plantillas base.
 - Unidad de trabajo de transacción corta.
@@ -74,14 +79,18 @@ ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores s
   `submitted`, `confirmed` y `failed`, y degradación local cuando LangSmith no está disponible.**
 - **Aceptación local: recorrido con dobles y recorrido real con Ollama, corpus, hallazgos,
   reinicio y aislamiento; confirmación de traza por API de lectura con identidad declarada.**
+- **002 (corte 1): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
+  staging/rechazo, snapshots confirmables, manifiesto y repeticiones; sin UI ni consulta importada.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Incrementos posteriores (CSV de Qualys, clasificación, entrenamiento o exportaciones) fuera del
-  alcance autorizado del primer incremento.
+- Resto de la funcionalidad 002: formulario «Vulnerabilidades», consulta importada, historial y
+  selector, y aceptación integral T039.
+- Incrementos posteriores (clasificación, entrenamiento o exportaciones) fuera del alcance
+  autorizado del primer incremento.
 
 El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
 [las tareas](specs/001-consulta-documental/tasks.md).
@@ -100,6 +109,9 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
    invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
    validaciones recomendadas y no bloqueantes, no ejecutadas.
+7. **Implementado parcialmente (corte 1):** procesamiento local del CSV Qualys, validación,
+   staging/rechazo, snapshots confirmables, manifiesto y repeticiones. El formulario y la consulta
+   importada todavía no están disponibles.
 
 La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
 herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
@@ -172,6 +184,11 @@ Copia `.env.example` a `.env` y ajusta los valores. `.env` está ignorado por Gi
 | `SECGUARD_STORAGE_DIR` | Directorio de SQLite, Chroma y originales |
 | `SECGUARD_REVIEWER_NAME` | Identidad local declarada para la revisión humana; no es autenticación |
 | `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` | Espera máxima del turno global de generación, en segundos |
+| `SECGUARD_QUALYS_MAX_BYTES` | Límite de bytes del CSV Qualys; por defecto 10 MiB |
+| `SECGUARD_QUALYS_MAX_ROWS` | Límite de filas del CSV Qualys; por defecto 10.000 |
+| `SECGUARD_QUALYS_MAX_FIELD_CHARS` | Límite de caracteres por campo; por defecto 20.000 |
+| `SECGUARD_QUALYS_MAX_CVES` | Límite de CVE por registro; por defecto 1.000 |
+| `SECGUARD_QUALYS_STAGING_TTL_SECONDS` | Vigencia del staging/rechazo; por defecto 24 h |
 | `LANGSMITH_*` | Trazas. Sin clave, la traza queda deshabilitada |
 
 Nunca se versionan secretos ni se muestran en registros o respuestas.
@@ -272,10 +289,24 @@ argumento ni aparece en el resultado), acepta `asset`, `severity`, `qid`, `cve`,
 `limit`, y calcula totales y grupos en SQLite sobre exactamente los filtros aplicados. El límite afecta
 solo al detalle y `truncated` avisa cuando se recortó. Un hallazgo con varios CVE no multiplica filas.
 
-El resultado se muestra con la etiqueta «Datos educativos sintéticos», los filtros aplicados, el total,
-las agrupaciones, la procedencia del dataset y el aviso de que no es una importación de Qualys. Un caso
-sin hallazgos devuelve total 0 y advierte que eso no demuestra ausencia de vulnerabilidades ni riesgo
-bajo. Cada invocación queda registrada en la evidencia de ejecución.
+El resultado sintético se muestra con la etiqueta «Datos educativos sintéticos», los filtros
+aplicados, el total, las agrupaciones, la procedencia del dataset y el aviso de que no es una
+importación de Qualys. La importación Qualys del corte 1 no se mezcla con esta consulta: todavía no
+hay formulario ni consulta importada. Un caso sin hallazgos devuelve total 0 y advierte que eso no
+demuestra ausencia de vulnerabilidades ni riesgo bajo. Cada invocación queda registrada en la
+evidencia de ejecución.
+
+### Vulnerabilidades Qualys (corte 1)
+
+El corte 1 implementa el procesamiento local del CSV filtrado de Qualys: lectura UTF-8 con BOM,
+encabezado exacto de 41 columnas, validación de filas, severidad 1–5, estados admitidos con revisión
+manual para desconocidos, evaluación separada de explotabilidad y malware, prioridad conjunta solo con
+ambos positivos, staging/rechazo completo, confirmación idempotente y snapshots independientes. También
+compara el manifiesto local y calcula posibles repeticiones sin deduplicar.
+
+No hay todavía formulario, rutas ni consulta importada. El CSV real se usa solo en comprobaciones
+locales con almacenamiento temporal; no se versiona ni se envía a servicios externos. La aceptación
+integral T039 sigue pendiente.
 
 ### Evidencia de ejecución y trazas
 
@@ -304,7 +335,8 @@ Límites del turno: 8 operaciones de modelo o herramienta, 2 llamadas a herramie
 ## Base de datos
 
 El esquema se crea y evoluciona solo con Alembic. La aplicación no crea tablas al arrancar; al
-iniciar reconcilia el estado de las operaciones que quedaron abiertas.
+iniciar reconcilia el estado de las operaciones que quedaron abiertas. El esquema actual tiene 20
+tablas: las 16 de 001 y las cuatro de snapshots Qualys.
 
 ```bash
 uv run alembic upgrade head
@@ -335,16 +367,18 @@ Estado actual: la base cubre configuración, motor y esquema, alcance, arranque,
 seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
 embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, la
 herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia) y
-la evidencia de ejecución con límites, trazas y redacción de secretos. `make test` incluye la
-aceptación con dobles; `make test-integration` ejecuta la aceptación real con Ollama, corpus y
-herramienta, además de las integraciones existentes. La confirmación de traza se prueba con dobles y
-con una traza real si hay credenciales.
+la evidencia de ejecución con límites, trazas y redacción de secretos, y el corte 1 de Qualys
+(lector, políticas, validación, staging, manifiesto y repeticiones). `make test` incluye la aceptación
+con dobles; la probe del CSV real está marcada como integración y se omite si los archivos externos no
+están disponibles. `make test-integration` ejecuta la aceptación real con Ollama, corpus y herramienta,
+además de las integraciones existentes; no es necesaria para la suite rápida. La confirmación de traza
+se prueba con dobles y con una traza real si hay credenciales.
 
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 343 pruebas rápidas
-make test-integration # 25 pruebas reales, incluida la aceptación y la traza
+make check            # lint, formato y 372 pruebas rápidas
+make test-integration # 26 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000
 ```
@@ -375,6 +409,7 @@ src/secguard_advisor/            paquete
 ├── retrieval/                   recuperación, citas y revisión
 ├── conversation/                grafo, memoria, prompts y concurrencia
 ├── tools/                       herramienta de hallazgos
+├── vulnerabilities/             importación y snapshots Qualys
 ├── evidence/                    ejecuciones y trazas
 ├── web/                         aplicación, rutas, plantillas y estáticos
 ├── corpus/                      adquisición e ingesta del corpus

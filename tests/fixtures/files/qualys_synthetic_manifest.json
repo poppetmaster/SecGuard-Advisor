@@ -1,0 +1,20 @@
+{
+  "output_filename": "qualys_synthetic_valid.csv",
+  "output_sha256": "88465844ee9ae0b31f11df7984a04c770f92060d3ae14f2ebfe8dddc3b0f0f96",
+  "output_bytes": 2111,
+  "output_detail_rows": 5,
+  "format": {
+    "encoding": "UTF-8 with BOM",
+    "delimiter": ",",
+    "header_first_record": true,
+    "columns": 41,
+    "multiline_fields_preserved": true
+  },
+  "output_status_counts": {
+    "Active": 1,
+    "New": 1,
+    "Re-Opened": 1,
+    "Fixed": 1,
+    "UnknownState": 1
+  }
+}

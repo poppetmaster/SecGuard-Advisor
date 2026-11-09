@@ -67,6 +67,18 @@ class Settings(BaseSettings):
 
     max_upload_mb: int = 20
 
+    qualys_max_bytes: int = Field(
+        default=10 * 1024 * 1024, validation_alias="SECGUARD_QUALYS_MAX_BYTES"
+    )
+    qualys_max_rows: int = Field(default=10_000, validation_alias="SECGUARD_QUALYS_MAX_ROWS")
+    qualys_max_field_chars: int = Field(
+        default=20_000, validation_alias="SECGUARD_QUALYS_MAX_FIELD_CHARS"
+    )
+    qualys_max_cves: int = Field(default=1_000, validation_alias="SECGUARD_QUALYS_MAX_CVES")
+    qualys_staging_ttl_seconds: int = Field(
+        default=86_400, validation_alias="SECGUARD_QUALYS_STAGING_TTL_SECONDS"
+    )
+
     langsmith_tracing: bool = Field(default=False, validation_alias="LANGSMITH_TRACING")
     langsmith_endpoint: str = Field(
         default="https://api.smith.langchain.com",

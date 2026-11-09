@@ -486,3 +486,230 @@ class FindingCve(Base):
     cve: Mapped[str] = mapped_column(String(20), primary_key=True)
 
     __table_args__ = (Index("ix_finding_cves_cve", "cve"),)
+
+
+class QualysImport(Base):
+    __tablename__ = "qualys_imports"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    original_filename: Mapped[str] = mapped_column(Text, nullable=False)
+    csv_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    csv_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    manifest_sha256: Mapped[str | None] = mapped_column(String(64))
+    manifest_status: Mapped[str] = mapped_column(String(20), nullable=False, default="absent")
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    valid_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    invalid_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    warning_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    manual_review_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    possible_repeat_groups: Mapped[int] = mapped_column(Integer, nullable=False)
+    possible_repeat_rows: Mapped[int] = mapped_column(Integer, nullable=False)
+    status_counts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    severity_counts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    exploitability_counts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    malware_counts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    priority_counts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    summary_json: Mapped[str] = mapped_column(Text, nullable=False)
+    adapter_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    severity_policy_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    status_policy_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    priority_rule_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    validated_at: Mapped[str | None] = mapped_column(String(40))
+    confirmed_at: Mapped[str | None] = mapped_column(String(40))
+    cancelled_at: Mapped[str | None] = mapped_column(String(40))
+    expires_at: Mapped[str | None] = mapped_column(String(40))
+    confirmed_sequence: Mapped[int | None] = mapped_column(Integer)
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+    __table_args__ = (
+        Index("ix_qualys_imports_case_status", "case_id", "status"),
+        Index("ix_qualys_imports_case_sequence", "case_id", "confirmed_sequence"),
+        Index(
+            "ux_qualys_imports_confirmed_hash",
+            "case_id",
+            "csv_sha256",
+            unique=True,
+            sqlite_where=text("status = 'confirmed'"),
+        ),
+        Index(
+            "ux_qualys_imports_confirmed_sequence",
+            "case_id",
+            "confirmed_sequence",
+            unique=True,
+            sqlite_where=text("confirmed_sequence IS NOT NULL"),
+        ),
+        _status_check(
+            "status",
+            ("validating", "staged", "rejected", "confirmed", "cancelled", "expired", "failed"),
+            "status_valid",
+        ),
+        _status_check(
+            "manifest_status",
+            ("absent", "matched", "mismatch", "invalid"),
+            "manifest_status_valid",
+        ),
+        CheckConstraint("csv_bytes >= 0", name="csv_bytes_nonnegative"),
+        CheckConstraint("row_count >= 0", name="row_count_nonnegative"),
+        CheckConstraint("valid_rows >= 0", name="valid_rows_nonnegative"),
+        CheckConstraint("invalid_rows >= 0", name="invalid_rows_nonnegative"),
+        CheckConstraint("warning_rows >= 0", name="warning_rows_nonnegative"),
+        CheckConstraint("manual_review_rows >= 0", name="manual_review_rows_nonnegative"),
+        CheckConstraint("possible_repeat_groups >= 0", name="repeat_groups_nonnegative"),
+        CheckConstraint("possible_repeat_rows >= 0", name="repeat_rows_nonnegative"),
+        CheckConstraint(
+            "confirmed_sequence IS NULL OR confirmed_sequence >= 1", name="sequence_positive"
+        ),
+        CheckConstraint("status != 'staged' OR invalid_rows = 0", name="staged_valid_rows"),
+        CheckConstraint("status != 'confirmed' OR invalid_rows = 0", name="confirmed_valid_rows"),
+        CheckConstraint(
+            "status NOT IN ('staged','confirmed') OR row_count >= 1",
+            name="staged_not_empty",
+        ),
+        CheckConstraint(
+            "manifest_status != 'matched' OR manifest_sha256 IS NOT NULL",
+            name="matched_has_manifest",
+        ),
+        CheckConstraint(
+            "status != 'confirmed' OR confirmed_sequence IS NOT NULL",
+            name="confirmed_has_sequence",
+        ),
+        CheckConstraint(
+            "confirmed_at IS NULL OR status = 'confirmed'",
+            name="confirmed_at_status",
+        ),
+        CheckConstraint(
+            "status != 'confirmed' OR confirmed_at IS NOT NULL",
+            name="confirmed_has_time",
+        ),
+    )
+
+
+class QualysVulnerability(Base):
+    __tablename__ = "qualys_vulnerabilities"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    import_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("qualys_imports.id", ondelete="CASCADE"), nullable=False
+    )
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    raw_json: Mapped[str] = mapped_column(Text, nullable=False)
+    asset_label: Mapped[str] = mapped_column(String(200), nullable=False)
+    ip: Mapped[str | None] = mapped_column(String(64))
+    dns: Mapped[str | None] = mapped_column(String(200))
+    netbios: Mapped[str | None] = mapped_column(String(200))
+    fqdn: Mapped[str | None] = mapped_column(String(200))
+    qid: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    vuln_type: Mapped[str | None] = mapped_column(String(20))
+    status_raw: Mapped[str] = mapped_column(String(40), nullable=False)
+    status_normalized: Mapped[str] = mapped_column(String(20), nullable=False)
+    status_group: Mapped[str] = mapped_column(String(20), nullable=False)
+    severity_raw: Mapped[str] = mapped_column(String(20), nullable=False)
+    severity_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    severity_label: Mapped[str] = mapped_column(String(20), nullable=False)
+    severity_policy_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    port: Mapped[int | None] = mapped_column(Integer)
+    protocol: Mapped[str | None] = mapped_column(String(20))
+    first_detected: Mapped[str | None] = mapped_column(String(40))
+    last_detected: Mapped[str | None] = mapped_column(String(40))
+    first_detected_normalized: Mapped[str | None] = mapped_column(String(40))
+    last_detected_normalized: Mapped[str | None] = mapped_column(String(40))
+    date_last_fixed: Mapped[str | None] = mapped_column(String(40))
+    first_reopened: Mapped[str | None] = mapped_column(String(40))
+    last_reopened: Mapped[str | None] = mapped_column(String(40))
+    times_detected: Mapped[int | None] = mapped_column(Integer)
+    times_reopened: Mapped[int | None] = mapped_column(Integer)
+    exploitability_raw: Mapped[str | None] = mapped_column(Text)
+    exploitability_eval: Mapped[str] = mapped_column(String(20), nullable=False)
+    exploitability_reason: Mapped[str | None] = mapped_column(String(200))
+    malware_raw: Mapped[str | None] = mapped_column(Text)
+    malware_eval: Mapped[str] = mapped_column(String(20), nullable=False)
+    malware_reason: Mapped[str | None] = mapped_column(String(200))
+    priority_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    priority_reason: Mapped[str | None] = mapped_column(String(300))
+    priority_rule_version: Mapped[str] = mapped_column(String(60), nullable=False)
+    vendor_metrics_json: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint("import_id", "row_number", name="uq_qualys_vulns_import_row"),
+        Index("ix_qualys_vulns_case_import", "case_id", "import_id"),
+        Index("ix_qualys_vulns_case_status", "case_id", "status_group"),
+        Index("ix_qualys_vulns_case_severity", "case_id", "severity_level"),
+        Index("ix_qualys_vulns_case_qid", "case_id", "qid"),
+        Index("ix_qualys_vulns_case_asset", "case_id", "asset_label"),
+        Index("ix_qualys_vulns_case_priority", "case_id", "priority_flag"),
+        Index("ix_qualys_vulns_case_indicators", "case_id", "exploitability_eval", "malware_eval"),
+        CheckConstraint("row_number >= 1", name="row_number_positive"),
+        CheckConstraint("severity_level BETWEEN 1 AND 5", name="severity_level_range"),
+        _status_check(
+            "status_normalized",
+            ("active", "new", "reopened", "fixed", "manual_review"),
+            "status_normalized_valid",
+        ),
+        _status_check(
+            "status_group",
+            ("pending_known", "fixed", "manual_review"),
+            "status_group_valid",
+        ),
+        _status_check(
+            "exploitability_eval",
+            ("positive", "negative_no_info", "indeterminate"),
+            "exploitability_eval_valid",
+        ),
+        _status_check(
+            "malware_eval",
+            ("positive", "negative_no_info", "indeterminate"),
+            "malware_eval_valid",
+        ),
+        CheckConstraint(
+            "(priority_flag = 0) OR "
+            "(exploitability_eval = 'positive' AND malware_eval = 'positive')",
+            name="priority_requires_both",
+        ),
+    )
+
+
+class QualysVulnerabilityCve(Base):
+    __tablename__ = "qualys_vulnerability_cves"
+
+    vulnerability_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("qualys_vulnerabilities.id", ondelete="CASCADE"), primary_key=True
+    )
+    cve: Mapped[str] = mapped_column(String(20), primary_key=True)
+
+    __table_args__ = (Index("ix_qualys_vuln_cves_cve", "cve"),)
+
+
+class QualysImportIssue(Base):
+    __tablename__ = "qualys_import_issues"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    import_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("qualys_imports.id", ondelete="CASCADE"), nullable=False
+    )
+    row_number: Mapped[int | None] = mapped_column(Integer)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    code: Mapped[str] = mapped_column(String(60), nullable=False)
+    field: Mapped[str | None] = mapped_column(String(60))
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        _status_check(
+            "severity",
+            ("error", "warning", "manual_review"),
+            "severity_valid",
+        ),
+        Index("ix_qualys_import_issues_import", "import_id", "severity"),
+        Index("ix_qualys_import_issues_row", "import_id", "row_number"),
+    )
