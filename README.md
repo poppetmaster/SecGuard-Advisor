@@ -36,10 +36,11 @@ una persona.
 
 ## Estado del proyecto
 
-**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T080: base técnica,
+**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T087: base técnica,
 US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y revisión humana), US4
-(memoria por caso y navegación) y US5 (herramienta de hallazgos sintéticos). La traza real con
-LangSmith y el recorrido de aceptación siguen pendientes.
+(memoria por caso y navegación), US5 (herramienta de hallazgos sintéticos) y US6 (evidencia de
+ejecución, límites y trazas). La aceptación real, la confirmación de la traza y el paquete final de
+evidencia (T088–T095) siguen pendientes.
 
 ### Implementado
 
@@ -66,14 +67,17 @@ LangSmith y el recorrido de aceptación siguen pendientes.
   turno, y navegación multipágina con barra lateral persistente y menú móvil.**
 - **US5: herramienta `findings_query` acotada al caso, con filtros, conteos calculados en SQLite,
   procedencia sintética y presentación en la consulta documental.**
+- **US6: evidencia de ejecución con intentos, pasos, fuentes, herramientas, presupuesto, citas y
+  controles separados; límites de operaciones y tiempos; traza externa con estados `disabled`,
+  `submitted` y `failed`, y degradación local cuando LangSmith no está disponible.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Trazas reales con LangSmith y confirmación de la traza observada.
-- Interfaz integrada y recorrido de aceptación completo.
+- Confirmación de la traza observada durante la aceptación (T091).
+- Interfaz integrada y recorrido de aceptación completo (T088–T095).
 
 El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
 [las tareas](specs/001-consulta-documental/tasks.md).
@@ -89,12 +93,13 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
    abstención explícita cuando la evidencia no alcanza.
 4. **Implementado:** continuar la conversación con memoria separada por caso.
 5. **Implementado:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
-6. **Parcial:** la ejecución ya muestra modelo, duración, pasos, fuentes, invocaciones de
-   herramienta y errores; la traza real con LangSmith queda pendiente.
+6. **Parcial:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
+   invocaciones de herramienta, presupuesto, citas y traza real con sus estados; la confirmación de
+   la traza durante la aceptación y el recorrido completo quedan pendientes.
 
-La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso y la
-herramienta de hallazgos están implementadas. La traza real y el recorrido de aceptación siguen
-pendientes.
+La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
+herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
+de la traza y el recorrido de aceptación siguen pendientes.
 
 ## Arquitectura
 
@@ -267,6 +272,29 @@ las agrupaciones, la procedencia del dataset y el aviso de que no es una importa
 sin hallazgos devuelve total 0 y advierte que eso no demuestra ausencia de vulnerabilidades ni riesgo
 bajo. Cada invocación queda registrada en la evidencia de ejecución.
 
+### Evidencia de ejecución y trazas
+
+Cada respuesta enlaza «Ver ejecución». La página muestra el estado y resultado, la duración, el
+intento y su vínculo con el anterior, el modelo con digest y parámetros, la versión del prompt, los
+pasos con su origen, las fuentes recuperadas, las herramientas con sus argumentos validados y
+resúmenes históricos, el presupuesto de contexto medido, las citas con el control automático y la
+revisión humana por separado, y el error cuando existe.
+
+El detalle de una herramienta con `detail=true` no se persiste: si la página lo recalcula, se rotula
+como una consulta actual y no como el detalle histórico. Los totales y grupos sí son el resultado
+registrado.
+
+Con `LANGSMITH_TRACING=true` y `LANGSMITH_API_KEY`, cada turno envía una traza con la ejecución y sus
+operaciones relevantes (decisión de herramienta, generación, reparación y llamadas de herramienta).
+El estado puede ser `disabled` (sin configuración), `submitted` (envío sin error observado; no
+verificado) o `failed` (envío no disponible). La aplicación nunca escribe `confirmed`: eso corresponde
+al script de confirmación de la aceptación. Si LangSmith no responde, la consulta local se completa
+igual y conserva su evidencia. El contenido enviado se limita a metadatos y datos sintéticos; no
+incluye la pregunta, prompts, documentos del caso, argumentos de herramienta ni rutas locales.
+
+Límites del turno: 8 operaciones de modelo o herramienta, 2 llamadas a herramientas, 1 reparación,
+120 s de turno y 90 s por llamada al modelo. La decisión de herramienta consume tiempo y paso.
+
 ## Base de datos
 
 El esquema se crea y evoluciona solo con Alembic. La aplicación no crea tablas al arrancar; al
@@ -299,10 +327,12 @@ make check             # lint + formato + pruebas
 
 Estado actual: la base cubre configuración, motor y esquema, alcance, arranque, transacciones,
 seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
-embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, y la
-herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia).
-Las pruebas de integración se ejecutan con `make test-integration` y requieren Ollama con el modelo de
-embeddings y el generador; la prueba real de la herramienta verifica que el modelo la solicite.
+embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, la
+herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia) y
+la evidencia de ejecución con límites, trazas y redacción de secretos. Las pruebas de integración se
+ejecutan con `make test-integration` y requieren Ollama con el modelo de embeddings y el generador; la
+prueba real de la herramienta verifica que el modelo la solicite y la de traza realiza un envío real
+solo si hay credenciales configuradas.
 
 ## Estructura
 
@@ -353,8 +383,13 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación implementa US1–US5; la traza real con LangSmith, parte de la integración de T088 y
-  el recorrido de aceptación siguen sin implementar. `demo` sigue sin implementar.
+- La aplicación implementa US1–US6 hasta T087; la interfaz integrada, la aceptación real, la
+  confirmación de la traza con `scripts/confirm_trace.py` y el paquete de evidencia (T088–T095) siguen
+  pendientes. `demo` sigue sin implementar.
+- `submitted` significa «envío sin error observado», no «traza verificada». La confirmación por API de
+  lectura corresponde a T091 y no se ejecutó en este bloque.
+- El detalle de herramienta no se persiste; cuando la página lo recalcula, se identifica como
+  consulta actual. Los conteos sí son históricos.
 - La selección de herramienta usa una llamada estructurada adicional (`ToolDecision`) porque Ollama
   no emite `tool_calls` nativos junto con `format`; cuesta una llamada corta al modelo por turno y se
   mide con el mismo tokenizador antes de ejecutarse.

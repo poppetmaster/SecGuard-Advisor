@@ -8,10 +8,11 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica, US1–US5 (cortes T001–T080) y la navegación aprobada. La aplicación
+**Estado actual**: base técnica, US1–US6 (cortes T001–T087) y la navegación aprobada. La aplicación
 arranca con `/healthz`, casos, documentos, consulta documental con citas y revisión humana del
-respaldo, memoria por caso en checkpoints separados y la herramienta `findings_query` acotada al
-caso. Todavía no hay traza real ni recorrido de aceptación; T088 conserva pendientes de integración.
+respaldo, memoria por caso en checkpoints separados, la herramienta `findings_query` acotada al caso
+y la evidencia de ejecución con intentos, límites y trazas. La aceptación real, la confirmación de la
+traza (T091) y el paquete de evidencia (T088–T095) siguen pendientes.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -103,6 +104,16 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
 - La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
   Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y
   la decisión también se mide con el tokenizador del generador.
+- Los límites del turno son: 8 operaciones de modelo o herramienta, 2 llamadas a herramientas, 1
+  reparación, 120 s de turno y 90 s por llamada al modelo. La decisión de herramienta consume paso y
+  tiempo; ninguna llamada recibe un presupuesto nuevo después de otra.
+- La página «Ver ejecución» lee solo registros persistidos. Si recalcula el detalle de una herramienta,
+  lo rotula como consulta actual; los totales y grupos son históricos. El control automático de citas
+  y la revisión humana se muestran por separado.
+- `trace_status` solo puede ser `disabled`, `submitted` o `failed` por la aplicación; `submitted` no
+  significa verificado. `confirmed` lo escribe únicamente `scripts/confirm_trace.py` en la aceptación.
+  Las trazas envían metadatos acotados: nunca pregunta, prompts, documentos del caso, argumentos de
+  herramienta, claves ni rutas locales.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit

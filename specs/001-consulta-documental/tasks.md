@@ -630,18 +630,66 @@ que confirma que no sirve como cota en ninguna dirección.
 
 ### Tests for User Story 6
 
-- [ ] T081 [P] [US6] Pruebas de la evidencia de ejecución en `tests/unit/test_run_states.py` — transiciones persistidas, `attempt_no`, una activa por caso, `confirmed` nunca escrito por la aplicación y serialización de pasos, fuentes y herramientas · Dep: T027 · Check: fallan antes de T082 · Evidence: rojo y verde
+- [X] T081 [P] [US6] Pruebas de la evidencia de ejecución en `tests/unit/test_run_states.py` — transiciones persistidas, `attempt_no`, una activa por caso, `confirmed` nunca escrito por la aplicación y serialización de pasos, fuentes y herramientas · Dep: T027 · Check: fallan antes de T082 · Evidence: rojo y verde
 
 ### Implementation for User Story 6
 
-- [ ] T082 [US6] Implementar las consultas de evidencia en `src/secguard_advisor/evidence/runs.py` — lectura y serialización de pasos, fuentes, herramientas e intentos, con `origin` determinista o del modelo; la escritura y el cierre ya viven en T027 · Dep: T027, T081 · Check: T081 en verde · Evidence: test en verde
-- [ ] T083 [US6] Implementar trazas en `src/secguard_advisor/evidence/tracing.py` — envoltura, metadatos, `flush`, `trace_status` (`disabled`/`submitted`/`failed`), nunca `confirmed` · Dep: T013 · Check: `tests/unit/test_tracing_status.py` · Evidence: test en verde
-- [ ] T084 [US6] Implementar límites y errores en `conversation/graph.py` — 8 pasos, 2 herramientas, 1 reparación, 120 s de turno, 90 s por llamada; mapeo a `model_unavailable`, `model_timeout`, `step_limit`, `tool_call_limit` · Dep: T060, T027 · Check: `tests/unit/test_limits.py` · Evidence: test en verde
-- [ ] T085 [US6] Implementar ruta y plantilla de evidencia en `src/secguard_advisor/web/routes/runs.py` y `templates/runs/` — modelo, duración, estado, fuentes, herramientas, intentos, error, traza y **ambos controles de cita** (automático y revisión humana) · Dep: T082, T083 · Check: `tests/contract/test_runs_routes.py` · Evidence: test en verde
-- [ ] T086 [US6] Prueba de integración de traza y caída en `tests/integration/test_trace_and_fallback.py` — traza `submitted`; LangSmith no disponible; consulta local completa · Dep: T083, T085 · Check: ejecución con y sin credenciales · Evidence: salida de ambos escenarios
-- [ ] T087 [US6] Prueba de secretos en `tests/unit/test_no_secrets.py` — ni clave ni rutas absolutas en respuestas, registros ni plantillas · Dep: T085 · Check: test en verde · Evidence: test en verde
+- [X] T082 [US6] Implementar las consultas de evidencia en `src/secguard_advisor/evidence/runs.py` — lectura y serialización de pasos, fuentes, herramientas e intentos, con `origin` determinista o del modelo; la escritura y el cierre ya viven en T027 · Dep: T027, T081 · Check: T081 en verde · Evidence: test en verde
+- [X] T083 [US6] Implementar trazas en `src/secguard_advisor/evidence/tracing.py` — envoltura, metadatos, `flush`, `trace_status` (`disabled`/`submitted`/`failed`), nunca `confirmed` · Dep: T013 · Check: `tests/unit/test_tracing_status.py` · Evidence: test en verde
+- [X] T084 [US6] Implementar límites y errores en `conversation/graph.py` — 8 pasos, 2 herramientas, 1 reparación, 120 s de turno, 90 s por llamada; mapeo a `model_unavailable`, `model_timeout`, `step_limit`, `tool_call_limit` · Dep: T060, T027 · Check: `tests/unit/test_limits.py` · Evidence: test en verde
+- [X] T085 [US6] Implementar ruta y plantilla de evidencia en `src/secguard_advisor/web/routes/runs.py` y `templates/runs/` — modelo, duración, estado, fuentes, herramientas, intentos, error, traza y **ambos controles de cita** (automático y revisión humana) · Dep: T082, T083 · Check: `tests/contract/test_runs_routes.py` · Evidence: test en verde
+- [X] T086 [US6] Prueba de integración de traza y caída en `tests/integration/test_trace_and_fallback.py` — traza `submitted`; LangSmith no disponible; consulta local completa · Dep: T083, T085 · Check: ejecución con y sin credenciales · Evidence: salida de ambos escenarios
+- [X] T087 [US6] Prueba de secretos en `tests/unit/test_no_secrets.py` — ni clave ni rutas absolutas en respuestas, registros ni plantillas · Dep: T085 · Check: test en verde · Evidence: test en verde
 
-**Checkpoint**: US6 funcional; las seis historias quedan cubiertas.
+**Evidencia de US6 (T081–T087, 2026-11-09)**
+
+- `tests/unit/test_run_states.py` (7): transiciones `running → succeeded/failed`, `attempt_no`,
+  `retry_of_run_id`, una ejecución activa por caso, `confirmed` rechazado por la aplicación,
+  serialización de pasos, fuentes y herramientas sin inventar valores, y `trace_url` persistido.
+- `src/secguard_advisor/evidence/runs.py`: lectura de pasos, fuentes, herramientas e intentos; el
+  resumen histórico de la herramienta se separa del detalle recalculado (`detail_source`).
+- `tests/unit/test_tracing_status.py` (7): `disabled`, `submitted` y `failed`; una caída de envío no
+  rompe la consulta; el payload no incluye pregunta, clave señuelo, rutas absolutas ni trazas de pila;
+  la aplicación nunca escribe `confirmed`.
+- `tests/unit/test_limits.py` (10): 8 operaciones de modelo/herramienta, 2 herramientas, 1 reparación,
+  120 s de turno, 90 s por llamada, tiempo restante propagado a decisión/generación/reparación y
+  `step_limit`/`tool_call_limit` registrados.
+- `tests/contract/test_runs_routes.py` (10): modelo, digest, parámetros, prompt, duración, pasos,
+  intentos y vínculo, fuentes, herramientas, citas con control automático y revisión humana por
+  separado, presupuesto, error y reintento, traza deshabilitada/enviada/fallida y aislamiento 404.
+  También cubre que la conversación recargada ofrece reintentar el último fallo.
+- `tests/integration/test_trace_and_fallback.py` (3): traza desactivada con consulta local completa;
+  LangSmith inaccesible con consulta local completa y `failed`; envío real con credenciales
+  disponibles y estado `submitted` (nunca `confirmed`).
+- `tests/unit/test_no_secrets.py` (5): redacción recursiva en registros, respuestas sin clave
+  señuelo, rutas absolutas ni trazas de pila, y plantillas sin referencias a secretos.
+- **Envío real observado**: la ejecución `3ef6950f938b41259a4cb3c635b13237` (pregunta documental,
+  datos sintéticos) quedó `trace_status=submitted` con traza
+  `01a1bee1-9f32-7561-8809-e653707d28d8` en `secguard-advisor-dev`. La ejecución con herramienta
+  `4b6fa5c2b8a84b60a7d60afd19ee2e91` quedó `submitted` con
+  `01a1bee2-0e94-738e-ae04-b96333221090`. No se consultó la API de lectura ni se escribió
+  `confirmed`: la confirmación corresponde a T091.
+- **Degradación**: con `LANGSMITH_ENDPOINT=http://127.0.0.1:1`, la ejecución
+  `97d3decb66914d599a40f05785440363` respondió localmente y quedó `trace_status=failed` sin enlace.
+  Con `LANGSMITH_TRACING=false`, las ejecuciones `e33633444cd441b399bd4269e3191294` y
+  `d7853ce6702442009334d47129311276` (reintento) quedaron `disabled`.
+- **Límites y presupuesto**: `make check` 332 en verde; `make test-integration` 24 en verde
+  (7 min 14 s). La decisión de herramienta, la generación, la reparación y las llamadas de
+  herramienta se registran como pasos y consumen el presupuesto de tiempo; el presupuesto de
+  contexto se conserva por llamada.
+- **Navegador** (Playwright, almacenamiento temporal, datos sintéticos): respuesta documental con
+  cita y ambos controles; respuesta con `findings_query` y Total 4; recarga y persistencia; intento 1
+  fallido e intento 2 con vínculo; traza real `submitted`, desactivada y `failed` con degradación
+  local; acceso a una ejecución de otro caso con 404; escritorio 1440 y móvil 390 sin
+  desbordamiento; 0 errores de consola y todos los recursos 200 en la página de ejecución correcta.
+  Se corrigió el reintento desde la página de ejecución (apuntaba a un `#chat-panel` inexistente) y
+  el desbordamiento móvil del digest.
+- Capturas: `docs/evidencia/us6/documental.png`, `herramienta.png`, `fallida.png`,
+  `traza-fallida.png`, `documental-movil.png` y `fallida-movil.png`.
+
+**Checkpoint**: US6 funcional; las seis historias quedan cubiertas. T088–T095 (interfaz integrada,
+aceptación real, confirmación de traza con `scripts/confirm_trace.py` y documentación final) siguen
+pendientes.
 
 ---
 

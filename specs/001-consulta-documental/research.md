@@ -460,3 +460,47 @@ argumentos validados, resumen, estado, error y duración). El resumen guarda tot
 `detail=true` y lo muestra con la etiqueta «Datos educativos sintéticos», los filtros, la procedencia y
 el aviso de que no es una importación de Qualys. Un total 0 se acompaña de la nota de que no demuestra
 ausencia de vulnerabilidades ni riesgo bajo.
+
+## R26. Evidencia de ejecución, límites y traza externa
+
+**Evidencia persistida**: la página «Ver ejecución» se construye solo con los registros de la
+ejecución (`runs`, `run_steps`, `run_sources`, `run_tool_calls`, citas y revisiones). No vuelve a
+llamar al modelo ni ejecuta `findings_query`. Muestra estado y resultado, intento y vínculo con el
+anterior, modelo con digest y parámetros, versión del prompt, pasos con origen y duración, fuentes,
+herramientas con argumentos validados y resumen histórico, presupuesto medido, citas con control
+automático y revisión humana por separado, error y estado de traza.
+
+**Detalle de herramienta**: las filas de `detail=true` no se persisten. Si la página las recalcula,
+las marca como «consulta actual» y aclara que los totales y grupos sí son el resultado histórico. La
+vista no presenta ese recálculo como el detalle original preservado.
+
+**Límites**: se cuentan como paso las operaciones de modelo o herramienta (decisión, generación,
+reparación y llamadas de herramienta); la preparación determinista y la persistencia no consumen el
+límite de 8. El máximo sigue siendo 2 llamadas a herramientas, 1 reparación, 120 s de turno y 90 s
+por llamada. La decisión de herramienta consume paso y tiempo. Cada llamada recibe como máximo el
+tiempo restante del turno, no un presupuesto nuevo; si el tiempo restante es menor que 90 s, un
+timeout se clasifica como `run_timeout`; si se agotaron los 90 s de una llamada completa, como
+`model_timeout`. El límite de pasos se mapea a `step_limit`; las llamadas adicionales a herramientas
+se registran con `tool_call_limit` y no se ejecutan, preservando el comportamiento aprobado en US5.
+
+**Traza**: se usa instrumentación manual con `langsmith.RunTree` para la ejecución raíz y las
+operaciones relevantes. La instrumentación automática de LangChain se desactiva durante la llamada
+al modelo para no duplicar trazas. El envío es síncrono (`auto_batch_tracing=False`) porque el modo
+batch oculta los errores de red: así `submitted` significa que el SDK no observó error tras el envío y
+`flush`, y una caída real produce `failed`. El `flush` se acota a 5 s. La aplicación nunca escribe
+`confirmed`; la confirmación por API de lectura es T091.
+
+**Redacción**: la traza envía solo metadatos: identificadores de ejecución, caso y prompt, modelo,
+tokens, estados, claves de argumentos y conteos. No incluye pregunta, prompts, documentos del caso,
+valores de argumentos, claves ni rutas locales. El filtro de logging redacta de forma recursiva claves
+sensibles, rutas absolutas y trazas de pila.
+
+**Verificación**: con datos sintéticos se observó un envío real `submitted` con traza
+`01a1bee1-9f32-7561-8809-e653707d28d8` y enlace de LangSmith, sin consultar la API de lectura ni
+escribir `confirmed`. Con `LANGSMITH_ENDPOINT=http://127.0.0.1:1` la consulta local se completó y la
+ejecución quedó `failed`; con `LANGSMITH_TRACING=false` quedó `disabled`. La suite rápida quedó en 332
+pruebas y la de integración en 24.
+
+**Límites conocidos**: el SDK de LangSmith puede registrar errores en su propio logger; el estado se
+basa en las excepciones observadas por el envío síncrono. La confirmación de que la traza existe en
+LangSmith sigue siendo una operación de aceptación separada.

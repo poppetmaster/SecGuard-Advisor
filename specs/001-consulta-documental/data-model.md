@@ -255,6 +255,7 @@ autenticación.
 | `error_message` | TEXT | NULL |
 | `trace_status` | TEXT | NOT NULL, CHECK IN (`disabled`,`submitted`,`confirmed`,`failed`) |
 | `trace_id` | TEXT | NULL |
+| `trace_url` | TEXT | NULL; enlace devuelto por LangSmith, si está disponible |
 | `started_at` | TEXT | NOT NULL |
 | `finished_at` | TEXT | NULL |
 
@@ -264,7 +265,7 @@ pregunta.
 `CREATE UNIQUE INDEX ux_runs_one_active_per_case ON runs(case_id) WHERE status = 'running';` — la
 base impone una sola ejecución activa por caso.
 
-`trace_status`: `submitted` significa que el SDK no reportó error tras `flush`; `confirmed` solo se
+`trace_status`: `submitted` significa que el SDK no reportó error tras el envío síncrono y `flush`; `confirmed` solo se
 asigna cuando `scripts/confirm_trace.py` verifica por API de lectura que la traza existe en
 LangSmith. El código de la aplicación nunca escribe `confirmed`.
 

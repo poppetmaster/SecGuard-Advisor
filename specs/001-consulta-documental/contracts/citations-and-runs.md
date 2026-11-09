@@ -54,6 +54,8 @@ revisión.
 | Situación | Resultado |
 |---|---|
 | Recuperación sin candidatos documentales | El agente se ejecuta igual y puede usar la herramienta de hallazgos |
+| Respuesta solo con evidencia estructurada de herramienta | `outcome=answered`, sin citas documentales |
+| Resultado de herramienta con total 0 | `outcome=answered` sobre el registro consultado; no afirma ausencia de vulnerabilidades |
 | Sin candidatos, sin herramienta y sin citas | `outcome=insufficient_evidence` |
 | Candidatos débiles | El agente responde; si no cita, se intenta una reparación |
 | Reparación sin citas válidas | `outcome=abstained_invalid_citations` |
@@ -63,6 +65,11 @@ revisión.
 El umbral de recuperación filtra candidatos débiles; no demuestra que no exista evidencia. Una cita
 que pasa el control automático no acredita fundamentación: el respaldo semántico se revisa y se
 registra por una persona.
+
+Una recuperación documental vacía no cierra el turno si la herramienta de hallazgos puede responder.
+Un resultado válido de total 0 responde sobre el registro consultado; no demuestra ausencia de
+vulnerabilidades ni riesgo bajo. Las cifras sobre hallazgos deben corresponder a la invocación
+registrada, no a una estimación del modelo.
 
 ## 2. Ejecución
 
@@ -85,10 +92,12 @@ registra por una persona.
     "seed": 42
   },
   "embedding": { "name": "embeddinggemma", "dim": 768 },
-  "prompt_version": "chat-v1",
+  "prompt_version": "chat-v4",
   "steps": [
     { "name": "load_scope", "origin": "deterministic", "status": "ok", "duration_ms": 4 },
     { "name": "retrieve", "origin": "deterministic", "status": "ok", "duration_ms": 210 },
+    { "name": "decide", "origin": "model", "status": "ok", "duration_ms": 1800 },
+    { "name": "tools", "origin": "deterministic", "status": "ok", "duration_ms": 4 },
     { "name": "agent", "origin": "model", "status": "ok", "duration_ms": 15100 },
     { "name": "validate", "origin": "deterministic", "status": "ok", "duration_ms": 8 }
   ],
@@ -105,7 +114,7 @@ registra por una persona.
       "summary": { "total": 3 }
     }
   ],
-  "trace": { "status": "submitted", "id": "…" },
+  "trace": { "status": "submitted", "id": "…", "url": "https://…" },
   "error": null
 }
 ```
@@ -122,8 +131,8 @@ registra por una persona.
 
 | `outcome` | Significado |
 |---|---|
-| `answered` | Respuesta con al menos una cita válida |
-| `insufficient_evidence` | Sin candidatos sobre el umbral |
+| `answered` | Respuesta con al menos una cita válida **o** evidencia estructurada válida de herramienta |
+| `insufficient_evidence` | Sin citas válidas, sin evidencia de herramienta y sin candidatos sobre el umbral |
 | `abstained_invalid_citations` | Se abstuvo tras fallar la reparación |
 | `error` | No se produjo respuesta |
 
@@ -151,7 +160,7 @@ registra por una persona.
 | `trace_status` | Significado | Qué se muestra |
 |---|---|---|
 | `disabled` | Sin credenciales o traza desactivada | «Traza no configurada» |
-| `submitted` | Enviada sin error observado tras `flush` | Identificador de traza y enlace al proyecto |
+| `submitted` | Enviada sin error observado tras el envío y `flush`; el SDK no informó error | «Enviada (no verificada)», identificador y enlace a la traza |
 | `confirmed` | La traza se observó en LangSmith durante la aceptación | «Traza verificada» con enlace |
 | `failed` | Error de red o de API | «Traza no disponible» y motivo |
 
@@ -169,10 +178,14 @@ El código **nunca** marca una traza como verificada. `submitted` significa «en
 | `error_code` | Cuándo |
 |---|---|
 | `model_unavailable` | Ollama no responde o el modelo no está instalado |
-| `model_timeout` | Se agotó el tiempo por llamada |
-| `run_timeout` | Se agotó el tiempo del turno |
-| `step_limit` | Se excedió el número de pasos |
-| `tool_call_limit` | Se excedió el número de llamadas a herramientas |
+| `model_timeout` | Se agotó el tiempo de 90 s de una llamada al modelo |
+| `run_timeout` | Se agotó el tiempo de 120 s del turno, incluida la decisión de herramienta |
+| `step_limit` | Se excedió el máximo de 8 operaciones de modelo o herramienta |
+| `tool_call_limit` | Se solicitaron más de dos llamadas a herramientas; las adicionales no se ejecutan y el turno puede responder con lo obtenido |
+| `tool_failed` | Falló la consulta a la base de hallazgos |
+| `tool_timeout` | La consulta de hallazgos excedió su tiempo |
+| `context_budget_unavailable` | No se pudo cargar el tokenizador del generador |
+| `context_budget_exceeded` | El prompt mínimo no cabe en el presupuesto |
 | `invalid_model_output` | La salida no cumple el esquema tras la reparación |
 | `citation_rejected` | Todas las citas de la respuesta fueron rechazadas |
 | `internal_error` | Fallo no clasificado |
@@ -199,7 +212,11 @@ Reglas:
 ## 4. Qué observa el usuario
 
 - En la conversación: pregunta, respuesta, citas y un enlace «Ver ejecución».
-- En la ejecución: modelo, duración, estado, fuentes recuperadas, herramientas usadas con su
-  origen, errores y estado de la traza.
-- En una ejecución fallida: el motivo comprensible y la posibilidad de reintentar la pregunta.
+- En la ejecución: modelo, digest, parámetros, prompt, duración, estado, intentos y vínculo con el
+  anterior, pasos con su origen, fuentes recuperadas, herramientas con su origen, presupuesto de
+  contexto registrado, citas con control automático y revisión humana por separado, errores y estado
+  de la traza con su enlace cuando está disponible.
+- En una ejecución fallida: el motivo comprensible y el acceso al reintento de la misma pregunta.
+- El detalle de herramienta recalcula filas actuales solo si el contrato lo pidió; se rotula como
+  «consulta actual» y nunca se presenta como el detalle histórico preservado.
 - Nunca: credenciales, rutas del sistema de archivos, trazas de pila ni contenido de otro caso.
