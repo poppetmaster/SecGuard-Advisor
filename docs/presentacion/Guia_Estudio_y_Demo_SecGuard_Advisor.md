@@ -614,6 +614,7 @@ Estos compromisos son **propuestas por acordar**, no promesas del equipo ni apro
 | `imagenes/10-consulta-vulnerabilidades.png` | Respuesta de `findings_query` | Conteo en SQLite y procedencia | «¿Cuántos registros importados hay?» |
 | `imagenes/11-evidencia-ejecucion.png` | Evidencia de ejecución | Modelo, pasos, herramienta y traza | Pulsar «Ver ejecución» |
 | `imagenes/12-abstencion.png` | Respuesta de abstención | Límite ante falta de evidencia | «¿Cuál es la capital de Francia?» |
+| `imagenes/13-formulario-nuevo-caso.png` | Formulario de nuevo caso con alcance general | Etiquetas y ayudas del alcance | Abrir `/cases/new` |
 
 ## Anexo B. Enlaces de evidencia
 
