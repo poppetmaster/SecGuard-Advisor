@@ -87,9 +87,11 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   autenticación. Sin esa variable no se escribe ninguna revisión.
 - El historial visible es la fuente autoritativa (`messages`). `storage/checkpoints.sqlite` es
   memoria operativa y se reconcilia antes de cada turno; no hay atomicidad entre bases.
-- El historial del prompt se acota a 8 mensajes y 6000 caracteres, y la evidencia a 3500 tokens
-  medidos al ingerir. El historial no es evidencia: las citas se validan contra los fragmentos del
-  turno actual.
+- El historial del prompt se acota a 8 mensajes y 6000 caracteres. El historial no es evidencia:
+  las citas se validan contra los fragmentos del turno actual.
+- Antes de cada generación se comprueba el presupuesto completo con una estimación conservadora por
+  bytes (2,4 B/token, calibrada contra 3,7-3,8 reales), no con el `token_count` de EmbeddingGemma.
+  Si no cabe, se reduce historial y luego fuentes; si el mínimo no cabe, `context_budget_exceeded`.
 - El umbral de recuperación es un filtro de candidatos débiles; una recuperación vacía no demuestra
   ausencia de evidencia. El generador configurado es `qwen3.5:9b`, con razonamiento desactivado.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.

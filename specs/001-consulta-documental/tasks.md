@@ -516,6 +516,35 @@ concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
 - Capturas en `docs/evidencia/us4/`: `carga.png`, `primera-pregunta.png`, `segunda-pregunta.png`,
   `tras-reinicio.png`, `tercera-pregunta.png`, `caso-a-completo.png` y `movil.png`.
 
+### Ajuste del presupuesto de contexto (post-US4, 2026-11-08)
+
+**Causa**: el historial se limitaba por caracteres y la evidencia por `token_count` medido con
+EmbeddingGemma. No existía una comprobación del total antes de invocar a Qwen3.5, por lo que el
+presupuesto dependía de un conteo de otro modelo y del posible truncado silencioso de Ollama.
+
+**Solución**: `conversation/budget.py` planifica el prompt antes de cada llamada (incluida la
+reparación). Estimación **conservadora, no exacta**: `ceil(bytes UTF-8 / 2,4)` + 32 tokens de
+envoltorio + 8 por mensaje o fuente; límite `num_ctx - num_predict - 320` = 6672 con la configuración
+vigente. Calibración real: 5689 bytes → 1537 tokens (3,70 B/token) y 3,8 B/token en la prueba de
+integración. El conteo del ingestor no se usa como tokens del generador.
+
+**Reducción**: primero el historial más antiguo por turnos completos; después las fuentes de menor
+rango, conservando `S1..Sk`. La pregunta y los textos incluidos no se recortan; el historial
+persistido no se modifica. Si el mínimo no cabe, `ContextBudgetExceeded` cierra la ejecución como
+`failed` con `context_budget_exceeded` sin invocar al modelo y permite reintento. Ollama informa
+`prompt_eval_count` tras la llamada y se registra en el paso (`observed_prompt_tokens`), sin contenido.
+
+**Evidencia**:
+
+- `tests/unit/test_context_budget.py` (10): estimación por bytes y Unicode, ajuste completo, recorte
+  de historial por turnos completos, recorte determinista de fuentes, presupuesto en reparación,
+  pregunta y fuentes íntegras, mínimo que no cabe, pregunta gigante y entradas sin mutar.
+- `tests/integration/test_context_budget_pipeline.py` (3): prompt acotado con historial persistido
+  intacto, reparación acotada y fallo `context_budget_exceeded` sin llamar al generador.
+- `tests/integration/test_context_budget_real.py`: estimado 6654, observado 3685, límite 6672,
+  reserva 1200, margen 320, 8 mensajes de historial descartados y 0 fuentes; 3,8 bytes/token.
+- `make check`: 255 en verde; `make test-integration`: 16 en verde (7 min 45 s).
+
 **Checkpoint**: US4 funcional.
 
 ---

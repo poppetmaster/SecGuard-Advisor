@@ -378,3 +378,28 @@ aprobado.
 **Alternativas consideradas**: enviar todo el historial (crece sin control y desplaza la evidencia);
 usar un modelo auxiliar para reescribir la consulta (fuera de alcance); confiar en el checkpoint como
 fuente de verdad (una pérdida o un fallo entre bases rompería la conversación).
+
+## R24. Presupuesto de contexto previo a la generación
+
+**Decisión**: antes de cada llamada al generador —incluida la reparación de citas— se construye el
+prompt con `conversation/budget.py` y se comprueba su tamaño. La estimación es **conservadora, no
+exacta**: `ceil(bytes UTF-8 / 2,4)` más 32 tokens de envoltorio de chat y 8 por mensaje o fuente. El
+límite es `num_ctx - num_predict - 320` (8192 - 1200 - 320 = 6672).
+
+**Calibración**: con `qwen3.5:9b` y el prompt de chat-v2, 5689 bytes produjeron 1537 tokens
+(3,70 bytes/token); la prueba real midió 3,8. Estimar con 2,4 deja ~54 % de holgura. El conteo de
+EmbeddingGemma medido al ingerir no se usa como tokens del generador.
+
+**Reducción**: primero el historial más antiguo por turnos completos; después las fuentes de menor
+rango, conservando `S1..Sk` estables. La pregunta y los textos de las fuentes incluidas no se
+recortan; el historial persistido no se modifica. Si el contenido mínimo no cabe, se lanza
+`ContextBudgetExceeded` y la ejecución termina `failed` con `context_budget_exceeded` sin invocar al
+modelo.
+
+El `retrieval_token_budget` de 3500 sigue como prefiltro grueso con el conteo del ingestor; no
+sustituye la comprobación previa ni se presenta como tokens de Qwen3.5.
+
+**Límites**: no es una cota matemática. Texto aleatorio o Base64 puede acercarse a 1-2 bytes/token;
+el margen y la reducción cubren esa frontera para el corpus y las evidencias previstas. Ollama
+informa `prompt_eval_count` después de cada llamada y ese valor se registra en el paso para detectar
+deriva; no se usa para decidir antes de la llamada.
