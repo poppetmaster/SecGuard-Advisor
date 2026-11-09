@@ -1,0 +1,25 @@
+﻿IP,Network,DNS,NetBIOS,Tracking Method,OS,IP Status,QID,Title,Vuln Status,Type,Severity,Port,Protocol,FQDN,SSL,First Detected,Last Detected,Times Detected,Date Last Fixed,First Reopened,Last Reopened,Times Reopened,CVE ID,Vendor Reference,Bugtraq ID,Threat,Impact,Solution,Exploitability,Associated Malware,Results,PCI Vuln,Ticket State,Instance,Category,Associated Tags,QDS,ARS,ACS,TruRisk Score
+10.0.0.1,Synthetic,demo-api.example,ASSET-1,Synthetic,Synthetic OS,Active,900001,Demo: componente desactualizado,Active,Vulnerability,5,443,tcp,demo-api.example,,01/01/2026 00:00:00,01/02/2026 00:00:00,1,,,,,"CVE-2024-0001, CVE-2024-12345",,,,,,"Source: Synthetic
+Reference: SYN-REF-1
+Description: Synthetic exploitability block
+Link: https://example.invalid/exploit","Source: Synthetic
+Malware ID: SYN-MAL-1
+Type: Synthetic
+Platform: Test
+Risk: High
+Link: https://example.invalid/malware",Resultado ficticio de demostración,,,,,,,,,
+10.0.0.1,Synthetic,demo-portal.example,ASSET-1,Synthetic,Synthetic OS,Active,900001,Demo: configuración TLS débil,New,Vulnerability,4,443,tcp,demo-portal.example,,01/01/2026 00:00:00,01/02/2026 00:00:00,1,,,,,CVE-2024-0002,,,,,,"Source: Synthetic
+Reference: SYN-REF-1
+Description: Synthetic exploitability block
+Link: https://example.invalid/exploit","Source: Synthetic
+Malware ID: SYN-MAL-1
+Type: Synthetic
+Platform: Test
+Risk: High
+Link: https://example.invalid/malware",Resultado ficticio de demostración,,,,,,,,,
+10.0.0.3,Synthetic,demo-wiki.example,ASSET-1,Synthetic,Synthetic OS,Active,900003,Demo: cabeceras ausentes,Re-Opened,Vulnerability,3,443,tcp,demo-wiki.example,,01/01/2026 00:00:00,01/02/2026 00:00:00,1,,,,,CVE-2026-1234567,,,,,,"Source: Synthetic
+Reference: SYN-REF-1
+Description: Synthetic exploitability block
+Link: https://example.invalid/exploit",,Resultado ficticio de demostración,,,,,,,,,
+10.0.0.4,Synthetic,demo-api.example,ASSET-1,Synthetic,Synthetic OS,Active,900004,Demo: permisos excesivos,Fixed,Vulnerability,2,443,tcp,demo-api.example,,01/01/2026 00:00:00,01/02/2026 00:00:00,1,,,,,,,,,,,,None,Resultado ficticio de demostración,,,,,,,,,
+10.0.0.5,Synthetic,demo-wiki.example,ASSET-1,Synthetic,Synthetic OS,Active,900005,Demo: estado desconocido,UnknownState,Vulnerability,1,443,tcp,demo-wiki.example,,01/01/2026 00:00:00,01/02/2026 00:00:00,1,,,,,,,,,,,,,Resultado ficticio de demostración,,,,,,,,,
