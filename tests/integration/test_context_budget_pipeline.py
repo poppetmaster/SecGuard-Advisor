@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 from tests.fixtures.conversation import build_env
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation import service
@@ -61,6 +61,7 @@ def _ask(env, generator, question: str):
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     return context, execute_turn(context)
 
@@ -102,7 +103,7 @@ def test_prompt_is_bounded_and_persisted_history_is_untouched(tmp_path: Path) ->
 
     assert result.outcome == "answered"
     detail = _step_detail(env.factory, context.run_id, "agent")
-    assert detail["estimated_tokens"] <= detail["limit"]
+    assert detail["admitted_tokens"] <= detail["limit"]
     assert detail["dropped_history_messages"] > 0
     assert detail["dropped_sources"] == 0
     assert "pregunta 1 " not in generator.prompts[0]
@@ -138,7 +139,7 @@ def test_repair_prompt_is_also_bounded(tmp_path: Path) -> None:
     assert generator.calls == 2
     for name in ("agent", "repair"):
         detail = _step_detail(env.factory, context.run_id, name)
-        assert detail["estimated_tokens"] <= detail["limit"]
+        assert detail["admitted_tokens"] <= detail["limit"]
     assert _step_detail(env.factory, context.run_id, "repair")["dropped_history_messages"] > 0
 
 

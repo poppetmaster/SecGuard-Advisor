@@ -71,6 +71,7 @@ def start_retry_turn(
     generator: object,
     embedder: object,
     index: object,
+    token_counter,
 ) -> TurnContext:
     """Crea una ejecución nueva que reutiliza la pregunta original."""
     plan = plan_retry(factory, scope, run_id)
@@ -106,6 +107,7 @@ def start_retry_turn(
                 embedder=embedder,
                 index=index,
                 settings=settings,
+                token_counter=token_counter,
             ),
             scope=scope,
             conversation_id=original.conversation_id,

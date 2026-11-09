@@ -15,6 +15,7 @@ from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
 from secguard_advisor.conversation.memory import open_memory
+from secguard_advisor.conversation.tokenizer import load_prompt_counter
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.corpus.ingest import ingest_public_corpus
 from secguard_advisor.db.base import Base
@@ -85,6 +86,7 @@ def _ask(settings, factory, index, store, case_id, embedder, generator, question
         generator=generator,
         embedder=embedder,
         index=index,
+        token_counter=load_prompt_counter(settings.ollama_model),
     )
     return context, execute_turn(context, memory=store)
 

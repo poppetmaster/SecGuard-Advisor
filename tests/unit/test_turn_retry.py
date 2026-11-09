@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from tests.fixtures.conversation import build_env
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.concurrency import GenerationSlot
@@ -37,6 +37,7 @@ def _failed_turn(env):
         generator=ScriptedGenerator(error=ModelUnavailable("caído")),
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     result = execute_turn(context)
     assert result.status == "failed"
@@ -72,6 +73,7 @@ def test_retry_reuses_question_and_creates_new_attempt(tmp_path: Path) -> None:
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     result = execute_turn(context)
 
@@ -114,6 +116,7 @@ def test_retry_is_rejected_when_answer_exists(tmp_path: Path) -> None:
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     execute_turn(context)
 
@@ -181,6 +184,7 @@ def test_retry_route_returns_429_when_global_slot_is_busy(tmp_path: Path) -> Non
         index_factory=lambda: env.index,
         llm_factory=lambda: ScriptedGenerator(payloads=[]),
         generation_slot=slot,
+        token_counter=FakeTokenCounter(),
     )
     assert slot.acquire() is True
     try:

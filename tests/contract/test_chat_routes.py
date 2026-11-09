@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from tests.fixtures.corpus import seed_document
-from tests.fixtures.fakes import FakeEmbedder
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
@@ -73,6 +73,7 @@ def _app(settings: Settings, index, generator, slot=None):
         index_factory=lambda: index,
         llm_factory=lambda: generator,
         generation_slot=slot,
+        token_counter=FakeTokenCounter(),
     )
 
 
@@ -324,4 +325,32 @@ def test_context_budget_exceeded_returns_a_clear_error(context) -> None:
 
     assert response.status_code == 500
     assert "presupuesto de contexto" in response.text
+    assert generator.calls == 0
+
+
+class _BrokenTokenCounter:
+    def count(self, system: str, user: str) -> int:
+        raise RuntimeError("tokenizador ausente")
+
+    def describe(self) -> dict:
+        return {"method": "unavailable"}
+
+
+def test_unavailable_tokenizer_returns_503_without_generating(context) -> None:
+    settings, _factory, case_id, seeded, _public, index, _engine = context
+    generator = ScriptedGenerator(payload=_payload(seeded, "funciones centrales"))
+    app = create_app(
+        settings,
+        ollama_probe=lambda: True,
+        embedder_factory=lambda: FakeEmbedder(),
+        index_factory=lambda: index,
+        llm_factory=lambda: generator,
+        token_counter=_BrokenTokenCounter(),
+    )
+
+    with TestClient(app) as client:
+        response = _ask(client, case_id)
+
+    assert response.status_code == 503
+    assert "contexto del modelo local" in response.text
     assert generator.calls == 0

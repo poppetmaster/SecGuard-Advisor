@@ -122,3 +122,19 @@ class ScriptedGenerator:
 
             return AnswerPayload(answer="respuesta", claims=[])
         return self.payloads.pop(0)
+
+
+class FakeTokenCounter:
+    """Contador determinista para pruebas con dobles: no usa el modelo real."""
+
+    def __init__(self, bytes_per_token: float = 2.4) -> None:
+        import math
+
+        self.bytes_per_token = bytes_per_token
+        self._ceil = math.ceil
+
+    def count(self, system: str, user: str) -> int:
+        return self._ceil(len((system + user).encode("utf-8")) / self.bytes_per_token)
+
+    def describe(self) -> dict:
+        return {"method": "fake", "bytes_per_token": self.bytes_per_token}

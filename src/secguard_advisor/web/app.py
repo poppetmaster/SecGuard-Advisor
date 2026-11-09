@@ -16,6 +16,7 @@ from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
 from secguard_advisor.conversation.memory import open_memory
+from secguard_advisor.conversation.tokenizer import LazyPromptCounter
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
@@ -50,6 +51,7 @@ def create_app(
     index_factory: Callable[[], object] | None = None,
     llm_factory: Callable[[], object] | None = None,
     generation_slot: GenerationSlot | None = None,
+    token_counter=None,
 ) -> FastAPI:
     """Construye la aplicación con sus dependencias."""
     resolved = settings or get_settings()
@@ -111,6 +113,7 @@ def create_app(
     app.state.generation_slot = generation_slot or GenerationSlot(
         resolved.generation_queue_timeout_seconds
     )
+    app.state.token_counter = token_counter or LazyPromptCounter(resolved.ollama_model)
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(cases.router)

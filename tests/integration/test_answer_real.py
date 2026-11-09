@@ -12,6 +12,7 @@ from tests.fixtures.real_corpus import ingest_one_public_source, real_embedder
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
+from secguard_advisor.conversation.tokenizer import load_prompt_counter
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
@@ -64,6 +65,7 @@ def test_real_answer_cites_a_locatable_fragment(tmp_path: Path) -> None:
             generator=generator,
             embedder=embedder,
             index=index,
+            token_counter=load_prompt_counter(settings.ollama_model),
         )
         result = execute_turn(context)
 

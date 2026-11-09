@@ -18,6 +18,7 @@ class TurnDependencies:
     embedder: object
     index: object
     settings: Settings
+    token_counter: object
 
 
 @dataclass(frozen=True, slots=True)

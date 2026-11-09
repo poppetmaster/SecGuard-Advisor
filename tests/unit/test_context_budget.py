@@ -1,14 +1,18 @@
-"""Pruebas del presupuesto de contexto previo a la generación."""
+"""Pruebas del presupuesto de contexto previo a la generación.
+
+La admisión usa el tokenizador del generador; en estas pruebas con dobles se usa
+`FakeTokenCounter`, que solo imita la interfaz. La exactitud del tokenizador se
+comprueba en `tests/integration/test_context_budget_real.py`.
+"""
 
 from __future__ import annotations
 
 import pytest
+from tests.fixtures.fakes import FakeTokenCounter
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.budget import (
-    BYTES_PER_TOKEN,
-    CHAT_OVERHEAD_TOKENS,
-    PER_MESSAGE_OVERHEAD,
+    DIAGNOSTIC_BYTES_PER_TOKEN,
     ContextBudgetExceeded,
     estimate_tokens,
     plan_prompt,
@@ -17,6 +21,8 @@ from secguard_advisor.conversation.budget import (
 from secguard_advisor.conversation.memory import HistoryTurn
 from secguard_advisor.conversation.prompts import SYSTEM_PROMPT
 from secguard_advisor.retrieval.search import RetrievedChunk
+
+COUNTER = FakeTokenCounter()
 
 
 def _settings(**overrides) -> Settings:
@@ -52,12 +58,15 @@ def _history(pairs: int, size: int = 100) -> tuple[HistoryTurn, ...]:
     return tuple(turns)
 
 
-def test_estimate_is_byte_based_and_not_a_char_count() -> None:
+def test_estimate_is_diagnostic_and_not_used_for_admission() -> None:
     assert estimate_tokens("") == 0
     assert estimate_tokens("a" * 240) == 100
     assert estimate_tokens("ñ" * 10) > estimate_tokens("n" * 10)
     assert estimate_tokens("漢" * 10) > 10
-    assert BYTES_PER_TOKEN == 2.4
+    assert DIAGNOSTIC_BYTES_PER_TOKEN == 2.4
+    plan = plan_prompt(question="¿Qué?", hits=(), history=(), settings=_settings(), counter=COUNTER)
+    assert plan.counter["method"] == "fake"
+    assert plan.admitted_tokens <= plan.prompt_limit
 
 
 def test_plan_keeps_everything_when_it_fits() -> None:
@@ -70,13 +79,14 @@ def test_plan_keeps_everything_when_it_fits() -> None:
         hits=hits,
         history=history,
         settings=settings,
+        counter=COUNTER,
     )
 
     assert plan.history == history
     assert plan.hits == hits
     assert plan.dropped_history_messages == 0
     assert plan.dropped_sources == 0
-    assert plan.estimated_prompt_tokens <= plan.prompt_limit
+    assert plan.admitted_tokens <= plan.prompt_limit
     assert plan.prompt_limit == prompt_limit(settings)
 
 
@@ -90,6 +100,7 @@ def test_history_is_reduced_oldest_first_with_whole_turns() -> None:
         hits=hits,
         history=history,
         settings=settings,
+        counter=COUNTER,
     )
 
     assert plan.dropped_history_messages > 0
@@ -113,6 +124,7 @@ def test_sources_are_reduced_after_history_by_rank() -> None:
         hits=hits,
         history=history,
         settings=settings,
+        counter=COUNTER,
     )
 
     assert plan.dropped_history_messages == len(history)
@@ -121,7 +133,7 @@ def test_sources_are_reduced_after_history_by_rank() -> None:
     assert plan.hits == hits[: len(plan.hits)]
     assert f"[S{len(plan.hits)}]" in plan.user
     assert f"[S{len(plan.hits) + 1}]" not in plan.user
-    assert plan.estimated_prompt_tokens <= plan.prompt_limit
+    assert plan.admitted_tokens <= plan.prompt_limit
 
 
 def test_repair_plan_also_respects_the_budget() -> None:
@@ -133,11 +145,12 @@ def test_repair_plan_also_respects_the_budget() -> None:
         hits=hits,
         history=_history(3, size=1500),
         settings=settings,
+        counter=COUNTER,
         repair_reasons=["quote_not_found"],
     )
 
     assert "no superó el control automático" in plan.user
-    assert plan.estimated_prompt_tokens <= plan.prompt_limit
+    assert plan.admitted_tokens <= plan.prompt_limit
     assert plan.dropped_sources > 0
 
 
@@ -152,6 +165,7 @@ def test_question_and_source_text_are_not_truncated() -> None:
         hits=hits,
         history=_history(1),
         settings=settings,
+        counter=COUNTER,
     )
 
     assert question in plan.user
@@ -162,7 +176,7 @@ def test_minimal_content_that_does_not_fit_is_reported() -> None:
     settings = _settings(generator_num_ctx=900, generator_num_predict=1200)
 
     with pytest.raises(ContextBudgetExceeded):
-        plan_prompt(question="¿Cabe?", hits=(), history=(), settings=settings)
+        plan_prompt(question="¿Cabe?", hits=(), history=(), settings=settings, counter=COUNTER)
 
 
 def test_oversized_question_is_reported_without_calling_the_model() -> None:
@@ -170,7 +184,13 @@ def test_oversized_question_is_reported_without_calling_the_model() -> None:
     question = "¿" + "x" * 20_000 + "?"
 
     with pytest.raises(ContextBudgetExceeded):
-        plan_prompt(question=question, hits=(_hit(1),), history=(), settings=settings)
+        plan_prompt(
+            question=question,
+            hits=(_hit(1),),
+            history=(),
+            settings=settings,
+            counter=COUNTER,
+        )
 
 
 def test_planning_does_not_mutate_the_received_history_or_sources() -> None:
@@ -183,6 +203,7 @@ def test_planning_does_not_mutate_the_received_history_or_sources() -> None:
         hits=hits,
         history=history,
         settings=settings,
+        counter=COUNTER,
     )
 
     assert len(history) == 6
@@ -193,11 +214,35 @@ def test_planning_does_not_mutate_the_received_history_or_sources() -> None:
     assert len(plan.hits) <= len(hits)
 
 
-def test_estimate_includes_system_prompt_and_overhead() -> None:
-    settings = _settings()
-    plan = plan_prompt(question="¿Qué?", hits=(), history=(), settings=settings)
-    expected_minimum = estimate_tokens(SYSTEM_PROMPT) + CHAT_OVERHEAD_TOKENS
+def test_admitted_count_covers_the_system_prompt() -> None:
+    plan = plan_prompt(
+        question="¿Qué?",
+        hits=(),
+        history=(),
+        settings=_settings(),
+        counter=COUNTER,
+    )
 
-    assert plan.estimated_prompt_tokens >= expected_minimum
-    assert plan.estimated_prompt_tokens <= plan.prompt_limit
-    assert PER_MESSAGE_OVERHEAD >= 1
+    assert plan.admitted_tokens >= estimate_tokens(SYSTEM_PROMPT)
+    assert plan.admitted_tokens <= plan.prompt_limit
+
+
+class _UnavailableCounter:
+    def count(self, system: str, user: str) -> int:
+        raise RuntimeError("tokenizador ausente")
+
+    def describe(self) -> dict:
+        return {"method": "unavailable"}
+
+
+def test_unavailable_tokenizer_is_reported_instead_of_guessing() -> None:
+    from secguard_advisor.conversation.budget import ContextBudgetUnavailable
+
+    with pytest.raises(ContextBudgetUnavailable):
+        plan_prompt(
+            question="¿Qué?",
+            hits=(),
+            history=(),
+            settings=_settings(),
+            counter=_UnavailableCounter(),
+        )

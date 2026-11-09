@@ -211,6 +211,7 @@ def ask_view(
             generator=generator,
             embedder=embedder,
             index=index,
+            token_counter=request.app.state.token_counter,
         )
 
     status_code, extras = _run_generation(request, scope, starter)
@@ -233,6 +234,7 @@ def retry_view(request: Request, case_id: str, run_id: str):
             generator=generator,
             embedder=embedder,
             index=index,
+            token_counter=request.app.state.token_counter,
         )
 
     with request.app.state.session_factory() as session:

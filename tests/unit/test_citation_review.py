@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 from tests.fixtures.conversation import build_env
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -44,6 +44,7 @@ def _answered_turn(env):
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     execute_turn(context)
     return context.run_id
@@ -89,6 +90,7 @@ def _rejected_turn(env):
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     execute_turn(context)
 

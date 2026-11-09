@@ -12,9 +12,14 @@ from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.budget import plan_prompt
+from secguard_advisor.conversation.budget import (
+    ContextBudgetExceeded,
+    estimate_tokens,
+    plan_prompt,
+)
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
 from secguard_advisor.conversation.memory import HistoryTurn
+from secguard_advisor.conversation.tokenizer import load_prompt_counter
 from secguard_advisor.corpus.ingest import ingest_public_corpus
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
@@ -92,11 +97,13 @@ def test_estimate_is_conservative_with_the_real_generator(tmp_path: Path) -> Non
             )
         assert retrieval.hits
 
+        counter = load_prompt_counter(settings.ollama_model)
         plan = plan_prompt(
             question=QUESTION,
             hits=retrieval.hits,
             history=_history(4, 900),
             settings=settings,
+            counter=counter,
         )
         generator = OllamaGenerator(
             GenerationConfig(
@@ -115,14 +122,15 @@ def test_estimate_is_conservative_with_the_real_generator(tmp_path: Path) -> Non
         assert generator.last_usage is not None
         observed = generator.last_usage["prompt_tokens"]
         assert observed is not None
-        assert observed <= plan.estimated_prompt_tokens, (
-            "la estimación debe ser una cota conservadora del prompt real"
+        assert observed <= plan.admitted_tokens, (
+            "el conteo del tokenizador debe ser una cota conservadora del prompt real"
         )
         assert observed + settings.generator_num_predict <= settings.generator_num_ctx
         print(
             "presupuesto:",
             {
-                "estimated": plan.estimated_prompt_tokens,
+                "admitted": plan.admitted_tokens,
+                "diagnostic_estimate": plan.estimated_tokens,
                 "observed": observed,
                 "limit": plan.prompt_limit,
                 "output_reserve": settings.generator_num_predict,
@@ -137,3 +145,55 @@ def test_estimate_is_conservative_with_the_real_generator(tmp_path: Path) -> Non
     finally:
         embedder.close()
         engine.dispose()
+
+
+def test_the_byte_estimate_is_not_an_admission_control(tmp_path: Path) -> None:
+    """Regresión: el divisor 2,4 admitía texto Base64 que el tokenizador rechaza."""
+    import base64
+    import random
+
+    settings = _settings(tmp_path)
+    counter = load_prompt_counter(settings.ollama_model)
+    rng = random.Random(11)
+    payload = base64.b64encode(bytes(rng.randrange(256) for _ in range(1200))).decode()
+
+    from secguard_advisor.retrieval.search import RetrievedChunk
+
+    hit = RetrievedChunk(
+        chunk_id="a" * 32,
+        document_id="d" * 32,
+        version_id="v" * 32,
+        document_title="Evidencia Base64",
+        declared_version="v1",
+        origin="case_evidence",
+        page=1,
+        section=None,
+        locator="p:1#0",
+        text=payload,
+        score=0.9,
+        version_current=True,
+        token_count=100,
+    )
+    from secguard_advisor.conversation.prompts import SYSTEM_PROMPT, build_user_prompt
+
+    probe = build_user_prompt("¿Qué contiene la evidencia?", (hit,), ())
+    diagnostic = estimate_tokens(SYSTEM_PROMPT) + estimate_tokens(probe)
+    admitted = counter.count(SYSTEM_PROMPT, probe)
+
+    assert diagnostic < admitted, "el divisor por bytes subestima el texto Base64"
+
+    limited = settings.model_copy(
+        update={
+            "generator_num_ctx": diagnostic
+            + settings.generator_num_predict
+            + settings.context_safety_margin_tokens
+        }
+    )
+    with pytest.raises(ContextBudgetExceeded):
+        plan_prompt(
+            question="¿Qué contiene la evidencia?",
+            hits=(hit,),
+            history=(),
+            settings=limited,
+            counter=counter,
+        )

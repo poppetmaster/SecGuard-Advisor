@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from tests.fixtures.corpus import create_case, seed_document
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -37,6 +37,7 @@ def _app(settings: Settings, index, generator):
         embedder_factory=lambda: FakeEmbedder(),
         index_factory=lambda: index,
         llm_factory=lambda: generator,
+        token_counter=FakeTokenCounter(),
     )
 
 

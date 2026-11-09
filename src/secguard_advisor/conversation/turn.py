@@ -10,7 +10,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation import service
-from secguard_advisor.conversation.budget import ContextBudgetExceeded
+from secguard_advisor.conversation.budget import (
+    ContextBudgetExceeded,
+    ContextBudgetUnavailable,
+)
 from secguard_advisor.conversation.context import TurnContext, TurnDependencies
 from secguard_advisor.conversation.graph import run_turn_graph
 from secguard_advisor.conversation.llm import (
@@ -46,6 +49,7 @@ def start_question_turn(
     generator: object,
     embedder: object,
     index: object,
+    token_counter,
 ) -> TurnContext:
     """Crea conversación, pregunta y ejecución en una transacción corta."""
     with factory() as session:
@@ -80,6 +84,7 @@ def start_question_turn(
                 embedder=embedder,
                 index=index,
                 settings=settings,
+                token_counter=token_counter,
             ),
             scope=scope,
             conversation_id=conversation.id,
@@ -95,6 +100,14 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     """Ejecuta el grafo y clasifica el cierre de la ejecución."""
     try:
         state = run_turn_graph(context, memory)
+    except ContextBudgetUnavailable as exc:
+        _fail(
+            context,
+            status="failed",
+            code="context_budget_unavailable",
+            message=str(exc),
+        )
+        return TurnResult("failed", "error", 503, "context_budget_unavailable")
     except ContextBudgetExceeded as exc:
         _fail(
             context,

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 from tests.fixtures.conversation import build_env
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation import nodes
@@ -43,6 +43,7 @@ def _ask(env, store, generator, question: str):
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     return context, execute_turn(context, memory=store)
 
@@ -105,6 +106,7 @@ def test_final_transaction_failure_leaves_no_answer_and_allows_retry(
         generator=ScriptedGenerator([_payload(public, "El marco define seis funciones.")]),
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     retry = execute_turn(retry_context, memory=store)
     try:

@@ -167,6 +167,7 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
         hits=state.get("hits", ()),
         history=state.get("history", ()),
         settings=context.deps.settings,
+        counter=context.deps.token_counter,
     )
     payload = context.deps.generator.generate(system=plan.system, user=plan.user)
     usage = getattr(context.deps.generator, "last_usage", None) or {}
@@ -335,6 +336,7 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
         hits=state.get("hits", ()),
         history=state.get("history", ()),
         settings=context.deps.settings,
+        counter=context.deps.token_counter,
         repair_reasons=reasons,
     )
     payload = context.deps.generator.generate(system=plan.system, user=plan.user)

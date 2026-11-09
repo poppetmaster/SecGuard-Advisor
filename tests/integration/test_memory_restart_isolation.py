@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import func, select
 from tests.fixtures.conversation import CASE_TEXT, build_env
 from tests.fixtures.corpus import create_case, seed_document
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -39,6 +39,7 @@ def _ask(settings, factory, index, store, case_id, generator, question: str):
         generator=generator,
         embedder=FakeEmbedder(),
         index=index,
+        token_counter=FakeTokenCounter(),
     )
     return execute_turn(context, memory=store)
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sqlalchemy import select
 from tests.fixtures.conversation import build_env
-from tests.fixtures.fakes import FakeEmbedder, ScriptedGenerator
+from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -28,6 +28,7 @@ def _run(env, generator, question: str = "¿Qué controles aplican?"):
         generator=generator,
         embedder=FakeEmbedder(),
         index=env.index,
+        token_counter=FakeTokenCounter(),
     )
     return execute_turn(context)
 
