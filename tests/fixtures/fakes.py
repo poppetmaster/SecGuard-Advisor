@@ -121,7 +121,7 @@ class ScriptedGenerator:
         self.prompts: list[str] = []
         self.decision_prompts: list[str] = []
 
-    def decide(self, *, system: str, user: str):
+    def decide(self, *, system: str, user: str, timeout_seconds=None):
         from secguard_advisor.conversation.llm import ToolDecision
 
         self.decision_calls += 1
@@ -130,7 +130,7 @@ class ScriptedGenerator:
             return self.decisions.pop(0)
         return ToolDecision(use_findings=False, arguments={})
 
-    def generate(self, *, system: str, user: str):
+    def generate(self, *, system: str, user: str, timeout_seconds=None):
         self.calls += 1
         self.prompts.append(user)
         if self.error is not None:

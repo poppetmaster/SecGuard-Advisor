@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Ejecución {{ run.id }} — SecGuard Advisor{% endblock %}
+
+{% block content %}
+<div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  <p class="text-sm text-slate-600">
+    Intento {{ run.attempt_no }} · {{ run.status_label }}{% if run.outcome_label %} · {{ run.outcome_label }}{% endif %}
+    · {{ run.duration_ms if run.duration_ms is not none else "sin duración" }} ms
+  </p>
+  <a class="text-sm font-medium text-blue-800 hover:underline" href="/cases/{{ case_id }}/chat">Volver a la conversación</a>
+</div>
+
+{% if run.error_message %}
+<div class="mt-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">
+  <p>{{ run.error_message }}</p>
+  {% if run.error_code %}<p class="mt-1 text-xs">Código: {{ run.error_code }}</p>{% endif %}
+  {% if run.can_retry %}
+  <a
+    class="mt-2 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800"
+    href="/cases/{{ case_id }}/chat"
+  >
+    Reintentar la pregunta
+  </a>
+  <p class="mt-1 text-xs">El reintento está disponible en la conversación, sobre la misma pregunta.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if run.attempts|length > 1 %}
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Intentos de esta pregunta</h2>
+  <ul class="mt-2 space-y-1 text-sm text-slate-700">
+    {% for attempt in run.attempts %}
+    <li>
+      {% if attempt.is_current %}
+      <span class="font-semibold">Intento {{ attempt.attempt_no }} (actual)</span>
+      {% else %}
+      <a class="text-blue-800 hover:underline" href="/cases/{{ case_id }}/runs/{{ attempt.id }}">Intento {{ attempt.attempt_no }}</a>
+      {% endif %}
+      · {{ attempt.status_label }}{% if attempt.outcome_label %} · {{ attempt.outcome_label }}{% endif %}
+      {% if attempt.retry_of_run_id %}· reintento de {{ attempt.retry_of_run_id }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if run.question %}
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Pregunta</h2>
+  <p class="mt-1 whitespace-pre-wrap text-sm text-slate-800">{{ run.question }}</p>
+</section>
+{% endif %}
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Modelo y configuración</h2>
+  <dl class="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+    <div class="min-w-0"><dt class="text-slate-500">Generador</dt><dd class="break-words">{{ run.generator_model }}</dd></div>
+    <div class="min-w-0"><dt class="text-slate-500">Digest</dt><dd class="break-all">{{ run.generator_digest or "no disponible" }}</dd></div>
+    <div><dt class="text-slate-500">Contexto</dt><dd>{{ run.generator_num_ctx }} tokens</dd></div>
+    <div><dt class="text-slate-500">Temperatura / semilla</dt><dd>{{ run.generator_temperature }} / {{ run.generator_seed }}</dd></div>
+    <div><dt class="text-slate-500">Embeddings</dt><dd>{{ run.embedding_model }} ({{ run.embedding_dim }} dimensiones)</dd></div>
+    <div><dt class="text-slate-500">Prompt</dt><dd>{{ run.prompt_version }}</dd></div>
+    <div><dt class="text-slate-500">Inicio</dt><dd>{{ run.started_at }}</dd></div>
+    <div><dt class="text-slate-500">Fin</dt><dd>{{ run.finished_at or "no disponible" }}</dd></div>
+  </dl>
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Traza externa</h2>
+  <dl class="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-500">Estado</dt><dd>{{ run.trace_status_label }}</dd></div>
+    <div>
+      <dt class="text-slate-500">Identificador</dt>
+      <dd class="break-all font-mono text-xs">{{ run.trace_id or "no disponible" }}</dd>
+    </div>
+  </dl>
+  {% if run.trace_status == "submitted" %}
+  <p class="mt-2 text-xs text-slate-600">
+    Envío completado sin error observado. No significa que la traza esté verificada en LangSmith;
+    la confirmación corresponde a la aceptación.
+  </p>
+  {% if run.trace_url %}
+  <a class="mt-1 inline-block break-all text-sm text-blue-800 hover:underline" href="{{ run.trace_url }}" rel="noreferrer noopener" target="_blank">
+    Abrir traza en LangSmith
+  </a>
+  {% endif %}
+  {% elif run.trace_status == "failed" %}
+  <p class="mt-2 text-xs text-slate-600">
+    La consulta local se completó o falló según su propio estado; el envío de la traza no está disponible.
+  </p>
+  {% elif run.trace_status == "disabled" %}
+  <p class="mt-2 text-xs text-slate-600">La traza externa no está configurada en este entorno.</p>
+  {% elif run.trace_status == "confirmed" %}
+  <p class="mt-2 text-xs text-slate-600">Traza verificada durante la aceptación.</p>
+  {% endif %}
+</section>
+
+{% if run.budget %}
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Presupuesto de contexto registrado</h2>
+  <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-3 py-2">Operación</th>
+          <th class="px-3 py-2">Admitido</th>
+          <th class="px-3 py-2">Observado</th>
+          <th class="px-3 py-2">Estimado</th>
+          <th class="px-3 py-2">Límite</th>
+          <th class="px-3 py-2">Reserva / margen</th>
+          <th class="px-3 py-2">Método</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for item in run.budget %}
+        <tr>
+          <td class="px-3 py-2">{{ item.step }}</td>
+          <td class="px-3 py-2">{{ item.admitted_tokens if item.admitted_tokens is not none else "no disponible" }}</td>
+          <td class="px-3 py-2">{{ item.observed_prompt_tokens if item.observed_prompt_tokens is not none else "no disponible" }}</td>
+          <td class="px-3 py-2">{{ item.estimated_tokens if item.estimated_tokens is not none else "no disponible" }}</td>
+          <td class="px-3 py-2">{{ item.limit if item.limit is not none else "no disponible" }}</td>
+          <td class="px-3 py-2">
+            {{ item.output_reserve if item.output_reserve is not none else "no disponible" }} /
+            {{ item.safety_margin if item.safety_margin is not none else "no disponible" }}
+          </td>
+          <td class="px-3 py-2">{{ item.method or "no disponible" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Pasos</h2>
+  {% if run.steps %}
+  <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-3 py-2">#</th>
+          <th class="px-3 py-2">Paso</th>
+          <th class="px-3 py-2">Origen</th>
+          <th class="px-3 py-2">Estado</th>
+          <th class="px-3 py-2">Duración</th>
+          <th class="px-3 py-2">Detalle</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for step in run.steps %}
+        <tr>
+          <td class="px-3 py-2">{{ step.seq }}</td>
+          <td class="px-3 py-2">{{ step.label }} <span class="font-mono text-[11px] text-slate-500">{{ step.name }}</span></td>
+          <td class="px-3 py-2">{{ step.origin }}</td>
+          <td class="px-3 py-2">{{ step.status }}</td>
+          <td class="px-3 py-2">{{ step.duration_ms if step.duration_ms is not none else "no disponible" }} ms</td>
+          <td class="px-3 py-2">
+            {% if step.detail %}
+            <details>
+              <summary class="cursor-pointer text-blue-800">Ver detalle</summary>
+              <pre class="mt-1 max-w-xs overflow-x-auto whitespace-pre-wrap break-words text-[11px] text-slate-700">{{ step.detail | tojson }}</pre>
+            </details>
+            {% else %}
+            <span class="text-slate-500">no disponible</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se registraron pasos para esta ejecución.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Herramientas</h2>
+  {% if run.tool_calls %}
+  {% set tool_calls = run.tool_calls %}
+  {% include "chat/_tool_calls.html" %}
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se consultaron herramientas en esta ejecución.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Citas y controles</h2>
+  {% if run.citations %}
+  <ul class="mt-2 space-y-3 text-sm text-slate-700">
+    {% for citation in run.citations %}
+    <li class="rounded-lg border border-slate-200 bg-white p-3">
+      <p class="font-medium text-slate-900">{{ citation.document_title }} · {{ citation.origin_label }}</p>
+      <p class="mt-1 text-xs text-slate-600">
+        Control automático: {{ citation.check_label }}{% if citation.check_reason %} ({{ citation.check_reason }}){% endif %}
+        · Revisión humana: {{ citation.review_label }}
+        {% if citation.reviewed_by %}· {{ citation.reviewed_by }}{% endif %}
+      </p>
+      <blockquote class="mt-2 border-l-2 border-slate-300 pl-2 text-xs italic text-slate-700">“{{ citation.quote }}”</blockquote>
+      {% if citation.review_note %}<p class="mt-1 text-xs text-slate-600">Observación: {{ citation.review_note }}</p>{% endif %}
+      <a class="mt-2 inline-block text-xs text-blue-800 hover:underline" href="{{ citation.locator }}">Abrir fragmento</a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="mt-3 text-xs text-slate-600">
+    Un control automático válido no acredita respaldo semántico. La revisión humana es por cita y no
+    adjudica prioridades P1–P4 ni aprueba un informe.
+  </p>
+  <p class="mt-1 text-xs text-slate-600">
+    {{ run.reviewed_count }} revisada(s) · {{ run.pending_review_count }} pendiente(s).
+  </p>
+  {% elif run.has_tool_evidence %}
+  <p class="mt-2 text-sm text-slate-700">
+    Sin citas documentales: la respuesta se respalda con el resultado estructurado de la herramienta.
+    Ese resultado no es una cita ni una prioridad P1–P4.
+  </p>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No hay citas documentales en esta ejecución.</p>
+  {% endif %}
+  {% if run.rejected_reasons %}
+  <p class="mt-2 text-xs text-slate-600">
+    Citas rechazadas por el control automático: {{ run.rejected_reasons | join(", ") }}.
+  </p>
+  {% endif %}
+</section>
+
+<section class="mt-6">
+  <h2 class="text-lg font-semibold">Fuentes recuperadas</h2>
+  {% if run.sources %}
+  <ul class="mt-2 space-y-1 text-sm text-slate-700">
+    {% for source in run.sources %}
+    <li>
+      <span class="font-medium">{{ source.rank }}.</span> {{ source.title }} · {{ source.origin_label }}
+      {% if source.page %}· página {{ source.page }}{% endif %}
+      {% if source.section %}· {{ source.section }}{% endif %}
+      · similitud {{ source.score }}
+      · {% if source.used_in_answer %}citado en la respuesta{% else %}no citado{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">No se recuperaron fuentes documentales.</p>
+  {% endif %}
+</section>
+{% endblock %}

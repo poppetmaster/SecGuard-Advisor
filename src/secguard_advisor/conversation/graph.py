@@ -44,6 +44,7 @@ class TurnState(TypedDict, total=False):
     tool_calls: int
     tool_budget: int
     decision: dict
+    step_count: int
 
 
 def build_turn_graph():
@@ -85,7 +86,7 @@ def build_turn_graph():
 TURN_GRAPH = build_turn_graph()
 
 
-def run_turn_graph(context, memory=None) -> dict[str, Any]:
+def run_turn_graph(context, memory=None, tracer=None) -> dict[str, Any]:
     """Ejecuta el turno con las dependencias y el checkpointer en configuración."""
     initial: TurnState = {
         "question": context.question,
@@ -100,6 +101,7 @@ def run_turn_graph(context, memory=None) -> dict[str, Any]:
         "tool_calls": 0,
         "tool_budget": 2,
         "decision": {"use_findings": False, "arguments": {}},
+        "step_count": 0,
     }
-    config = {"configurable": {"runtime": context, "memory": memory}}
+    config = {"configurable": {"runtime": context, "memory": memory, "tracer": tracer}}
     return TURN_GRAPH.invoke(initial, config)

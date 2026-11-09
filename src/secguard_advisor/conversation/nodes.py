@@ -12,7 +12,9 @@ from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
     GenerationConfig,
+    ModelTimeout,
     RunTimeout,
+    StepLimit,
     elapsed_ms,
 )
 from secguard_advisor.conversation.persistence import (
@@ -26,6 +28,7 @@ from secguard_advisor.conversation.prompts import (
     DECISION_SYSTEM_PROMPT,
     build_decision_prompt,
 )
+from secguard_advisor.evidence.tracing import NullTracer
 from secguard_advisor.retrieval.citations import check_citation
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
 from secguard_advisor.tools.findings import (
@@ -73,6 +76,46 @@ def runtime_of(config) -> Any:
 
 def memory_of(config):
     return config["configurable"].get("memory") if config else None
+
+
+def tracer_of(config):
+    """Traza del turno; ausente en pruebas rápidas, nunca inventa un envío."""
+    if not config:
+        return NullTracer()
+    return config["configurable"].get("tracer") or NullTracer()
+
+
+def _remaining_turn_seconds(context) -> float:
+    return max(
+        0.0,
+        context.deps.settings.run_timeout_seconds - (time.perf_counter() - context.started_perf),
+    )
+
+
+def _model_timeout(context) -> float:
+    """Tiempo máximo de esta llamada: nunca supera el tiempo restante del turno."""
+    remaining = _remaining_turn_seconds(context)
+    if remaining <= 0:
+        raise RunTimeout("Se agotó el tiempo del turno.")
+    return min(context.deps.settings.llm_timeout_seconds, remaining)
+
+
+def _call_model(context, call, timeout_seconds: float):
+    """Ejecuta una llamada al modelo y distingue timeout de llamada y de turno."""
+    try:
+        return call(timeout_seconds=timeout_seconds)
+    except ModelTimeout:
+        if timeout_seconds < context.deps.settings.llm_timeout_seconds:
+            raise RunTimeout("Se agotó el tiempo del turno.") from None
+        raise
+
+
+def _consume_step(state: dict, context) -> int:
+    """Cuenta una operación de modelo o herramienta; la preparación no cuenta."""
+    count = state.get("step_count", 0) + 1
+    if count > context.deps.settings.max_graph_steps:
+        raise StepLimit("Se excedió el máximo de operaciones del turno.")
+    return count
 
 
 def resolve_source_id(source_id: str, hits: tuple[RetrievedChunk, ...]) -> str | None:
@@ -150,6 +193,12 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             min_score=settings.retrieval_min_score,
             token_budget=settings.retrieval_token_budget,
         )
+    tracer_of(config).operation(
+        "retrieve",
+        run_type="retriever",
+        inputs={"query_length": len(context.question)},
+        outputs={"hits": len(result.hits), "status": result.status},
+    )
     return {
         "hits": result.hits,
         "retrieval_status": result.status,
@@ -172,6 +221,7 @@ def _check_turn_deadline(context) -> None:
 def agent(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
+    step_count = _consume_step(state, context)
     plan = plan_prompt(
         question=context.question,
         hits=state.get("hits", ()),
@@ -180,13 +230,41 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
         counter=context.deps.token_counter,
         tool_results=state.get("tool_results", ()),
     )
-    payload = context.deps.generator.generate(system=plan.system, user=plan.user)
+    timeout = _model_timeout(context)
+    tracer = tracer_of(config)
+    try:
+        payload = _call_model(
+            context,
+            lambda **kwargs: context.deps.generator.generate(
+                system=plan.system, user=plan.user, **kwargs
+            ),
+            timeout,
+        )
+    except Exception as exc:
+        tracer.operation(
+            "agent.generate",
+            run_type="llm",
+            inputs={"model": context.deps.generator.model},
+            error=type(exc).__name__,
+        )
+        raise
     usage = getattr(context.deps.generator, "last_usage", None) or {}
+    tracer.operation(
+        "agent.generate",
+        run_type="llm",
+        inputs={
+            "model": context.deps.generator.model,
+            "prompt_version": plan.detail().get("prompt_version"),
+            "admitted_tokens": plan.detail().get("admitted_tokens"),
+        },
+        outputs={"claims": len(payload.claims), "answer_length": len(payload.answer)},
+    )
     _check_turn_deadline(context)
     return {
         "payload": payload,
         "hits": plan.hits,
         "tool_budget": context.deps.settings.max_tool_calls,
+        "step_count": step_count,
         "steps": record_step(
             state,
             "agent",
@@ -230,6 +308,7 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
             ),
         }
 
+    step_count = _consume_step(state, context)
     user_prompt = build_decision_prompt(
         context.question,
         state.get("history", ()),
@@ -241,11 +320,41 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
         settings=settings,
         counter=context.deps.token_counter,
     )
-    decision = context.deps.generator.decide(system=DECISION_SYSTEM_PROMPT, user=user_prompt)
+    timeout = _model_timeout(context)
+    tracer = tracer_of(config)
+    try:
+        decision = _call_model(
+            context,
+            lambda **kwargs: context.deps.generator.decide(
+                system=DECISION_SYSTEM_PROMPT, user=user_prompt, **kwargs
+            ),
+            timeout,
+        )
+    except Exception as exc:
+        tracer.operation(
+            "tool.decide",
+            run_type="llm",
+            inputs={"model": context.deps.generator.model},
+            error=type(exc).__name__,
+        )
+        raise
     usage = getattr(context.deps.generator, "last_usage", None) or {}
+    tracer.operation(
+        "tool.decide",
+        run_type="llm",
+        inputs={
+            "model": context.deps.generator.model,
+            "admitted_tokens": admitted,
+        },
+        outputs={
+            "use_findings": decision.use_findings,
+            "argument_keys": sorted(decision.arguments),
+        },
+    )
     _check_turn_deadline(context)
     return {
         "decision": decision.model_dump(),
+        "step_count": step_count,
         "steps": record_step(
             state,
             "decide",
@@ -273,17 +382,23 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
     settings = context.deps.settings
+    step_count = _consume_step(state, context)
+    remaining = _remaining_turn_seconds(context)
+    if remaining <= 0:
+        raise RunTimeout("Se agotó el tiempo del turno.")
     decision = state.get("decision") or {}
     arguments = decision.get("arguments") or {}
     query = FindingsQuery(
         context.factory,
         context.scope,
-        timeout_seconds=settings.tool_timeout_seconds,
+        timeout_seconds=min(settings.tool_timeout_seconds, remaining),
     )
+    tracer = tracer_of(config)
     results = list(state.get("tool_results", ()))
     records = list(state.get("tool_records", ()))
     call_started = time.perf_counter()
     status = "ok"
+    summary = None
 
     try:
         result = query.execute(arguments)
@@ -309,14 +424,29 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
             }
         )
         status = "invalid_arguments"
+        tracer.operation(
+            "findings_query",
+            run_type="tool",
+            inputs={"tool": TOOL_NAME, "argument_keys": sorted(arguments)},
+            outputs={"status": status, "error_code": exc.code},
+        )
+    except Exception as exc:
+        tracer.operation(
+            "findings_query",
+            run_type="tool",
+            inputs={"tool": TOOL_NAME, "argument_keys": sorted(arguments)},
+            error=type(exc).__name__,
+        )
+        raise
     else:
         duration = elapsed_ms(call_started)
+        summary = _tool_summary(result)
         records.append(
             ToolCallRecord(
                 tool_name=TOOL_NAME,
                 origin="model_requested",
                 arguments=arguments,
-                summary=_tool_summary(result),
+                summary=summary,
                 status="ok",
                 error_code=None,
                 duration_ms=duration,
@@ -330,11 +460,23 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
                 "result": result,
             }
         )
+        tracer.operation(
+            "findings_query",
+            run_type="tool",
+            inputs={"tool": TOOL_NAME, "argument_keys": sorted(arguments)},
+            outputs={
+                "status": status,
+                "total": summary.get("total"),
+                "groups_count": len(summary.get("groups", ())),
+                "truncated": summary.get("truncated"),
+            },
+        )
 
     return {
         "tool_results": tuple(results),
         "tool_records": tuple(records),
         "tool_calls": state.get("tool_calls", 0) + 1,
+        "step_count": step_count,
         "decision": {"use_findings": False, "arguments": {}},
         "steps": record_step(
             state,
@@ -492,6 +634,7 @@ def route_after_validate(state: dict[str, Any]) -> str:
 def repair(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
+    step_count = _consume_step(state, context)
     reasons = [draft.check_reason or "cita inválida" for draft in state.get("rejected", ())]
     plan = plan_prompt(
         question=context.question,
@@ -501,13 +644,41 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
         counter=context.deps.token_counter,
         repair_reasons=reasons,
     )
-    payload = context.deps.generator.generate(system=plan.system, user=plan.user)
+    timeout = _model_timeout(context)
+    tracer = tracer_of(config)
+    try:
+        payload = _call_model(
+            context,
+            lambda **kwargs: context.deps.generator.generate(
+                system=plan.system, user=plan.user, **kwargs
+            ),
+            timeout,
+        )
+    except Exception as exc:
+        tracer.operation(
+            "agent.repair",
+            run_type="llm",
+            inputs={"model": context.deps.generator.model, "reason_codes": reasons},
+            error=type(exc).__name__,
+        )
+        raise
     usage = getattr(context.deps.generator, "last_usage", None) or {}
+    tracer.operation(
+        "agent.repair",
+        run_type="llm",
+        inputs={
+            "model": context.deps.generator.model,
+            "reason_codes": reasons,
+            "admitted_tokens": plan.detail().get("admitted_tokens"),
+        },
+        outputs={"claims": len(payload.claims), "answer_length": len(payload.answer)},
+    )
     _check_turn_deadline(context)
     return {
         "payload": payload,
         "hits": plan.hits,
         "repaired": True,
+        "step_count": step_count,
         "steps": record_step(
             state,
             "repair",

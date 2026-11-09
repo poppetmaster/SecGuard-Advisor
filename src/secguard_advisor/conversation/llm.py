@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -21,6 +23,10 @@ class ModelTimeout(Exception):
 
 class RunTimeout(Exception):
     """Se agotó el tiempo total del turno."""
+
+
+class StepLimit(Exception):
+    """Se excedió el máximo de operaciones del turno."""
 
 
 class InvalidModelOutput(Exception):
@@ -102,7 +108,7 @@ class OllamaGenerator:
                 return item.get("digest")
         return None
 
-    def _chat(self) -> ChatOllama:
+    def _chat(self, timeout_seconds: float | None = None) -> ChatOllama:
         return ChatOllama(
             model=self.config.model,
             base_url=self.config.base_url,
@@ -113,23 +119,38 @@ class OllamaGenerator:
             # El modelo configurado es de razonamiento: se desactiva para acotar la
             # latencia y obtener la salida estructurada dentro del presupuesto del turno.
             reasoning=False,
-            client_kwargs={"timeout": self.config.timeout_seconds},
+            client_kwargs={"timeout": timeout_seconds or self.config.timeout_seconds},
         )
 
-    def decide(self, *, system: str, user: str) -> ToolDecision:
+    def decide(
+        self, *, system: str, user: str, timeout_seconds: float | None = None
+    ) -> ToolDecision:
         """Pide al modelo la decisión estructurada sobre findings_query."""
-        return self._structured(system=system, user=user, schema=ToolDecision)
+        return self._structured(
+            system=system,
+            user=user,
+            schema=ToolDecision,
+            timeout_seconds=timeout_seconds,
+        )
 
-    def generate(self, *, system: str, user: str) -> AnswerPayload:
+    def generate(
+        self, *, system: str, user: str, timeout_seconds: float | None = None
+    ) -> AnswerPayload:
         """Genera la respuesta estructurada o falla con un error clasificado."""
-        return self._structured(system=system, user=user, schema=AnswerPayload)
+        return self._structured(
+            system=system,
+            user=user,
+            schema=AnswerPayload,
+            timeout_seconds=timeout_seconds,
+        )
 
-    def _structured(self, *, system: str, user: str, schema):
-        structured = self._chat().with_structured_output(
+    def _structured(self, *, system: str, user: str, schema, timeout_seconds=None):
+        structured = self._chat(timeout_seconds).with_structured_output(
             schema, method="json_schema", include_raw=True
         )
         try:
-            result = structured.invoke([("system", system), ("human", user)])
+            with _auto_tracing_disabled():
+                result = structured.invoke([("system", system), ("human", user)])
         except (httpx.ConnectError, ConnectionError) as exc:
             raise ModelUnavailable("El modelo local no responde.") from exc
         except (httpx.ReadTimeout, httpx.ConnectTimeout, TimeoutError) as exc:
@@ -163,6 +184,28 @@ class OllamaGenerator:
                     "La salida del modelo no cumple el esquema esperado."
                 ) from exc
         raise InvalidModelOutput("La salida del modelo no cumple el esquema esperado.")
+
+
+@contextmanager
+def _auto_tracing_disabled():
+    """Evita una traza duplicada de LangChain junto con la traza manual.
+
+    La traza del producto se construye explícitamente en ``evidence.tracing``.
+    Si el entorno habilita la instrumentación automática de LangChain, se apaga
+    solo durante la llamada al modelo y se restaura después.
+    """
+    keys = ("LANGSMITH_TRACING", "LANGCHAIN_TRACING_V2", "LANGCHAIN_TRACING")
+    previous = {key: os.environ.get(key) for key in keys}
+    for key in keys:
+        os.environ[key] = "false"
+    try:
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 def _usage_of(raw) -> dict | None:

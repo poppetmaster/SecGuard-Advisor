@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import time
 from dataclasses import dataclass
 
@@ -21,13 +22,15 @@ from secguard_advisor.conversation.llm import (
     ModelTimeout,
     ModelUnavailable,
     RunTimeout,
+    StepLimit,
     elapsed_ms,
 )
 from secguard_advisor.conversation.nodes import generation_config  # noqa: F401
 from secguard_advisor.conversation.persistence import StepRecord, fail_run
 from secguard_advisor.conversation.prompts import PROMPT_VERSION
 from secguard_advisor.db.models import utc_now_iso
-from secguard_advisor.evidence.runs import ActiveRunConflict, create_run
+from secguard_advisor.evidence.runs import ActiveRunConflict, create_run, record_trace
+from secguard_advisor.evidence.tracing import build_tracer
 from secguard_advisor.tools.findings import ToolExecutionError, ToolTimeout
 
 
@@ -91,6 +94,7 @@ def start_question_turn(
             conversation_id=conversation.id,
             question_message_id=message.id,
             run_id=run.id,
+            attempt_no=run.attempt_no,
             question=question,
             started_perf=time.perf_counter(),
             started_at=utc_now_iso(),
@@ -98,9 +102,39 @@ def start_question_turn(
 
 
 def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
-    """Ejecuta el grafo y clasifica el cierre de la ejecución."""
+    """Ejecuta el grafo, clasifica el cierre y registra la traza externa."""
+    tracer = build_tracer(context.deps.settings)
+    tracer.start(
+        run_id=context.run_id,
+        case_id=context.scope.case_id,
+        attempt_no=context.attempt_no,
+        prompt_version=PROMPT_VERSION,
+    )
+    result = _execute_turn(context, memory, tracer)
+    trace = tracer.finish(status=result.status, outcome=result.outcome)
+    with contextlib.suppress(Exception):
+        record_trace(
+            context.factory,
+            context.run_id,
+            status=trace.status,
+            trace_id=trace.trace_id,
+            trace_url=trace.trace_url,
+        )
+    return result
+
+
+def _execute_turn(context: TurnContext, memory, tracer) -> TurnResult:
     try:
-        state = run_turn_graph(context, memory)
+        state = run_turn_graph(context, memory, tracer)
+    except StepLimit:
+        _fail(
+            context,
+            status="failed",
+            code="step_limit",
+            message="Se excedió el máximo de operaciones del turno.",
+            step_name="limits",
+        )
+        return TurnResult("failed", "error", 500, "step_limit")
     except ToolTimeout:
         _fail(
             context,
@@ -144,10 +178,10 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
         _fail(
             context,
             status="timeout",
-            code="run_timeout",
+            code="model_timeout",
             message="Se agotó el tiempo de espera del modelo.",
         )
-        return TurnResult("timeout", "error", 504, "run_timeout")
+        return TurnResult("timeout", "error", 504, "model_timeout")
     except ModelUnavailable:
         _fail(
             context,

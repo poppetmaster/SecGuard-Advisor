@@ -32,3 +32,6 @@ node_modules/
 .ruff_cache/
 __pycache__/
 .DS_Store
+
+# Artefactos de Playwright MCP
+.playwright-mcp/

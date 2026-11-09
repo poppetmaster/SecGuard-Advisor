@@ -44,6 +44,12 @@
       Detalle limitado a {{ call.summary.items_count }} filas; los conteos no se limitan.
     </p>
     {% endif %}
+    {% if call.detail_source == "current_query" %}
+    <p class="mt-2 rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
+      Detalle recalculado al abrir esta página: es una consulta actual al caso, no el detalle original
+      preservado. Los totales y grupos de arriba sí son el resultado histórico registrado.
+    </p>
+    {% endif %}
     {% if call.detail_error %}
     <p class="mt-2 text-xs text-slate-600">{{ call.detail_error }}</p>
     {% elif call.detail_items %}

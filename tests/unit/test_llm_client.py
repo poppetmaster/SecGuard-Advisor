@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import httpx
 import pytest
 
@@ -60,7 +62,7 @@ class StubChat:
 def _generator_with(monkeypatch, structured: StubStructured) -> tuple[OllamaGenerator, dict]:
     captured: dict = {}
 
-    def fake_chat(self):
+    def fake_chat(self, timeout_seconds=None):
         captured["kwargs"] = {
             "model": self.config.model,
             "base_url": self.config.base_url,
@@ -68,7 +70,7 @@ def _generator_with(monkeypatch, structured: StubStructured) -> tuple[OllamaGene
             "temperature": self.config.temperature,
             "seed": self.config.seed,
             "num_predict": self.config.num_predict,
-            "timeout": self.config.timeout_seconds,
+            "timeout": timeout_seconds or self.config.timeout_seconds,
         }
         captured["chat"] = StubChat(structured)
         return captured["chat"]
@@ -220,3 +222,37 @@ def test_parsing_error_with_raw_output_is_invalid(monkeypatch) -> None:
 
     with pytest.raises(InvalidModelOutput):
         generator.generate(system="s", user="u")
+
+
+def test_auto_tracing_is_disabled_only_during_the_call(monkeypatch) -> None:
+    seen: dict = {}
+
+    class EnvStub(StubStructured):
+        def invoke(self, _messages):
+            seen.update(
+                {
+                    key: os.environ.get(key)
+                    for key in (
+                        "LANGSMITH_TRACING",
+                        "LANGCHAIN_TRACING_V2",
+                        "LANGCHAIN_TRACING",
+                    )
+                }
+            )
+            return self.result
+
+    monkeypatch.setenv("LANGSMITH_TRACING", "true")
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "true")
+    generator, _captured = _generator_with(
+        monkeypatch, EnvStub(result=AnswerPayload(answer="hola", claims=[]))
+    )
+
+    generator.generate(system="s", user="u")
+
+    assert seen == {
+        "LANGSMITH_TRACING": "false",
+        "LANGCHAIN_TRACING_V2": "false",
+        "LANGCHAIN_TRACING": "false",
+    }
+    assert os.environ["LANGSMITH_TRACING"] == "true"
+    assert os.environ["LANGCHAIN_TRACING_V2"] == "true"

@@ -322,6 +322,7 @@ class Run(Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     trace_status: Mapped[str] = mapped_column(String(20), nullable=False, default="disabled")
     trace_id: Mapped[str | None] = mapped_column(String(120))
+    trace_url: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
     finished_at: Mapped[str | None] = mapped_column(String(40))
 

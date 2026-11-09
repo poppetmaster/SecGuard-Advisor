@@ -20,7 +20,7 @@ from secguard_advisor.conversation.retry import (
     start_retry_turn,
 )
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
-from secguard_advisor.conversation.views import conversation_view, run_view
+from secguard_advisor.conversation.views import conversation_view, latest_failed_run
 from secguard_advisor.evidence.runs import ActiveRunConflict
 from secguard_advisor.web.errors import message_for
 from secguard_advisor.web.navigation import Crumb, case_crumbs, page
@@ -52,14 +52,22 @@ def _panel_context(
     failure: dict | None = None,
 ) -> dict:
     settings = request.app.state.settings
+    scope = CaseScope(case_id=case_id)
     with request.app.state.session_factory() as session:
-        case = require_case(session, CaseScope(case_id=case_id))
+        case = require_case(session, scope)
         view = conversation_view(
             session,
-            CaseScope(case_id=case_id),
+            scope,
             reviewer_configured=bool(settings.reviewer_name),
             factory=request.app.state.session_factory,
         )
+        if failure is None:
+            pending = latest_failed_run(session, scope)
+            if pending is not None:
+                failure = {
+                    "run_id": pending.id,
+                    "message": message_for(pending.error_code or "internal_error"),
+                }
         case_title = case.title
     return {
         "case_id": case_id,
@@ -257,39 +265,3 @@ def retry_view(request: Request, case_id: str, run_id: str):
     if status_code == 200:
         status_code = 202
     return _render(request, case_id, status_code=status_code, **extras)
-
-
-@router.get("/cases/{case_id}/runs/{run_id}", response_class=HTMLResponse)
-def run_evidence_view(request: Request, case_id: str, run_id: str):
-    try:
-        scope = _resolve_scope(request, case_id)
-    except CaseNotFoundError:
-        return _not_found(request)
-
-    with request.app.state.session_factory() as session:
-        case = require_case(session, scope)
-        view = run_view(session, scope, run_id, factory=request.app.state.session_factory)
-        case_title = case.title
-    if view is None:
-        return _not_found(request)
-
-    return _templates(request).TemplateResponse(
-        request=request,
-        name="chat/run.html",
-        context={
-            "case_id": case_id,
-            "run": view,
-            **page(
-                title="Evidencia de ejecución",
-                section="chat",
-                case_id=case_id,
-                case_title=case_title,
-                crumbs=case_crumbs(
-                    case_id,
-                    case_title,
-                    Crumb("Consulta documental", f"/cases/{case_id}/chat"),
-                    Crumb("Ejecución"),
-                ),
-            ),
-        },
-    )

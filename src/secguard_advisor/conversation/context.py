@@ -31,6 +31,7 @@ class TurnContext:
     conversation_id: str
     question_message_id: str
     run_id: str
+    attempt_no: int
     question: str
     started_perf: float
     started_at: str

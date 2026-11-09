@@ -43,12 +43,12 @@ class ScriptedGenerator:
         self.error = error
         self.calls = 0
 
-    def decide(self, *, system: str, user: str):
+    def decide(self, *, system: str, user: str, timeout_seconds=None):
         from secguard_advisor.conversation.llm import ToolDecision
 
         return ToolDecision(use_findings=False, arguments={})
 
-    def generate(self, *, system: str, user: str) -> AnswerPayload:
+    def generate(self, *, system: str, user: str, timeout_seconds=None) -> AnswerPayload:
         self.calls += 1
         if self.error is not None:
             raise self.error
@@ -273,11 +273,11 @@ def test_model_timeout_returns_504(context) -> None:
 
     assert response.status_code == 504
     assert response.text.lstrip().startswith('<section id="chat-panel"')
-    assert "excedió el tiempo" in response.text
+    assert "Se agotó el tiempo de espera del modelo." in response.text
     with factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == case_id))
         assert run.status == "timeout"
-        assert run.error_code == "run_timeout"
+        assert run.error_code == "model_timeout"
 
 
 def test_panel_shows_sources_with_provenance(context) -> None:

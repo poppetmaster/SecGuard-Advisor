@@ -1,11 +1,40 @@
-"""Ciclo de vida mínimo de las ejecuciones."""
+"""Ciclo de vida y lectura de la evidencia de ejecución."""
 
+from __future__ import annotations
+
+import json
+
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
-from secguard_advisor.db.models import Run, utc_now_iso
+from secguard_advisor.db.models import (
+    Document,
+    DocumentChunk,
+    DocumentVersion,
+    Run,
+    RunSource,
+    RunStep,
+    RunToolCall,
+    utc_now_iso,
+)
+from secguard_advisor.tools.findings import FindingsQuery
 
 _RUN_STATUSES = {"succeeded", "failed", "timeout", "interrupted"}
+_TRACE_STATUSES = {"disabled", "submitted", "failed"}
+
+ORIGIN_LABELS = {
+    "public_corpus": "Corpus público",
+    "case_evidence": "Evidencia del caso",
+}
+
+TOOL_STATUS_LABELS = {
+    "ok": "Consulta completada",
+    "invalid_arguments": "Argumentos inválidos",
+    "error": "Error de la herramienta",
+}
+
+RETRYABLE_STATUSES = {"failed", "timeout", "interrupted"}
 
 
 class ActiveRunConflict(RuntimeError):
@@ -91,3 +120,152 @@ def close_run(
     run.finished_at = utc_now_iso()
     session.add(run)
     return run
+
+
+def record_trace(
+    factory: sessionmaker[Session],
+    run_id: str,
+    *,
+    status: str,
+    trace_id: str | None = None,
+    trace_url: str | None = None,
+) -> None:
+    """Persiste el resultado del envío de traza en una transacción corta.
+
+    ``confirmed`` nunca se escribe desde la aplicación: corresponde al script de
+    confirmación de la aceptación (T091).
+    """
+    if status not in _TRACE_STATUSES:
+        raise ValueError(f"Estado de traza no permitido por la aplicación: {status}")
+    with factory() as session:
+        run = session.get(Run, run_id)
+        if run is None:
+            return
+        run.trace_status = status
+        run.trace_id = trace_id
+        run.trace_url = trace_url
+        session.commit()
+
+
+def serialize_steps(session: Session, run_id: str) -> list[dict]:
+    """Pasos registrados, con su detalle histórico ya serializado."""
+    rows = list(
+        session.scalars(select(RunStep).where(RunStep.run_id == run_id).order_by(RunStep.seq))
+    )
+    return [
+        {
+            "seq": step.seq,
+            "name": step.name,
+            "origin": step.origin,
+            "status": step.status,
+            "duration_ms": step.duration_ms,
+            "detail": json.loads(step.detail_json) if step.detail_json else None,
+        }
+        for step in rows
+    ]
+
+
+def serialize_sources(session: Session, run_id: str) -> list[dict]:
+    """Fuentes recuperadas y si fueron citadas en la respuesta."""
+    rows = list(
+        session.scalars(
+            select(RunSource).where(RunSource.run_id == run_id).order_by(RunSource.rank)
+        )
+    )
+    sources: list[dict] = []
+    for row in rows:
+        chunk = session.get(DocumentChunk, row.chunk_id)
+        version = session.get(DocumentVersion, chunk.version_id) if chunk is not None else None
+        document = session.get(Document, version.document_id) if version is not None else None
+        sources.append(
+            {
+                "rank": row.rank,
+                "origin": row.origin,
+                "origin_label": ORIGIN_LABELS.get(row.origin, row.origin),
+                "title": document.title if document else "Documento",
+                "page": chunk.page_start if chunk else None,
+                "section": chunk.section if chunk else None,
+                "score": round(row.score, 4),
+                "used_in_answer": row.used_in_answer,
+            }
+        )
+    return sources
+
+
+def serialize_tool_calls(
+    session: Session,
+    run_id: str,
+    *,
+    factory=None,
+    scope=None,
+) -> list[dict]:
+    """Invocaciones registradas; separa el resumen histórico del detalle actual.
+
+    El resumen (totales, grupos, procedencia) es el resultado original persistido.
+    Las filas de detalle no se persisten: si el contrato las pidió, se recalculan
+    en modo lectura y se marcan explícitamente como una consulta actual.
+    """
+    rows = list(
+        session.scalars(
+            select(RunToolCall).where(RunToolCall.run_id == run_id).order_by(RunToolCall.seq)
+        )
+    )
+    views: list[dict] = []
+    for row in rows:
+        arguments = json.loads(row.arguments_json) if row.arguments_json else {}
+        summary = json.loads(row.result_summary_json) if row.result_summary_json else None
+        detail_items = None
+        detail_error = None
+        detail_source = None
+        if summary and arguments.get("detail") and factory is not None and scope is not None:
+            detail_source = "current_query"
+            try:
+                detail_items = FindingsQuery(factory, scope).execute(arguments).get("items", [])
+            except Exception:
+                detail_error = "No se pudo recalcular el detalle de la consulta."
+        views.append(
+            {
+                "tool_name": row.tool_name,
+                "status": row.status,
+                "status_label": TOOL_STATUS_LABELS.get(row.status, row.status),
+                "error_code": row.error_code,
+                "duration_ms": row.duration_ms,
+                "arguments": arguments,
+                "summary": summary,
+                "detail_items": detail_items,
+                "detail_source": detail_source,
+                "detail_error": detail_error,
+                "is_synthetic": True,
+            }
+        )
+    return views
+
+
+def serialize_attempts(session: Session, run: Run) -> list[dict]:
+    """Intentos de la misma pregunta, en orden, con el actual marcado."""
+    if not run.question_message_id:
+        return []
+    rows = list(
+        session.scalars(
+            select(Run)
+            .where(Run.question_message_id == run.question_message_id)
+            .order_by(Run.attempt_no)
+        )
+    )
+    return [
+        {
+            "id": item.id,
+            "attempt_no": item.attempt_no,
+            "retry_of_run_id": item.retry_of_run_id,
+            "status": item.status,
+            "outcome": item.outcome,
+            "started_at": item.started_at,
+            "is_current": item.id == run.id,
+        }
+        for item in rows
+    ]
+
+
+def retry_allowed(run: Run) -> bool:
+    """Un intento se reintenta solo si falló y no dejó respuesta."""
+    return run.answer_message_id is None and run.status in RETRYABLE_STATUSES

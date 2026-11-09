@@ -113,6 +113,7 @@ def start_retry_turn(
             conversation_id=original.conversation_id,
             question_message_id=plan.question_message_id,
             run_id=run.id,
+            attempt_no=run.attempt_no,
             question=plan.question,
             started_perf=time.perf_counter(),
             started_at=utc_now_iso(),

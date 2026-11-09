@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from urllib.parse import quote as url_quote
 
 from sqlalchemy import select
@@ -12,21 +11,23 @@ from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.db.models import (
     Conversation,
     Document,
-    DocumentChunk,
     DocumentVersion,
     Message,
     MessageCitation,
     Run,
-    RunSource,
-    RunStep,
-    RunToolCall,
 )
-from secguard_advisor.tools.findings import FindingsQuery
-
-ORIGIN_LABELS = {
-    "public_corpus": "Corpus público",
-    "case_evidence": "Evidencia del caso",
-}
+from secguard_advisor.evidence.runs import (
+    ORIGIN_LABELS,
+    retry_allowed,
+    serialize_attempts,
+    serialize_steps,
+)
+from secguard_advisor.evidence.runs import (
+    serialize_sources as _sources_view,
+)
+from secguard_advisor.evidence.runs import (
+    serialize_tool_calls as tool_calls_view,
+)
 
 CHECK_LABELS = {
     "valid": "válida",
@@ -99,80 +100,6 @@ def citation_view(session: Session, case_id: str, citation: MessageCitation) -> 
         "is_supported": citation.support_review_status == "supported",
         "is_pending": citation.support_review_status == "unreviewed",
     }
-
-
-TOOL_STATUS_LABELS = {
-    "ok": "Consulta completada",
-    "invalid_arguments": "Argumentos inválidos",
-    "error": "Error de la herramienta",
-}
-
-
-def tool_calls_view(
-    session: Session,
-    run_id: str,
-    *,
-    factory=None,
-    scope=None,
-) -> list[dict]:
-    """Resume las invocaciones registradas; recalcula el detalle si hace falta."""
-    rows = list(
-        session.scalars(
-            select(RunToolCall).where(RunToolCall.run_id == run_id).order_by(RunToolCall.seq)
-        )
-    )
-    views: list[dict] = []
-    for row in rows:
-        arguments = json.loads(row.arguments_json) if row.arguments_json else {}
-        summary = json.loads(row.result_summary_json) if row.result_summary_json else None
-        items = None
-        detail_error = None
-        if summary and arguments.get("detail") and factory is not None and scope is not None:
-            try:
-                items = FindingsQuery(factory, scope).execute(arguments).get("items", [])
-            except Exception:
-                detail_error = "No se pudo recalcular el detalle de la consulta."
-        views.append(
-            {
-                "tool_name": row.tool_name,
-                "status": row.status,
-                "status_label": TOOL_STATUS_LABELS.get(row.status, row.status),
-                "error_code": row.error_code,
-                "duration_ms": row.duration_ms,
-                "arguments": arguments,
-                "summary": summary,
-                "detail_items": items,
-                "detail_error": detail_error,
-                "is_synthetic": True,
-            }
-        )
-    return views
-
-
-def _sources_view(session: Session, run_id: str) -> list[dict]:
-    rows = list(
-        session.scalars(
-            select(RunSource).where(RunSource.run_id == run_id).order_by(RunSource.rank)
-        )
-    )
-    sources: list[dict] = []
-    for row in rows:
-        chunk = session.get(DocumentChunk, row.chunk_id)
-        version = session.get(DocumentVersion, chunk.version_id) if chunk is not None else None
-        document = session.get(Document, version.document_id) if version is not None else None
-        sources.append(
-            {
-                "rank": row.rank,
-                "origin": row.origin,
-                "origin_label": ORIGIN_LABELS.get(row.origin, row.origin),
-                "title": document.title if document else "Documento",
-                "page": chunk.page_start if chunk else None,
-                "section": chunk.section if chunk else None,
-                "score": round(row.score, 4),
-                "used_in_answer": row.used_in_answer,
-            }
-        )
-    return sources
 
 
 def _message_run(session: Session, message: Message) -> Run | None:
@@ -251,15 +178,91 @@ def latest_failed_run(session: Session, scope: CaseScope) -> Run | None:
     )
 
 
+TRACE_STATUS_LABELS = {
+    "disabled": "No configurada",
+    "submitted": "Enviada (no verificada)",
+    "failed": "No disponible",
+    "confirmed": "Verificada",
+}
+
+STEP_LABELS = {
+    "load_scope": "Alcance del caso",
+    "load_memory": "Memoria",
+    "retrieve": "Recuperación documental",
+    "decide": "Decisión de herramienta",
+    "tools": "Herramienta",
+    "agent": "Generación",
+    "validate": "Control automático de citas",
+    "repair": "Reparación",
+    "abstain": "Abstención",
+    "persist": "Persistencia",
+}
+
+
+def _budget_view(steps: list[dict]) -> list[dict]:
+    """Extrae solo las mediciones de contexto realmente registradas."""
+    budget: list[dict] = []
+    for step in steps:
+        detail = step.get("detail") or {}
+        if not any(
+            key in detail
+            for key in ("admitted_tokens", "observed_prompt_tokens", "limit", "estimated_tokens")
+        ):
+            continue
+        counter = detail.get("counter") or {}
+        budget.append(
+            {
+                "step": step["name"],
+                "admitted_tokens": detail.get("admitted_tokens"),
+                "observed_prompt_tokens": detail.get("observed_prompt_tokens"),
+                "estimated_tokens": detail.get("estimated_tokens"),
+                "limit": detail.get("limit"),
+                "output_reserve": detail.get("output_reserve"),
+                "safety_margin": detail.get("safety_margin"),
+                "history_messages": detail.get("history_messages"),
+                "sources": detail.get("sources"),
+                "method": counter.get("method"),
+                "model": counter.get("model"),
+                "template": counter.get("template"),
+            }
+        )
+    return budget
+
+
 def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -> dict | None:
     """Evidencia de ejecución completa, siempre dentro del alcance del caso."""
     run = session.get(Run, run_id)
     if run is None or run.case_id != scope.case_id:
         return None
     question = session.get(Message, run.question_message_id) if run.question_message_id else None
-    steps = list(
-        session.scalars(select(RunStep).where(RunStep.run_id == run.id).order_by(RunStep.seq))
-    )
+    steps = serialize_steps(session, run.id)
+    attempts = [
+        {
+            **item,
+            "status_label": RUN_STATUS_LABELS.get(item["status"], item["status"]),
+            "outcome_label": OUTCOME_LABELS.get(item["outcome"] or "", item["outcome"]),
+        }
+        for item in serialize_attempts(session, run)
+    ]
+    previous = next((item for item in attempts if item["attempt_no"] == run.attempt_no - 1), None)
+    citations: list[dict] = []
+    rejected_reasons: list[str] = []
+    if run.answer_message_id:
+        citations = [
+            citation_view(session, scope.case_id, citation)
+            for citation in session.scalars(
+                select(MessageCitation)
+                .where(MessageCitation.message_id == run.answer_message_id)
+                .order_by(MessageCitation.created_at)
+            )
+            if citation.check_status == "valid"
+        ]
+    validate_step = next((step for step in steps if step["name"] == "validate"), None)
+    if validate_step and validate_step.get("detail"):
+        rejected_reasons = list(validate_step["detail"].get("reasons") or [])
+    tool_calls = tool_calls_view(session, run.id, factory=factory, scope=scope)
+    tool_evidence = any(call["status"] == "ok" for call in tool_calls)
+    budget = _budget_view(steps)
     return {
         "id": run.id,
         "status": run.status,
@@ -268,6 +271,10 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
         "outcome_label": OUTCOME_LABELS.get(run.outcome or ""),
         "attempt_no": run.attempt_no,
         "retry_of_run_id": run.retry_of_run_id,
+        "attempts": attempts,
+        "previous_attempt": previous,
+        "can_retry": retry_allowed(run),
+        "retry_url": f"/cases/{scope.case_id}/runs/{run.id}/retry",
         "question": question.content if question else None,
         "started_at": run.started_at,
         "finished_at": run.finished_at,
@@ -283,16 +290,23 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
         "error_code": run.error_code,
         "error_message": run.error_message,
         "trace_status": run.trace_status,
+        "trace_status_label": TRACE_STATUS_LABELS.get(run.trace_status, run.trace_status),
+        "trace_id": run.trace_id,
+        "trace_url": run.trace_url,
         "steps": [
             {
-                "seq": step.seq,
-                "name": step.name,
-                "origin": step.origin,
-                "status": step.status,
-                "duration_ms": step.duration_ms,
+                **step,
+                "label": STEP_LABELS.get(step["name"], step["name"]),
             }
             for step in steps
         ],
         "sources": _sources_view(session, run.id),
-        "tool_calls": tool_calls_view(session, run.id, factory=factory, scope=scope),
+        "tool_calls": tool_calls,
+        "citations": citations,
+        "rejected_reasons": rejected_reasons,
+        "reviewed_count": sum(1 for item in citations if not item["is_pending"]),
+        "pending_review_count": sum(1 for item in citations if item["is_pending"]),
+        "budget": budget,
+        "has_documentary_evidence": bool(citations),
+        "has_tool_evidence": tool_evidence,
     }
