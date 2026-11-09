@@ -16,13 +16,14 @@ ejecución con intentos, límites y trazas. La aceptación local está documenta
 semánticas) son validaciones recomendadas y no bloqueantes; no se ejecutaron y no se presentan como
 aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**US1 y US2 de 002 implementadas**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de
+**US1–US3 de 002 implementadas**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de
 forma local con lector, políticas versionadas, validación por fila, staging/rechazo, snapshots
 confirmables, comparación de manifiesto y posibles repeticiones. La sección «Vulnerabilidades» incluye
-formulario, vista previa, confirmación, cancelación, historial y selector de instantáneas, y consulta
-básica de registros confirmados mediante `findings_query` (origen e instantánea incluidos). La primera
-consulta de un turno fija el snapshot y las posteriores lo reutilizan. Los filtros avanzados y la
-aceptación integral T039 siguen pendientes.
+formulario, vista previa, confirmación, cancelación, historial, selector de instantáneas, filtros por
+estado, severidad, prioridad e indicadores, y consulta de registros confirmados mediante
+`findings_query` (origen, instantánea, estado, severidad, prioridad e indicadores incluidos). La
+primera consulta de un turno fija el snapshot y las posteriores lo reutilizan. La aceptación integral
+T039 sigue pendiente.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -116,6 +117,17 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   `snapshot_locked`. Solo se consultan importaciones `confirmed`, no se envían `Results` al modelo y
   los registros Qualys no se convierten en documentos, vectores ni citas del RAG. Un total 0 no
   demuestra ausencia de vulnerabilidades ni implica remediación.
+- La severidad importada usa la escala del proyecto 1 Informativa, 2 Baja, 3 Media, 4 Alta y 5
+  Crítica; conserva el valor original y no se equipara con CVSS, QDS, TruRisk ni prioridades P1–P4.
+  Los estados se agrupan en `pending_known` (Active, New, Re-Opened), `fixed` y `manual_review`
+  (desconocido); un estado desconocido no es un indicador indeterminado. Explotabilidad y malware son
+  distribuciones independientes y la prioridad conjunta solo aplica con ambos positivos; `Fixed` con
+  ambos positivos es antecedente, no remediación pendiente.
+- La tabla y `findings_query` comparten filtros. `origin=imported` usa `pending_known` por defecto;
+  `origin=all` usa `all`, devuelve bloques separados y solo admite `status_group=all`. Los filtros
+  importados exigen `origin=imported`. La UI conserva la instantánea seleccionada y los parámetros en
+  la URL, muestra filtros activos y distingue «Sin importaciones confirmadas» de «Sin registros para
+  estos filtros».
 - La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
   Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y
   la decisión también se mide con el tokenizador del generador.

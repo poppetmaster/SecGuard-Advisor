@@ -93,10 +93,13 @@ Si el caso solo tiene importados:
   "status_group": "pending_known",
   "total": 662,
   "groups": [{ "key": "4", "count": 162, "label": "Alta" }],
-  "severity_scale": "project_1_5",
+  "status_counts": { "Active": 631, "New": 10, "Re-Opened": 21 },
+  "severity_counts": { "1": 20, "2": 316, "3": 94, "4": 162, "5": 70 },
   "exploitability_counts": { "positive": 129, "negative_no_info": 0, "indeterminate": 533 },
   "malware_counts": { "positive": 8, "negative_no_info": 0, "indeterminate": 654 },
   "priority_counts": { "both_positive": 8 },
+  "manual_review_rows": 654,
+  "severity_scale": "project_1_5",
   "items": [],
   "truncated": false
 }
@@ -184,6 +187,11 @@ etiqueta de activo es de presentación, no una identidad.
 - `exploitability_counts` y `malware_counts` son distribuciones independientes; no se suman como
   grupos excluyentes. `priority_counts.both_positive` cuenta solo la conjunción positiva.
 - `priority_counts` se calcula por separado y no reemplaza la severidad.
+- `status_counts` usa el estado original (`Active`, `New`, `Re-Opened`, `Fixed`, desconocido) y no se
+  deriva de `status_group`; `severity_counts` usa el nivel 1–5.
+- `manual_review_rows` cuenta filas con estado desconocido o algún indicador indeterminado; no es la
+  suma de las distribuciones de indicadores.
+- `group_by=status` agrupa por `status_group`; `group_by=severity_level` agrupa por nivel 1–5.
 - `Fixed` y `manual_review` no se suman a `pending_known`.
 
 ## Snapshot seleccionado

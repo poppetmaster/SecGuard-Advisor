@@ -121,6 +121,17 @@ En la tabla y mediante el agente:
   admite `all`.
 - Un `snapshot_id` distinto después de fijar la instantánea del turno devuelve `snapshot_locked`.
 
+En la interfaz:
+
+1. Con una instantánea anterior seleccionada, aplicar y limpiar filtros: la URL conserva
+   `import_id` y los parámetros del filtro; no se cambia en silencio a la última instantánea.
+2. Comprobar que los filtros activos se muestran como texto junto al formulario y que el selector
+   histórico sigue funcionando.
+3. Aplicar un filtro sin coincidencias: se muestra «Sin registros para estos filtros», no «Sin
+   importaciones confirmadas».
+4. Abrir un caso sin instantáneas confirmadas: se muestra «Sin importaciones confirmadas» y no el
+   mensaje de filtros. Ninguno de los dos estados afirma ausencia de vulnerabilidades ni riesgo bajo.
+
 ## 8. Aislamiento y errores
 
 1. Crear un segundo caso sin importaciones.
