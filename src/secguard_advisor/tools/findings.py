@@ -94,13 +94,13 @@ class FindingsQuery:
         self._scope = scope
         self._timeout = timeout_seconds
 
-    def execute(self, arguments: dict) -> dict:
+    def execute(self, arguments: dict, *, fixed_snapshot_id: str | None = None) -> dict:
         """Valida, consulta y devuelve el resultado del contrato."""
         started = perf_counter()
         parsed = parse_arguments(arguments)
         try:
             with self._factory() as session:
-                result = self._run(session, parsed)
+                result = self._run(session, parsed, fixed_snapshot_id=fixed_snapshot_id)
         except SQLAlchemyError as exc:
             raise ToolExecutionError("No se pudieron consultar los hallazgos del caso.") from exc
         if perf_counter() - started > self._timeout:
@@ -234,7 +234,22 @@ class FindingsQuery:
             result["truncated"] = total > len(items)
         return result
 
-    def _run(self, session: Session, arguments: FindingsArguments) -> dict:
+    def _run(
+        self,
+        session: Session,
+        arguments: FindingsArguments,
+        *,
+        fixed_snapshot_id: str | None = None,
+    ) -> dict:
+        if (
+            fixed_snapshot_id is not None
+            and arguments.snapshot_id is not None
+            and arguments.snapshot_id != fixed_snapshot_id
+        ):
+            raise ToolArgumentError(
+                "snapshot_locked",
+                "La instantánea del turno ya está fijada; no puede cambiarse en esta respuesta.",
+            )
         synthetic_exists = has_synthetic(session, self._scope.case_id)
         imported_exists = has_confirmed_imports(session, self._scope.case_id)
 
@@ -256,6 +271,7 @@ class FindingsQuery:
                     self._scope.case_id,
                     arguments,
                     status_group="pending_known",
+                    snapshot_id=fixed_snapshot_id,
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc
@@ -284,6 +300,7 @@ class FindingsQuery:
                     self._scope.case_id,
                     arguments,
                     status_group=None,
+                    snapshot_id=fixed_snapshot_id,
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc
@@ -300,6 +317,7 @@ class FindingsQuery:
                     self._scope.case_id,
                     arguments,
                     status_group=None,
+                    snapshot_id=fixed_snapshot_id,
                 )
             except QualysQueryError as exc:
                 raise ToolArgumentError(exc.code, exc.message) from exc

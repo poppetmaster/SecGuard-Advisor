@@ -159,6 +159,8 @@ Argumentos válidos y sus tipos:
 - detail: booleano true/false (solo para listar filas; no lo uses para conteos).
 - limit: entero de 1 a 100.
 No incluyas case_id ni inventes valores.
+La primera resolución de una instantánea fija el snapshot del turno; no cambies snapshot_id después.
+Si el servidor devuelve snapshot_locked, reutilizá la instantánea fijada.
 Si un intento anterior devolvió un error de argumentos, corregí los argumentos.
 Si un intento anterior ya devolvió un resultado para esta pregunta, no repitas la misma consulta."""
 

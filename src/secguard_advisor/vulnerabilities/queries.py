@@ -41,6 +41,26 @@ def has_confirmed_imports(session: Session, case_id: str) -> bool:
     )
 
 
+def list_confirmed(session: Session, case_id: str) -> list[QualysImport]:
+    return list(
+        session.scalars(
+            select(QualysImport)
+            .where(QualysImport.case_id == case_id, QualysImport.status == "confirmed")
+            .order_by(QualysImport.confirmed_sequence.desc())
+        )
+    )
+
+
+def get_confirmed(session: Session, case_id: str, import_id: str) -> QualysImport | None:
+    return session.scalar(
+        select(QualysImport).where(
+            QualysImport.id == import_id,
+            QualysImport.case_id == case_id,
+            QualysImport.status == "confirmed",
+        )
+    )
+
+
 def resolve_snapshot(
     session: Session,
     case_id: str,
@@ -166,9 +186,14 @@ def imported_result(
     arguments: Any,
     *,
     status_group: str | None,
+    snapshot_id: str | None = None,
 ) -> dict:
     """Devuelve el bloque de una instantánea confirmada o un resultado vacío."""
-    snapshot = resolve_snapshot(session, case_id, getattr(arguments, "snapshot_id", None))
+    snapshot = resolve_snapshot(
+        session,
+        case_id,
+        snapshot_id or getattr(arguments, "snapshot_id", None),
+    )
     if snapshot is None:
         return {
             "origin": "imported",

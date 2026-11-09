@@ -44,11 +44,11 @@ US6 (evidencia de ejecución, límites y trazas). La aceptación local está doc
 SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
 ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**Funcionalidad 002 — US1 implementada.** El módulo `vulnerabilities` incorpora lectura y validación
-del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables, formulario,
-vista previa, confirmación, cancelación y consulta básica mediante `findings_query` (origen e
-instantánea incluidos). El selector histórico completo, los filtros avanzados y la aceptación
-integral T039 siguen pendientes.
+**Funcionalidad 002 — US1 y US2 implementadas.** El módulo `vulnerabilities` incorpora lectura y
+validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables,
+formulario, vista previa, confirmación, cancelación, historial y selector de instantáneas, y consulta
+básica mediante `findings_query` (origen e instantánea incluidos). La instantánea se fija por turno.
+Los filtros avanzados y la aceptación integral T039 siguen pendientes.
 
 ### Implementado
 
@@ -80,18 +80,19 @@ integral T039 siguen pendientes.
   `submitted`, `confirmed` y `failed`, y degradación local cuando LangSmith no está disponible.**
 - **Aceptación local: recorrido con dobles y recorrido real con Ollama, corpus, hallazgos,
   reinicio y aislamiento; confirmación de traza por API de lectura con identidad declarada.**
-- **002 (US1): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
+- **002 (US1 y US2): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
   staging/rechazo, snapshots confirmables, manifiesto, repeticiones, sección «Vulnerabilidades» con
-  formulario/preview/confirmación/cancelación y consulta básica importada en `findings_query`.
-  El selector histórico y los filtros avanzados quedan para los siguientes cortes.**
+  formulario/preview/confirmación/cancelación, historial y selector de instantáneas, y consulta básica
+  importada en `findings_query` con instantánea fija por turno. Los filtros avanzados quedan para el
+  siguiente corte.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Resto de la funcionalidad 002: selector histórico completo, filtros avanzados, evidencia histórica
-  frente a detalle actual y aceptación integral T039.
+- Resto de la funcionalidad 002: filtros avanzados, evidencia histórica frente a detalle actual y
+  aceptación integral T039.
 - Incrementos posteriores (clasificación, entrenamiento o exportaciones) fuera del alcance
   autorizado del primer incremento.
 
@@ -112,9 +113,10 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
    invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
    validaciones recomendadas y no bloqueantes, no ejecutadas.
-7. **Implementado (US1):** sección «Vulnerabilidades» con carga del CSV Qualys, validación,
-   vista previa, confirmación, cancelación, snapshots confirmables y consulta básica mediante
-   `findings_query`. El selector histórico y los filtros avanzados quedan para el siguiente corte.
+7. **Implementado (US1 y US2):** sección «Vulnerabilidades» con carga del CSV Qualys, validación,
+   vista previa, confirmación, cancelación, historial, selector de instantáneas y consulta básica
+   mediante `findings_query` con instantánea fija por turno. Los filtros avanzados quedan para el
+   siguiente corte.
 
 La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
 herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
@@ -300,7 +302,7 @@ importación de Qualys. La importación Qualys confirmada se consulta desde la s
 sintéticas. Un caso sin hallazgos devuelve total 0 y advierte que eso no demuestra ausencia de
 vulnerabilidades ni riesgo bajo. Cada invocación queda registrada en la evidencia de ejecución.
 
-### Vulnerabilidades Qualys (US1)
+### Vulnerabilidades Qualys (US1 y US2)
 
 La sección **Vulnerabilidades** del caso permite cargar el CSV filtrado de Qualys, validarlo y revisar
 la vista previa antes de confirmar. La validación local aplica severidad 1–5, estados admitidos con
@@ -310,12 +312,17 @@ local y calcula posibles repeticiones sin deduplicar.
 
 El formulario recibe únicamente el CSV. Tras confirmar, la instantánea queda consultable desde la
 sección y mediante `findings_query`, que usa por defecto la última instantánea confirmada, distingue
-origen e identificador de instantánea y no mezcla datos sintéticos con importados. El selector
-histórico completo y los filtros avanzados quedan para el siguiente corte.
+origen e identificador de instantánea y no mezcla datos sintéticos con importados. El historial y el
+selector permiten consultar una instantánea anterior; la selección se conserva en la URL y el
+resultado muestra siempre la instantánea usada. La primera consulta de un turno fija el snapshot y
+otra solicitud en el mismo turno devuelve `snapshot_locked`. Las instantáneas no se suman y la
+ausencia de un registro no se interpreta como remediación. Los filtros avanzados quedan para el
+siguiente corte.
 
 El CSV real se usa solo en comprobaciones locales con almacenamiento temporal; no se versiona ni se
 envía a servicios externos. La aceptación integral T039 sigue pendiente. Capturas sintéticas de la UI:
-[`docs/evidencia/002-corte-2/`](docs/evidencia/002-corte-2/).
+[`docs/evidencia/002-corte-2/`](docs/evidencia/002-corte-2/) y
+[`docs/evidencia/002-corte-3/`](docs/evidencia/002-corte-3/).
 
 ### Evidencia de ejecución y trazas
 
@@ -387,8 +394,8 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 388 pruebas rápidas
-make test-integration # 28 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
+make check            # lint, formato y 394 pruebas rápidas
+make test-integration # 29 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000
 ```

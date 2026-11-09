@@ -17,6 +17,7 @@ from secguard_advisor.db.models import (
     QualysVulnerability,
     QualysVulnerabilityCve,
 )
+from secguard_advisor.vulnerabilities.queries import get_confirmed, list_confirmed
 from secguard_advisor.vulnerabilities.service import (
     ImportNotFoundError,
     InvalidTransitionError,
@@ -206,19 +207,31 @@ def _section_context(
     case_id: str,
     case_title: str,
     *,
+    import_id: str | None = None,
     notice: str | None = None,
     errors: dict[str, str] | None = None,
 ) -> dict:
     with request.app.state.session_factory() as session:
-        latest = _latest_confirmed(session, case_id)
-        rows = _rows(session, latest.id) if latest is not None else []
+        snapshots = list_confirmed(session, case_id)
+        if import_id is not None:
+            selected = get_confirmed(session, case_id, import_id)
+            if selected is None:
+                raise LookupError(import_id)
+        else:
+            selected = snapshots[0] if snapshots else None
+        rows = _rows(session, selected.id) if selected is not None else []
+    latest_id = snapshots[0].id if snapshots else None
     return {
         "case_id": case_id,
         "case_title": case_title,
-        "record": latest,
-        "summary": _summary(latest),
+        "record": selected,
+        "summary": _summary(selected),
         "rows": rows,
-        "rows_truncated": bool(latest and latest.row_count > len(rows)),
+        "rows_truncated": bool(selected and selected.row_count > len(rows)),
+        "snapshots": snapshots,
+        "selected_id": selected.id if selected is not None else None,
+        "latest_id": latest_id,
+        "is_latest": selected is not None and selected.id == latest_id,
         "notice": notice,
         "errors": errors or {},
         "status_labels": STATUS_LABELS,
@@ -239,11 +252,19 @@ def _render_section(
     case_id: str,
     case_title: str,
     *,
+    import_id: str | None = None,
     status_code: int = 200,
     notice: str | None = None,
     errors: dict[str, str] | None = None,
 ):
-    context = _section_context(request, case_id, case_title, notice=notice, errors=errors)
+    context = _section_context(
+        request,
+        case_id,
+        case_title,
+        import_id=import_id,
+        notice=notice,
+        errors=errors,
+    )
     name = "vulnerabilities/_panel.html" if _is_htmx(request) else "vulnerabilities/index.html"
     return _templates(request).TemplateResponse(
         request=request, name=name, context=context, status_code=status_code
@@ -352,7 +373,16 @@ def vulnerabilities_view(request: Request, case_id: str):
     except CaseNotFoundError:
         return _not_found(request)
     notice = NOTICES.get(request.query_params.get("notice", ""))
-    return _render_section(request, resolved_id, case_title, notice=notice)
+    try:
+        return _render_section(
+            request,
+            resolved_id,
+            case_title,
+            import_id=request.query_params.get("import_id"),
+            notice=notice,
+        )
+    except LookupError:
+        return _not_found(request)
 
 
 @router.get("/cases/{case_id}/vulnerabilities/imports", response_class=HTMLResponse)

@@ -89,13 +89,25 @@ anterior; no se suman ni se infiere remediación.
 **Independent Test**: importar fixture válido, luego segundo fixture; existen dos snapshots; el
 default es el segundo; seleccionar el primero devuelve sus totales, sin suma.
 
-- [ ] T023 [P] [US2] Escribir pruebas de snapshots en `tests/unit/test_qualys_snapshots.py` — secuencia, último confirmado, selección anterior, mismo hash idempotente, archivo distinto, ausencia sin remediación, snapshot fijado en el turno, `snapshot_locked` y confirmación concurrente de otro reporte · Dep: T011 · Check: fallan antes de T024/T026 · Evidence: rojo inicial
-- [ ] T024 [US2] Implementar historial y selector en `src/secguard_advisor/vulnerabilities/service.py`, `queries.py`, `web/routes/vulnerabilities.py` y `web/templates/vulnerabilities/_history.html` — lista de snapshots, selección, default y estado vacío · Dep: T023, T015, T017 · Check: T023 en verde para historial/selección · Evidence: pruebas y HTML
-- [ ] T025 [P] [US2] Escribir integración de snapshots en `tests/integration/test_qualys_snapshots.py` — dos archivos, no suma, idempotencia, ausencia no remediación · Dep: T024 · Check: falla antes de T026 si aplica · Evidence: rojo/verde
-- [ ] T026 [US2] Fijar el snapshot en la primera herramienta del turno en `src/secguard_advisor/conversation/graph.py` y `nodes.py` — `selected_import_id` en estado, reutilización obligatoria, `snapshot_locked` ante otra instantánea, resumen histórico y ausencia de cambio durante la respuesta; un turno nuevo puede seleccionar otra · Dep: T019, T024 · Check: T023/T025 en verde; pruebas de cambio solicitado y confirmación concurrente de otro reporte · Evidence: estado y `run_tool_calls`
-- [ ] T027 [US2] Actualizar `quickstart.md`, `README.md` y `AGENTS.md` con snapshots, selector y ausencia de inferencia de remediación; T027 es la responsable de esta documentación — Dep: T024, T026 · Check: pasos reproducibles y sin contradicción · Evidence: diff y ejecución del quickstart sintético
+- [x] T023 [P] [US2] Escribir pruebas de snapshots en `tests/unit/test_qualys_snapshot_selection.py` — secuencia, último confirmado, selección anterior, mismo hash idempotente, archivo distinto, ausencia sin remediación, snapshot fijado en el turno, `snapshot_locked` y confirmación concurrente de otro reporte · Dep: T011 · Check: pruebas de snapshots en verde · Evidence: `test_qualys_snapshot_selection.py` verde; RED no observado por ejecución conjunta
+- [x] T024 [US2] Implementar historial y selector en `src/secguard_advisor/vulnerabilities/service.py`, `queries.py`, `web/routes/vulnerabilities.py` y `web/templates/vulnerabilities/_history.html` — lista de snapshots, selección, default y estado vacío · Dep: T023, T015, T017 · Check: T023 en verde para historial/selección · Evidence: pruebas y HTML
+- [x] T025 [P] [US2] Escribir integración de snapshots en `tests/integration/test_qualys_snapshots.py` — dos archivos, no suma, idempotencia, ausencia no remediación · Dep: T024 · Check: integración de snapshots en verde · Evidence: `tests/integration/test_qualys_snapshots.py` verde; RED no observado por ejecución conjunta
+- [x] T026 [US2] Fijar el snapshot en la primera herramienta del turno en `src/secguard_advisor/conversation/graph.py` y `nodes.py` — `selected_import_id` en estado, reutilización obligatoria, `snapshot_locked` ante otra instantánea, resumen histórico y ausencia de cambio durante la respuesta; un turno nuevo puede seleccionar otra · Dep: T019, T024 · Check: T023/T025 en verde; pruebas de cambio solicitado y confirmación concurrente de otro reporte · Evidence: estado y `run_tool_calls`
+- [x] T027 [US2] Actualizar `quickstart.md`, `README.md` y `AGENTS.md` con snapshots, selector y ausencia de inferencia de remediación; T027 es la responsable de esta documentación — Dep: T024, T026 · Check: pasos reproducibles y sin contradicción · Evidence: diff y ejecución del quickstart sintético
 
 **Checkpoint**: snapshots históricos y selección reproducibles.
+
+### US2 — Evidencia ejecutada
+
+- **T023/T024**: dos instantáneas confirmadas, última por defecto, selección anterior, URL persistente, conteos independientes, idempotencia, aislamiento y ausencia sin inferencia de remediación.
+- **T025**: integración SQLite de snapshots, no suma, reimportación sin duplicados y consulta explícita.
+- **T026**: `selected_import_id` fija el snapshot en la primera herramienta; solicitar otro devuelve `snapshot_locked`; una confirmación concurrente no cambia el snapshot; un turno nuevo puede seleccionar otra.
+- **T027**: quickstart, README y AGENTS actualizados con historial, selector, snapshot fijo y ausencia de inferencia de remediación.
+- **Menú**: renderizado comprobado; el acceso muestra únicamente «Vulnerabilidades», sin texto de datos sintéticos.
+- **Pruebas focalizadas**: 14 passed en snapshots, selector, rutas e integración.
+- **`make check`**: 394 passed, 29 deselected.
+- **Playwright sintético**: historial, selector, instantánea histórica, persistencia por URL, escritorio 1440, móvil 390 y 320, sin desbordamiento horizontal, consola sin errores y recursos 200. Capturas en `docs/evidencia/002-corte-3/`.
+- **T039**: no ejecutada; no se cierra aceptación integral ni T028+.
 
 ## Phase 5: User Story 3 - Estado, severidad, prioridad y procedencia (P3)
 

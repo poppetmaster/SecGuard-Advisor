@@ -76,11 +76,14 @@ No se usan filas del archivo real para crear estos fixtures. Los CVE sintéticos
    Esperado: cero filas nuevas, cero cambios de conteos, enlace al snapshot existente.
 2. Cargar `qualys_synthetic_second.csv` y confirmar.
    Esperado: nuevo snapshot, una fila nueva y una ya presente; el total no suma ambos snapshots.
-3. En la sección, dejar el selector en el último snapshot y comprobar sus conteos.
-4. Seleccionar el snapshot anterior y comprobar que los conteos vuelven a los de ese snapshot.
-5. Verificar que la ausencia de un registro en el segundo snapshot no se etiqueta como corregido ni
-   remediado.
-6. En un turno nuevo, seleccionar el snapshot anterior. En el mismo turno, solicitar otro snapshot
+3. Abrir **Historial de importaciones**: comprobar estado, fecha, filas y secuencia de cada snapshot.
+4. En la sección, comprobar que el selector usa por defecto la última instantánea confirmada y que la
+   URL conserva `import_id` al recargar.
+5. Seleccionar el snapshot anterior y comprobar que los conteos vuelven a los de ese snapshot, que la
+   etiqueta «Histórica» aparece y que la selección persiste al recargar.
+6. Verificar que la ausencia de un registro en el segundo snapshot no se etiqueta como corregido ni
+   remediado. Las instantáneas no se suman.
+7. En un turno nuevo, seleccionar el snapshot anterior. En el mismo turno, solicitar otro snapshot
    después de la primera consulta debe devolver `snapshot_locked`; no puede cambiar en silencio.
 
 ## 6. Estados, severidad y prioridad

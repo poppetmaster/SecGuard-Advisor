@@ -26,11 +26,33 @@
     </div>
   </div>
 
-  {% if record %}
+  {% if snapshots %}
+  <form
+    class="mt-4 rounded-lg border border-slate-200 bg-white p-3"
+    method="get"
+    action="/cases/{{ case_id }}/vulnerabilities"
+  >
+    <label class="block text-sm font-medium text-slate-800" for="import_id">Instantánea confirmada</label>
+    <div class="mt-2 flex flex-wrap items-end gap-2">
+      <select class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" id="import_id" name="import_id">
+        {% for snapshot in snapshots %}
+        <option value="{{ snapshot.id }}" {% if snapshot.id == selected_id %}selected{% endif %}>
+          #{{ snapshot.confirmed_sequence }} · {{ snapshot.original_filename }} · {{ snapshot.row_count }} registros · {{ (snapshot.confirmed_at or snapshot.created_at)[:19] }}
+        </option>
+        {% endfor %}
+      </select>
+      <button class="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" type="submit">Consultar</button>
+      {% if not is_latest %}
+      <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50" href="/cases/{{ case_id }}/vulnerabilities">Volver a la última</a>
+      {% endif %}
+    </div>
+    <p class="mt-2 text-xs text-slate-600">La última instantánea confirmada es la predeterminada. Las instantáneas no se suman y la ausencia de un registro no implica remediación.</p>
+  </form>
   <div class="mt-4 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
     <p>
       Instantánea confirmada <span class="font-mono">#{{ record.confirmed_sequence }}</span> ·
       <span class="font-mono">{{ record.original_filename }}</span>
+      {% if not is_latest %}<span class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Histórica</span>{% endif %}
     </p>
     <p class="mt-1 text-xs text-slate-500">
       Hash <span class="font-mono">{{ record.csv_sha256[:12] }}…</span> ·

@@ -301,6 +301,18 @@ def _tool_summary(result: dict) -> dict:
     return summary
 
 
+def _selected_snapshot_from_result(result: dict) -> str | None:
+    snapshot = result.get("snapshot")
+    if isinstance(snapshot, dict) and snapshot.get("id"):
+        return str(snapshot["id"])
+    for block in result.get("origins", ()):  # origin=all
+        if isinstance(block, dict):
+            snapshot = block.get("snapshot")
+            if isinstance(snapshot, dict) and snapshot.get("id"):
+                return str(snapshot["id"])
+    return None
+
+
 def decide(state: dict[str, Any], config) -> dict[str, Any]:
     """El modelo decide, con un esquema propio, si necesita findings_query."""
     started = time.perf_counter()
@@ -399,6 +411,7 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         raise RunTimeout("Se agotó el tiempo del turno.")
     decision = state.get("decision") or {}
     arguments = decision.get("arguments") or {}
+    selected_import_id = state.get("selected_import_id")
     query = FindingsQuery(
         context.factory,
         context.scope,
@@ -412,7 +425,10 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
     summary = None
 
     try:
-        result = query.execute(arguments)
+        if selected_import_id is None:
+            result = query.execute(arguments)
+        else:
+            result = query.execute(arguments, fixed_snapshot_id=selected_import_id)
     except ToolArgumentError as exc:
         duration = elapsed_ms(call_started)
         records.append(
@@ -451,6 +467,7 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         raise
     else:
         duration = elapsed_ms(call_started)
+        selected_import_id = selected_import_id or _selected_snapshot_from_result(result)
         summary = _tool_summary(result)
         records.append(
             ToolCallRecord(
@@ -487,6 +504,7 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         "tool_results": tuple(results),
         "tool_records": tuple(records),
         "tool_calls": state.get("tool_calls", 0) + 1,
+        "selected_import_id": selected_import_id,
         "step_count": step_count,
         "decision": {"use_findings": False, "arguments": {}},
         "steps": record_step(

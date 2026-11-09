@@ -44,6 +44,7 @@ class TurnState(TypedDict, total=False):
     tool_calls: int
     tool_budget: int
     decision: dict
+    selected_import_id: str | None
     step_count: int
 
 
@@ -101,6 +102,7 @@ def run_turn_graph(context, memory=None, tracer=None) -> dict[str, Any]:
         "tool_calls": 0,
         "tool_budget": 2,
         "decision": {"use_findings": False, "arguments": {}},
+        "selected_import_id": None,
         "step_count": 0,
     }
     config = {"configurable": {"runtime": context, "memory": memory, "tracer": tracer}}

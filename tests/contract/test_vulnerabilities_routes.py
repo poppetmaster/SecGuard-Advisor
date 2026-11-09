@@ -284,3 +284,97 @@ def test_csv_content_is_escaped_and_results_not_rendered(client, tmp_path: Path)
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in section.text
     assert "<script>alert(1)</script>" not in section.text
     assert "evil()" not in section.text
+
+
+def test_history_selector_persists_selected_snapshot(client) -> None:
+    case_id = _create_case(client)
+    first = _upload(
+        client,
+        case_id,
+        "first.csv",
+        (FIXTURES / "qualys_synthetic_valid.csv").read_bytes(),
+    )
+    assert first.status_code == 200
+    first_id = _records(client, case_id)[0].id
+    client.post(
+        f"/cases/{case_id}/vulnerabilities/imports/{first_id}/confirm",
+        headers=HTMX,
+    )
+    second = _upload(
+        client,
+        case_id,
+        "second.csv",
+        (FIXTURES / "qualys_synthetic_second.csv").read_bytes(),
+    )
+    assert second.status_code == 200
+    second_id = next(record.id for record in _records(client, case_id) if record.id != first_id)
+    client.post(
+        f"/cases/{case_id}/vulnerabilities/imports/{second_id}/confirm",
+        headers=HTMX,
+    )
+
+    default = client.get(f"/cases/{case_id}/vulnerabilities")
+    assert default.status_code == 200
+    assert "Synthetic new" in default.text
+    assert "Synthetic one" not in default.text
+    assert f'value="{second_id}" selected' in default.text
+
+    selected = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": first_id},
+    )
+    assert selected.status_code == 200
+    assert "Synthetic one" in selected.text
+    assert "Histórica" in selected.text
+    assert "5</span> detectados" in selected.text
+    assert f'value="{first_id}" selected' in selected.text
+
+    reloaded = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": first_id},
+    )
+    assert reloaded.status_code == 200
+    assert f'value="{first_id}" selected' in reloaded.text
+    assert "Synthetic one" in reloaded.text
+
+    history = client.get(f"/cases/{case_id}/vulnerabilities/imports")
+    assert history.status_code == 200
+    assert "Consultar" in history.text
+    assert first_id in history.text and second_id in history.text
+    assert "La última instantánea confirmada es la predeterminada" in history.text
+
+    with client.app.state.session_factory() as session:
+        staged = QualysImport(
+            id="a" * 32,
+            case_id=case_id,
+            status="staged",
+            original_filename="staged.csv",
+            csv_sha256="b" * 64,
+            csv_bytes=1,
+            manifest_status="absent",
+            row_count=1,
+            valid_rows=1,
+            invalid_rows=0,
+            warning_rows=0,
+            manual_review_rows=0,
+            possible_repeat_groups=0,
+            possible_repeat_rows=0,
+            status_counts_json="{}",
+            severity_counts_json="{}",
+            exploitability_counts_json="{}",
+            malware_counts_json="{}",
+            priority_counts_json="{}",
+            summary_json="{}",
+            adapter_version="test",
+            severity_policy_version="test",
+            status_policy_version="test",
+            priority_rule_version="test",
+            created_at="2026-11-09T00:00:00+00:00",
+            expires_at="2026-11-10T00:00:00+00:00",
+        )
+        session.add(staged)
+        session.commit()
+    assert (
+        client.get(f"/cases/{case_id}/vulnerabilities", params={"import_id": "a" * 32}).status_code
+        == 404
+    )

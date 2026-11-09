@@ -29,6 +29,7 @@ from secguard_advisor.vulnerabilities import (
     SEVERITY_POLICY_VERSION,
     STATUS_POLICY_VERSION,
 )
+from secguard_advisor.vulnerabilities.queries import get_confirmed, list_confirmed
 from secguard_advisor.vulnerabilities.validation import ValidationResult, validate_csv
 
 
@@ -116,6 +117,19 @@ class QualysImportService:
             record = self._persist_result(session, case_id, filename, content, sha, result)
             session.commit()
             return StageResult(record, idempotent=False)
+
+    def list_confirmed(self, case_id: str) -> list[QualysImport]:
+        """Lista instantáneas confirmadas de la más reciente a la más antigua."""
+        with self._factory() as session:
+            return list_confirmed(session, case_id)
+
+    def latest_confirmed(self, case_id: str) -> QualysImport | None:
+        snapshots = self.list_confirmed(case_id)
+        return snapshots[0] if snapshots else None
+
+    def get_confirmed(self, case_id: str, import_id: str) -> QualysImport | None:
+        with self._factory() as session:
+            return get_confirmed(session, case_id, import_id)
 
     def get_import(self, case_id: str, import_id: str) -> QualysImport:
         with self._factory() as session:

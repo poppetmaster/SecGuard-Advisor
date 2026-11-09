@@ -16,12 +16,13 @@ ejecución con intentos, límites y trazas. La aceptación local está documenta
 semánticas) son validaciones recomendadas y no bloqueantes; no se ejecutaron y no se presentan como
 aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**US1 de 002 implementada**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de forma
-local con lector, políticas versionadas, validación por fila, staging/rechazo, snapshots confirmables,
-comparación de manifiesto y posibles repeticiones. La sección «Vulnerabilidades» incluye formulario,
-vista previa, confirmación, cancelación y consulta básica de registros confirmados mediante
-`findings_query` (origen e instantánea incluidos). El selector histórico completo, los filtros
-avanzados y la aceptación integral T039 siguen pendientes.
+**US1 y US2 de 002 implementadas**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de
+forma local con lector, políticas versionadas, validación por fila, staging/rechazo, snapshots
+confirmables, comparación de manifiesto y posibles repeticiones. La sección «Vulnerabilidades» incluye
+formulario, vista previa, confirmación, cancelación, historial y selector de instantáneas, y consulta
+básica de registros confirmados mediante `findings_query` (origen e instantánea incluidos). La primera
+consulta de un turno fija el snapshot y las posteriores lo reutilizan. Los filtros avanzados y la
+aceptación integral T039 siguen pendientes.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -110,10 +111,11 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   expuesto al modelo. Los conteos se calculan en SQLite sobre los filtros aplicados; el límite afecta
   solo al detalle y un CVE con varias relaciones no multiplica filas. La herramienta consulta por
   defecto la última instantánea Qualys confirmada y distingue origen sintético/importado; los
-  resultados importados identifican la instantánea y no se mezclan con las etiquetas sintéticas. Solo
-  se consultan importaciones `confirmed`, no se envían `Results` al modelo y los registros Qualys no
-  se convierten en documentos, vectores ni citas del RAG. Un total 0 no demuestra ausencia de
-  vulnerabilidades.
+  resultados importados identifican la instantánea y no se mezclan con las etiquetas sintéticas. La
+  primera resolución de importación fija el snapshot del turno y otra solicitud devuelve
+  `snapshot_locked`. Solo se consultan importaciones `confirmed`, no se envían `Results` al modelo y
+  los registros Qualys no se convierten en documentos, vectores ni citas del RAG. Un total 0 no
+  demuestra ausencia de vulnerabilidades ni implica remediación.
 - La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
   Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y
   la decisión también se mide con el tokenizador del generador.
