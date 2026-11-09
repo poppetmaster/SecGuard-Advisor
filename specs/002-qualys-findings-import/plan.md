@@ -187,9 +187,14 @@ Sin tareas numeradas; cortes revisables:
 - **Escalas**: los filtros de severidad deben exigir origen cuando haya ambos orígenes; una conversión
   silenciosa es un defecto de aceptación.
 - **Privacidad**: el prompt local puede contener activos; la traza externa no. Cualquier callback,
-  error o log que incluya contenido real es bloqueante.
+  error o log que incluya contenido real es bloqueante. La aceptación real no puede ejecutarse antes
+  de T036/T042 y debe usar `LANGSMITH_TRACING=false`.
 - **Datos reales**: no se versionan; la aceptación local debe usar almacenamiento temporal y no dejar
-  copias.
+  copias. Si faltan los archivos, se registra «no ejecutada» con motivo; no se declara cerrada.
+- **Evidencia**: el histórico de `run_tool_calls` y el detalle recalculado se prueban por separado
+  (T043); los registros Qualys no se indexan ni se citan (T044).
+- **Manifiesto y repeticiones**: T045/T046 cubren hash/cantidades y grupos repetidos con fixtures
+  sintéticos; no se depende de la aceptación real para esa cobertura.
 - **Concurrencia**: confirmación repetida y snapshot seleccionado durante una respuesta requieren
   pruebas explícitas.
 - **Rechazo único**: una fila inválida invalida el archivo; no se ofrece «aceptar solo filas válidas»

@@ -102,7 +102,7 @@ la tabla.
 - `Fixed` y «Revisión manual» se muestran en grupos separados; no se suman a pendientes activos.
 - La tabla no usa `Results` completo.
 - El estado vacío distingue «sin registros para estos filtros» de «sin importaciones confirmadas».
-- El detalle recalculado se etiqueta como consulta actual; no reemplaza el resumen histórico.
+- El detalle recalculado se etiqueta como **«Consulta actual»**; no reemplaza el resumen histórico.
 
 ## Errores y estados
 
@@ -124,7 +124,8 @@ No se exponen rutas absolutas, valores de filas, IP, activos, resultados ni stac
 
 ## Accesibilidad y presentación
 
-- Formulario con `label`, foco visible, texto de ayuda y errores asociados.
+- Formulario con `label`, foco visible, texto de ayuda y errores asociados; navegación por teclado,
+  cierre con Escape, foco inicial/restauración en el menú móvil y etiquetas accesibles.
 - Indicador de carga y botón deshabilitado; sin doble envío.
 - Tabla con encabezados, scroll horizontal en móvil y alternativa de tarjetas si no cabe.
 - Objetivos de 390 px y 320 px sin desbordamiento de página.
@@ -138,6 +139,7 @@ No se exponen rutas absolutas, valores de filas, IP, activos, resultados ni stac
   resumen agregado.
 - El nombre del archivo y los metadatos se guardan localmente para procedencia; no se envían a
   LangSmith.
-- La vista previa no renderiza `Results` completo.
+- La vista previa no renderiza `Results` completo. Las plantillas escapan todo el contenido del CSV
+  (título, activo, resultados, indicadores); no se usa `|safe` ni se inyecta HTML del archivo.
 - Los logs no incluyen filas, IP, activos, resultados ni indicadores; solo IDs, códigos y conteos.
 - La importación no realiza llamadas a servicios externos.

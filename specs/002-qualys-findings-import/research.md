@@ -208,6 +208,11 @@ adaptador, duración y versiones de política.
 inferencia es local. Los `Results` largos no se incluyen en el resultado de la herramienta ni en la
 vista previa completa. Los logs se redactan con el filtro existente y no se añaden valores de fila.
 
+**Pruebas y orden**: las pruebas usan señuelos sintéticos y payloads capturados; cubren preguntas,
+memoria/historial, argumentos/resultados, prompts/respuestas, callbacks, nombres de archivo,
+logs/errores y renderizado. La aceptación real con el CSV se ejecuta después de verificar privacidad
+y manifiesto, con trazas externas desactivadas.
+
 **Alternativas consideradas**: enviar el CSV a un servicio de parsing (prohibido); trazar el prompt
 completo (prohibido); mostrar `Results` completo en preview (exposición innecesaria).
 
@@ -245,13 +250,18 @@ confirmación, historial, selector, tabla, móvil 390/320 y doble envío.
 
 **Fixtures sintéticos**: CSV con BOM, comas, comillas, multilínea, `Active/New/Re-Opened/Fixed`,
 estado desconocido, severidades 1–5, varios CVE, ambos/solo uno/vacío/negativo/indeterminado en
-indicadores, filas repetidas por combinaciones parciales y errores estructurales. El fixture de
-errores debe quedar `rejected` y no confirmarse.
+indicadores, filas repetidas por combinaciones parciales y errores estructurales. Se añaden
+manifiesto sintético, escenarios de repetición, evidencia histórica/actual, estados vacíos y una
+prueba de que los registros no entran en Chroma ni en citas. El fixture de errores debe quedar
+`rejected` y no confirmarse.
 
-**Aceptación real**: leer el CSV y el manifiesto desde `../` solo si existen; verificar hash y conteos;
-importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a documentación; no
-enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no resultados forzados.
-Un archivo con error de integridad queda `rejected`; no se permite una aceptación parcial.
+**Aceptación real**: se ejecuta después de las pruebas de privacidad y manifiesto, con
+`LANGSMITH_TRACING=false`; leer el CSV y el manifiesto desde `../` solo si existen; verificar hash y
+conteos; importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a
+documentación; no enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no
+resultados forzados. Un archivo con error de integridad queda `rejected`; no se permite una
+aceptación parcial. El resultado se registra como ejecutada aprobada, ejecutada fallida o no
+ejecutada con motivo; un skip no acredita la aceptación.
 
 ## R15. Riesgos y decisiones pendientes de implementación
 

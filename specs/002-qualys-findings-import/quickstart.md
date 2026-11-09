@@ -102,11 +102,15 @@ En la tabla y mediante el agente:
 - Un registro con varios CVE debe contar una vez; el filtro por uno de sus CVE lo devuelve.
 - Un caso con datos sintéticos e importados debe mostrar desglose por origen. Un filtro de severidad
   sin origen debe rechazarse como ambiguo.
+- `origin=imported` sin `status_group` usa `pending_known`; `origin=all` usa `all` y devuelve bloques
+  separados. `origin=all` con `status_group=pending_known` explícito debe rechazarse con
+  `origin_required_for_status_filter`.
 
 ## 8. Aislamiento y errores
 
 1. Crear un segundo caso sin importaciones.
-2. Abrir `Vulnerabilidades`: debe mostrar estado vacío y CTA, no datos del primer caso.
+2. Abrir `Vulnerabilidades`: debe distinguir «sin importaciones confirmadas» (estado vacío con CTA)
+   de «sin registros para estos filtros»; ninguno afirma ausencia de vulnerabilidades ni riesgo bajo.
 3. Abrir una URL de snapshot del primer caso bajo el segundo: debe responder 404.
 4. Validar `qualys_synthetic_invalid_header.csv`: debe rechazar con columnas esperadas/detectadas y
    sin incorporar filas.
@@ -118,10 +122,13 @@ En la tabla y mediante el agente:
 
 ## 9. Aceptación local con el archivo real
 
-Esta prueba es opcional y local; no se ejecuta en CI ni se versiona el archivo.
+Esta prueba es una comprobación separada; no se ejecuta en CI ni se versiona el archivo. Puede quedar
+no ejecutada si faltan los archivos, pero no se reporta como aprobada. La aceptación real solo se
+ejecuta después de las pruebas de privacidad y manifiesto.
 
 ```bash
 export SECGUARD_STORAGE_DIR=/ruta/temporal/fuera/del/repositorio
+export LANGSMITH_TRACING=false
 uv run alembic upgrade head
 ```
 
@@ -137,15 +144,21 @@ uv run alembic upgrade head
 6. Comprobar que no se copió el CSV al repositorio, logs, fixtures ni LangSmith.
 7. Comprobar que un error de integridad no se puede eludir con una aceptación parcial: no existe tal
    control.
+8. Registrar el resultado como **ejecutada y aprobada**, **ejecutada y fallida** o **no ejecutada con
+   motivo**. Un `skip` no acredita la aceptación ni permite declarar terminado el incremento.
 
 ## 10. Privacidad y trazas
 
 - La importación no produce llamadas externas.
-- Las pruebas de traza deben confirmar que los payloads enviados a LangSmith no contienen filas, IP,
-  activos, títulos, resultados ni indicadores.
+- Las pruebas usan señuelos sintéticos y payloads capturados: preguntas con activos, memoria/historial,
+  argumentos y resultados de herramienta, prompts/respuestas, callbacks, nombres de archivo, logs y
+  errores. No se usan datos reales para probar una posible filtración.
+- Los payloads externos no contienen filas, IP, activos, títulos, resultados, indicadores ni nombres
+  de archivo reales.
 - Los logs solo pueden contener IDs, códigos, conteos y versiones de política.
-- El prompt del modelo local puede contener activos/títulos; la inferencia es local y la traza
-  externa solo recibe metadatos acotados.
+- El prompt del modelo local puede contener activos/títulos; la inferencia es local y la traza externa
+  solo recibe metadatos acotados.
+- La UI escapa el contenido del CSV; `Results` no se renderiza completo ni se envía al modelo.
 
 ## 11. Comprobaciones automatizadas
 
@@ -154,13 +167,25 @@ make check
 make test-integration
 ```
 
-La suite de integración incluye SQLite temporal y, si los archivos autorizados existen, la aceptación
-local real. No debe versionar ni imprimir filas reales.
+La suite de integración incluye SQLite temporal. La aceptación local real es una comprobación
+separada: si los archivos autorizados no existen, se registra como no ejecutada, no como aprobada.
+No debe versionar ni imprimir filas reales.
+
+Además:
+
+- la evidencia de ejecución conserva snapshot, filtros y totales históricos; el detalle recalculado
+  se etiqueta «Consulta actual» y no sustituye el histórico;
+- los registros importados no crean `Document`/`DocumentChunk`, no se indexan en Chroma y no se
+  convierten en citas;
+- las posibles repeticiones conservan grupos, filas adicionales y todas las filas válidas;
+- el manifiesto sintético se compara por hash, bytes, filas, columnas y conteos;
+- los estados vacíos distinguen «sin registros» de «sin importaciones confirmadas».
 
 Playwright:
 
 - escritorio 1440, móvil 390 y 320;
 - formulario, preview, confirmación, historial, selector, tabla y estados vacíos;
 - indicador de carga y un solo POST ante doble clic;
-- menú móvil, foco y recursos locales;
+- menú móvil, foco inicial/restauración, Escape, navegación por teclado, etiquetas accesibles y
+  recursos locales;
 - consola sin errores y sin recursos faltantes.

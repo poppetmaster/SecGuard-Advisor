@@ -125,7 +125,7 @@ origen:
     {
       "origin": "imported",
       "snapshot": { "id": "imp_…", "sequence": 3 },
-      "status_group": "pending_known",
+      "status_group": "all",
       "total": 662,
       "groups": [{ "key": "4", "count": 162, "label": "Alta" }],
       "severity_scale": "project_1_5",
@@ -140,6 +140,10 @@ origen:
 
 `total` es la suma de los bloques, pero siempre está acompañado por `origins`. La respuesta del
 agente debe mencionar el origen y el snapshot cuando corresponda.
+
+El ejemplo anterior usa `status_group=all` en el bloque importado porque `origin=all` no aplica un
+`status_group` parcial por defecto. Un valor explícito distinto de `all` en un caso mixto debe
+rechazarse con `origin_required_for_status_filter`; el ejemplo es normativo para esa regla.
 
 ## Detalle de un registro importado
 
