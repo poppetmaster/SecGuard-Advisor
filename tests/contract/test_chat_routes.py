@@ -311,3 +311,17 @@ def test_run_evidence_page_is_scoped_to_the_case(context) -> None:
     assert "fake-generator" in page.text
     assert "load_scope" in page.text
     assert foreign.status_code == 404
+
+
+def test_context_budget_exceeded_returns_a_clear_error(context) -> None:
+    settings, _factory, case_id, seeded, _public, index, _engine = context
+    settings.generator_num_ctx = 900
+    generator = ScriptedGenerator(payload=_payload(seeded, "funciones centrales"))
+    app = _app(settings, index, generator)
+
+    with TestClient(app) as client:
+        response = _ask(client, case_id)
+
+    assert response.status_code == 500
+    assert "presupuesto de contexto" in response.text
+    assert generator.calls == 0
