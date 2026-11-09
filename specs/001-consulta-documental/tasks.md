@@ -743,9 +743,10 @@ pendientes.
 - `make check`: 343 aprobadas, 25 deseleccionadas. `make test-integration`: 25 aprobadas en 881,19 s
   (14 min 41 s). `uv run pre-commit run --all-files` en verde; `make assets` reproducible sin cambios
   en `src/secguard_advisor/web/static`.
-- **Pendiente honesto**: SC-003 requiere diez revisiones humanas reales; solo se registró una
-  revisión declarada de prueba. SC-001 no se cronometró con una persona (el recorrido automatizado
-  tardó 333,89 s). La revisión en navegadores distintos de Chromium y la CI remota siguen pendientes.
+- **Validaciones recomendadas**: por decisión del responsable (2026-11-09), SC-003 (diez revisiones
+  humanas) y SC-001 (recorrido cronometrado) son recomendadas y no bloqueantes; no se ejecutaron y no
+  se presentan como aprobadas. La revisión en navegadores distintos de Chromium y la CI remota siguen
+  pendientes.
 
 ---
 

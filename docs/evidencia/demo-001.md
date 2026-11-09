@@ -4,7 +4,8 @@
 **Alcance**: T001–T095 del primer incremento. No incluye CSV de Qualys, clasificación,
 entrenamiento, exportaciones ni otras funciones posteriores.
 **Naturaleza de los datos**: escenario educativo sintético y corpus público. No es una validación
-empresarial ni una certificación de cumplimiento.
+empresarial ni una certificación de cumplimiento. SC-001 y SC-003 son validaciones recomendadas y no
+bloqueantes; no se ejecutaron y no se presentan como aprobadas.
 
 ## 1. Alcance terminado
 
@@ -191,9 +192,9 @@ Criterios medibles:
 
 | Criterio | Estado | Evidencia |
 |---|---|---|
-| SC-001 | Parcial | Recorrido automatizado completo en 333,89 s; no se cronometró a una persona |
+| SC-001 | Recomendada, no ejecutada | Recorrido automatizado completo en 333,89 s; no se cronometró a una persona. No bloquea el segundo incremento |
 | SC-002 | Cumplido | Todas las citas reales resolvieron a fragmento y página/sección; pruebas de citas |
-| SC-003 | Pendiente | Una revisión declarada de prueba; faltan 10 revisiones humanas reales |
+| SC-003 | Recomendada, no ejecutada | Una revisión declarada de prueba; las diez revisiones humanas no se ejecutaron. No bloquea el segundo incremento |
 | SC-004 | Cumplido | Total 4 y grupos idénticos a SQLite |
 | SC-005 | Cumplido | Aislamiento real y pruebas 404 entre casos |
 | SC-006 | Cumplido | Tres reinicios consecutivos con 12 mensajes cada uno |
@@ -245,12 +246,13 @@ Navegador: Chromium vía Playwright MCP. Página de ejecución correcta: 0 error
 los recursos locales con estado 200. En escenarios fallidos hay un 404/503 esperado de la petición,
 no un defecto de la interfaz.
 
-## 9. Limitaciones y pendientes
+## 9. Limitaciones y validaciones recomendadas
 
-- **SC-003**: faltan diez revisiones humanas reales de afirmaciones normativas. La revisión registrada
-  con `Aceptación de prueba` es una identidad declarada de prueba, no una persona.
-- **SC-001**: el recorrido automatizado se completó en 333,89 s, pero no se cronometró a una persona
-  que conozca el producto.
+- **SC-003**: validación recomendada y no bloqueante. Las diez revisiones humanas de afirmaciones
+  normativas no se ejecutaron. La revisión registrada con `Aceptación de prueba` es una identidad
+  declarada de prueba, no una persona.
+- **SC-001**: validación recomendada y no bloqueante. El recorrido automatizado se completó en
+  333,89 s, pero no se cronometró a una persona que conozca el producto.
 - Revisión visual en navegadores distintos de Chromium pendiente.
 - Cuatro vulnerabilidades bajas de npm en la cadena de Flowbite; no afectan al servidor y no se aplicó
   una corrección que degrade Flowbite.

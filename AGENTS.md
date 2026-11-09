@@ -12,8 +12,9 @@ brechas y prepara recomendaciones respaldadas por evidencia, con supervisión hu
 `/healthz`, casos, documentos, consulta documental con citas y revisión humana del respaldo, memoria
 por caso en checkpoints separados, la herramienta `findings_query` acotada al caso y la evidencia de
 ejecución con intentos, límites y trazas. La aceptación local está documentada en
-`docs/evidencia/demo-001.md`; quedan pendientes las verificaciones humanas de SC-001 y SC-003 y la
-revisión en otros navegadores.
+`docs/evidencia/demo-001.md`. SC-001 (recorrido humano cronometrado) y SC-003 (diez revisiones
+semánticas) son validaciones recomendadas y no bloqueantes; no se ejecutaron y no se presentan como
+aprobadas. La revisión en otros navegadores sigue pendiente.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,

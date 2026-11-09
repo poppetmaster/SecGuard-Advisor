@@ -40,8 +40,9 @@ una persona.
 T001–T095: base técnica, US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y
 revisión humana), US4 (memoria por caso y navegación), US5 (herramienta de hallazgos sintéticos) y
 US6 (evidencia de ejecución, límites y trazas). La aceptación local está documentada en
-[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md). Quedan pendientes las verificaciones
-humanas de SC-001 (cronometraje) y SC-003 (diez revisiones), y la revisión en otros navegadores.
+[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md). SC-001 (recorrido humano cronometrado) y
+SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
+ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
 
 ### Implementado
 
@@ -96,13 +97,13 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
    abstención explícita cuando la evidencia no alcanza.
 4. **Implementado:** continuar la conversación con memoria separada por caso.
 5. **Implementado:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
-6. **Parcial:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
-   invocaciones de herramienta, presupuesto, citas y traza real con sus estados; la confirmación de
-   la traza durante la aceptación y el recorrido completo quedan pendientes.
+6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
+   invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
+   validaciones recomendadas y no bloqueantes, no ejecutadas.
 
 La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
 herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
-de la traza y el recorrido de aceptación siguen pendientes.
+de traza por API se ejecutó; SC-001 y SC-003 quedan como validaciones recomendadas, no como bloqueos.
 
 ## Arquitectura
 
@@ -414,10 +415,11 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación implementa US1–US6 y T088–T095. Quedan pendientes las verificaciones humanas de
-  SC-001 (recorrido cronometrado por una persona) y SC-003 (diez afirmaciones normativas revisadas),
-  además de la revisión en navegadores distintos de Chrome/Chromium. La aceptación automatizada y la
-  confirmación de traza están documentadas en `docs/evidencia/demo-001.md`.
+- La aplicación implementa US1–US6 y T088–T095. SC-001 (recorrido cronometrado por una persona) y
+  SC-003 (diez afirmaciones normativas revisadas) son validaciones recomendadas y no bloqueantes;
+  sus resultados reales no se ejecutaron. La revisión en navegadores distintos de Chrome/Chromium
+  sigue pendiente. La aceptación automatizada y la confirmación de traza están documentadas en
+  `docs/evidencia/demo-001.md`.
 - `submitted` significa «envío sin error observado», no «traza verificada». La confirmación por API de
   lectura se ejecutó y quedó registrada con la identidad declarada de prueba; no es autenticación.
 - El detalle de herramienta no se persiste; cuando la página lo recalcula, se identifica como
@@ -430,8 +432,9 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   demuestra por sí sola que la evidencia no exista.
 - La revisión humana del respaldo semántico es por cita y requiere `SECGUARD_REVIEWER_NAME`; es una
   identidad local declarada, no autenticación.
-- La revisión visual del ajuste de experiencia se hizo con Playwright sobre Chrome; el recorrido
-  completo de aceptación (US6) y la verificación en otros navegadores siguen pendientes.
+- La revisión visual del ajuste de experiencia se hizo con Playwright sobre Chrome; la verificación
+  en otros navegadores sigue pendiente. SC-001 y SC-003 son recomendadas y no bloquean el segundo
+  incremento.
 
 ## Contribución
 

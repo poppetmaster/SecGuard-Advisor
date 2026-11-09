@@ -1,8 +1,8 @@
 # Guía de SC-001 — recorrido cronometrado por una persona
 
-**Criterio vigente**: una persona que conoce el producto completa el recorrido —caso, dos
-documentos, cuatro preguntas, reinicio y segundo caso— en **15 minutos o menos**. No se cambia el
-umbral ni se excluyen pasos.
+**Validación recomendada y no bloqueante**. El umbral de referencia sigue siendo **15 minutos o
+menos** para una persona que conoce el producto; no se cambia el umbral ni se excluyen pasos. La
+decisión de gobierno del 2026-11-09 indica que su resultado no bloquea el segundo incremento.
 
 Esta guía es para una persona. El recorrido automatizado de `tests/acceptance/` no sustituye esta
 medición y no se presenta como SC-001.
@@ -84,4 +84,5 @@ automatizada ni con la identidad «Aceptación de prueba».
   las incidencias.
 - Si no cumple: registrar igualmente la duración real, el paso que más tardó y las incidencias. No
   cambiar el criterio ni eliminar pasos para forzar el cumplimiento.
-- El cierre formal del incremento queda pendiente hasta que exista este registro y el de SC-003.
+- SC-001 es recomendada y no bloqueante; si se ejecuta, registrar el resultado sin cambiar el umbral.
+  El cierre del segundo incremento no depende de este registro.

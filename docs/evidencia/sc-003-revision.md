@@ -1,7 +1,8 @@
 # SC-003 — Revisión humana de diez afirmaciones normativas
 
 **Estado**: preparado para revisión humana. Las decisiones de esta tabla están **pendientes** y no se
-completan en este documento.
+completan en este documento. SC-003 es una **validación recomendada y no bloqueante**; su resultado
+no se presenta como aprobación académica ni como requisito para el segundo incremento.
 
 **Selección fijada antes de evaluar**: primeras diez afirmaciones normativas explícitas con cita válida,
 en este orden: P1 seis funciones, P2 GOVERN, P3 IDENTIFY, P4 PROTECT, P5 DETECT, P6 RESPOND,
@@ -83,4 +84,5 @@ decide la persona revisora.
 | Responsable | |
 | Fecha | |
 
-No cerrar SC-003 hasta que las diez filas tengan una decisión humana y el resumen esté completo.
+Si se ejecuta SC-003, completar las diez filas y el resumen; el resultado es evidencia recomendada y
+no bloquea el segundo incremento.
