@@ -1,0 +1,44 @@
+{% macro rows_table(rows, rows_truncated) %}
+{% set indicator_labels = {"positive": "Positivo", "negative_no_info": "Negativo/no informado", "indeterminate": "Indeterminado"} %}
+<div class="mt-4 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-3 py-3">Activo</th>
+        <th class="px-3 py-3">Título</th>
+        <th class="px-3 py-3">QID</th>
+        <th class="px-3 py-3">Estado</th>
+        <th class="px-3 py-3">Severidad</th>
+        <th class="px-3 py-3">Prioridad</th>
+        <th class="px-3 py-3">Indicadores</th>
+        <th class="px-3 py-3">CVE</th>
+        <th class="px-3 py-3">Detecciones</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for row in rows %}
+      <tr>
+        <td class="px-3 py-3 font-medium text-slate-900">{{ row.asset }}</td>
+        <td class="px-3 py-3 text-slate-700">{{ row.title }}</td>
+        <td class="px-3 py-3 font-mono text-xs text-slate-700">{{ row.qid }}</td>
+        <td class="px-3 py-3 text-slate-700">{{ row.status }}</td>
+        <td class="px-3 py-3 text-slate-700"><span class="font-mono">{{ row.severity_level }}</span> · {{ row.severity_label }}</td>
+        <td class="px-3 py-3 text-slate-700">
+          {% if row.priority %}Sí{% else %}No{% endif %}
+          {% if row.priority_reason %}<span class="block text-xs text-slate-500">{{ row.priority_reason }}</span>{% endif %}
+        </td>
+        <td class="px-3 py-3 text-xs text-slate-700">
+          Explotabilidad: {{ indicator_labels.get(row.exploitability, row.exploitability) }}<br>
+          Malware: {{ indicator_labels.get(row.malware, row.malware) }}
+        </td>
+        <td class="px-3 py-3 font-mono text-xs text-slate-700">{{ row.cves|join(", ") if row.cves else "—" }}</td>
+        <td class="px-3 py-3 text-xs text-slate-600">{{ row.first_detected or "—" }}<br>{{ row.last_detected or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if rows_truncated %}
+<p class="mt-2 text-xs text-slate-600">Vista limitada a las primeras filas; los conteos no se limitan.</p>
+{% endif %}
+{% endmacro %}

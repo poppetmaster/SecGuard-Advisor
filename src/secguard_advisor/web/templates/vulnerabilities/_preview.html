@@ -1,0 +1,65 @@
+{% from "components/pending.html" import pending %}
+{% from "vulnerabilities/_summary.html" import summary_block %}
+{% from "vulnerabilities/_table.html" import rows_table %}
+{% from "vulnerabilities/_issues.html" import issues_block %}
+<section id="vulnerabilities-panel" class="mt-8">
+  {% if notice %}
+  <div class="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900" role="status">{{ notice }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <p class="text-sm text-slate-600">
+        Vista previa de <span class="font-mono">{{ record.original_filename }}</span>.
+        El archivo todavía no se incorpora a una instantánea consultable hasta confirmar.
+      </p>
+      <p class="mt-1 text-xs text-slate-500">
+        Hash <span class="font-mono">{{ record.csv_sha256[:12] }}…</span> ·
+        {{ manifest_labels.get(record.manifest_status, record.manifest_status) }}
+      </p>
+    </div>
+    <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800">
+      {{ status_labels.get(record.status, record.status) }}
+    </span>
+  </div>
+
+  {{ summary_block(summary, severity_labels, manifest_labels) }}
+  {{ issues_block(issues, issue_counts) }}
+
+  {% if record.status == "staged" %}
+  <div class="mt-4 flex flex-wrap gap-2">
+    <form
+      method="post"
+      action="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/confirm"
+      hx-post="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/confirm"
+      hx-target="#vulnerabilities-panel"
+      hx-swap="outerHTML"
+      data-form-key="qualys-confirm"
+    >
+      <button class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-800" type="submit">Confirmar importación</button>
+      {{ pending("Confirmando la importación…") }}
+    </form>
+    <form method="post" action="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/cancel" hx-post="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/cancel" hx-target="#vulnerabilities-panel" hx-swap="outerHTML" data-form-key="qualys-cancel">
+      <button class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-800" type="submit">Cancelar</button>
+    </form>
+  </div>
+  {% elif record.status == "rejected" %}
+  <div class="mt-4 flex flex-wrap gap-2">
+    <a class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" href="/cases/{{ case_id }}/vulnerabilities/imports/new">Cargar archivo corregido</a>
+    <form method="post" action="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/cancel" hx-post="/cases/{{ case_id }}/vulnerabilities/imports/{{ record.id }}/cancel" hx-target="#vulnerabilities-panel" hx-swap="outerHTML" data-form-key="qualys-cancel">
+      <button class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-800" type="submit">Cancelar</button>
+    </form>
+  </div>
+  {% elif record.status == "confirmed" %}
+  <p class="mt-4"><a class="text-blue-700 hover:underline" href="/cases/{{ case_id }}/vulnerabilities">Ver la instantánea confirmada</a></p>
+  {% else %}
+  <p class="mt-4"><a class="text-blue-700 hover:underline" href="/cases/{{ case_id }}/vulnerabilities/imports/new">Cargar un archivo nuevo</a></p>
+  {% endif %}
+
+  {% if rows %}
+  {{ rows_table(rows, rows_truncated) }}
+  {% endif %}
+</section>

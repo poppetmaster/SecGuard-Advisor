@@ -44,10 +44,11 @@ US6 (evidencia de ejecución, límites y trazas). La aceptación local está doc
 SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
 ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**Funcionalidad 002 — corte 1 implementado.** El módulo `vulnerabilities` incorpora lectura y
-validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables,
-verificación de manifiesto y posibles repeticiones. El formulario, las rutas y la consulta importada
-todavía no están disponibles; la aceptación integral T039 sigue pendiente.
+**Funcionalidad 002 — US1 implementada.** El módulo `vulnerabilities` incorpora lectura y validación
+del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables, formulario,
+vista previa, confirmación, cancelación y consulta básica mediante `findings_query` (origen e
+instantánea incluidos). El selector histórico completo, los filtros avanzados y la aceptación
+integral T039 siguen pendientes.
 
 ### Implementado
 
@@ -79,16 +80,18 @@ todavía no están disponibles; la aceptación integral T039 sigue pendiente.
   `submitted`, `confirmed` y `failed`, y degradación local cuando LangSmith no está disponible.**
 - **Aceptación local: recorrido con dobles y recorrido real con Ollama, corpus, hallazgos,
   reinicio y aislamiento; confirmación de traza por API de lectura con identidad declarada.**
-- **002 (corte 1): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
-  staging/rechazo, snapshots confirmables, manifiesto y repeticiones; sin UI ni consulta importada.**
+- **002 (US1): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
+  staging/rechazo, snapshots confirmables, manifiesto, repeticiones, sección «Vulnerabilidades» con
+  formulario/preview/confirmación/cancelación y consulta básica importada en `findings_query`.
+  El selector histórico y los filtros avanzados quedan para los siguientes cortes.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Resto de la funcionalidad 002: formulario «Vulnerabilidades», consulta importada, historial y
-  selector, y aceptación integral T039.
+- Resto de la funcionalidad 002: selector histórico completo, filtros avanzados, evidencia histórica
+  frente a detalle actual y aceptación integral T039.
 - Incrementos posteriores (clasificación, entrenamiento o exportaciones) fuera del alcance
   autorizado del primer incremento.
 
@@ -109,9 +112,9 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
    invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
    validaciones recomendadas y no bloqueantes, no ejecutadas.
-7. **Implementado parcialmente (corte 1):** procesamiento local del CSV Qualys, validación,
-   staging/rechazo, snapshots confirmables, manifiesto y repeticiones. El formulario y la consulta
-   importada todavía no están disponibles.
+7. **Implementado (US1):** sección «Vulnerabilidades» con carga del CSV Qualys, validación,
+   vista previa, confirmación, cancelación, snapshots confirmables y consulta básica mediante
+   `findings_query`. El selector histórico y los filtros avanzados quedan para el siguiente corte.
 
 La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
 herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
@@ -219,6 +222,7 @@ propia, accesible por URL y con su ruta de navegación visible:
 | `/cases/new` | Nuevo caso |
 | `/cases/{case_id}` | Resumen del caso (contexto y activos) |
 | `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
+| `/cases/{case_id}/vulnerabilities` | Vulnerabilidades: formulario, preview, confirmación y snapshot |
 | `/cases/{case_id}/chat` | Consulta documental (preguntas, citas, revisión) |
 | `/cases/{case_id}/runs/{run_id}` | Evidencia de ejecución, desde cada respuesta |
 | `/cases/{case_id}/documents/{document_id}` | Documento con sus versiones y fragmentos |
@@ -291,22 +295,27 @@ solo al detalle y `truncated` avisa cuando se recortó. Un hallazgo con varios C
 
 El resultado sintético se muestra con la etiqueta «Datos educativos sintéticos», los filtros
 aplicados, el total, las agrupaciones, la procedencia del dataset y el aviso de que no es una
-importación de Qualys. La importación Qualys del corte 1 no se mezcla con esta consulta: todavía no
-hay formulario ni consulta importada. Un caso sin hallazgos devuelve total 0 y advierte que eso no
-demuestra ausencia de vulnerabilidades ni riesgo bajo. Cada invocación queda registrada en la
-evidencia de ejecución.
+importación de Qualys. La importación Qualys confirmada se consulta desde la sección
+«Vulnerabilidades» y mediante `findings_query` con origen importado; no se mezcla con las etiquetas
+sintéticas. Un caso sin hallazgos devuelve total 0 y advierte que eso no demuestra ausencia de
+vulnerabilidades ni riesgo bajo. Cada invocación queda registrada en la evidencia de ejecución.
 
-### Vulnerabilidades Qualys (corte 1)
+### Vulnerabilidades Qualys (US1)
 
-El corte 1 implementa el procesamiento local del CSV filtrado de Qualys: lectura UTF-8 con BOM,
-encabezado exacto de 41 columnas, validación de filas, severidad 1–5, estados admitidos con revisión
-manual para desconocidos, evaluación separada de explotabilidad y malware, prioridad conjunta solo con
-ambos positivos, staging/rechazo completo, confirmación idempotente y snapshots independientes. También
-compara el manifiesto local y calcula posibles repeticiones sin deduplicar.
+La sección **Vulnerabilidades** del caso permite cargar el CSV filtrado de Qualys, validarlo y revisar
+la vista previa antes de confirmar. La validación local aplica severidad 1–5, estados admitidos con
+revisión manual para desconocidos, evaluación separada de explotabilidad y malware, prioridad conjunta
+solo con ambos positivos, rechazo completo y snapshots independientes. También compara el manifiesto
+local y calcula posibles repeticiones sin deduplicar.
 
-No hay todavía formulario, rutas ni consulta importada. El CSV real se usa solo en comprobaciones
-locales con almacenamiento temporal; no se versiona ni se envía a servicios externos. La aceptación
-integral T039 sigue pendiente.
+El formulario recibe únicamente el CSV. Tras confirmar, la instantánea queda consultable desde la
+sección y mediante `findings_query`, que usa por defecto la última instantánea confirmada, distingue
+origen e identificador de instantánea y no mezcla datos sintéticos con importados. El selector
+histórico completo y los filtros avanzados quedan para el siguiente corte.
+
+El CSV real se usa solo en comprobaciones locales con almacenamiento temporal; no se versiona ni se
+envía a servicios externos. La aceptación integral T039 sigue pendiente. Capturas sintéticas de la UI:
+[`docs/evidencia/002-corte-2/`](docs/evidencia/002-corte-2/).
 
 ### Evidencia de ejecución y trazas
 
@@ -367,8 +376,9 @@ Estado actual: la base cubre configuración, motor y esquema, alcance, arranque,
 seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
 embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, la
 herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia) y
-la evidencia de ejecución con límites, trazas y redacción de secretos, y el corte 1 de Qualys
-(lector, políticas, validación, staging, manifiesto y repeticiones). `make test` incluye la aceptación
+la evidencia de ejecución con límites, trazas y redacción de secretos, y la US1 de Qualys
+(lector, políticas, validación, staging, formulario, rutas, manifiesto, repeticiones y consulta
+básica). `make test` incluye la aceptación
 con dobles; la probe del CSV real está marcada como integración y se omite si los archivos externos no
 están disponibles. `make test-integration` ejecuta la aceptación real con Ollama, corpus y herramienta,
 además de las integraciones existentes; no es necesaria para la suite rápida. La confirmación de traza
@@ -377,8 +387,8 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 372 pruebas rápidas
-make test-integration # 26 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
+make check            # lint, formato y 388 pruebas rápidas
+make test-integration # 28 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000
 ```

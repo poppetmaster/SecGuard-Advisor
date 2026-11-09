@@ -6,8 +6,8 @@ import json
 
 from secguard_advisor.retrieval.search import RetrievedChunk
 
-PROMPT_VERSION = "chat-v4"
-DECISION_PROMPT_VERSION = "decide-v1"
+PROMPT_VERSION = "chat-v5"
+DECISION_PROMPT_VERSION = "decide-v2"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad y seguridad de aplicaciones de IA.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
@@ -41,6 +41,9 @@ Reglas obligatorias:
 9. La conversación previa ayuda a interpretar la pregunta, pero no es evidencia documental: no
    cites respuestas anteriores. Para cada afirmación, citá únicamente las fuentes recuperadas en
    este turno.
+10. Los resultados de `findings_query` son evidencia estructurada calculada en SQLite, no citas
+    documentales. No inventes citas para ellos ni los presentes como fragmentos del RAG. Indicá
+    origen e instantánea cuando corresponda.
 
 """
 
@@ -139,13 +142,17 @@ def build_repair_prompt(
 
 
 DECISION_SYSTEM_PROMPT = """Sos un clasificador de consultas de un asesor de ciberseguridad.
-Decidí si la pregunta necesita consultar los hallazgos sintéticos del caso.
+Decidí si la pregunta necesita consultar hallazgos sintéticos o registros importados del caso.
 Devolvé {"use_findings": true, "arguments": {...}} si la pregunta pide conteos, filtros,
 agrupaciones o detalles de hallazgos del caso. Devolvé {"use_findings": false, "arguments": {}}
 en cualquier otro caso.
 Argumentos válidos y sus tipos:
+- origin: all, synthetic o imported. Usá imported para registros Qualys y synthetic para el
+  dataset educativo.
+- snapshot_id: identificador opcional de una instantánea confirmada; sin él se usa la última
+  confirmada.
 - asset: texto (nombre del activo).
-- severity: Critical, High, Medium, Low o Info.
+- severity: Critical, High, Medium, Low o Info (solo datos sintéticos).
 - qid: dígitos.
 - cve: CVE-AAAA-NNNN.
 - group_by: severity o asset.

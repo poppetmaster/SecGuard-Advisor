@@ -1,0 +1,61 @@
+{% macro summary_block(summary, severity_labels, manifest_labels) %}
+{% set indicator_labels = {"positive": "Positivo", "negative_no_info": "Negativo/no informado", "indeterminate": "Indeterminado"} %}
+<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Registros</p>
+    <p class="mt-1 text-sm text-slate-900">
+      <span class="font-mono">{{ summary.row_count }}</span> detectados ·
+      <span class="font-mono">{{ summary.valid_rows }}</span> válidos ·
+      <span class="font-mono">{{ summary.invalid_rows }}</span> inválidos
+    </p>
+    {% if summary.warning_rows or summary.manual_review_rows %}
+    <p class="mt-1 text-xs text-amber-800">
+      {{ summary.warning_rows }} advertencias · {{ summary.manual_review_rows }} en revisión manual
+    </p>
+    {% endif %}
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Estados</p>
+    <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
+      {% for key, count in summary.status_counts.items() %}
+      <li><span class="font-medium">{{ key or "Sin estado" }}</span>: <span class="font-mono">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Severidad</p>
+    <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
+      {% for key, count in summary.severity_counts.items() %}
+      <li><span class="font-medium">{{ severity_labels.get(key, key) }}</span>: <span class="font-mono">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Explotabilidad</p>
+    <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
+      {% for key, count in summary.exploitability_counts.items() %}
+      <li><span class="font-medium">{{ indicator_labels.get(key, key) }}</span>: <span class="font-mono">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Malware</p>
+    <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
+      {% for key, count in summary.malware_counts.items() %}
+      <li><span class="font-medium">{{ indicator_labels.get(key, key) }}</span>: <span class="font-mono">{{ count }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-3">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Prioridad y repeticiones</p>
+    <p class="mt-1 text-sm text-slate-700">
+      Ambos positivos: <span class="font-mono">{{ summary.priority_counts.get("both_positive", 0) }}</span>
+    </p>
+    <p class="text-sm text-slate-700">
+      Posibles repeticiones: <span class="font-mono">{{ summary.possible_repeat_groups }}</span> grupos,
+      <span class="font-mono">{{ summary.possible_repeat_rows }}</span> filas adicionales
+    </p>
+    <p class="mt-1 text-xs text-slate-600">{{ manifest_labels.get(summary.manifest_status, summary.manifest_status) }}</p>
+  </div>
+</div>
+{% endmacro %}

@@ -247,6 +247,8 @@ def test_schema_does_not_expose_case_id_or_free_sql() -> None:
     assert schema["additionalProperties"] is False
     assert "sql" not in json.dumps(schema).casefold()
     assert set(schema["properties"]) == {
+        "origin",
+        "snapshot_id",
         "asset",
         "severity",
         "qid",

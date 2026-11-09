@@ -1,0 +1,22 @@
+{% macro issues_block(issues, issue_counts) %}
+<div class="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+  <p class="text-xs uppercase tracking-wide text-slate-500">Advertencias y errores</p>
+  <p class="mt-1 text-xs text-slate-600">
+    {{ issue_counts.get("error", 0) }} errores · {{ issue_counts.get("warning", 0) }} advertencias ·
+    {{ issue_counts.get("manual_review", 0) }} revisiones manuales
+  </p>
+  {% if issues %}
+  <ul class="mt-2 space-y-1 text-sm">
+    {% for issue in issues %}
+    <li class="{% if issue.severity == 'error' %}text-red-800{% elif issue.severity == 'manual_review' %}text-amber-800{% else %}text-slate-700{% endif %}">
+      {% if issue.row_number %}Fila {{ issue.row_number }} · {% endif %}
+      <span class="font-mono text-xs">{{ issue.code }}</span>{% if issue.field %} ({{ issue.field }}){% endif %}:
+      {{ issue.message }}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="mt-2 text-sm text-slate-600">Sin errores ni advertencias.</p>
+  {% endif %}
+</div>
+{% endmacro %}

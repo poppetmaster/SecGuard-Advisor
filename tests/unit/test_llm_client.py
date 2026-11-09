@@ -145,7 +145,7 @@ def test_missing_digest_is_not_invented(monkeypatch) -> None:
 
 
 def test_prompt_version_and_rules() -> None:
-    assert PROMPT_VERSION == "chat-v4"
+    assert PROMPT_VERSION == "chat-v5"
     folded = SYSTEM_PROMPT.casefold()
     for rule in (
         "cita literal",

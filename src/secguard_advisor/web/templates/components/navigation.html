@@ -30,6 +30,7 @@
     <ul class="mt-2 space-y-1">
       <li>{{ nav_link("/cases/" ~ nav_case.id, "Resumen", "home", active_section == "summary") }}</li>
       <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/documents", "Documentos", "document", active_section == "documents") }}</li>
+      <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/vulnerabilities", "Vulnerabilidades", "shield", active_section == "vulnerabilities") }}</li>
       <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/chat", "Consulta documental", "chat", active_section == "chat") }}</li>
     </ul>
   </div>

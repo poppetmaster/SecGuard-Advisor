@@ -16,15 +16,18 @@ ejecución con intentos, límites y trazas. La aceptación local está documenta
 semánticas) son validaciones recomendadas y no bloqueantes; no se ejecutaron y no se presentan como
 aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**Corte 1 de 002 implementado**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de
-forma local con lector, políticas versionadas, validación por fila, staging/rechazo, snapshots
-confirmables, comparación de manifiesto y posibles repeticiones. No existen todavía formulario, rutas
-ni consulta importada; la aceptación integral T039 sigue pendiente.
+**US1 de 002 implementada**: el módulo `vulnerabilities` procesa el CSV filtrado de Qualys de forma
+local con lector, políticas versionadas, validación por fila, staging/rechazo, snapshots confirmables,
+comparación de manifiesto y posibles repeticiones. La sección «Vulnerabilidades» incluye formulario,
+vista previa, confirmación, cancelación y consulta básica de registros confirmados mediante
+`findings_query` (origen e instantánea incluidos). El selector histórico completo, los filtros
+avanzados y la aceptación integral T039 siguen pendientes.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
-`/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents` y `/cases/{id}/chat`; la evidencia de
-ejecución vive en `/cases/{id}/runs/{run_id}`. HTMX se conserva solo dentro de cada sección.
+`/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities` y
+`/cases/{id}/chat`; la evidencia de ejecución vive en `/cases/{id}/runs/{run_id}`. HTMX se conserva
+solo dentro de cada sección.
 
 La verdad normativa vive en [`CONSTITUTION.md`](./CONSTITUTION.md), que es un enlace simbólico a
 `.specify/memory/constitution.md`. Se edita únicamente el archivo real; nunca se mantienen dos
@@ -105,11 +108,11 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   ausencia de evidencia. El generador configurado es `qwen3.5:9b`, con razonamiento desactivado.
 - `findings_query` recibe el alcance por clausura: `case_id` no es argumento ni aparece en el resultado
   expuesto al modelo. Los conteos se calculan en SQLite sobre los filtros aplicados; el límite afecta
-  solo al detalle y un CVE con varias relaciones no multiplica filas. El resultado sintético se
-  presenta como «Datos educativos sintéticos». El corte 1 de 002 almacena snapshots Qualys
-  confirmables, pero la herramienta sigue devolviendo solo datos sintéticos: no hay consulta importada
-  ni formulario todavía. Los registros importados se identificarán como importados y no se mezclarán
-  con sintéticos cuando se implemente esa consulta. Un total 0 no demuestra ausencia de
+  solo al detalle y un CVE con varias relaciones no multiplica filas. La herramienta consulta por
+  defecto la última instantánea Qualys confirmada y distingue origen sintético/importado; los
+  resultados importados identifican la instantánea y no se mezclan con las etiquetas sintéticas. Solo
+  se consultan importaciones `confirmed`, no se envían `Results` al modelo y los registros Qualys no
+  se convierten en documentos, vectores ni citas del RAG. Un total 0 no demuestra ausencia de
   vulnerabilidades.
 - La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
   Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y

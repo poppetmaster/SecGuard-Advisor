@@ -6,9 +6,13 @@
       <p class="text-sm font-semibold text-slate-900">
         Herramienta consultada: <span class="font-mono text-xs">{{ call.tool_name }}</span>
       </p>
-      <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900">
-        Datos educativos sintéticos
-      </span>
+      {% if call.summary and call.summary.origins %}
+      <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900">Orígenes separados</span>
+      {% elif call.summary and call.summary.snapshot %}
+      <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900">Registros importados</span>
+      {% elif call.summary and call.summary.dataset %}
+      <span class="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900">Datos educativos sintéticos</span>
+      {% endif %}
     </div>
 
     {% if call.arguments %}
@@ -19,7 +23,7 @@
       {% endfor %}
     </p>
     {% else %}
-    <p class="mt-2 text-xs text-slate-600">Sin filtros: todos los hallazgos del caso.</p>
+    <p class="mt-2 text-xs text-slate-600">Sin filtros: todos los registros del caso.</p>
     {% endif %}
 
     {% if call.status != "ok" %}
@@ -30,15 +34,52 @@
     {% elif call.summary %}
     <p class="mt-2 text-sm text-slate-900">
       <span class="font-semibold">Total:</span>
-      <span class="font-mono">{{ call.summary.total }}</span> hallazgo{{ "" if call.summary.total == 1 else "s" }}
+      <span class="font-mono">{{ call.summary.total }}</span> registro{{ "" if call.summary.total == 1 else "s" }}
     </p>
+
+    {% if call.summary.origins %}
+    <div class="mt-2 space-y-2">
+      {% for block in call.summary.origins %}
+      <div class="rounded border border-slate-200 bg-slate-50 p-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">
+          Origen: {{ block.origin }} · Total: <span class="font-mono">{{ block.total }}</span>
+        </p>
+        {% if block.snapshot %}
+        <p class="mt-1 text-xs text-slate-600">Instantánea <span class="font-mono">#{{ block.snapshot.sequence }}</span></p>
+        {% elif block.dataset and block.dataset.name %}
+        <p class="mt-1 text-xs text-slate-600">Dataset <span class="font-mono">{{ block.dataset.name }}</span> v{{ block.dataset.version }}</p>
+        {% endif %}
+        {% if block.empty_reason %}
+        <p class="mt-1 text-xs text-slate-600">
+          {% if block.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para esta consulta.{% endif %}
+        </p>
+        {% endif %}
+        {% if block.groups %}
+        <ul class="mt-1 space-y-0.5 text-xs text-slate-700">
+          {% for group in block.groups %}
+          <li><span class="font-medium">{{ group.label or group.key }}</span>: <span class="font-mono">{{ group.count }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    {% if call.summary.snapshot %}
+    <p class="mt-1 text-xs text-slate-600">
+      Instantánea <span class="font-mono">#{{ call.summary.snapshot.sequence }}</span>
+      · origen importado
+    </p>
+    {% endif %}
     {% if call.summary.groups %}
     <ul class="mt-1 space-y-0.5 text-sm text-slate-700">
       {% for group in call.summary.groups %}
-      <li><span class="font-medium">{{ group.key }}</span>: <span class="font-mono">{{ group.count }}</span></li>
+      <li><span class="font-medium">{{ group.label or group.key }}</span>: <span class="font-mono">{{ group.count }}</span></li>
       {% endfor %}
     </ul>
     {% endif %}
+    {% endif %}
+
     {% if call.summary.truncated %}
     <p class="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-900">
       Detalle limitado a {{ call.summary.items_count }} filas; los conteos no se limitan.
@@ -82,8 +123,12 @@
     {% if call.summary.dataset and call.summary.dataset.name %}
     <p class="mt-2 text-xs text-slate-600">
       Procedencia: <span class="font-mono">{{ call.summary.dataset.name }}</span>
-      v{{ call.summary.dataset.version }} ·
-      {{ call.summary.dataset.checksum[:12] }}… · datos sintéticos, no una importación de Qualys.
+      v{{ call.summary.dataset.version }} · {{ call.summary.dataset.checksum[:12] }}… · datos sintéticos,
+      no una importación de Qualys.
+    </p>
+    {% elif call.summary.snapshot %}
+    <p class="mt-2 text-xs text-slate-600">
+      Procedencia: instantánea Qualys <span class="font-mono">#{{ call.summary.snapshot.sequence }}</span>.
     </p>
     {% else %}
     <p class="mt-2 text-xs text-slate-600">
@@ -92,8 +137,8 @@
     {% endif %}
     {% if call.summary.total == 0 %}
     <p class="mt-2 text-xs text-slate-600" role="note">
-      La ausencia de hallazgos en esta consulta no demuestra ausencia de vulnerabilidades ni un
-      riesgo bajo.
+      {% if call.summary.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para esta consulta.{% endif %}
+      Esto no demuestra ausencia de vulnerabilidades ni un riesgo bajo.
     </p>
     {% endif %}
     {% endif %}

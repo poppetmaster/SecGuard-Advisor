@@ -1,4 +1,4 @@
-"""Herramienta de lectura de hallazgos sintéticos con alcance en clausura."""
+"""Herramienta de lectura de hallazgos sintéticos e importados, acotada por caso."""
 
 from __future__ import annotations
 
@@ -12,6 +12,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.db.models import Asset, Finding, FindingCve, SyntheticDataset
+from secguard_advisor.vulnerabilities.queries import (
+    QualysQueryError,
+    has_confirmed_imports,
+    has_synthetic,
+    imported_result,
+)
 
 TOOL_NAME = "findings_query"
 SEVERITY_ORDER = ("Critical", "High", "Medium", "Low", "Info")
@@ -41,6 +47,8 @@ class FindingsArguments(BaseModel):
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    origin: Literal["all", "synthetic", "imported"] = "all"
+    snapshot_id: str | None = Field(default=None, max_length=32)
     asset: str | None = Field(default=None, max_length=120)
     severity: Literal["Critical", "High", "Medium", "Low", "Info"] | None = None
     qid: str | None = Field(default=None, pattern=r"^[0-9]{1,10}$")
@@ -58,6 +66,8 @@ def _translate(error: ValidationError) -> ToolArgumentError:
         "qid": "invalid_qid",
         "cve": "invalid_cve",
         "limit": "limit_out_of_range",
+        "origin": "invalid_arguments",
+        "snapshot_id": "invalid_arguments",
     }.get(field, "invalid_arguments")
     return ToolArgumentError(code)
 
@@ -205,13 +215,17 @@ class FindingsQuery:
             for finding, asset_name in rows
         ]
 
-    def _run(self, session: Session, arguments: FindingsArguments) -> dict:
+    def _synthetic_result(
+        self, session: Session, arguments: FindingsArguments, *, origin: str
+    ) -> dict:
         filters = self._filters(arguments)
         total = session.scalar(select(func.count()).select_from(Finding).where(*filters)) or 0
         result = {
+            "origin": origin,
             "total": total,
             "groups": self._groups(session, arguments, filters),
             "dataset": self._dataset(session, filters),
+            "severity_scale": "synthetic_labels",
             "truncated": False,
         }
         if arguments.detail:
@@ -219,3 +233,74 @@ class FindingsQuery:
             result["items"] = items
             result["truncated"] = total > len(items)
         return result
+
+    def _run(self, session: Session, arguments: FindingsArguments) -> dict:
+        synthetic_exists = has_synthetic(session, self._scope.case_id)
+        imported_exists = has_confirmed_imports(session, self._scope.case_id)
+
+        if arguments.origin == "synthetic":
+            if arguments.snapshot_id is not None:
+                raise ToolArgumentError(
+                    "filter_not_applicable", "snapshot_id solo aplica a registros importados."
+                )
+            return self._synthetic_result(session, arguments, origin="synthetic")
+
+        if arguments.origin == "imported":
+            if arguments.severity is not None:
+                raise ToolArgumentError(
+                    "filter_not_applicable", "severity sintética no aplica a registros importados."
+                )
+            try:
+                return imported_result(
+                    session,
+                    self._scope.case_id,
+                    arguments,
+                    status_group="pending_known",
+                )
+            except QualysQueryError as exc:
+                raise ToolArgumentError(exc.code, exc.message) from exc
+
+        if arguments.snapshot_id is not None:
+            raise ToolArgumentError(
+                "filter_not_applicable", "snapshot_id requiere origin=imported."
+            )
+        if arguments.severity is not None:
+            if synthetic_exists and imported_exists:
+                raise ToolArgumentError(
+                    "ambiguous_severity_filter",
+                    "El caso contiene ambos orígenes; indicá origin antes de filtrar por "
+                    "severidad.",
+                )
+            if not synthetic_exists:
+                raise ToolArgumentError(
+                    "filter_not_applicable",
+                    "severity sintética no aplica sin registros sintéticos.",
+                )
+        if synthetic_exists and imported_exists:
+            synthetic = self._synthetic_result(session, arguments, origin="synthetic")
+            try:
+                imported = imported_result(
+                    session,
+                    self._scope.case_id,
+                    arguments,
+                    status_group=None,
+                )
+            except QualysQueryError as exc:
+                raise ToolArgumentError(exc.code, exc.message) from exc
+            return {
+                "origin": "all",
+                "origins": [synthetic, imported],
+                "total": synthetic["total"] + imported["total"],
+                "truncated": False,
+            }
+        if imported_exists:
+            try:
+                return imported_result(
+                    session,
+                    self._scope.case_id,
+                    arguments,
+                    status_group=None,
+                )
+            except QualysQueryError as exc:
+                raise ToolArgumentError(exc.code, exc.message) from exc
+        return self._synthetic_result(session, arguments, origin="synthetic")

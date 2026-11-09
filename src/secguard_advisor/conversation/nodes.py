@@ -281,13 +281,24 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
 
 
 def _tool_summary(result: dict) -> dict:
-    return {
-        "total": result["total"],
-        "groups": result["groups"],
-        "dataset": result["dataset"],
-        "truncated": result["truncated"],
+    summary = {
+        "total": result.get("total", 0),
+        "truncated": result.get("truncated", False),
         "items_count": len(result.get("items", [])),
     }
+    for key in (
+        "groups",
+        "origins",
+        "dataset",
+        "snapshot",
+        "status_group",
+        "severity_scale",
+        "priority_counts",
+        "empty_reason",
+    ):
+        if key in result:
+            summary[key] = result[key]
+    return summary
 
 
 def decide(state: dict[str, Any], config) -> dict[str, Any]:
