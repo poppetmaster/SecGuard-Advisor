@@ -26,14 +26,14 @@ ORIGIN_LABELS = {
 }
 
 CHECK_LABELS = {
-    "valid": "Control automático: válida",
-    "rejected": "Control automático: rechazada",
+    "valid": "válida",
+    "rejected": "rechazada",
 }
 
 REVIEW_LABELS = {
-    "unreviewed": "Respaldo pendiente de revisión",
-    "supported": "Revisado: respaldada",
-    "not_supported": "Revisado: no respaldada",
+    "unreviewed": "pendiente de revisión",
+    "supported": "respaldada",
+    "not_supported": "no respaldada",
 }
 
 RUN_STATUS_LABELS = {

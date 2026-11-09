@@ -341,9 +341,42 @@ Se recompiló el CSS y se fijaron estilos explícitos: `bg-slate-900` con texto 
   raíz `<section id="chat-panel">`; 415 de documentos con raíz `<section id="documents-panel">`;
   `/static/js/forms.js` servido como `text/javascript`; `app.css` con `disabled:bg-slate-400`.
 - `npm run build`: CSS recompilado con las clases nuevas; sin cambios en recursos vendorizados.
-- Verificación visual en navegador: pendiente; no hay navegador automatizado disponible. El
-  comportamiento de JavaScript (aparición inmediata, bloqueo de doble envío, restauración) no queda
-  acreditado por las pruebas de HTML.
+
+**Verificación en navegador (Playwright MCP, Chrome, 2026-11-08)**
+
+Con el servidor real en `127.0.0.1:8800`, almacenamiento del proyecto y demora controlada de 4 s por
+intercepción de red en el navegador (sin cambios en producción):
+
+- Caso creado desde la interfaz; paneles de documentos y consulta renderizados.
+- Carga de PDF: durante la solicitud el formulario quedó `aria-busy="true"`, con spinner visible
+  (16×16, animación `spin`) y el mensaje «Enviando y procesando el documento…», botón deshabilitado;
+  al terminar, documento «Disponible».
+- Error 415: el panel se reemplazó con el motivo, el título y la versión declarada se conservaron, el
+  archivo se reinició con el aviso de volver a seleccionarlo, el botón se rehabilitó y el indicador se
+  ocultó.
+- Error 409 por contenido duplicado: mismo comportamiento de restauración y mensaje comprensible.
+- Consulta con doble clic sobre «Preguntar»: **un solo POST** `/chat/messages`, un solo mensaje de
+  pregunta, indicador y botón deshabilitado durante la espera; respuesta con dos citas, «Borrador no
+  revisado», control automático y fragmentos recuperados con procedencia.
+- Revisión humana: spinner y mensaje «Guardando revisión…», botón deshabilitado, nota y selección
+  conservadas; tras el reemplazo, «Respaldo semántico: respaldada por Revisora Visual» y, en la otra
+  cita, «no respaldada por Revisora Visual», con fecha y observación.
+- Movimiento reducido emulado: la animación del spinner pasa a `none` (0 s).
+- Tras recargar la página y tras varios reemplazos HTMX, los indicadores y los formularios siguen
+  funcionando y las revisiones persisten.
+
+**Defectos encontrados y corregidos en esta verificación**:
+
+1. El spinner nunca se mostraba: `hidden` es una propiedad de `HTMLElement`, y en un `<svg>`
+   (`SVGElement`) `elemento.hidden = false` no elimina el atributo, por lo que
+   `[hidden]{display:none}` seguía aplicándose. Ahora se alterna el atributo con
+   `setAttribute`/`removeAttribute`.
+2. Copia redundante en la cita: «Control automático (existencia y cita literal): Control automático:
+   válida» y «Respaldo semántico: Respaldo pendiente de revisión». Se simplificaron las etiquetas.
+3. El indicador del formulario de revisión era un cuarto elemento de la fila flexible y podía
+   reflotar los controles; ahora se muestra debajo de la fila con el espacio ya reservado.
+4. Los errores del servidor no se veían porque HTMX descarta los cuerpos 4xx/5xx; se habilitó el
+   reemplazo solo cuando el cuerpo es el fragmento del propio destino.
 
 ---
 

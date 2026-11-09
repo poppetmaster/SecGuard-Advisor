@@ -86,7 +86,7 @@ def test_review_flow_keeps_controls_separated(tmp_path: Path) -> None:
             assert "Borrador no revisado" in page
             assert "Control automático" in page and "válida" in page
             assert "pendiente de revisión" in page
-            assert "Revisado: respaldada" not in page
+            assert "respaldada por" not in page
 
             with factory() as session:
                 citation = session.scalar(select(MessageCitation))
@@ -119,7 +119,7 @@ def test_review_flow_keeps_controls_separated(tmp_path: Path) -> None:
                 headers=HTMX,
             )
             assert reviewed.status_code == 200
-            assert "Revisado: respaldada" in reviewed.text
+            assert "respaldada por Revisora Local" in reviewed.text
             assert "Revisora Local" in reviewed.text
             assert "Control automático" in reviewed.text
 
@@ -146,7 +146,7 @@ def test_review_flow_keeps_controls_separated(tmp_path: Path) -> None:
 
             chat = client.get(f"/cases/{case_id}/chat")
             assert chat.status_code == 200
-            assert "Revisado: respaldada" in chat.text
+            assert "respaldada por Revisora Local" in chat.text
     finally:
         embedder.close()
         engine.dispose()

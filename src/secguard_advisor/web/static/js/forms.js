@@ -35,6 +35,19 @@
     );
   }
 
+  // `hidden` es una propiedad de HTMLElement: en un <svg> hay que tocar el
+  // atributo, o el estilo del navegador ([hidden]{display:none}) lo mantiene oculto.
+  function setHidden(element, hidden) {
+    if (!element) {
+      return;
+    }
+    if (hidden) {
+      element.setAttribute("hidden", "");
+    } else {
+      element.removeAttribute("hidden");
+    }
+  }
+
   function spinner(form) {
     return form.querySelector("[data-pending-spinner]");
   }
@@ -74,12 +87,8 @@
 
     if (pending) {
       form.setAttribute("aria-busy", "true");
-      if (icon) {
-        icon.hidden = false;
-      }
-      if (text) {
-        text.hidden = false;
-      }
+      setHidden(icon, false);
+      setHidden(text, false);
       buttons.forEach(function (button) {
         button.dataset.wasDisabled = button.disabled ? "1" : "0";
         button.disabled = true;
@@ -89,12 +98,8 @@
     }
 
     form.removeAttribute("aria-busy");
-    if (icon) {
-      icon.hidden = true;
-    }
-    if (text) {
-      text.hidden = true;
-    }
+    setHidden(icon, true);
+    setHidden(text, true);
     buttons.forEach(function (button) {
       if (button.dataset.wasDisabled !== "1") {
         button.disabled = false;

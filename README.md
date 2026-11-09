@@ -288,7 +288,8 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   demuestra por sí sola que la evidencia no exista.
 - La revisión humana del respaldo semántico es por cita y requiere `SECGUARD_REVIEWER_NAME`; es una
   identidad local declarada, no autenticación.
-- Revisión visual en navegador pendiente: no hay navegador automatizado disponible.
+- La revisión visual del ajuste de experiencia se hizo con Playwright sobre Chrome; el recorrido
+  completo de aceptación (US6) y la verificación en otros navegadores siguen pendientes.
 
 ## Contribución
 
