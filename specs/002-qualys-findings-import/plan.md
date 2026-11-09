@@ -14,10 +14,11 @@ Vulnerabilidades → «Cargar reporte de Qualys» → «Validar archivo» → vi
 importación» → consultar registros desde la sección y mediante `findings_query`.
 
 La importación no usa RAG ni Chroma. Parsea el CSV con la biblioteca estándar, valida estructura y
-filas, conserva valores originales y normalizados en SQLite, y solo hace consultables las
-instantáneas confirmadas. `findings_query` se extiende con origen, snapshot, estado, severidad
-numérica/etiqueta, prioridad e indicadores, manteniendo el alcance del servidor y la compatibilidad
-con hallazgos sintéticos.
+filas, conserva valores originales y normalizados en SQLite y solo hace consultables las instantáneas
+confirmadas. La política es única: todo el archivo válido pasa a `staged`; cualquier error bloqueante
+deja la importación en `rejected` y no se confirma. No existe aceptación parcial. `findings_query`
+se extiende con origen, snapshot, estado, severidad numérica/etiqueta, prioridad e indicadores,
+manteniendo el alcance del servidor y la compatibilidad con hallazgos sintéticos.
 
 ## Technical Context
 
@@ -166,8 +167,9 @@ Sin tareas numeradas; cortes revisables:
 
 1. **Esquema y políticas**: migración aditiva, modelos, parser, severidad, estados y prioridad.
    Comprobación: unitarias de parser/políticas sobre fixtures sintéticos.
-2. **Staging y confirmación**: validación, issues, preview, confirmación idempotente, cancelación,
-   expiración y secuencia local. Comprobación: unitarias de servicio y concurrencia.
+2. **Staging y confirmación**: validación, estados `staged`/`rejected`, issues, preview, rechazo único,
+   confirmación idempotente, cancelación, expiración y secuencia local. Comprobación: unitarias de
+   servicio y concurrencia.
 3. **Interfaz Vulnerabilidades**: navegación, formulario, preview, historial, resumen y tabla.
    Comprobación: contrato de rutas y Playwright.
 4. **findings_query**: esquema extendido, origen/snapshot, conteos, resultado por origen y prompt.
@@ -190,6 +192,8 @@ Sin tareas numeradas; cortes revisables:
   copias.
 - **Concurrencia**: confirmación repetida y snapshot seleccionado durante una respuesta requieren
   pruebas explícitas.
+- **Rechazo único**: una fila inválida invalida el archivo; no se ofrece «aceptar solo filas válidas»
+  ni se crea un snapshot parcial.
 - **Fixed/desconocidos**: el archivo de referencia no contiene `Fixed`; la cobertura se hará con
   fixtures sintéticos.
 - **UI**: la sección «Vulnerabilidades» es nueva; no se rediseña el shell ni se añade dashboard.

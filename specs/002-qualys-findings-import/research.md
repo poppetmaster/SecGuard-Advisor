@@ -69,8 +69,8 @@ etiqueta existe para presentación y filtros del proyecto; el valor original que
 de severidad en un caso mixto exige `origin`; si falta, se devuelve `ambiguous_severity_filter`.
 
 **Valores inválidos**: ausente o fuera de 1–5 es un error de validación de fila, no una etiqueta
-inventada. Bajo rechazo completo, no se confirma el archivo; bajo aceptación parcial explícita, la
-fila se excluye y se informa.
+inventada. Una sola fila inválida impide confirmar el archivo: la importación queda `rejected` y no
+se crea una instantánea parcial.
 
 ## R5. Estados y grupos de consulta
 
@@ -166,19 +166,26 @@ consultar de nuevo al mostrar detalle (mezcla historia y actualidad).
 
 ## R9. Staging, preview y confirmación
 
-**Decisión**: validar en memoria, persistir una importación en estado `staged` con sus filas e issues
-en una transacción corta, mostrar preview desde SQLite y confirmar cambiando el estado dentro de una
-transacción que asigna `confirmed_sequence`.
+**Decisión**: validar en memoria y persistir una importación en estado `staged` (todo el archivo
+válido) o `rejected` (error bloqueante) con sus issues en una transacción corta. Solo `staged`
+inserta filas de validación; `rejected` no inserta filas en `qualys_vulnerabilities`. La preview se
+lee de SQLite y la confirmación cambia `staged` a `confirmed` dentro de una transacción que asigna
+`confirmed_sequence`.
 
 **Rationale**: el preview y la confirmación deben usar exactamente el contenido validado; no se
 confía en contadores enviados por el cliente. No se conserva el CSV como archivo; `raw_json` por fila
 preserva los valores originales.
 
-**Cancelar/expirar**: una importación `staged` puede pasar a `cancelled` o `expired`; sus filas e
-issues se eliminan en la limpieza. Las confirmadas nunca se borran ni se sobrescriben.
+**Cancelar/expirar**: una importación `staged` o `rejected` puede pasar a `cancelled` o `expired`;
+sus filas/issues se eliminan en la limpieza. Las confirmadas nunca se borran ni se sobrescriben.
+
+**Sin aceptación parcial**: no hay control para importar solo filas válidas. Un error estructural,
+de encabezado, contenido obligatorio, hash, cantidad o límite deja la importación en `rejected` y no
+permite confirmar. La persona cancela o carga un archivo corregido.
 
 **Idempotencia**: índice único parcial `(case_id, csv_sha256)` para `confirmed`; el servicio reutiliza
-un `staged` con el mismo hash o devuelve la confirmación existente.
+un `staged` con el mismo hash o devuelve la confirmación existente. Un `rejected` no bloquea una
+carga corregida.
 
 ## R10. Concurrencia y secuencia
 
@@ -238,16 +245,20 @@ confirmación, historial, selector, tabla, móvil 390/320 y doble envío.
 
 **Fixtures sintéticos**: CSV con BOM, comas, comillas, multilínea, `Active/New/Re-Opened/Fixed`,
 estado desconocido, severidades 1–5, varios CVE, ambos/solo uno/vacío/negativo/indeterminado en
-indicadores, filas repetidas por clave parcial y errores estructurales.
+indicadores, filas repetidas por combinaciones parciales y errores estructurales. El fixture de
+errores debe quedar `rejected` y no confirmarse.
 
 **Aceptación real**: leer el CSV y el manifiesto desde `../` solo si existen; verificar hash y conteos;
 importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a documentación; no
 enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no resultados forzados.
+Un archivo con error de integridad queda `rejected`; no se permite una aceptación parcial.
 
 ## R15. Riesgos y decisiones pendientes de implementación
 
 - El default `pending_known` para consultas importadas es una decisión de producto del plan; debe
   quedar visible en el resultado.
+- La política de rechazo es única: `staged` solo si todo el archivo es válido; `rejected` no se
+  confirma ni produce instantánea parcial.
 - La etiqueta de activo es de presentación (`FQDN`→`DNS`→`NetBIOS`→`IP`) y no una identidad.
 - La fecha no tiene zona horaria; se conserva el valor y se marca la limitación.
 - El soporte de `Fixed` y estados desconocidos se acredita con fixtures, no con el archivo de

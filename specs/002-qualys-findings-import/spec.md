@@ -220,14 +220,18 @@ muestra el indicador sin la bandera conjunta.
   MUST informar posibles repeticiones y no puede eliminar filas por esa coincidencia.
 - **FR-011**: La vista previa MUST mostrar filas detectadas, válidas, inválidas estructurales,
   posibles repeticiones y conteos por estado, además de la comparación con el manifiesto cuando se
-  aporte, antes de escribir datos.
+  aporte, antes de escribir datos. La validación MUST distinguir una preparación `staged` (todo el
+  archivo válido y confirmable) de un archivo `rejected` (con errores bloqueantes, no confirmable).
 - **FR-012**: El sistema MUST exigir una confirmación explícita después de la vista previa; ninguna
-  fila puede incorporarse antes de esa confirmación.
-- **FR-013**: La política por defecto MUST ser rechazo completo ante error estructural, de encabezado,
-  hash o cantidad. La aceptación parcial solo puede existir si la persona la elige explícitamente y ve
-  las filas omitidas, sus motivos y los totales resultantes. Ningún descarte puede ser silencioso.
+  fila puede incorporarse antes de esa confirmación. Solo un archivo `staged` puede confirmarse.
+- **FR-013**: La política MUST ser rechazo del archivo ante cualquier error estructural, de encabezado,
+  hash, cantidad o contenido obligatorio que invalide registros. No existe aceptación parcial, no hay
+  un control para «aceptar solo filas válidas» y no se incorpora una instantánea parcial. Un fallo de
+  integridad frente al manifiesto de referencia tampoco puede eludirse. La vista previa de un archivo
+  rechazado muestra cantidades y motivos y permite cancelar o cargar un archivo corregido.
 - **FR-014**: El sistema MUST validar valores ausentes, tipos, longitudes, QID numérico, severidad
-  entera, fechas y CVEs; cada fila inválida MUST tener número de fila y motivo.
+  entera, fechas y CVEs; cada fila inválida MUST tener número de fila y motivo. Una fila inválida
+  bloquea la confirmación del archivo completo; no se omite para crear una instantánea parcial.
 - **FR-015**: El sistema MUST admitir los estados `Active`, `New`, `Re-Opened` y `Fixed`. Los estados
   desconocidos MUST conservarse con su valor original, identificarse como «Revisión manual»,
   aparecer en la vista previa y el resumen, y no bloquear la importación por sí solos. Errores
@@ -236,6 +240,16 @@ muestra el indicador sin la bandera conjunta.
   (`Fixed`) y `manual_review` (estado desconocido). El usuario puede consultar todos, pero los
   conteos MUST identificar el grupo aplicado; `Fixed` y «Revisión manual» no se presentan como
   vulnerabilidades activas.
+- **FR-016a**: Los estados de una importación MUST distinguir `validating` (procesamiento),
+  `staged` (validación preparada, todas las filas válidas y confirmable), `rejected` (archivo con
+  errores bloqueantes, no confirmable), `confirmed` (instantánea consultable), `cancelled`,
+  `expired` y `failed`. Solo `confirmed` es visible para `findings_query`.
+
+- **FR-016b**: El procesamiento puede guardar datos temporales de validación para la vista previa,
+  pero no forman parte de una instantánea consultable. Las consultas de vulnerabilidades y
+  `findings_query` solo pueden acceder a importaciones `confirmed`; `staged`, `rejected`, `cancelled`,
+  `expired` y `failed` no son consultables.
+
 - **FR-017**: El sistema MUST aplicar exactamente la convención de presentación del proyecto:
   1 Informativa, 2 Baja, 3 Media, 4 Alta, 5 Crítica. MUST conservar el valor original de `Severity`,
   el nivel numérico validado, la etiqueta del proyecto y el identificador de la política de
@@ -337,8 +351,8 @@ muestra el indicador sin la bandera conjunta.
 - **SC-001**: La vista previa del CSV informa 662 filas, 41 columnas, 631 `Active`, 10 `New`,
   21 `Re-Opened` y 0 `Fixed`; la verificación de referencia con el manifiesto coincide en hash, bytes
   y filas.
-- **SC-002**: La confirmación incorpora exactamente las filas válidas y muestra por separado las
-  inválidas estructurales; ninguna fila desaparece sin motivo y sin conteo.
+- **SC-002**: La confirmación solo procede de un archivo `staged`; un archivo `rejected` muestra sus
+  filas inválidas con número y motivo, no se confirma y no produce una instantánea parcial.
 - **SC-003**: Reimportar el mismo archivo en el mismo caso produce cero filas nuevas y cero cambios en
   los conteos.
 - **SC-004**: Importar un archivo distinto crea una instantánea nueva; la anterior se conserva; la
@@ -372,7 +386,7 @@ muestra el indicador sin la bandera conjunta.
 - **SC-016**: Los logs, respuestas y trazas externas no contienen filas, IP, activos, resultados ni
   indicadores reales; solo metadatos acotados.
 - **SC-017**: El sistema rechaza con motivo un archivo que supere los límites de tamaño, filas, campo
-  o CVE, sin dejar una importación parcial silenciosa.
+  o CVE, sin dejar una importación parcial ni una instantánea confirmada.
 - **SC-018**: El soporte de `Fixed` y de estados desconocidos se acredita con fixtures sintéticos; el
   archivo de referencia no contiene `Fixed` y no se usa para inventar esa evidencia.
 
@@ -382,8 +396,8 @@ muestra el indicador sin la bandera conjunta.
   preámbulo/pie, otros formatos de Qualys, Tenable ni conectores API.
 - El manifiesto se usa para verificar el insumo de referencia; no es obligatorio para cada importación
   futura. El producto conserva el hash del manifiesto cuando se aporta.
-- La política por defecto es rechazo completo ante errores estructurales; la aceptación parcial es una
-  elección explícita.
+- La política es rechazo del archivo ante errores estructurales, de contenido obligatorio, hash,
+  cantidad o límites. No existe aceptación parcial.
 - La severidad 1–5 es una convención de presentación del proyecto, no una denominación oficial de
   Qualys ni una equivalencia con CVSS, QDS, TruRisk o P1–P4.
 - Los estados desconocidos son datos válidos para conservar y revisar, no errores estructurales.

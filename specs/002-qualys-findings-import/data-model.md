@@ -21,7 +21,7 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 |---|---|---|
 | `id` | TEXT(32) | PK, `new_id()` |
 | `case_id` | TEXT(32) | FK `cases.id` `ON DELETE CASCADE`, NOT NULL |
-| `status` | TEXT(20) | NOT NULL, `CHECK IN ('validating','staged','confirmed','cancelled','expired','failed')` |
+| `status` | TEXT(20) | NOT NULL, `CHECK IN ('validating','staged','rejected','confirmed','cancelled','expired','failed')` |
 | `original_filename` | TEXT | NOT NULL; solo metadato local |
 | `csv_sha256` | TEXT(64) | NOT NULL |
 | `csv_bytes` | INTEGER | NOT NULL, `> 0` |
@@ -45,7 +45,7 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 | `validated_at` | TEXT(40) | NULL |
 | `confirmed_at` | TEXT(40) | NULL |
 | `cancelled_at` | TEXT(40) | NULL |
-| `expires_at` | TEXT(40) | NULL; solo para `staged` |
+| `expires_at` | TEXT(40) | NULL; para `staged`/`rejected` |
 | `confirmed_sequence` | INTEGER | NULL; `>= 1`; asignado al confirmar |
 | `error_code` | TEXT(60) | NULL |
 | `error_message` | TEXT | NULL; mensaje comprensible, sin filas |
@@ -59,6 +59,10 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 - `UNIQUE INDEX ux_qualys_imports_confirmed_sequence (case_id, confirmed_sequence)
   WHERE confirmed_sequence IS NOT NULL`. Garantiza la secuencia local.
 - `CHECK confirmed_sequence IS NULL OR confirmed_sequence >= 1`.
+- `CHECK status != 'staged' OR invalid_rows = 0`.
+- `CHECK status != 'confirmed' OR invalid_rows = 0`.
+- `CHECK status != 'confirmed' OR confirmed_sequence IS NOT NULL`.
+
 - `CHECK confirmed_at IS NULL OR status = 'confirmed'` (la transición se valida en servicio además
   del check).
 - `CHECK status != 'confirmed' OR confirmed_at IS NOT NULL`.
@@ -66,20 +70,23 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 ### Estados y transiciones
 
 ```text
-validating ──éxito──> staged ──confirmar──> confirmed
-     │                  │
-     ├──error──────────> failed
-     └──cancelar───────> cancelled
-                        │
-                        └──expirar──> expired
+validating ──todo válido──> staged ──confirmar──> confirmed
+     │                        │
+     ├──error bloqueante──> rejected ──cancelar/expirar──> cancelled/expired
+     ├──error interno─────> failed
+     └──cancelar──────────> cancelled
 ```
 
 - `validating`: mientras se lee/valida; no visible como snapshot.
-- `staged`: validado, con filas e issues; visible en preview; no consultable por `findings_query`.
+- `staged`: validación preparada, todas las filas válidas, sin errores bloqueantes; visible en
+  preview y confirmable; no consultable por `findings_query` hasta confirmar.
 - `confirmed`: instantánea histórica consultable; inmutable.
 - `cancelled`: descartada por la persona; sus filas/issues se eliminan en la limpieza.
-- `expired`: staging abandonado; se limpia; la persona debe volver a cargar.
-- `failed`: error estructural/transacción; no hay snapshot consultable.
+- `expired`: staging/rechazo abandonado; se limpia; la persona debe volver a cargar.
+- `rejected`: archivo con error estructural, de encabezado, contenido obligatorio, hash, cantidad o
+  límite; no confirmable y sin filas en `qualys_vulnerabilities`. La preview muestra cantidades y
+  motivos; la persona cancela o carga un archivo corregido.
+- `failed`: error interno/transacción; no hay snapshot consultable.
 
 ## 2. `qualys_vulnerabilities`
 
@@ -160,13 +167,19 @@ Una fila lógica de una instantánea. No representa una vulnerabilidad única en
 - `priority_flag`: solo si `exploitability_eval = positive` y `malware_eval = positive`.
 - `vendor_metrics_json`: conserva QDS/ARS/ACS/TruRisk y sus nombres, sin mapearlos a CVSS.
 
-### Filas inválidas y staging
+### Filas inválidas, staging y confirmación
 
-`qualys_vulnerabilities` contiene solo filas que superan la validación estructural. Las filas
-inválidas no se insertan en esa tabla; se representan en `qualys_import_issues` con `row_number`,
-`code`, `field` y un mensaje sin valores reales. La vista previa muestra el número y el motivo, no la
-fila completa. Bajo aceptación parcial explícita, las filas inválidas se omiten y se informan; bajo
-rechazo completo, no se confirma la importación.
+`qualys_vulnerabilities` contiene solo filas de un archivo `staged` o `confirmed`; un archivo
+`rejected` no inserta filas en esa tabla. Las filas inválidas se representan en
+`qualys_import_issues` con `row_number`, `code`, `field` y un mensaje sin valores reales. La vista
+previa de un archivo rechazado muestra cantidades y motivos, no una vista de filas válidas.
+
+No existe aceptación parcial ni control para «aceptar solo filas válidas». Una fila inválida bloquea
+la confirmación del archivo completo. Un manifiesto que no coincide también produce `rejected`.
+
+Las filas de `staged` son datos temporales de validación; solo al pasar a `confirmed` se convierten
+en instantánea consultable. `findings_query` y la tabla de «Vulnerabilidades» filtran siempre por
+`status='confirmed'`.
 
 ## 3. `qualys_vulnerability_cves`
 
@@ -192,6 +205,9 @@ rechazo completo, no se confirma la importación.
 | `message` | TEXT | NOT NULL; mensaje comprensible, sin valores reales |
 | `created_at` | TEXT(40) | NOT NULL |
 
+- `error` es bloqueante: si existe al menos uno, la importación queda `rejected` y no se confirma.
+- `warning` y `manual_review` no bloquean por sí solos: estado desconocido, indicador indeterminado,
+  posible repetición o celda opcional vacía.
 - `INDEX ix_qualys_import_issues_import (import_id, severity)`.
 - `INDEX ix_qualys_import_issues_row (import_id, row_number)`.
 - Un issue no incluye la fila completa ni el valor original; el `raw_json` ya está en la fila.
@@ -232,10 +248,10 @@ instantánea confirmada, que nunca se borra.
 
 ## 8. Limpieza y retención
 
-- `staged`, `cancelled`, `expired` y `failed` pueden limpiarse; `confirmed` nunca.
+- `staged`, `rejected`, `cancelled`, `expired` y `failed` pueden limpiarse; `confirmed` nunca.
 - Al iniciar o antes de una nueva validación, expirar `staged` con `expires_at < now` y borrar sus
   filas/issues en una transacción corta.
-- Cancelar solo afecta a un `staged`; si ya está `confirmed`, responde conflicto y no borra.
+- Cancelar solo afecta a un `staged` o `rejected`; si ya está `confirmed`, responde conflicto y no borra.
 - La base y los archivos locales se mantienen fuera de Git; no se copian a fixtures.
 
 ## 9. Compatibilidad con el primer incremento

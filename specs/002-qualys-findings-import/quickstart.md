@@ -49,7 +49,7 @@ No se usan filas del archivo real para crear estos fixtures.
 3. Seleccionar `qualys_synthetic_valid.csv` desde el equipo. No escribir una ruta.
 4. Pulsar **Validar archivo**. Comprobar el indicador de carga y que un doble clic no duplique el
    envío.
-5. En **Vista previa**, comprobar:
+5. En **Vista previa**, comprobar que el archivo queda `staged` y que muestra:
    - archivo y hash;
    - 5 filas detectadas, 5 válidas, 0 inválidas;
    - estados: `Active` 1, `New` 1, `Re-Opened` 1, `Fixed` 1, desconocido 1;
@@ -57,7 +57,7 @@ No se usan filas del archivo real para crear estos fixtures.
    - prioridad conjunta: 2 filas; solo explotabilidad: 1; indeterminadas: 2;
    - un posible grupo de repetición por combinación parcial;
    - advertencias de estado desconocido y de indicadores indeterminados.
-6. Pulsar **Confirmar importación**.
+6. Pulsar **Confirmar importación**. Solo un archivo `staged` puede confirmarse.
 7. Comprobar el resumen, el snapshot confirmado y la tabla. Las filas `Fixed` y «Revisión manual» no
    deben aparecer como pendientes activos.
 8. Abrir **Consulta documental** y preguntar:
@@ -110,10 +110,11 @@ En la tabla y mediante el agente:
 3. Abrir una URL de snapshot del primer caso bajo el segundo: debe responder 404.
 4. Validar `qualys_synthetic_invalid_header.csv`: debe rechazar con columnas esperadas/detectadas y
    sin incorporar filas.
-5. Validar `qualys_synthetic_invalid_rows.csv`: debe mostrar filas inválidas con número y motivo; no
-   debe haber descarte silencioso.
-6. Cancelar una vista previa: la instantánea vigente no cambia. Volver a la URL debe informar
-   cancelación/expiración y ofrecer cargar de nuevo.
+5. Validar `qualys_synthetic_invalid_rows.csv`: debe quedar `rejected`, mostrar filas inválidas con
+   número y motivo y no ofrecer confirmación. No existe un control para «aceptar solo filas válidas»
+   ni se crea un snapshot parcial.
+6. Cancelar una vista previa `staged` o `rejected`: la instantánea vigente no cambia. Volver a la URL
+   debe informar cancelación/expiración y ofrecer cargar de nuevo.
 
 ## 9. Aceptación local con el archivo real
 
@@ -127,13 +128,15 @@ uv run alembic upgrade head
 1. Verificar que el CSV autorizado tiene SHA-256
    `f55ab562f2fe5a41654f5c256a0ba9a281b446ebbe608514e06d0100af934e34` y 1.355.926 bytes.
 2. Verificar contra el manifiesto: 662 filas, 41 columnas, `Active` 631, `New` 10, `Re-Opened` 21,
-   `Fixed` 0.
+   `Fixed` 0. Si el hash o las cantidades no coinciden, el archivo queda `rejected` y no se confirma.
 3. Importar en el almacenamiento temporal y confirmar.
 4. Contrastar en SQLite los totales por estado y por severidad.
 5. Consultar la regla de indicadores: 129 con explotabilidad positiva, 8 con malware positivo, 8 con
    ambos (7 `Active`, 1 `New`), 121 con solo explotabilidad, 0 con solo malware. Son referencias de
    inspección; si la regla produce otro valor, reportar la diferencia y no forzar el número.
 6. Comprobar que no se copió el CSV al repositorio, logs, fixtures ni LangSmith.
+7. Comprobar que un error de integridad no se puede eludir con una aceptación parcial: no existe tal
+   control.
 
 ## 10. Privacidad y trazas
 

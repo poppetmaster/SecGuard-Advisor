@@ -15,10 +15,10 @@
 | GET | `/cases/{case_id}/vulnerabilities` | Sección con snapshot por defecto, resumen, tabla, filtros, selector e historial |
 | GET | `/cases/{case_id}/vulnerabilities/imports` | Historial de importaciones del caso |
 | GET | `/cases/{case_id}/vulnerabilities/imports/new` | Formulario «Cargar reporte de Qualys» |
-| POST | `/cases/{case_id}/vulnerabilities/imports/validate` | Valida el CSV, crea un `staged` y devuelve/redirige a la vista previa |
-| GET | `/cases/{case_id}/vulnerabilities/imports/{import_id}` | Vista previa del `staged`; 404 si no pertenece al caso |
-| POST | `/cases/{case_id}/vulnerabilities/imports/{import_id}/confirm` | Confirma el `staged`; idempotente si ya está confirmado |
-| POST | `/cases/{case_id}/vulnerabilities/imports/{import_id}/cancel` | Cancela un `staged`; no toca la instantánea vigente |
+| POST | `/cases/{case_id}/vulnerabilities/imports/validate` | Valida el CSV: `staged` si todo es válido, `rejected` si hay error bloqueante; devuelve/redirige a la vista previa |
+| GET | `/cases/{case_id}/vulnerabilities/imports/{import_id}` | Vista previa del `staged` o `rejected`; 404 si no pertenece al caso |
+| POST | `/cases/{case_id}/vulnerabilities/imports/{import_id}/confirm` | Confirma solo un `staged`; idempotente si ya está confirmado; 409 si está `rejected` |
+| POST | `/cases/{case_id}/vulnerabilities/imports/{import_id}/cancel` | Cancela un `staged` o `rejected`; no toca la instantánea vigente |
 | GET | `/cases/{case_id}/vulnerabilities?import_id=...&filters...` | Tabla de una instantánea seleccionada |
 
 Todas las rutas resuelven el caso en el servidor. Un `import_id` de otro caso responde 404, nunca 403
@@ -38,18 +38,22 @@ con existencia confirmada.
 
 ## Validación y vista previa
 
-La validación es server-side y produce un `import_id` `staged`. El cliente no envía contadores,
-hashes, filas normalizadas ni resultados de validación.
+La validación es server-side y produce un `import_id` en estado `staged` o `rejected`. `staged`
+significa que todo el archivo es válido y confirmable; `rejected` significa que hay al menos un error
+estructural, de encabezado, contenido obligatorio, hash, cantidad o límite, y no se puede confirmar.
+El cliente no envía contadores, hashes, filas normalizadas ni resultados de validación.
 
 La vista previa muestra:
 
 - Nombre original del archivo y SHA-256 (prefijo visible; valor completo en detalle local).
-- Filas detectadas, válidas, inválidas estructurales, advertencias y revisión manual.
+- Filas detectadas, válidas, inválidas estructurales, advertencias y revisión manual, y el estado
+  `staged` o `rejected`.
 - Distribución por estado: `Active`, `New`, `Re-Opened`, `Fixed`, desconocidos.
 - Distribución por severidad 1–5 y etiqueta del proyecto.
 - Prioridad conjunta: ambos, solo explotabilidad, solo malware, ninguno, indeterminados.
 - Posibles repeticiones por combinaciones parciales (sin afirmar identidad).
-- Errores y advertencias con número de fila y motivo; sin valores sensibles en el mensaje.
+- Errores y advertencias con número de fila y motivo; sin valores sensibles en el mensaje. Un archivo
+  `rejected` muestra cantidades y motivos, no una vista de filas válidas.
 - Comparación con el manifiesto cuando se aportó.
 - Efecto de confirmar: snapshot que pasará a ser el último confirmado y conteos esperados.
 
@@ -58,28 +62,28 @@ tabla de preview se limita a campos clave y un máximo de filas por página.
 
 ## Confirmación
 
-- Solo se confirma un `staged` del caso.
+- Solo se confirma un `staged` del caso. Un `rejected` no se puede confirmar por ningún control.
 - La confirmación usa el contenido persistido por la validación; no reenvía el archivo ni acepta
   contadores del cliente.
 - Una confirmación repetida devuelve el mismo snapshot y no duplica.
 - Si el mismo hash ya está confirmado en el caso, responde con la importación existente (idempotente).
-- Si hay errores estructurales y la política es rechazo completo, el botón está deshabilitado y se
-  explica el motivo.
-- Si hay filas inválidas y la persona elige aceptación parcial, debe confirmar esa elección y ver las
-  filas omitidas; no hay descarte silencioso.
+- Si hay cualquier error bloqueante, el botón de confirmación no existe o está deshabilitado y se
+  explica el motivo. No hay un control para «aceptar solo filas válidas» ni una confirmación parcial.
+- Un fallo de integridad contra el manifiesto de referencia también deja el archivo en `rejected`.
 - Al confirmar, el snapshot recibe `confirmed_sequence` local y pasa a ser el último por defecto.
 
 ## Cancelar y expiración
 
-- Cancelar un `staged` lo marca `cancelled`; se eliminan sus filas/issues en la limpieza.
+- Cancelar un `staged` o `rejected` lo marca `cancelled`; se eliminan sus filas/issues en la limpieza.
 - No modifica la instantánea vigente ni las confirmadas.
-- Un `staged` abandonado expira a las 24 h (configurable); al volver a la URL se informa «validación
-  expirada» y se ofrece cargar de nuevo.
+- Un `staged` o `rejected` abandonado expira a las 24 h (configurable); al volver a la URL se informa
+  «validación expirada» y se ofrece cargar de nuevo.
 - Un `confirmed` no se cancela desde la interfaz; es evidencia histórica.
 
 ## Historial y selector
 
-- «Historial de importaciones» lista snapshots confirmados, cancelados/fallidos recientes y su estado.
+- «Historial de importaciones» lista snapshots confirmados y validaciones `staged`/`rejected`/
+  canceladas/fallidas recientes con su estado.
 - Cada fila muestra fecha, hash corto, filas, estados, severidad, prioridad y secuencia.
 - El selector de la sección principal permite elegir un snapshot confirmado anterior.
 - La sección siempre muestra el snapshot consultado; no suma snapshots.
@@ -106,11 +110,12 @@ la tabla.
 |---|---|
 | Archivo ausente o extensión no admitida | 422 con motivo |
 | Archivo demasiado grande | 413 con límite |
-| Encabezado/columnas ausentes o adicionales | 422 con columnas esperadas y detectadas, sin filas |
-| CSV ilegible o BOM/encoding inválido | 422 con motivo |
+| Encabezado/columnas ausentes o adicionales | 200 con preview `rejected`, columnas esperadas/detectadas y sin filas confirmables |
+| CSV ilegible, BOM/encoding inválido o fila inválida | 200 con preview `rejected` y motivo; no se confirma |
 | Hash/manifiesto no coincide | 422/409 con hash calculado y esperado |
 | Validación expirada | 410 con opción de cargar de nuevo |
 | Confirmación de un snapshot ya confirmado | 200 idempotente con enlace |
+| Confirmación de un `rejected` | 409; no se modifica nada |
 | Confirmación de otro caso | 404 |
 | Conflicto de secuencia/concurrencia | reintento seguro o 409 con mensaje |
 | Fallo interno | 500 con mensaje comprensible; sin traza ni filas |
@@ -128,7 +133,9 @@ No se exponen rutas absolutas, valores de filas, IP, activos, resultados ni stac
 
 ## Privacidad
 
-- El CSV no se guarda como archivo en el repositorio; los valores originales viven en SQLite local.
+- El CSV no se guarda como archivo en el repositorio; los valores originales de filas `staged`/
+  `confirmed` viven en SQLite local. Un `rejected` no conserva filas de vulnerabilidad, solo issues y
+  resumen agregado.
 - El nombre del archivo y los metadatos se guardan localmente para procedencia; no se envían a
   LangSmith.
 - La vista previa no renderiza `Results` completo.

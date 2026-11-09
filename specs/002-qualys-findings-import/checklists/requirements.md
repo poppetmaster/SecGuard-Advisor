@@ -36,6 +36,9 @@
   «Revisión manual», prioridad conjunta por explotabilidad y malware, y manifiesto opcional.
 - La interpretación de valores no reconocidos de `Exploitability` y `Associated Malware` queda
   resuelta como `indeterminada` con revisión manual; no se inventa evidencia.
+- La política de importación es única: un error bloqueante deja el archivo en `rejected`; no hay
+  aceptación parcial, control de «solo filas válidas» ni snapshot parcial. `staged` exige todo el
+  archivo válido.
 - La acreditación de `Fixed` y de estados desconocidos con fixtures sintéticos es una cobertura de
   prueba pendiente de ejecución, no una ambigüedad de especificación.
 - La especificación está lista para revisión y puede avanzar a `/speckit.plan` cuando el equipo lo
