@@ -13,8 +13,8 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
-- [ ] Requirements are testable and unambiguous
+- [x] No [NEEDS CLARIFICATION] markers remain
+- [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
 - [x] All acceptance scenarios are defined
@@ -24,17 +24,19 @@
 
 ## Feature Readiness
 
-- [ ] All functional requirements have clear acceptance criteria
+- [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 
 ## Notes
 
-- Quedan tres decisiones de negocio sin resolver, registradas en la sección **Clarifications needed** y
-  en tres marcadores `[NEEDS CLARIFICATION]`:
-  identidad estable entre archivos, política de actualización/reimportación y semántica de la
-  severidad numérica. Hasta resolverlas no se puede cerrar la aceptación de identidad, actualización
-  y filtros de severidad.
-- La especificación es apta para revisión; no debe pasar a `/speckit.plan` hasta acordar esas tres
-  decisiones.
+- 16/16 elementos aprobados tras integrar las decisiones del responsable: instantáneas
+  independientes, escala 1–5, estados `Active`/`New`/`Re-Opened`/`Fixed`, estados desconocidos como
+  «Revisión manual», prioridad conjunta por explotabilidad y malware, y manifiesto opcional.
+- La interpretación de valores no reconocidos de `Exploitability` y `Associated Malware` queda
+  resuelta como `indeterminada` con revisión manual; no se inventa evidencia.
+- La acreditación de `Fixed` y de estados desconocidos con fixtures sintéticos es una cobertura de
+  prueba pendiente de ejecución, no una ambigüedad de especificación.
+- La especificación está lista para revisión y puede avanzar a `/speckit.plan` cuando el equipo lo
+  indique.
