@@ -74,6 +74,7 @@ class OllamaGenerator:
     config: GenerationConfig
     model: str = field(init=False)
     digest: str | None = None
+    last_usage: dict | None = None
 
     def __post_init__(self) -> None:
         self.model = self.config.model
@@ -108,7 +109,9 @@ class OllamaGenerator:
 
     def generate(self, *, system: str, user: str) -> AnswerPayload:
         """Genera la respuesta estructurada o falla con un error clasificado."""
-        structured = self._chat().with_structured_output(AnswerPayload, method="json_schema")
+        structured = self._chat().with_structured_output(
+            AnswerPayload, method="json_schema", include_raw=True
+        )
         try:
             result = structured.invoke([("system", system), ("human", user)])
         except (httpx.ConnectError, ConnectionError) as exc:
@@ -123,16 +126,43 @@ class OllamaGenerator:
                 raise ModelTimeout("Se agotó el tiempo de espera del modelo.") from exc
             raise InvalidModelOutput("La salida del modelo no cumple el esquema esperado.") from exc
 
-        if isinstance(result, AnswerPayload):
-            return result
-        if isinstance(result, dict):
+        raw = None
+        parsed = result
+        parse_error = None
+        if isinstance(result, dict) and "raw" in result and "parsed" in result:
+            raw = result.get("raw")
+            parsed = result.get("parsed")
+            parse_error = result.get("parsing_error")
+        self.last_usage = _usage_of(raw)
+
+        if parse_error is not None:
+            raise InvalidModelOutput("La salida del modelo no cumple el esquema esperado.")
+        if isinstance(parsed, AnswerPayload):
+            return parsed
+        if isinstance(parsed, dict):
             try:
-                return AnswerPayload.model_validate(result)
+                return AnswerPayload.model_validate(parsed)
             except Exception as exc:
                 raise InvalidModelOutput(
                     "La salida del modelo no cumple el esquema esperado."
                 ) from exc
         raise InvalidModelOutput("La salida del modelo no cumple el esquema esperado.")
+
+
+def _usage_of(raw) -> dict | None:
+    """Tokens observados por Ollama, si el mensaje los informa."""
+    if raw is None:
+        return None
+    metadata = getattr(raw, "response_metadata", None) or {}
+    prompt_tokens = metadata.get("prompt_eval_count")
+    output_tokens = metadata.get("eval_count")
+    if prompt_tokens is None:
+        usage = getattr(raw, "usage_metadata", None) or {}
+        prompt_tokens = usage.get("input_tokens")
+        output_tokens = usage.get("output_tokens")
+    if prompt_tokens is None:
+        return None
+    return {"prompt_tokens": prompt_tokens, "output_tokens": output_tokens}
 
 
 @dataclass(frozen=True, slots=True)

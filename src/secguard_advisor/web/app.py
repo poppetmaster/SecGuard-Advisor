@@ -72,6 +72,7 @@ def create_app(
                 base_url=resolved.ollama_base_url,
                 model=resolved.ollama_model,
                 num_ctx=resolved.generator_num_ctx,
+                num_predict=resolved.generator_num_predict,
                 temperature=resolved.generator_temperature,
                 seed=resolved.generator_seed,
                 timeout_seconds=resolved.llm_timeout_seconds,

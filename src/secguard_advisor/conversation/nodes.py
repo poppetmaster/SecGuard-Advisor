@@ -7,6 +7,7 @@ from typing import Any
 
 from secguard_advisor.cases.scope import require_case
 from secguard_advisor.conversation import service
+from secguard_advisor.conversation.budget import plan_prompt
 from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
@@ -19,11 +20,6 @@ from secguard_advisor.conversation.persistence import (
     StepRecord,
     fail_run,
     persist_turn,
-)
-from secguard_advisor.conversation.prompts import (
-    SYSTEM_PROMPT,
-    build_repair_prompt,
-    build_user_prompt,
 )
 from secguard_advisor.retrieval.citations import check_citation
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
@@ -166,15 +162,29 @@ def _check_turn_deadline(context) -> None:
 def agent(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
-    payload = context.deps.generator.generate(
-        system=SYSTEM_PROMPT,
-        user=build_user_prompt(context.question, state.get("hits", ()), state.get("history", ())),
+    plan = plan_prompt(
+        question=context.question,
+        hits=state.get("hits", ()),
+        history=state.get("history", ()),
+        settings=context.deps.settings,
     )
+    payload = context.deps.generator.generate(system=plan.system, user=plan.user)
+    usage = getattr(context.deps.generator, "last_usage", None) or {}
     _check_turn_deadline(context)
     return {
         "payload": payload,
+        "hits": plan.hits,
         "steps": record_step(
-            state, "agent", "model", "ok", started, {"claims": len(payload.claims)}
+            state,
+            "agent",
+            "model",
+            "ok",
+            started,
+            {
+                "claims": len(payload.claims),
+                **plan.detail(),
+                "observed_prompt_tokens": usage.get("prompt_tokens"),
+            },
         ),
     }
 
@@ -320,21 +330,31 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
     reasons = [draft.check_reason or "cita inválida" for draft in state.get("rejected", ())]
-    payload = context.deps.generator.generate(
-        system=SYSTEM_PROMPT,
-        user=build_repair_prompt(
-            context.question,
-            state.get("hits", ()),
-            reasons,
-            state.get("history", ()),
-        ),
+    plan = plan_prompt(
+        question=context.question,
+        hits=state.get("hits", ()),
+        history=state.get("history", ()),
+        settings=context.deps.settings,
+        repair_reasons=reasons,
     )
+    payload = context.deps.generator.generate(system=plan.system, user=plan.user)
+    usage = getattr(context.deps.generator, "last_usage", None) or {}
     _check_turn_deadline(context)
     return {
         "payload": payload,
+        "hits": plan.hits,
         "repaired": True,
         "steps": record_step(
-            state, "repair", "model", "ok", started, {"claims": len(payload.claims)}
+            state,
+            "repair",
+            "model",
+            "ok",
+            started,
+            {
+                "claims": len(payload.claims),
+                **plan.detail(),
+                "observed_prompt_tokens": usage.get("prompt_tokens"),
+            },
         ),
     }
 
@@ -424,6 +444,7 @@ def generation_config(settings) -> GenerationConfig:
         base_url=settings.ollama_base_url,
         model=settings.ollama_model,
         num_ctx=settings.generator_num_ctx,
+        num_predict=settings.generator_num_predict,
         temperature=settings.generator_temperature,
         seed=settings.generator_seed,
         timeout_seconds=settings.llm_timeout_seconds,

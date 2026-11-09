@@ -36,9 +36,15 @@ def build_env(
     *,
     with_documents: bool = True,
     min_score: float | None = None,
+    settings_overrides: dict | None = None,
 ) -> ConversationEnv:
     overrides = {} if min_score is None else {"retrieval_min_score": min_score}
-    settings = Settings(_env_file=None, storage_dir=tmp_path / "storage", **overrides)
+    settings = Settings(
+        _env_file=None,
+        storage_dir=tmp_path / "storage",
+        **overrides,
+        **(settings_overrides or {}),
+    )
     settings.ensure_directories()
     engine = create_engine_for_url(settings.database_url)
     Base.metadata.create_all(engine)

@@ -48,11 +48,12 @@ class StubChat:
         self.structured = structured
         self.schema = None
         self.method = None
-        self.received = None
+        self.include_raw = None
 
-    def with_structured_output(self, schema, *, method="json_schema"):
+    def with_structured_output(self, schema, *, method="json_schema", include_raw=False):
         self.schema = schema
         self.method = method
+        self.include_raw = include_raw
         return self.structured
 
 
@@ -85,6 +86,7 @@ def test_structured_output_uses_json_schema(monkeypatch) -> None:
     assert result.answer == "hola"
     assert captured["chat"].schema is AnswerPayload
     assert captured["chat"].method == "json_schema"
+    assert captured["chat"].include_raw is True
     assert captured["kwargs"]["model"] == "qwen3.5:9b"
     assert captured["kwargs"]["num_ctx"] == 8192
     assert captured["kwargs"]["temperature"] == 0.1
@@ -181,3 +183,40 @@ def test_user_prompt_lists_sources_with_ids() -> None:
     assert "a" * 32 in prompt
     assert "página 12" in prompt
     assert "Texto del fragmento" in prompt
+
+
+def test_observed_usage_is_recorded(monkeypatch) -> None:
+    from langchain_core.messages import AIMessage
+
+    payload = AnswerPayload(answer="hola", claims=[])
+    raw = AIMessage(
+        content="",
+        response_metadata={"prompt_eval_count": 1234, "eval_count": 56},
+    )
+    generator, _captured = _generator_with(
+        monkeypatch,
+        StubStructured(result={"raw": raw, "parsed": payload, "parsing_error": None}),
+    )
+
+    result = generator.generate(system="s", user="u")
+
+    assert result.answer == "hola"
+    assert generator.last_usage == {"prompt_tokens": 1234, "output_tokens": 56}
+
+
+def test_parsing_error_with_raw_output_is_invalid(monkeypatch) -> None:
+    from langchain_core.messages import AIMessage
+
+    generator, _captured = _generator_with(
+        monkeypatch,
+        StubStructured(
+            result={
+                "raw": AIMessage(content="no json"),
+                "parsed": None,
+                "parsing_error": ValueError("no json"),
+            }
+        ),
+    )
+
+    with pytest.raises(InvalidModelOutput):
+        generator.generate(system="s", user="u")

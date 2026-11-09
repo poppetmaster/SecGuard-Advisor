@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation import service
+from secguard_advisor.conversation.budget import ContextBudgetExceeded
 from secguard_advisor.conversation.context import TurnContext, TurnDependencies
 from secguard_advisor.conversation.graph import run_turn_graph
 from secguard_advisor.conversation.llm import (
@@ -94,6 +95,14 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     """Ejecuta el grafo y clasifica el cierre de la ejecución."""
     try:
         state = run_turn_graph(context, memory)
+    except ContextBudgetExceeded as exc:
+        _fail(
+            context,
+            status="failed",
+            code="context_budget_exceeded",
+            message=str(exc),
+        )
+        return TurnResult("failed", "error", 500, "context_budget_exceeded")
     except RunTimeout:
         _fail(
             context, status="timeout", code="run_timeout", message="Se agotó el tiempo del turno."

@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     embedding_context_tokens: int = 2048
 
     generator_num_ctx: int = 8192
+    generator_num_predict: int = 1200
+    # Margen de seguridad del presupuesto de contexto previo a cada llamada.
+    context_safety_margin_tokens: int = 320
     generator_temperature: float = 0.1
     generator_seed: int = 42
     llm_timeout_seconds: float = 90.0
