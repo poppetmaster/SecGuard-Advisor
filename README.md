@@ -93,8 +93,9 @@ Evidencia localizable:
   recomendadas y no bloqueantes; no se ejecutaron.
 - La CI remota no se verificó y no se declara en verde.
 - La revisión en navegadores distintos de Chromium sigue pendiente.
-- El repositorio es privado y la protección de rama de GitHub no está disponible en el plan actual;
-  GitHub la ofrece al pasar a público o a un plan con esa capacidad.
+- El repositorio es público. La rama `main` está protegida contra force push y eliminación. Los
+  colaboradores pueden contribuir mediante fork y pull request, o ser invitados como colaboradores
+  con permisos de escritura.
 
 ## Funcionalidades
 
