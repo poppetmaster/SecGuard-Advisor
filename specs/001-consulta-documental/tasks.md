@@ -724,9 +724,13 @@ pendientes.
 - `scripts/confirm_trace.py` y columnas `trace_confirmed_by`, `trace_confirmed_at` y
   `trace_evidence_json` (migración `9c3e4f5a6b7d`). La aplicación normal sigue sin escribir
   `confirmed`.
-- `make demo` pasó a ser operativo: prepara `storage/demo`, aplica migraciones, siembra el caso
-  sintético y arranca un worker. `/healthz` respondió con base y Ollama disponibles; 1 caso y 12
-  hallazgos en `storage/demo`.
+- `make demo-prepare` prepara `storage/demo` con migraciones, corpus público ingerido y dataset
+  sintético; `make demo` arranca esa misma instancia. Se corrigió la divergencia que documentaba
+  `make corpus-ingest`/`make seed-demo` sobre `storage/` y arrancaba la demo desde `storage/demo`.
+  Verificado: `/healthz` 200, 4 documentos públicos, 193 fragmentos, 12 hallazgos; `storage/` no se
+  tocó. La traza confirmada de la aceptación no se copió a `storage/demo`.
+- `docs/evidencia/sc-001-guia.md` y `docs/evidencia/sc-003-revision.md` preparan el cierre humano;
+  las decisiones de SC-003 quedan `pendiente` y no se rellenaron.
 - Quickstart validado en almacenamiento temporal: `make install`, `make assets`, `make corpus`,
   migraciones, `make seed-demo`, `make corpus-ingest` (4 documentos, 4 versiones, 193 fragmentos) y
   `make demo`.

@@ -15,7 +15,7 @@ separado; los resultados observados están en `docs/evidencia/demo-001.md`.
 - **Un solo proceso y un worker.** Los comandos de ejecución fijan `--workers 1`; el semáforo
   global y la reconciliación de arranque lo asumen.
 
-## 2. Comandos previstos
+## 2. Comandos
 
 | Comando | Efecto |
 |---|---|
@@ -24,15 +24,25 @@ separado; los resultados observados están en `docs/evidencia/demo-001.md`.
 | `make seed-demo` | Carga el caso de demostración y los hallazgos sintéticos deterministas |
 | `make assets` | Compila Tailwind y verifica los recursos vendorizados |
 | `make dev` | Servidor local en `127.0.0.1` con recarga |
-| `make demo` | Prepara `storage/demo`, siembra el caso sintético y arranca el servidor con un worker |
+| `make demo-prepare` | Prepara `storage/demo`: migraciones, corpus público ingerido y dataset sintético |
+| `make demo` | Ejecuta `demo-prepare` y arranca el servidor con un worker sobre `storage/demo` |
 | `make test` | Pruebas unitarias y de contrato (sin Ollama, para CI) |
 | `make test-integration` | Pruebas reales con Ollama, embeddings, recuperación y herramienta |
 | `make check` | Lint, formato y pruebas rápidas |
 | `make clean` | Limpia cachés y artefactos locales |
 
-`make demo` no toca `storage/`: usa `storage/demo`. `make dev` usa el almacenamiento configurado
-por `SECGUARD_STORAGE_DIR` (por defecto `storage/`). Para la aceptación se usó un directorio
-temporal separado, nunca los casos del usuario.
+`make demo` no toca `storage/`: usa `storage/demo`. `make corpus-ingest` y `make seed-demo` operan
+sobre el `SECGUARD_STORAGE_DIR` configurado; no preparan `storage/demo` por sí solos. `make dev` usa
+el almacenamiento configurado por `SECGUARD_STORAGE_DIR` (por defecto `storage/`). Para la aceptación
+se usó un directorio temporal separado, nunca los casos del usuario.
+
+Preparación explícita de la demo (la preparación queda fuera del cronómetro de SC-001):
+
+```bash
+make corpus          # una vez; requiere red y deja data/corpus verificado
+make demo-prepare    # storage/demo: migraciones + corpus + seed
+make demo            # arranca storage/demo en 127.0.0.1:8000
+```
 
 ## 3. Matriz de verificación
 
@@ -200,7 +210,9 @@ revisión no adjudica P1–P4 ni aprueba el informe, y no cambia el control auto
 
 ## 9. Validación ejecutada
 
-La validación del 2026-11-09 se hizo con almacenamiento temporal separado y datos sintéticos:
+La validación del 2026-11-09 se hizo con almacenamiento temporal separado y datos sintéticos. La
+instancia de demostración (`storage/demo`) se prepara aparte y no contiene la traza confirmada de la
+aceptación:
 
 - `make install`, `make assets` y migraciones: sin error.
 - `make corpus` verificó las cuatro fuentes oficiales y `make corpus-ingest` las ingirió con
@@ -209,7 +221,8 @@ La validación del 2026-11-09 se hizo con almacenamiento temporal separado y dat
 - El recorrido real está automatizado en `tests/acceptance/test_journey_real.py` y el recorrido con
   dobles en `tests/acceptance/test_journey.py`.
 - La traza de la pregunta sobre la evidencia sintética del caso se confirmó por lectura externa con
-  `scripts/confirm_trace.py`; la salida y la identidad declarada están en el reporte de evidencia.
+  `scripts/confirm_trace.py` en la instancia temporal de aceptación; la salida y la identidad declarada
+  están en el reporte de evidencia. Esa traza no se copió a `storage/demo`.
 
 Los modelos deben estar instalados previamente. Las credenciales de LangSmith son opcionales: sin
 ellas la consulta funciona y la traza queda `disabled`.

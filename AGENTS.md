@@ -118,8 +118,9 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   nunca pregunta, prompts, documentos del caso, argumentos de herramienta, claves ni rutas locales.
 - Las pruebas de aceptación con dobles viven en `tests/acceptance/test_journey.py`; la aceptación real
   con Ollama, corpus y herramienta en `tests/acceptance/test_journey_real.py`, siempre con
-  almacenamiento separado (`SECGUARD_ACCEPTANCE_DIR` o `tmp_path`). `make demo` usa `storage/demo` y
-  no modifica `storage/`.
+  almacenamiento separado (`SECGUARD_ACCEPTANCE_DIR` o `tmp_path`). `make demo-prepare` prepara
+  `storage/demo` con migraciones, corpus y seed; `make demo` arranca esa misma instancia. No modifica
+  `storage/`.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit

@@ -181,11 +181,12 @@ Nunca se versionan secretos ni se muestran en registros o respuestas.
 casos, documentos, conversación y evidencia de ejecución.
 
 ```bash
-make dev            # servidor con casos, documentos y consulta
-make corpus         # descarga y verifica el corpus oficial
-make corpus-ingest  # ingesta el corpus verificado en SQLite y Chroma
-make seed-demo      # carga el dataset sintético; requiere el esquema migrado
-make demo           # prepara storage/demo, siembra el caso sintético y arranca el servidor
+make dev             # servidor con casos, documentos y consulta
+make corpus          # descarga y verifica el corpus oficial
+make corpus-ingest   # ingesta el corpus verificado en el almacenamiento configurado
+make seed-demo       # carga el dataset sintético en el almacenamiento configurado
+make demo-prepare    # storage/demo: migraciones + corpus + dataset sintético
+make demo            # ejecuta demo-prepare y arranca storage/demo
 ```
 
 ### Navegación
@@ -343,21 +344,26 @@ con una traza real si hay credenciales.
 ```bash
 make check            # lint, formato y 343 pruebas rápidas
 make test-integration # 25 pruebas reales, incluida la aceptación y la traza
-make demo             # storage/demo + seed + servidor en 127.0.0.1:8000
+make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
+make demo             # arranca storage/demo en 127.0.0.1:8000
 ```
 
-`make demo` no toca `storage/`. Para la aceptación real se usó un directorio temporal separado con
-Ollama, EmbeddingGemma, corpus oficial, caso sintético y `findings_query`. La confirmación de traza se
-hace con:
+`make demo` no toca `storage/`. `make corpus-ingest` y `make seed-demo` operan sobre el
+`SECGUARD_STORAGE_DIR` configurado, no sobre `storage/demo`. Para la aceptación real se usó un
+directorio temporal separado con Ollama, EmbeddingGemma, corpus oficial, caso sintético y
+`findings_query`; esa base no se copió a `storage/demo`. La confirmación de traza se hace con:
 
 ```bash
 uv run python scripts/confirm_trace.py --run-id <local> --trace-id <externo> --reviewer "<identidad>"
 ```
 
 El comando solo escribe `confirmed` después de verificar por API de lectura que la traza existe,
-pertenece a `secguard-advisor-dev` y coincide con `run_id`, `case_id` e intento. La evidencia del
-recorrido, las cifras, las capturas y la salida de confirmación está en
-[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md).
+pertenece a `secguard-advisor-dev` y coincide con `run_id`, `case_id` e intento. La traza confirmada
+de la aceptación pertenece al entorno temporal de aceptación, no a `storage/demo`; no se copió ninguna
+base. La evidencia del recorrido, las cifras, las capturas y la salida de confirmación está en
+[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md). Los materiales humanos pendientes están
+en [`docs/evidencia/sc-001-guia.md`](docs/evidencia/sc-001-guia.md) y
+[`docs/evidencia/sc-003-revision.md`](docs/evidencia/sc-003-revision.md).
 
 ## Estructura
 

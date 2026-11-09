@@ -30,20 +30,31 @@ Requisitos:
 - `LANGSMITH_*` si se quiere traza externa. Sin credenciales, la consulta funciona y la traza queda
   `disabled`.
 
-Comandos mínimos:
+Comandos mínimos para la instancia de demostración:
 
 ```bash
 make install
 make assets
-uv run alembic upgrade head
-make corpus
-make corpus-ingest
-make seed-demo
-make demo          # storage/demo + seed + servidor en 127.0.0.1:8000
+make corpus          # una vez: descarga/verifica data/corpus (red)
+make demo-prepare    # storage/demo: migraciones + corpus ingerido + dataset sintético
+make demo            # arranca storage/demo en 127.0.0.1:8000
 ```
 
-`make demo` no toca `storage/`: usa `storage/demo`. La aceptación real usó un directorio temporal
-separado (`SECGUARD_ACCEPTANCE_DIR`), nunca los casos del usuario.
+`make demo-prepare` y `make demo` usan `storage/demo`; no tocan `storage/`. `make corpus-ingest` y
+`make seed-demo` operan sobre el `SECGUARD_STORAGE_DIR` configurado, no sobre `storage/demo` por sí
+solos. La aceptación real usó un directorio temporal separado (`SECGUARD_ACCEPTANCE_DIR`), nunca los
+casos del usuario ni `storage/demo`. No se copiaron bases temporales a `storage/demo`.
+
+Materiales humanos:
+
+- [`sc-001-guia.md`](sc-001-guia.md): recorrido cronometrado y campos para el ejecutor.
+- [`sc-001-resultado.md`](sc-001-resultado.md): plantilla de resultado de SC-001.
+- [`sc-003-revision.md`](sc-003-revision.md): diez afirmaciones reales con citas y decisiones
+  `pendiente`; no se completaron.
+- [`sc-001/`](sc-001/): los dos documentos Markdown que se suben en el recorrido.
+
+La instancia `storage/demo` también contiene los casos «Revisión SC-003» y «SC-003 lista normativa»
+para abrir las citas de la tabla. No forman parte del recorrido cronometrado de SC-001.
 
 ## 3. Recorrido breve de demostración
 
@@ -60,7 +71,9 @@ separado (`SECGUARD_ACCEPTANCE_DIR`), nunca los casos del usuario.
 7. Preguntar: «¿Cuántos hallazgos de severidad High están registrados? Agrúpalos por activo.».
    Comprobar `findings_query`, Total 4, los tres activos, la etiqueta sintética y la procedencia.
 8. Abrir **Ver ejecución** de la primera respuesta: modelo, digest, duración, pasos, presupuesto,
-   fuentes, citas, control automático y revisión humana separados, y traza confirmada.
+   fuentes, citas, control automático y revisión humana separados. La traza puede estar
+   `disabled`, `submitted`, `failed` o `confirmed` según la instancia; en `storage/demo` no hay una
+   traza confirmada por defecto.
 9. Mostrar el caso aislado: una ejecución del caso principal devuelve 404 bajo el otro caso; una
    consulta de hallazgos devuelve Total 0 y la nota de que no demuestra ausencia de vulnerabilidades.
 10. Reiniciar el servidor y recargar: casos, documentos, conversación, citas, revisiones y ejecuciones
@@ -136,18 +149,27 @@ Reintento: la ejecución fallida `fefcaf34a6a444fda7b2939c39e124da` se reintent�
 `ab380b063ab7418ca4b826adc9c5f89f`, intento 2, con la misma pregunta y `retry_of_run_id`; terminó
 `answered`.
 
-## 5. Traza confirmada
+## 5. Traza confirmada en la aceptación (no en `storage/demo`)
 
 - Proyecto: `secguard-advisor-dev`.
 - Ejecución local: `6f33353e3a264ad593156c4fd04d8c9d`.
 - Traza: `01a1bf0c-961c-7672-ae65-ceef31b5f66e`.
 - Confirmación: `scripts/confirm_trace.py` verificó por API de lectura que la traza existe, pertenece
   al proyecto y sus metadatos coinciden con `run_id`, `case_id` y `attempt_no`.
-- Identidad declarada: `Aceptación de prueba`.
+- Identidad declarada: `Aceptación de prueba` (identidad de prueba, no una persona).
 - Fecha: `2026-11-09T06:49:26.239214+00:00`.
 - Salida completa: [`trace-confirmation.json`](demo-001/trace-confirmation.json).
 - Antes de confirmar, una traza ajena a la ejecución fue rechazada con `trace_mismatch` y no modificó
   el estado local.
+
+**Importante**: esta traza pertenece a la instancia temporal de aceptación, no a `storage/demo`. No se
+copió ninguna base ni se inventó una traza confirmada en la demo. Para confirmar una traza de la
+instancia de demostración, ejecutar una consulta con LangSmith configurado y luego:
+
+```bash
+SECGUARD_STORAGE_DIR="$PWD/storage/demo" uv run python scripts/confirm_trace.py \
+  --run-id <run_de_la_demo> --trace-id <trace_de_la_demo> --reviewer "<identidad>"
+```
 
 ## 6. Requisitos y criterios
 

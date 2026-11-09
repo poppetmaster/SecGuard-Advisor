@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
-.PHONY: help install assets dev demo corpus seed-demo lint format format-check test test-integration check clean
+.PHONY: help install assets dev demo demo-prepare corpus seed-demo lint format format-check test test-integration check clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -22,11 +22,16 @@ dev: ## Servidor local en 127.0.0.1 con un worker
 	@if [ ! -f src/secguard_advisor/web/app.py ]; then echo "no implementado: la aplicación llega en T019"; exit 1; fi
 	uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1 --reload
 
-demo: ## Prepara storage/demo con datos sintéticos y arranca el servidor
-	@mkdir -p storage/demo
-	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run alembic upgrade head
-	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run python scripts/seed_demo.py
-	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1
+DEMO_STORAGE := $(CURDIR)/storage/demo
+
+demo-prepare: ## Prepara storage/demo: migraciones, corpus público y dataset sintético
+	@mkdir -p "$(DEMO_STORAGE)"
+	@if [ ! -f data/corpus/manifest.json ]; then echo "faltan el manifiesto o los originales del corpus; ejecutá make corpus una vez"; exit 2; fi
+	SECGUARD_STORAGE_DIR="$(DEMO_STORAGE)" uv run alembic upgrade head
+	SECGUARD_STORAGE_DIR="$(DEMO_STORAGE)" uv run python scripts/prepare_demo.py
+
+demo: demo-prepare ## Prepara y arranca la demostración sobre storage/demo
+	SECGUARD_STORAGE_DIR="$(DEMO_STORAGE)" uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1
 
 corpus: ## Descarga y verifica el corpus oficial
 	uv run python scripts/fetch_corpus.py
