@@ -93,7 +93,16 @@
   {% elif run.trace_status == "disabled" %}
   <p class="mt-2 text-xs text-slate-600">La traza externa no está configurada en este entorno.</p>
   {% elif run.trace_status == "confirmed" %}
-  <p class="mt-2 text-xs text-slate-600">Traza verificada durante la aceptación.</p>
+  <p class="mt-2 text-xs text-slate-600">
+    Traza verificada durante la aceptación
+    {% if run.trace_confirmed_by %}por {{ run.trace_confirmed_by }}{% endif %}
+    {% if run.trace_confirmed_at %}el {{ run.trace_confirmed_at }}{% endif %}.
+  </p>
+  {% if run.trace_url %}
+  <a class="mt-1 inline-block break-all text-sm text-blue-800 hover:underline" href="{{ run.trace_url }}" rel="noreferrer noopener" target="_blank">
+    Abrir traza en LangSmith
+  </a>
+  {% endif %}
   {% endif %}
 </section>
 

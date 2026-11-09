@@ -22,10 +22,11 @@ dev: ## Servidor local en 127.0.0.1 con un worker
 	@if [ ! -f src/secguard_advisor/web/app.py ]; then echo "no implementado: la aplicación llega en T019"; exit 1; fi
 	uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1 --reload
 
-demo: ## Servidor con datos de demostración (no implementado)
-	@echo "no implementado: requiere el recorrido de consulta (US3+)"
-	@echo "previsto: uvicorn --factory secguard_advisor.web.app:create_app --workers 1"
-	@exit 1
+demo: ## Prepara storage/demo con datos sintéticos y arranca el servidor
+	@mkdir -p storage/demo
+	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run alembic upgrade head
+	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run python scripts/seed_demo.py
+	SECGUARD_STORAGE_DIR="$(CURDIR)/storage/demo" uv run uvicorn --factory secguard_advisor.web.app:create_app --host 127.0.0.1 --port 8000 --workers 1
 
 corpus: ## Descarga y verifica el corpus oficial
 	uv run python scripts/fetch_corpus.py

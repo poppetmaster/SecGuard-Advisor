@@ -293,6 +293,8 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
         "trace_status_label": TRACE_STATUS_LABELS.get(run.trace_status, run.trace_status),
         "trace_id": run.trace_id,
         "trace_url": run.trace_url,
+        "trace_confirmed_by": run.trace_confirmed_by,
+        "trace_confirmed_at": run.trace_confirmed_at,
         "steps": [
             {
                 **step,

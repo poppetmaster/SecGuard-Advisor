@@ -254,3 +254,28 @@ def test_chat_reload_offers_retry_for_the_latest_failure(tmp_path: Path) -> None
     assert "Reintentar la pregunta" in html
     assert f"/cases/{env.case_id}/runs/" in html
     assert "El modelo local no responde." in html
+
+
+def test_confirmed_trace_shows_declared_identity_and_date(tmp_path: Path) -> None:
+    env = build_env(tmp_path, with_documents=False, min_score=-1.0)
+    generator = ScriptedGenerator([_answer(env)])
+
+    with TestClient(_app(env, generator)) as client:
+        _ask(client, env.case_id)
+        run_id = _run_id(env, env.case_id)
+        with env.factory() as session:
+            run = session.get(Run, run_id)
+            run.trace_status = "confirmed"
+            run.trace_id = "trace-1"
+            run.trace_url = "https://smith.test/trace-1"
+            run.trace_confirmed_by = "Aceptación de prueba"
+            run.trace_confirmed_at = "2026-11-09T06:49:26Z"
+            session.commit()
+        page = client.get(f"/cases/{env.case_id}/runs/{run_id}")
+
+    html = page.text
+    assert "Traza verificada" in html
+    assert "Aceptación de prueba" in html
+    assert "2026-11-09T06:49:26Z" in html
+    assert "Enviada (no verificada)" not in html
+    assert "https://smith.test/trace-1" in html
