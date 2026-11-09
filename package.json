@@ -12,7 +12,7 @@
     "build": "npm run copy:vendor && npm run build:css"
   },
   "devDependencies": {
-    "flowbite": "2.5.2",
+    "flowbite": "4.0.2",
     "htmx.org": "2.0.4",
     "tailwindcss": "3.4.17"
   }
