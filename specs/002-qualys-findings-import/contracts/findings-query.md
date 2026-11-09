@@ -22,8 +22,7 @@ importados no se convierten en documentos RAG ni en citas.
     "severity": { "enum": ["Critical", "High", "Medium", "Low", "Info"] },
     "severity_level": { "type": "integer", "minimum": 1, "maximum": 5 },
     "status_group": {
-      "enum": ["pending_known", "fixed", "manual_review", "all"],
-      "default": "pending_known"
+      "enum": ["pending_known", "fixed", "manual_review", "all"]
     },
     "priority": { "type": "boolean" },
     "exploitability": {
@@ -54,13 +53,14 @@ Todos los filtros son opcionales. `limit` solo afecta al detalle; nunca a los co
   `origin=imported`.
 - Si `origin=all` y el caso contiene ambos orígenes, un filtro de severidad (`severity` o
   `severity_level`) sin origen produce `ambiguous_severity_filter`. No se convierte una escala en otra.
-- `status_group` con `origin=all` en un caso mixto exige `origin=imported`; de lo contrario devuelve
-  `origin_required_for_status_filter`.
+- `status_group` es opcional. Con `origin=imported` y sin valor, el default es `pending_known`.
+  Con `origin=all`, el default es `all`; si se envía un valor distinto de `all` en un caso mixto,
+  devuelve `origin_required_for_status_filter`.
 - `snapshot_id` debe ser un snapshot confirmado del caso; si no, `snapshot_not_found`.
 - `origin=imported` sin snapshots confirmados devuelve `snapshot: null`, `total: 0` y
   `empty_reason: "no_confirmed_import"`; no es una afirmación de ausencia de vulnerabilidades.
-- El default `status_group=pending_known` solo se aplica a importados. Para sintéticos no cambia el
-  comportamiento existente.
+- El default `status_group=pending_known` solo se aplica a `origin=imported`. Con `origin=all` el
+  default es `all`; para sintéticos no cambia el comportamiento existente.
 
 ## Resultado con un solo origen
 

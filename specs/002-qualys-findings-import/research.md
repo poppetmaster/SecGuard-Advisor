@@ -82,9 +82,9 @@ y `all`.
 estado desconocido es un dato válido que requiere revisión, no un error estructural. Mezclar estados
 desconocidos con `Active` inflaría pendientes.
 
-**Default de consulta importada**: `pending_known`. El usuario puede pedir `all`, `fixed` o
-`manual_review`; el resultado siempre muestra el grupo aplicado. `Fixed` y «Revisión manual» no se
-presentan como vulnerabilidades activas.
+**Default de consulta importada**: `pending_known` cuando `origin=imported`; `all` cuando
+`origin=all`. El usuario puede pedir `all`, `fixed` o `manual_review`; el resultado siempre muestra el
+grupo aplicado. `Fixed` y «Revisión manual» no se presentan como vulnerabilidades activas.
 
 **Alternativas consideradas**: rechazar estados desconocidos (contradice la decisión del responsable);
 mapearlos a `Active` (inventa estado); excluirlos silenciosamente (oculta información).
