@@ -43,6 +43,18 @@ Datos agregados de verificación, sin filas ni valores de activos:
   indeterminados por campo vacío. Estos totales son agregados, no filas.
 - Los 662 registros no se presentan como 662 vulnerabilidades únicas.
 
+## Terminología de producto
+
+- La sección visible del caso se llama **«Vulnerabilidades»**, no «Hallazgos».
+- Menú del caso abierto: Resumen, Documentos, Vulnerabilidades, Consulta documental.
+- Dentro de la sección: «Cargar reporte de Qualys», «Validar archivo», «Vista previa»,
+  «Confirmar importación», «Cancelar» e «Historial de importaciones».
+- `findings_query`, las tablas, los módulos y los contratos internos conservan su nombre. El cambio es
+  de lenguaje de producto.
+- Se distingue «registros de vulnerabilidades» de «vulnerabilidades únicas»: la identidad estable
+  entre reportes no está demostrada.
+- «Documentos» sigue siendo la sección de PDF y Markdown.
+
 ## Clarifications
 
 ### Session 2026-11-09
@@ -72,22 +84,25 @@ Datos agregados de verificación, sin filas ni valores de activos:
 
 ### User Story 1 - Importar una instantánea y consultar sus registros (Priority: P1)
 
-Una persona autorizada abre un caso, carga el CSV filtrado y su manifiesto de referencia, revisa la
-vista previa, confirma la importación y consulta los registros mediante `findings_query`. La consulta
-usa por defecto la última instantánea confirmada y muestra siempre cuál consultó.
+Una persona autorizada abre la sección **Vulnerabilidades** del caso, carga el CSV filtrado, valida el
+archivo, revisa la vista previa, confirma la importación y consulta los registros mediante
+`findings_query`. El manifiesto de referencia se usa para verificar el insumo, no como archivo
+obligatorio del formulario. La consulta usa por defecto la última instantánea confirmada y muestra
+siempre cuál consultó.
 
 **Why this priority**: es el recorrido mínimo que hace consultables los datos reales del caso sin
 mezclarlos con documentos ni con otras importaciones.
 
-**Independent Test**: con el CSV filtrado y su manifiesto, un caso vacío muestra la vista previa
-esperada, confirma la importación y responde una consulta de conteo por activo con cifras que
-coinciden con un recálculo independiente sobre la instantánea.
+**Independent Test**: con el CSV filtrado (y el manifiesto para la verificación de referencia), un
+caso vacío muestra la vista previa esperada, confirma la importación y responde una consulta de conteo
+por activo con cifras que coinciden con un recálculo independiente sobre la instantánea.
 
 **Acceptance Scenarios**:
 
-1. **Given** un caso autorizado sin importaciones, **When** la persona carga el CSV y el manifiesto y
-   confirma, **Then** el sistema registra una instantánea con hash, fecha, versión del adaptador,
-   cantidades y estado, y los registros quedan asociados solo a ese caso.
+1. **Given** un caso autorizado sin importaciones, **When** la persona carga el CSV y confirma, **Then**
+   el sistema registra una instantánea con hash, fecha, versión del adaptador, cantidades y estado, y
+   los registros quedan asociados solo a ese caso. El manifiesto de referencia se usa en la
+   verificación de aceptación, no como archivo obligatorio del formulario.
 2. **Given** una instantánea confirmada, **When** la persona pregunta por conteos agrupados por
    activo, **Then** `findings_query` responde con el total y los grupos de esa instantánea,
    identificando snapshot, origen e importación.
@@ -319,8 +334,9 @@ muestra el indicador sin la bandera conjunta.
 
 ### Measurable Outcomes
 
-- **SC-001**: Con el CSV filtrado y su manifiesto, la vista previa informa 662 filas, 41 columnas,
-  631 `Active`, 10 `New`, 21 `Re-Opened`, 0 `Fixed` y coincidencia de hash con el manifiesto.
+- **SC-001**: La vista previa del CSV informa 662 filas, 41 columnas, 631 `Active`, 10 `New`,
+  21 `Re-Opened` y 0 `Fixed`; la verificación de referencia con el manifiesto coincide en hash, bytes
+  y filas.
 - **SC-002**: La confirmación incorpora exactamente las filas válidas y muestra por separado las
   inválidas estructurales; ninguna fila desaparece sin motivo y sin conteo.
 - **SC-003**: Reimportar el mismo archivo en el mismo caso produce cero filas nuevas y cero cambios en

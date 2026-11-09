@@ -1,0 +1,255 @@
+# Research — Importación de vulnerabilidades Qualys
+
+## R1. Snapshots independientes, sin identidad estable entre reportes
+
+**Decisión**: cada carga confirmada es una instantánea inmutable, identificada por `import_id` y una
+secuencia local por caso. Cada fila conserva `import_id` y `row_number`. No se calcula ni se afirma
+una identidad de vulnerabilidad entre archivos.
+
+**Rationale**: el CSV no incluye un identificador estable demostrado. `QID + IP + Port + Protocol`
+produce 10 grupos duplicados y 11 filas adicionales; `First Detected` es única en el archivo pero no
+se puede probar inmutable ante reaperturas. Afirmar identidad establecería una remediación o
+duplicación que los datos no sostienen.
+
+**Alternativas consideradas**:
+
+- Clave natural `QID + IP + Port + Protocol`: rechazada como identidad; se conserva para informar
+  posibles repeticiones.
+- `QID + IP + Port + Protocol + First Detected`: no se usa para reconciliar entre reportes.
+- Identificador externo de Qualys: no está disponible en el CSV.
+
+**Consecuencia**: el mismo hash de archivo en el mismo caso es idempotente; un archivo distinto crea
+una instantánea nueva; la ausencia en un snapshot posterior no se interpreta como remediación.
+
+## R2. Tablas nuevas en lugar de extender `findings`
+
+**Decisión**: crear `qualys_imports`, `qualys_vulnerabilities`, `qualys_vulnerability_cves` y
+`qualys_import_issues`. No se reutiliza `findings` para registros Qualys.
+
+**Rationale**: `findings` exige `asset_id` y `dataset_id` del dataset sintético, y su severidad está
+restringida a `Critical/High/Medium/Low/Info`. Forzar esos campos crearía una identidad de activo y
+una escala que el CSV no demuestra. Las tablas separadas preservan la semántica y permiten consultas
+por origen sin migrar datos sintéticos.
+
+**Alternativas consideradas**:
+
+- Una columna `origin` y un `dataset_id` nulo en `findings`: obliga a relajar restricciones existentes
+  y mezcla dos ciclos de vida.
+- Una tabla única de snapshots con JSON: pierde índices y checks útiles para conteos.
+- Extender `findings` con `import_id`: deja el modelo sintético acoplado a Qualys.
+
+## R3. Parser CSV estándar, límites y estructura
+
+**Decisión**: usar `csv.DictReader` con `utf-8-sig`, `newline=""`, encabezado exacto de 41 columnas y
+lectura acotada por bytes/filas. No se usa pandas ni se abre el reporte original. El archivo se lee
+desde el `UploadFile` de FastAPI o desde el fixture de aceptación; no se conserva como archivo en el
+repositorio.
+
+**Rationale**: el archivo tiene BOM, comas, comillas y campos multilínea; la biblioteca estándar
+respeta RFC 4180 y evita dependencias nuevas. El límite de 10 MiB/10.000 filas es superior al insumo
+de referencia y evita cargas desmedidas.
+
+**Alternativas consideradas**:
+
+- `pandas.read_csv`: dependencia pesada para un formato ya acotado.
+- Lectura línea a línea propia: no maneja comillas/multilínea con seguridad.
+- Guardar el CSV original en `storage/`: no es necesario para consultar y aumenta la exposición de
+  datos reales.
+
+## R4. Severidad: convención del proyecto versionada
+
+**Decisión**: conservar `Severity` original, `severity_level` 1–5 y una etiqueta de presentación:
+1 Informativa, 2 Baja, 3 Media, 4 Alta, 5 Crítica. La política se identifica con
+`project-severity-1-5-v1`. No se usa para CVSS, QDS, ARS, ACS, TruRisk ni P1–P4.
+
+**Rationale**: es una convención de producto explícita, no una denominación oficial de Qualys. La
+etiqueta existe para presentación y filtros del proyecto; el valor original queda para auditoría.
+
+**Compatibilidad**: los hallazgos sintéticos conservan sus etiquetas y escala existentes. Un filtro
+de severidad en un caso mixto exige `origin`; si falta, se devuelve `ambiguous_severity_filter`.
+
+**Valores inválidos**: ausente o fuera de 1–5 es un error de validación de fila, no una etiqueta
+inventada. Bajo rechazo completo, no se confirma el archivo; bajo aceptación parcial explícita, la
+fila se excluye y se informa.
+
+## R5. Estados y grupos de consulta
+
+**Decisión**: normalizar `Active`, `New`, `Re-Opened`, `Fixed`; cualquier otro valor se conserva como
+`manual_review` con el original. Los grupos de consulta son `pending_known`, `fixed`, `manual_review`
+y `all`.
+
+**Rationale**: el archivo de referencia no tiene `Fixed`, pero la especificación exige admitirlo. Un
+estado desconocido es un dato válido que requiere revisión, no un error estructural. Mezclar estados
+desconocidos con `Active` inflaría pendientes.
+
+**Default de consulta importada**: `pending_known`. El usuario puede pedir `all`, `fixed` o
+`manual_review`; el resultado siempre muestra el grupo aplicado. `Fixed` y «Revisión manual» no se
+presentan como vulnerabilidades activas.
+
+**Alternativas consideradas**: rechazar estados desconocidos (contradice la decisión del responsable);
+mapearlos a `Active` (inventa estado); excluirlos silenciosamente (oculta información).
+
+## R6. Explotabilidad, malware y prioridad
+
+**Decisión**: evaluar cada campo por separado y versionar la regla.
+
+**Exploitability**:
+
+- Positiva si existe al menos un bloque estructurado con `Source` y `Reference`, `Link` o
+  `Description`, sin que el bloque sea solo un marcador negativo.
+- Negativa/no informada si solo hay `N/A`, `None`, `No` o mensajes explícitos de no detección.
+- Indeterminada si está vacía o la estructura no se reconoce.
+
+**Associated Malware**:
+
+- Positiva si existe al menos un `Malware ID` distinto de `N/A`, `None` o `No`, acompañado de `Type`,
+  `Risk` o `Link`.
+- Negativa/no informada si solo hay marcadores negativos.
+- Indeterminada si está vacía o la estructura no se reconoce.
+
+**Prioridad**: `priority_flag` solo si ambas evaluaciones son positivas. Se conservan
+`exploitability_eval`, `malware_eval`, `priority_flag`, `priority_reason` y
+`priority_rule_version = "qualys-evidence-both-v1"`.
+
+**Contexto**: pendiente conocido + ambos positivos = prioridad de atención; `Fixed` + ambos =
+antecedente prioritario reportado; estado desconocido + ambos = revisión manual del estado con
+indicadores. Un solo indicador positivo se muestra, pero no activa la bandera conjunta.
+
+**Evidencia de referencia (agregada)**: 129 con explotabilidad positiva, 8 con malware positivo, 8 con
+ambos (7 `Active`, 1 `New`), 121 con solo explotabilidad, 0 con solo malware, 533/654 indeterminados
+por campo vacío. No se usan estos conteos para forzar resultados.
+
+**Alternativas consideradas**: considerar cualquier texto no vacío como positivo (falso positivo);
+usar una disyunción (contradice la regla conjunta); interpretar campos vacíos como ausencia (no
+demostrable).
+
+## R7. findings_query: composición por origen y snapshot
+
+**Decisión**: extender el esquema estricto con `origin`, `snapshot_id`, `status_group`,
+`severity_level`, `priority`, `exploitability`, `malware` y `group_by` adicional. Mantener
+`asset`, `qid`, `cve`, `severity` sintética, `detail` y `limit`.
+
+**Composición**:
+
+- `origin=synthetic`: usa el repositorio sintético existente; `severity` conserva las etiquetas
+  actuales.
+- `origin=imported`: usa la instantánea seleccionada o la última confirmada; `severity_level` usa
+  1–5 y la etiqueta del proyecto.
+- `origin=all`: devuelve un bloque por origen (`origins[]`) con totales y grupos independientes, sin
+  fusionar escalas. `total` puede ser la suma, pero siempre acompañado del desglose.
+- Un filtro de severidad con `origin=all` devuelve `ambiguous_severity_filter`.
+- `status_group`, `priority`, indicadores y `snapshot_id` solo aplican a `imported`; usarlos con
+  `origin=synthetic` devuelve `filter_not_applicable`.
+- `snapshot_id` debe pertenecer al caso y estar confirmado; si no, `snapshot_not_found`.
+
+**Conteos**: `COUNT(*)` sobre la tabla correspondiente con los filtros aplicados; CVE con
+subconsulta `EXISTS`/`IN`, nunca join que multiplique filas.
+
+**Alternativas consideradas**: unir sintéticos e importados en una sola tabla (pierde escalas);
+convertir etiquetas sintéticas a 1–5 (conversión silenciosa); devolver solo un total agregado
+(mezcla silenciosa).
+
+## R8. Fijación del snapshot y reproducibilidad
+
+**Decisión**: en la primera ejecución de `findings_query` de un turno, resolver la última instantánea
+confirmada y guardar `selected_import_id` en el estado del grafo. Las llamadas posteriores del mismo
+turno reutilizan ese id salvo que el modelo seleccione uno explícito. Cada `run_tool_calls` guarda el
+snapshot usado y el resumen; la respuesta se construye con ese resultado y no se vuelve a consultar
+la base al renderizar la evidencia.
+
+**Rationale**: si otra importación se confirma mientras el modelo responde, la respuesta no cambia de
+snapshot de forma invisible. La página de ejecución lee el resumen histórico; el detalle recalculado
+se etiqueta como consulta actual.
+
+**Alternativas consideradas**: resolver el snapshot al renderizar (puede cambiar el resultado);
+consultar de nuevo al mostrar detalle (mezcla historia y actualidad).
+
+## R9. Staging, preview y confirmación
+
+**Decisión**: validar en memoria, persistir una importación en estado `staged` con sus filas e issues
+en una transacción corta, mostrar preview desde SQLite y confirmar cambiando el estado dentro de una
+transacción que asigna `confirmed_sequence`.
+
+**Rationale**: el preview y la confirmación deben usar exactamente el contenido validado; no se
+confía en contadores enviados por el cliente. No se conserva el CSV como archivo; `raw_json` por fila
+preserva los valores originales.
+
+**Cancelar/expirar**: una importación `staged` puede pasar a `cancelled` o `expired`; sus filas e
+issues se eliminan en la limpieza. Las confirmadas nunca se borran ni se sobrescriben.
+
+**Idempotencia**: índice único parcial `(case_id, csv_sha256)` para `confirmed`; el servicio reutiliza
+un `staged` con el mismo hash o devuelve la confirmación existente.
+
+## R10. Concurrencia y secuencia
+
+**Decisión**: `confirmed_sequence` se asigna por caso dentro de la transacción de confirmación como
+`max(sequence)+1`; índice único `(case_id, confirmed_sequence)`. Confirmar dos veces la misma
+importación devuelve el resultado ya confirmado sin duplicar. Dos archivos distintos pueden crear
+snapshots distintos en secuencia.
+
+**Rationale**: la app es de un worker, pero hay concurrencia de solicitudes; la restricción de base
+es la garantía final. No se usan locks distribuidos.
+
+## R11. Privacidad y trazabilidad
+
+**Decisión**: la importación es estrictamente local. No se envían a LangSmith ni a otros servicios
+filas, IP, DNS, NetBIOS, FQDN, títulos, resultados, indicadores, nombres de archivo ni metadatos
+sensibles. La traza manual existente recibe solo identificadores opacos, conteos, estado, versión de
+adaptador, duración y versiones de política.
+
+**Riesgo residual**: el prompt del modelo local puede contener activos o títulos importados; la
+inferencia es local. Los `Results` largos no se incluyen en el resultado de la herramienta ni en la
+vista previa completa. Los logs se redactan con el filtro existente y no se añaden valores de fila.
+
+**Alternativas consideradas**: enviar el CSV a un servicio de parsing (prohibido); trazar el prompt
+completo (prohibido); mostrar `Results` completo en preview (exposición innecesaria).
+
+## R12. Interfaz «Vulnerabilidades»
+
+**Decisión**: añadir una sección de caso después de Documentos, con rutas GET/POST y plantillas
+propias, reutilizando shell, iconos, `pending`, Tailwind/Flowbite y patrones de tablas existentes.
+
+**Rutas**:
+
+- `GET /cases/{case_id}/vulnerabilities`
+- `GET /cases/{case_id}/vulnerabilities/imports`
+- `GET /cases/{case_id}/vulnerabilities/imports/new`
+- `POST /cases/{case_id}/vulnerabilities/imports/validate`
+- `GET /cases/{case_id}/vulnerabilities/imports/{import_id}`
+- `POST /cases/{case_id}/vulnerabilities/imports/{import_id}/confirm`
+- `POST /cases/{case_id}/vulnerabilities/imports/{import_id}/cancel`
+
+La sección principal muestra el snapshot seleccionado, resumen, tabla, filtros, selector de historial
+y CTA de carga. No hay dashboard.
+
+## R13. Migración y compatibilidad
+
+**Decisión**: migración aditiva después de `9c3e4f5a6b7d`; solo crea tablas e índices nuevos. No se
+modifican tablas sintéticas, mensajes, citas, ejecuciones ni trazas existentes.
+
+**Rationale**: preservar el primer incremento y permitir rollback de la migración sin tocar datos
+sintéticos. Los datos importados son locales y desechables por snapshot; las confirmadas se conservan.
+
+## R14. Pruebas y aceptación local
+
+**Decisión**: pruebas unitarias y de contrato con fixtures sintéticos; integración con SQLite temporal;
+aceptación real opcional con el CSV autorizado fuera de Git; Playwright para formulario, preview,
+confirmación, historial, selector, tabla, móvil 390/320 y doble envío.
+
+**Fixtures sintéticos**: CSV con BOM, comas, comillas, multilínea, `Active/New/Re-Opened/Fixed`,
+estado desconocido, severidades 1–5, varios CVE, ambos/solo uno/vacío/negativo/indeterminado en
+indicadores, filas repetidas por clave parcial y errores estructurales.
+
+**Aceptación real**: leer el CSV y el manifiesto desde `../` solo si existen; verificar hash y conteos;
+importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a documentación; no
+enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no resultados forzados.
+
+## R15. Riesgos y decisiones pendientes de implementación
+
+- El default `pending_known` para consultas importadas es una decisión de producto del plan; debe
+  quedar visible en el resultado.
+- La etiqueta de activo es de presentación (`FQDN`→`DNS`→`NetBIOS`→`IP`) y no una identidad.
+- La fecha no tiene zona horaria; se conserva el valor y se marca la limitación.
+- El soporte de `Fixed` y estados desconocidos se acredita con fixtures, no con el archivo de
+  referencia.
+- La respuesta del agente debe mencionar snapshot, origen, estado y prioridad cuando corresponda.
