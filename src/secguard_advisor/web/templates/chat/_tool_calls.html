@@ -51,7 +51,7 @@
         {% endif %}
         {% if block.empty_reason %}
         <p class="mt-1 text-xs text-slate-600">
-          {% if block.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para esta consulta.{% endif %}
+          {% if block.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para estos filtros.{% endif %}
         </p>
         {% endif %}
         {% if block.groups %}
@@ -137,7 +137,7 @@
     {% endif %}
     {% if call.summary.total == 0 %}
     <p class="mt-2 text-xs text-slate-600" role="note">
-      {% if call.summary.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para esta consulta.{% endif %}
+      {% if call.summary.empty_reason == "no_confirmed_import" %}Sin importaciones confirmadas.{% else %}Sin registros para estos filtros.{% endif %}
       Esto no demuestra ausencia de vulnerabilidades ni un riesgo bajo.
     </p>
     {% endif %}

@@ -80,7 +80,7 @@ def test_documentary_run_shows_model_steps_sources_and_both_controls(tmp_path: P
     html = page.text
     assert "Modelo y configuración" in html
     assert "fake-generator" in html
-    assert "chat-v5" in html
+    assert "chat-v6" in html
     assert "Pasos" in html
     assert "Generación" in html
     assert "Control automático de citas" in html

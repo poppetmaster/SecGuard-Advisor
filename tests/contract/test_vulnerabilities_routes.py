@@ -378,3 +378,108 @@ def test_history_selector_persists_selected_snapshot(client) -> None:
         client.get(f"/cases/{case_id}/vulnerabilities", params={"import_id": "a" * 32}).status_code
         == 404
     )
+
+
+def test_filters_keep_snapshot_and_filtered_counts(client) -> None:
+    case_id = _create_case(client)
+    preview = _upload(
+        client,
+        case_id,
+        "valid.csv",
+        (FIXTURES / "qualys_synthetic_valid.csv").read_bytes(),
+    )
+    assert preview.status_code == 200
+    import_id = _records(client, case_id)[0].id
+    client.post(
+        f"/cases/{case_id}/vulnerabilities/imports/{import_id}/confirm",
+        headers=HTMX,
+    )
+
+    fixed = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "status_group": "fixed"},
+    )
+    assert fixed.status_code == 200
+    assert "Synthetic four" in fixed.text
+    assert "Synthetic one" not in fixed.text
+    assert "Estado: Fixed" in fixed.text
+    assert f'name="import_id" value="{import_id}"' in fixed.text
+    assert "1</span> detectados" in fixed.text
+
+    severity = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "severity_level": "2"},
+    )
+    assert severity.status_code == 200
+    assert "Synthetic four" in severity.text
+    assert "Synthetic one" not in severity.text
+    assert "Severidad: Baja" in severity.text
+
+    priority = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "priority": "true"},
+    )
+    assert priority.status_code == 200
+    assert "Synthetic one" in priority.text and "Synthetic two" in priority.text
+    assert "Synthetic three" not in priority.text
+    assert "Ambos positivos:" in priority.text
+
+    indicators = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={
+            "import_id": import_id,
+            "status_group": "all",
+            "exploitability": "positive",
+        },
+    )
+    assert indicators.status_code == 200
+    assert "Synthetic three" in indicators.text
+    assert "Synthetic four" not in indicators.text
+
+    malware_negative = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "status_group": "all", "malware": "negative_no_info"},
+    )
+    assert malware_negative.status_code == 200
+    assert "Synthetic four" in malware_negative.text
+    assert "Synthetic one" not in malware_negative.text
+
+    no_match = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "asset": "activo-inexistente"},
+    )
+    assert no_match.status_code == 200
+    assert "Sin registros para estos filtros" in no_match.text
+    assert "Sin importaciones confirmadas" not in no_match.text
+
+    invalid = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "severity_level": "9"},
+    )
+    assert invalid.status_code == 200
+    assert "La severidad debe estar entre 1 y 5" in invalid.text
+
+
+def test_fixed_with_both_indicators_is_shown_as_antecedent(client) -> None:
+    case_id = _create_case(client)
+    preview = _upload(
+        client,
+        case_id,
+        "mixed.csv",
+        (FIXTURES / "qualys_synthetic_mixed.csv").read_bytes(),
+    )
+    assert preview.status_code == 200
+    import_id = _records(client, case_id)[0].id
+    client.post(
+        f"/cases/{case_id}/vulnerabilities/imports/{import_id}/confirm",
+        headers=HTMX,
+    )
+
+    fixed = client.get(
+        f"/cases/{case_id}/vulnerabilities",
+        params={"import_id": import_id, "status_group": "fixed"},
+    )
+    assert fixed.status_code == 200
+    assert "Synthetic fixed" in fixed.text
+    assert "Prioritaria: explotabilidad y malware" in fixed.text
+    assert "Antecedente prioritario; no es remediación pendiente." in fixed.text

@@ -24,8 +24,9 @@
         <td class="px-3 py-3 text-slate-700">{{ row.status }}</td>
         <td class="px-3 py-3 text-slate-700"><span class="font-mono">{{ row.severity_level }}</span> · {{ row.severity_label }}</td>
         <td class="px-3 py-3 text-slate-700">
-          {% if row.priority %}Sí{% else %}No{% endif %}
+          {% if row.priority %}Prioritaria: explotabilidad y malware{% else %}No{% endif %}
           {% if row.priority_reason %}<span class="block text-xs text-slate-500">{{ row.priority_reason }}</span>{% endif %}
+          {% if row.priority and row.status_group == "fixed" %}<span class="block text-xs text-amber-700">Antecedente prioritario; no es remediación pendiente.</span>{% endif %}
         </td>
         <td class="px-3 py-3 text-xs text-slate-700">
           Explotabilidad: {{ indicator_labels.get(row.exploitability, row.exploitability) }}<br>

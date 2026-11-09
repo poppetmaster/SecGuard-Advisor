@@ -17,7 +17,12 @@ from secguard_advisor.db.models import (
     QualysVulnerability,
     QualysVulnerabilityCve,
 )
-from secguard_advisor.vulnerabilities.queries import get_confirmed, list_confirmed
+from secguard_advisor.tools.findings import FindingsArguments
+from secguard_advisor.vulnerabilities.queries import (
+    get_confirmed,
+    imported_result,
+    list_confirmed,
+)
 from secguard_advisor.vulnerabilities.service import (
     ImportNotFoundError,
     InvalidTransitionError,
@@ -54,6 +59,20 @@ NOTICES = {
     "idempotent": "La importación ya estaba confirmada; no se duplicaron registros.",
     "cancelled": "Importación cancelada. La instantánea vigente no cambió.",
 }
+STATUS_OPTIONS = {"all", "pending_known", "fixed", "manual_review"}
+SEVERITY_LEVEL_OPTIONS = {str(level) for level in range(1, 6)}
+INDICATOR_OPTIONS = {"positive", "negative_no_info", "indeterminate"}
+STATUS_GROUP_LABELS = {
+    "all": "Todos",
+    "pending_known": "Pendientes conocidos",
+    "fixed": "Fixed",
+    "manual_review": "Revisión manual",
+}
+INDICATOR_LABELS = {
+    "positive": "Positivo",
+    "negative_no_info": "Negativo/no informado",
+    "indeterminate": "Indeterminado",
+}
 MAX_PREVIEW_ROWS = 50
 MAX_ISSUES = 30
 
@@ -88,6 +107,68 @@ def _case_header(request: Request, case_id: str) -> tuple[str, str]:
         scope = resolve_case_scope(session, case_id)
         case = require_case(session, scope)
         return case.id, case.title
+
+
+def _parse_filters(request: Request) -> tuple[dict[str, str], list[str], dict[str, str]]:
+    raw = request.query_params
+    state = {
+        "status_group": raw.get("status_group", "all"),
+        "severity_level": raw.get("severity_level", ""),
+        "priority": raw.get("priority", ""),
+        "exploitability": raw.get("exploitability", ""),
+        "malware": raw.get("malware", ""),
+        "asset": raw.get("asset", "").strip(),
+        "qid": raw.get("qid", "").strip(),
+        "cve": raw.get("cve", "").strip(),
+    }
+    errors: list[str] = []
+    if state["status_group"] not in STATUS_OPTIONS:
+        errors.append("El estado seleccionado no es válido.")
+        state["status_group"] = "all"
+    if state["severity_level"] and state["severity_level"] not in SEVERITY_LEVEL_OPTIONS:
+        errors.append("La severidad debe estar entre 1 y 5.")
+        state["severity_level"] = ""
+    if state["priority"] not in {"", "true", "false"}:
+        errors.append("La prioridad debe ser verdadera o falsa.")
+        state["priority"] = ""
+    for key, label in (("exploitability", "explotabilidad"), ("malware", "malware")):
+        if state[key] and state[key] not in INDICATOR_OPTIONS:
+            errors.append(f"El valor de {label} no es válido.")
+            state[key] = ""
+    if len(state["asset"]) > 120:
+        errors.append("El activo supera los 120 caracteres.")
+        state["asset"] = ""
+    if state["qid"] and (not state["qid"].isdigit() or len(state["qid"]) > 10):
+        errors.append("El QID debe ser numérico.")
+        state["qid"] = ""
+    if state["cve"] and not state["cve"].startswith("CVE-"):
+        errors.append("El CVE debe empezar por CVE-.")
+        state["cve"] = ""
+    hidden = {
+        key: value
+        for key, value in state.items()
+        if value and not (key == "status_group" and value == "all")
+    }
+    return state, errors, hidden
+
+
+def _filtered_summary(record: QualysImport, result: dict) -> dict:
+    status_counts = result.get("status_counts", {})
+    return {
+        "row_count": result.get("total", 0),
+        "valid_rows": result.get("total", 0),
+        "invalid_rows": 0,
+        "warning_rows": 0,
+        "manual_review_rows": result.get("manual_review_rows", 0),
+        "status_counts": status_counts,
+        "severity_counts": result.get("severity_counts", {}),
+        "exploitability_counts": result.get("exploitability_counts", {}),
+        "malware_counts": result.get("malware_counts", {}),
+        "priority_counts": result.get("priority_counts", {"both_positive": 0}),
+        "possible_repeat_groups": record.possible_repeat_groups,
+        "possible_repeat_rows": record.possible_repeat_rows,
+        "manifest_status": record.manifest_status,
+    }
 
 
 def _summary(record: QualysImport | None) -> dict | None:
@@ -202,6 +283,27 @@ def _history(session, case_id: str) -> list[QualysImport]:
     )
 
 
+def _active_filters(state: dict[str, str]) -> list[str]:
+    active: list[str] = []
+    if state["status_group"] != "all":
+        active.append(f"Estado: {STATUS_GROUP_LABELS[state['status_group']]}")
+    if state["severity_level"]:
+        active.append(f"Severidad: {SEVERITY_LABELS[state['severity_level']]}")
+    if state["priority"]:
+        active.append("Prioridad: " + ("Sí" if state["priority"] == "true" else "No"))
+    if state["exploitability"]:
+        active.append("Explotabilidad: " + INDICATOR_LABELS[state["exploitability"]])
+    if state["malware"]:
+        active.append("Malware: " + INDICATOR_LABELS[state["malware"]])
+    if state["asset"]:
+        active.append(f"Activo: {state['asset']}")
+    if state["qid"]:
+        active.append(f"QID: {state['qid']}")
+    if state["cve"]:
+        active.append(f"CVE: {state['cve']}")
+    return active
+
+
 def _section_context(
     request: Request,
     case_id: str,
@@ -211,6 +313,7 @@ def _section_context(
     notice: str | None = None,
     errors: dict[str, str] | None = None,
 ) -> dict:
+    filter_state, filter_errors, filter_hidden = _parse_filters(request)
     with request.app.state.session_factory() as session:
         snapshots = list_confirmed(session, case_id)
         if import_id is not None:
@@ -219,19 +322,62 @@ def _section_context(
                 raise LookupError(import_id)
         else:
             selected = snapshots[0] if snapshots else None
-        rows = _rows(session, selected.id) if selected is not None else []
+        rows: list[dict] = []
+        summary = _summary(selected)
+        rows_truncated = False
+        if selected is not None:
+            args = FindingsArguments(
+                origin="imported",
+                snapshot_id=selected.id,
+                status_group=filter_state["status_group"],
+                severity_level=(
+                    int(filter_state["severity_level"]) if filter_state["severity_level"] else None
+                ),
+                priority=(filter_state["priority"] == "true" if filter_state["priority"] else None),
+                exploitability=filter_state["exploitability"] or None,
+                malware=filter_state["malware"] or None,
+                asset=filter_state["asset"] or None,
+                qid=filter_state["qid"] or None,
+                cve=filter_state["cve"] or None,
+                detail=True,
+                limit=MAX_PREVIEW_ROWS,
+            )
+            result = imported_result(
+                session,
+                case_id,
+                args,
+                status_group=None
+                if filter_state["status_group"] == "all"
+                else filter_state["status_group"],
+                snapshot_id=selected.id,
+            )
+            rows = result.get("items", [])
+            rows_truncated = bool(result.get("truncated"))
+            summary = _filtered_summary(selected, result)
     latest_id = snapshots[0].id if snapshots else None
+    active_filters = []
+    if selected is not None:
+        active_filters = _active_filters(filter_state)
     return {
         "case_id": case_id,
         "case_title": case_title,
         "record": selected,
-        "summary": _summary(selected),
+        "summary": summary,
         "rows": rows,
-        "rows_truncated": bool(selected and selected.row_count > len(rows)),
+        "rows_truncated": rows_truncated,
         "snapshots": snapshots,
         "selected_id": selected.id if selected is not None else None,
         "latest_id": latest_id,
         "is_latest": selected is not None and selected.id == latest_id,
+        "filter_state": filter_state,
+        "filter_errors": filter_errors,
+        "filter_hidden": filter_hidden,
+        "filter_labels": {
+            **STATUS_GROUP_LABELS,
+            **{key: label for key, label in SEVERITY_LABELS.items()},
+            **INDICATOR_LABELS,
+        },
+        "active_filters": active_filters,
         "notice": notice,
         "errors": errors or {},
         "status_labels": STATUS_LABELS,
