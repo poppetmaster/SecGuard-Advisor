@@ -427,6 +427,10 @@ concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
   Escape, fondo, cierre al navegar y restauración de foco.
 - Consola: sin errores tras añadir el favicon local; las únicas entradas son las respuestas 4xx
   provocadas a propósito y el icono faltante previo, ahora resuelto.
+- Capturas en `docs/evidencia/navegacion/`: `escritorio-casos.png`, `escritorio-resumen.png`,
+  `escritorio-documentos.png`, `escritorio-documentos-cargando.png`,
+  `escritorio-consulta-cargando.png`, `escritorio-consulta.png`, `escritorio-ejecucion.png`,
+  `movil-menu.png`, `movil-contenido.png` y `movil-320.png`.
 
 **Defectos encontrados y corregidos en la validación**:
 
