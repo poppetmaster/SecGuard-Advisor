@@ -56,14 +56,21 @@ def test_valid_first_attempt_goes_straight_to_persist(tmp_path: Path) -> None:
     with env.factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == env.case_id))
         assert run.status == "succeeded"
-        assert run.steps_count == 5
+        assert run.steps_count == 6
         names = [
             step.name
             for step in session.scalars(
                 select(RunStep).where(RunStep.run_id == run.id).order_by(RunStep.seq)
             )
         ]
-        assert names == ["load_scope", "retrieve", "agent", "validate", "persist"]
+        assert names == [
+            "load_scope",
+            "load_memory",
+            "retrieve",
+            "agent",
+            "validate",
+            "persist",
+        ]
 
 
 def test_invalid_then_repaired_stops_after_one_repair(tmp_path: Path) -> None:
@@ -127,3 +134,28 @@ def test_answer_without_claims_abstains(tmp_path: Path) -> None:
     assert result.outcome == "abstained_invalid_citations"
     assert generator.calls == 2
     assert _count(env, Message) == 2
+
+
+def test_claim_with_unresolvable_source_does_not_break_persistence(tmp_path: Path) -> None:
+    env = build_env(tmp_path)
+    generator = ScriptedGenerator(
+        [
+            AnswerPayload(
+                answer="El marco define seis funciones.",
+                claims=[_claim("S9", "seis funciones centrales")],
+            )
+        ]
+    )
+
+    result = _run(env, generator)
+
+    assert result.status == "succeeded"
+    assert result.outcome == "abstained_invalid_citations"
+    with env.factory() as session:
+        assert (
+            session.scalar(select(MessageCitation).where(MessageCitation.check_status == "valid"))
+            is None
+        )
+        steps = list(session.scalars(select(RunStep).where(RunStep.name == "validate")))
+        assert steps
+        assert "chunk_missing" in (steps[0].detail_json or "")

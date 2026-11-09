@@ -27,6 +27,7 @@ class RetrievedChunk:
     text: str
     score: float
     version_current: bool
+    token_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +82,7 @@ def _resolve_hit(
         text=chunk.text,
         score=score,
         version_current=is_current,
+        token_count=chunk.token_count,
     )
 
 
@@ -93,6 +95,7 @@ def search_documents(
     index,
     top_k: int = 6,
     min_score: float = 0.0,
+    token_budget: int | None = None,
 ) -> RetrievalResult:
     """Busca en el corpus público y en las evidencias del caso, sin mezclarlos."""
     embedding = embedder.embed_one(query, kind="query")
@@ -120,5 +123,14 @@ def search_documents(
                 merged[resolved.chunk_id] = resolved
 
     ordered = sorted(merged.values(), key=lambda hit: hit.score, reverse=True)
-    hits = tuple(ordered[:top_k])
+    selected: list[RetrievedChunk] = []
+    spent = 0
+    for hit in ordered:
+        if len(selected) >= top_k:
+            break
+        if token_budget is not None and selected and spent + hit.token_count > token_budget:
+            break
+        selected.append(hit)
+        spent += hit.token_count
+    hits = tuple(selected)
     return RetrievalResult(hits=hits, status="ok" if hits else "empty")

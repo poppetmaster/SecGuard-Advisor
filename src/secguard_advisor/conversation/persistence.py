@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from secguard_advisor.conversation.service import next_seq
 from secguard_advisor.db.models import (
     Message,
     MessageCitation,
@@ -42,14 +42,6 @@ class StepRecord:
     status: str
     duration_ms: int
     detail: dict | None = None
-
-
-def next_message_seq(session: Session, conversation_id: str) -> int:
-    """Siguiente número de mensaje del hilo, dentro de la transacción del llamador."""
-    highest = session.scalar(
-        select(func.max(Message.seq)).where(Message.conversation_id == conversation_id)
-    )
-    return (highest or 0) + 1
 
 
 def _write_steps(session: Session, run_id: str, steps: tuple[StepRecord, ...]) -> None:
@@ -95,7 +87,7 @@ def persist_turn(
 
         message = Message(
             conversation_id=run.conversation_id,
-            seq=next_message_seq(session, run.conversation_id),
+            seq=next_seq(session, run.conversation_id),
             role="assistant",
             content=answer_text,
             status="complete",
@@ -106,6 +98,10 @@ def persist_turn(
 
         valid_chunk_ids = set()
         for draft in tuple(citations) + tuple(rejected):
+            # Una cita rechazada sin fragmento resoluble no se puede referenciar:
+            # el motivo queda registrado en el paso `validate`, no en la tabla.
+            if not draft.chunk_id:
+                continue
             if draft.check_status == "valid":
                 valid_chunk_ids.add(draft.chunk_id)
             session.add(

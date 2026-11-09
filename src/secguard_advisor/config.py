@@ -46,9 +46,14 @@ class Settings(BaseSettings):
     max_tool_calls: int = 2
 
     retrieval_top_k: int = 6
+    # Presupuesto de evidencia por turno: tokens exactos medidos al ingerir.
+    retrieval_token_budget: int = 3500
     # Calibrado con datos de humo: preguntas pertinentes >= 0.58, fuera de dominio <= 0.05.
     # Es un filtro de candidatos débiles, no una prueba de ausencia de evidencia.
     retrieval_min_score: float = 0.35
+    # Historial acotado: turnos completos, del más nuevo al más viejo.
+    history_max_messages: int = 8
+    history_max_chars: int = 6000
 
     generation_queue_timeout_seconds: float = Field(
         default=5.0,

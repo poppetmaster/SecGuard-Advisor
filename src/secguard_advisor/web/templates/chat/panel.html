@@ -69,15 +69,5 @@
     {{ pending("Consultando las fuentes y preparando la respuesta…") }}
   </form>
 
-  {% if messages %}
-  <div class="mt-6 space-y-4">
-    {% for message in messages %}
-      {% include "chat/_message.html" %}
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="mt-4 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">
-    Todavía no hay preguntas en este caso.
-  </p>
-  {% endif %}
+  {% include "chat/history.html" %}
 </section>

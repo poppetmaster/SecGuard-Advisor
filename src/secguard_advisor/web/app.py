@@ -15,6 +15,7 @@ from sqlalchemy import text
 from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
+from secguard_advisor.conversation.memory import open_memory
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
@@ -87,10 +88,15 @@ def create_app(
         app.state.settings = resolved
         app.state.engine = engine
         app.state.session_factory = factory
-        with factory() as session:
-            reconcile_startup(session)
-        yield
-        engine.dispose()
+        memory = open_memory(resolved.checkpoints_path)
+        app.state.memory = memory
+        try:
+            with factory() as session:
+                reconcile_startup(session)
+            yield
+        finally:
+            memory.close()
+            engine.dispose()
 
     app = FastAPI(
         title="SecGuard Advisor",

@@ -139,7 +139,7 @@ def _run_generation(request: Request, scope: CaseScope, starter):
                 },
             )
 
-        result = execute_turn(context)
+        result = execute_turn(context, memory=request.app.state.memory)
         if result.status == "succeeded":
             return 200, {"notice": None, "failure": None}
         message = message_for(result.error_code or "internal_error")

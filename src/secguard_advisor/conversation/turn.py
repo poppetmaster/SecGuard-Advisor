@@ -5,11 +5,11 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
+from secguard_advisor.conversation import service
 from secguard_advisor.conversation.context import TurnContext, TurnDependencies
 from secguard_advisor.conversation.graph import run_turn_graph
 from secguard_advisor.conversation.llm import (
@@ -20,9 +20,9 @@ from secguard_advisor.conversation.llm import (
     elapsed_ms,
 )
 from secguard_advisor.conversation.nodes import generation_config  # noqa: F401
-from secguard_advisor.conversation.persistence import StepRecord, fail_run, next_message_seq
+from secguard_advisor.conversation.persistence import StepRecord, fail_run
 from secguard_advisor.conversation.prompts import PROMPT_VERSION
-from secguard_advisor.db.models import Conversation, Message, new_id, utc_now_iso
+from secguard_advisor.db.models import utc_now_iso
 from secguard_advisor.evidence.runs import ActiveRunConflict, create_run
 
 
@@ -48,23 +48,8 @@ def start_question_turn(
 ) -> TurnContext:
     """Crea conversación, pregunta y ejecución en una transacción corta."""
     with factory() as session:
-        conversation = session.scalar(
-            select(Conversation).where(Conversation.case_id == scope.case_id)
-        )
-        if conversation is None:
-            conversation = Conversation(case_id=scope.case_id, thread_id=new_id())
-            session.add(conversation)
-            session.flush()
-
-        message = Message(
-            conversation_id=conversation.id,
-            seq=next_message_seq(session, conversation.id),
-            role="user",
-            content=question,
-            status="complete",
-        )
-        session.add(message)
-        session.flush()
+        conversation = service.get_or_create_conversation(session, scope.case_id)
+        message = service.create_question_message(session, conversation.id, question)
 
         try:
             run = create_run(
@@ -105,10 +90,10 @@ def start_question_turn(
         )
 
 
-def execute_turn(context: TurnContext) -> TurnResult:
+def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     """Ejecuta el grafo y clasifica el cierre de la ejecución."""
     try:
-        state = run_turn_graph(context)
+        state = run_turn_graph(context, memory)
     except RunTimeout:
         _fail(
             context, status="timeout", code="run_timeout", message="Se agotó el tiempo del turno."

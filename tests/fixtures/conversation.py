@@ -31,8 +31,14 @@ class ConversationEnv:
     index: ChromaIndex
 
 
-def build_env(tmp_path: Path, *, with_documents: bool = True) -> ConversationEnv:
-    settings = Settings(_env_file=None, storage_dir=tmp_path / "storage")
+def build_env(
+    tmp_path: Path,
+    *,
+    with_documents: bool = True,
+    min_score: float | None = None,
+) -> ConversationEnv:
+    overrides = {} if min_score is None else {"retrieval_min_score": min_score}
+    settings = Settings(_env_file=None, storage_dir=tmp_path / "storage", **overrides)
     settings.ensure_directories()
     engine = create_engine_for_url(settings.database_url)
     Base.metadata.create_all(engine)
@@ -40,7 +46,7 @@ def build_env(tmp_path: Path, *, with_documents: bool = True) -> ConversationEnv
     with factory() as session:
         case_id = create_case(session, "Caso de conversación")
         session.commit()
-    index = ChromaIndex(tmp_path / "chroma")
+    index = ChromaIndex(settings.chroma_dir)
     embedder = FakeEmbedder()
     if with_documents:
         case_document = seed_document(

@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 from secguard_advisor.cases.scope import require_case
+from secguard_advisor.conversation import service
 from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
@@ -59,6 +60,15 @@ def record_step(
     )
 
 
+def runtime_of(config) -> Any:
+    """Dependencias del turno: viajan por configuración, nunca por el checkpoint."""
+    return config["configurable"]["runtime"]
+
+
+def memory_of(config):
+    return config["configurable"].get("memory") if config else None
+
+
 def resolve_source_id(source_id: str, hits: tuple[RetrievedChunk, ...]) -> str | None:
     """Acepta el identificador real del fragmento o la etiqueta S1, S2, ..."""
     cleaned = (source_id or "").strip()
@@ -74,26 +84,65 @@ def resolve_source_id(source_id: str, hits: tuple[RetrievedChunk, ...]) -> str |
     return None
 
 
-def load_scope(state: dict[str, Any]) -> dict[str, Any]:
+def load_scope(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
     with context.factory() as session:
         require_case(session, context.scope)
     return {"steps": record_step(state, "load_scope", "deterministic", "ok", started)}
 
 
-def retrieve(state: dict[str, Any]) -> dict[str, Any]:
+def load_memory(state: dict[str, Any], config) -> dict[str, Any]:
+    """Carga el historial confirmado y alinea el checkpoint con la base de negocio."""
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
+    settings = context.deps.settings
+    with context.factory() as session:
+        turns = service.load_confirmed_history(
+            session,
+            context.conversation_id,
+            exclude_message_id=context.question_message_id,
+            max_messages=settings.history_max_messages,
+            max_chars=settings.history_max_chars,
+        )
+
+    memory = memory_of(config)
+    status = "disabled"
+    if memory is not None:
+        try:
+            status = service.reconcile_memory(memory, context.conversation_id, turns)
+        except Exception:
+            status = "failed"
+
+    return {
+        "history": turns,
+        "memory_status": status,
+        "steps": record_step(
+            state,
+            "load_memory",
+            "deterministic",
+            "ok",
+            started,
+            {"messages": len(turns), "memory": status},
+        ),
+    }
+
+
+def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
+    started = time.perf_counter()
+    context = runtime_of(config)
+    settings = context.deps.settings
+    query = service.retrieval_query(context.question, state.get("history", ()))
     with context.factory() as session:
         result = search_documents(
             session,
             scope=context.scope,
-            query=context.question,
+            query=query,
             embedder=context.deps.embedder,
             index=context.deps.index,
-            top_k=context.deps.settings.retrieval_top_k,
-            min_score=context.deps.settings.retrieval_min_score,
+            top_k=settings.retrieval_top_k,
+            min_score=settings.retrieval_min_score,
+            token_budget=settings.retrieval_token_budget,
         )
     return {
         "hits": result.hits,
@@ -114,12 +163,12 @@ def _check_turn_deadline(context) -> None:
         raise RunTimeout("Se agotó el tiempo del turno.")
 
 
-def agent(state: dict[str, Any]) -> dict[str, Any]:
+def agent(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
     payload = context.deps.generator.generate(
         system=SYSTEM_PROMPT,
-        user=build_user_prompt(context.question, state.get("hits", ())),
+        user=build_user_prompt(context.question, state.get("hits", ()), state.get("history", ())),
     )
     _check_turn_deadline(context)
     return {
@@ -225,9 +274,9 @@ def _rejected_draft(
     )
 
 
-def validate(state: dict[str, Any]) -> dict[str, Any]:
+def validate(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
     payload: AnswerPayload = state["payload"]
     hits = state.get("hits", ())
 
@@ -250,7 +299,11 @@ def validate(state: dict[str, Any]) -> dict[str, Any]:
             "deterministic",
             "ok",
             started,
-            {"valid": len(citations), "rejected": len(rejected)},
+            {
+                "valid": len(citations),
+                "rejected": len(rejected),
+                "reasons": sorted({draft.check_reason for draft in rejected if draft.check_reason}),
+            },
         ),
     }
 
@@ -263,13 +316,18 @@ def route_after_validate(state: dict[str, Any]) -> str:
     return "abstain"
 
 
-def repair(state: dict[str, Any]) -> dict[str, Any]:
+def repair(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
     reasons = [draft.check_reason or "cita inválida" for draft in state.get("rejected", ())]
     payload = context.deps.generator.generate(
         system=SYSTEM_PROMPT,
-        user=build_repair_prompt(context.question, state.get("hits", ()), reasons),
+        user=build_repair_prompt(
+            context.question,
+            state.get("hits", ()),
+            reasons,
+            state.get("history", ()),
+        ),
     )
     _check_turn_deadline(context)
     return {
@@ -304,9 +362,30 @@ def abstain(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def persist(state: dict[str, Any]) -> dict[str, Any]:
+def _save_memory(config) -> str:
+    """Guarda la instantánea después del commit; un fallo no rompe la respuesta."""
+    memory = memory_of(config)
+    if memory is None:
+        return "disabled"
+    context = runtime_of(config)
+    settings = context.deps.settings
+    try:
+        with context.factory() as session:
+            turns = service.load_confirmed_history(
+                session,
+                context.conversation_id,
+                max_messages=settings.history_max_messages,
+                max_chars=settings.history_max_chars,
+            )
+        memory.write(context.conversation_id, turns)
+    except Exception:
+        return "failed"
+    return "saved"
+
+
+def persist(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
-    context = state["context"]
+    context = runtime_of(config)
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
@@ -327,7 +406,13 @@ def persist(state: dict[str, Any]) -> dict[str, Any]:
         outcome=outcome,
         duration_ms=duration_ms,
     )
-    return {"answer_message_id": message_id, "persisted": True, "outcome": outcome}
+    memory_status = _save_memory(config)
+    return {
+        "answer_message_id": message_id,
+        "persisted": True,
+        "outcome": outcome,
+        "memory_status": memory_status,
+    }
 
 
 def _turn_duration(context) -> int:
@@ -362,6 +447,7 @@ __all__ = [
     "abstain",
     "agent",
     "fail_run",
+    "load_memory",
     "load_scope",
     "persist",
     "repair",
