@@ -442,6 +442,30 @@ concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
 3. El foco inicial del menú móvil caía en el fondo superpuesto en lugar del botón de cierre; el panel
    ahora recibe el foco y restaura al control de apertura.
 
+### Ajuste de identidad visual y resaltado (2026-11-08)
+
+- Icono aprobado copiado a `src/secguard_advisor/web/static/icons/` (`secguard-icon.svg`,
+  `favicon.ico` y `secguard-icon-512.png`). La cabecera usa el SVG a 28 px en móvil y 32 px en
+  escritorio, con `alt=""` y `aria-hidden="true"` porque acompaña al nombre. Se enlazan favicon SVG e
+  ICO y `apple-touch-icon`; se retiró el favicon anterior para no dejar referencias contradictorias.
+- Resaltado de citas: `find_quote_span` construye la cadena normalizada con un índice hacia cada
+  carácter original y devuelve el tramo exacto; el `<mark>` envuelve ese tramo, conservando saltos de
+  línea y espacios. Si el tramo no vuelve a normalizarse igual que la cita, no se resalta. La
+  validación de citas no cambió y no se usan coincidencias aproximadas.
+- A 320 px la insignia «Escenario educativo» se oculta (`min-width: 360px`) para que icono, nombre y
+  botón de menú quepan sin desbordar.
+- `AGENTS.md`: corregida la frase que presentaba `make corpus` como no implementado.
+- Evidencia: `tests/unit/test_quote_highlight.py` (8), `tests/contract/test_navigation.py` (15, con
+  icono, recursos y resaltado de extremo a extremo), `make check` 227 en verde y
+  `make test-integration` 6 en verde. CSS recompilado y reproducible
+  (`b52e4a6b8d32737bcb1dcd7b7b55983dbfa5b0c3dff1056769480b1b8a0cfc74`).
+- Playwright: icono cargado y legible en escritorio y móvil; 320, 360 y 390 px sin desbordamiento;
+  recursos del icono y favicon con 200, sin peticiones fallidas ni errores de consola; cita real del
+  CSF resaltada conservando el salto de línea y caso negativo sin `<mark>`; indicadores de carga y
+  navegación sin regresiones.
+- Capturas: `docs/evidencia/navegacion/escritorio-identidad.png`, `movil-390-identidad.png`,
+  `movil-320-identidad.png` y `cita-resaltada.png`.
+
 ---
 
 ## Phase 6: User Story 4 - Continuar la conversación (Priority: P2)

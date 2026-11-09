@@ -192,6 +192,10 @@ propia, accesible por URL y con su ruta de navegación visible:
 | `/cases/{case_id}/runs/{run_id}` | Evidencia de ejecución, desde cada respuesta |
 | `/cases/{case_id}/documents/{document_id}` | Documento con sus versiones y fragmentos |
 
+La cabecera usa el escudo local (`/static/icons/secguard-icon.svg`) junto al nombre y sirve favicon
+SVG e ICO desde `/static/icons/`. En pantallas menores a 360 px la insignia «Escenario educativo» se
+oculta para no desbordar.
+
 El grupo «Caso abierto» de la barra lateral solo aparece dentro de un caso. Las citas abren el
 fragmento correspondiente (del caso o del corpus público) y, cuando vienen de una respuesta, ofrecen
 «Volver a la consulta» con un destino construido por el servidor.
