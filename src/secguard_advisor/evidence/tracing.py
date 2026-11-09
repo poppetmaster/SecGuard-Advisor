@@ -86,6 +86,8 @@ class LangSmithTracer:
         case_id: str,
         attempt_no: int,
         prompt_version: str,
+        question_length: int | None = None,
+        metadata: dict | None = None,
     ) -> None:
         api_key = self._settings.langsmith_api_key
         if api_key is None:
@@ -97,23 +99,46 @@ class LangSmithTracer:
                 api_key=api_key.get_secret_value(),
                 timeout_ms=_CLIENT_TIMEOUT_MS,
             )
+            run_metadata = {
+                "component": "secguard-advisor",
+                "prompt_version": prompt_version,
+                "app_version": self._settings.app_version,
+                "app_env": self._settings.app_env,
+                "generator_model": self._settings.ollama_model,
+                "embedding_model": self._settings.ollama_embedding_model,
+                "embedding_dim": self._settings.embedding_dim,
+                "num_ctx": self._settings.generator_num_ctx,
+                "num_predict": self._settings.generator_num_predict,
+                "temperature": self._settings.generator_temperature,
+                "seed": self._settings.generator_seed,
+                "max_tool_calls": self._settings.max_tool_calls,
+                "max_graph_steps": self._settings.max_graph_steps,
+                "run_timeout_seconds": self._settings.run_timeout_seconds,
+                "llm_timeout_seconds": self._settings.llm_timeout_seconds,
+                "retrieval_top_k": self._settings.retrieval_top_k,
+                "retrieval_min_score": self._settings.retrieval_min_score,
+                "retrieval_token_budget": self._settings.retrieval_token_budget,
+                "history_max_messages": self._settings.history_max_messages,
+                "history_max_chars": self._settings.history_max_chars,
+            }
+            run_metadata.update(metadata or {})
+            run_metadata = {key: value for key, value in run_metadata.items() if value is not None}
+            run_inputs = {
+                "run_id": run_id,
+                "case_id": case_id,
+                "attempt_no": attempt_no,
+                "prompt_version": prompt_version,
+            }
+            if question_length is not None:
+                run_inputs["question_length"] = question_length
             self._root = self._run_tree_factory(
                 name="secguard-advisor.turn",
                 run_type="chain",
-                inputs={
-                    "run_id": run_id,
-                    "case_id": case_id,
-                    "attempt_no": attempt_no,
-                    "prompt_version": prompt_version,
-                },
+                inputs=run_inputs,
                 ls_client=self._client,
                 project_name=self._settings.langsmith_project,
-                extra={
-                    "metadata": {
-                        "component": "secguard-advisor",
-                        "prompt_version": prompt_version,
-                    }
-                },
+                tags=["secguard-advisor", f"env:{self._settings.app_env}"],
+                extra={"metadata": _scrub(run_metadata)},
             )
             self._root.post()
         except Exception:
@@ -128,6 +153,7 @@ class LangSmithTracer:
         inputs: dict | None = None,
         outputs: dict | None = None,
         error: str | None = None,
+        duration_ms: int | None = None,
     ) -> None:
         if self._failed or self._root is None:
             return
@@ -138,16 +164,24 @@ class LangSmithTracer:
                 inputs=_scrub(inputs or {}),
             )
             child.post()
-            child.end(outputs=_scrub(outputs or {}), error=error)
+            payload = dict(outputs or {})
+            if duration_ms is not None:
+                payload["duration_ms"] = duration_ms
+            child.end(outputs=_scrub(payload), error=_scrub(error))
             child.patch()
         except Exception:
             self._failed = True
 
-    def finish(self, *, status: str, outcome: str | None) -> TraceOutcome:
+    def finish(
+        self, *, status: str, outcome: str | None, duration_ms: int | None = None
+    ) -> TraceOutcome:
         if self._failed or self._root is None:
             return TraceOutcome("failed", error="trace_send_failed")
         try:
-            self._root.end(outputs=_scrub({"status": status, "outcome": outcome}))
+            outputs = {"status": status, "outcome": outcome}
+            if duration_ms is not None:
+                outputs["duration_ms"] = duration_ms
+            self._root.end(outputs=_scrub(outputs))
             self._root.patch()
             self._client.flush(timeout=_FLUSH_TIMEOUT_SECONDS)
             trace_id = str(getattr(self._root, "id", "") or "") or None

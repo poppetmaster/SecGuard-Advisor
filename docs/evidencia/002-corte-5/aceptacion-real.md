@@ -66,12 +66,13 @@ make check
 # 409 passed, 35 deselected
 
 LANGSMITH_TRACING=false make test-integration
-# 34 passed, 1 skipped (LangSmith no configurado)
+# 34 passed, 1 skipped (LangSmith desactivado en esa ejecución)
 ```
 
 ## Limitaciones
 
-- LangSmith no está configurado en este entorno: el envío real de trazas queda skipped; la privacidad
-  se comprobó con tracer y callbacks falsos, no con una cuenta externa.
+- LangSmith se desactivó en esta ejecución de aceptación (`LANGSMITH_TRACING=false`) para no enviar
+  trazas de la validación con el CSV real. La integración se verificó por separado con datos
+  sintéticos: una traza real quedó `submitted` y luego `confirmed` mediante `scripts/confirm_trace.py`.
 - SC-001 y SC-003 de 001 siguen siendo validaciones humanas recomendadas y no ejecutadas.
 - La CI remota no se ejecutó ni se declara aprobada.

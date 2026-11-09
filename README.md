@@ -1,4 +1,7 @@
-# SecGuard Advisor
+# SecGuard Advisor · Agente de Ciberseguridad
+
+**Proyecto final · Universidad Icesi**  
+Cristian Camilo Quebrada · Rubén Darío Sabogal · Edwin Pérez L.
 
 [![Python](https://img.shields.io/badge/python-3.14.6-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -51,8 +54,8 @@ instantáneas, filtros avanzados y consulta mediante `findings_query` (origen, i
 severidad, prioridad e indicadores). La instantánea se fija por turno. El corte final añade pruebas
 de privacidad, evidencia histórica sobre el snapshot persistido, separación del RAG y aceptación real
 local con el CSV filtrado y Ollama. `make check` = 409 passed; `make test-integration` = 34 passed y
-1 skipped (LangSmith no configurado). SC-001, SC-003 y la CI remota no se ejecutaron y no se
-presentan como aprobadas.
+1 skipped (LangSmith desactivado en esa ejecución para la aceptación real). SC-001, SC-003 y la
+CI remota no se ejecutaron y no se presentan como aprobadas.
 
 ### Implementado
 
@@ -198,7 +201,7 @@ Copia `.env.example` a `.env` y ajusta los valores. `.env` está ignorado por Gi
 | `SECGUARD_QUALYS_MAX_FIELD_CHARS` | Límite de caracteres por campo; por defecto 20.000 |
 | `SECGUARD_QUALYS_MAX_CVES` | Límite de CVE por registro; por defecto 1.000 |
 | `SECGUARD_QUALYS_STAGING_TTL_SECONDS` | Vigencia del staging/rechazo; por defecto 24 h |
-| `LANGSMITH_*` | Trazas. Sin clave, la traza queda deshabilitada |
+| `LANGSMITH_*` | Trazas. Sin clave, la traza queda deshabilitada. La instancia local de demo tiene `LANGSMITH_TRACING=true`; `.env.example` mantiene `false` para evitar envíos accidentales |
 
 Nunca se versionan secretos ni se muestran en registros o respuestas.
 
@@ -378,13 +381,20 @@ como una consulta actual y no como el detalle histórico. Los totales y grupos s
 registrado.
 
 Con `LANGSMITH_TRACING=true` y `LANGSMITH_API_KEY`, cada turno envía una traza con la ejecución y sus
-operaciones relevantes (decisión de herramienta, generación, reparación y llamadas de herramienta).
+operaciones relevantes (alcance, memoria, recuperación, decisión de herramienta, generación,
+validación, reparación, herramienta y persistencia). Además del resultado, envía metadatos seguros:
+versión de la aplicación, entorno, modelo y digest del generador, modelo y dimensión de embeddings,
+contexto y parámetros de generación, límites, presupuesto de contexto, cantidad de fuentes y orígenes,
+duración por paso, conteos de claims, citas y recomendaciones, códigos de rechazo de citas, y
+agregados de `findings_query` (total, estado, severidad, indicadores y prioridad conjunta). No envía
+la pregunta, prompts, documentos, citas literales, argumentos de herramienta, filas, claves ni rutas
+locales.
+
 El estado puede ser `disabled` (sin configuración), `submitted` (envío sin error observado; no
 verificado), `confirmed` (verificado por lectura externa) o `failed` (envío no disponible). La
 aplicación nunca escribe `confirmed`: eso corresponde a `scripts/confirm_trace.py`, que exige que la
-traza exista, pertenezca al proyecto y sus metadatos coincidan con la ejecución local. Si LangSmith no responde, la consulta local se completa
-igual y conserva su evidencia. El contenido enviado se limita a metadatos y datos sintéticos; no
-incluye la pregunta, prompts, documentos del caso, argumentos de herramienta ni rutas locales.
+traza exista, pertenezca al proyecto y sus metadatos coincidan con la ejecución local. Si LangSmith no
+responde, la consulta local se completa igual y conserva su evidencia.
 
 Límites del turno: 8 operaciones de modelo o herramienta, 2 llamadas a herramientas, 1 reparación,
 120 s de turno y 90 s por llamada al modelo. La decisión de herramienta consume tiempo y paso.

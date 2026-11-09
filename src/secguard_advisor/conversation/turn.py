@@ -103,15 +103,30 @@ def start_question_turn(
 
 def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
     """Ejecuta el grafo, clasifica el cierre y registra la traza externa."""
-    tracer = build_tracer(context.deps.settings)
+    settings = context.deps.settings
+    tracer = build_tracer(settings)
     tracer.start(
         run_id=context.run_id,
         case_id=context.scope.case_id,
         attempt_no=context.attempt_no,
         prompt_version=PROMPT_VERSION,
+        question_length=len(context.question),
+        metadata={
+            "conversation_id": context.conversation_id,
+            "generator_model": getattr(context.deps.generator, "model", settings.ollama_model),
+            "generator_digest": getattr(context.deps.generator, "digest", None),
+            "embedding_model": getattr(
+                context.deps.embedder, "model", settings.ollama_embedding_model
+            ),
+            "embedding_dim": getattr(context.deps.embedder, "dimension", settings.embedding_dim),
+        },
     )
     result = _execute_turn(context, memory, tracer)
-    trace = tracer.finish(status=result.status, outcome=result.outcome)
+    trace = tracer.finish(
+        status=result.status,
+        outcome=result.outcome,
+        duration_ms=int((time.perf_counter() - context.started_perf) * 1000),
+    )
     with contextlib.suppress(Exception):
         record_trace(
             context.factory,

@@ -126,14 +126,28 @@ def test_langsmith_tracer_submits_without_confirming(tmp_path: Path) -> None:
         run_tree_factory=FakeRunTree,
     )
 
-    tracer.start(run_id="run-1", case_id="case-1", attempt_no=1, prompt_version="chat-v4")
+    tracer.start(
+        run_id="run-1",
+        case_id="case-1",
+        attempt_no=1,
+        prompt_version="chat-v4",
+        question_length=42,
+        metadata={
+            "conversation_id": "conv-1",
+            "generator_model": "qwen3.5:9b",
+            "generator_digest": "digest-1",
+            "embedding_model": "embeddinggemma",
+            "embedding_dim": 768,
+        },
+    )
     tracer.operation(
         "agent.generate",
         run_type="llm",
         inputs={"model": "qwen3.5:9b", "prompt_tokens": 817},
         outputs={"claims": 0, "answer_length": 90},
+        duration_ms=12,
     )
-    outcome = tracer.finish(status="succeeded", outcome="answered")
+    outcome = tracer.finish(status="succeeded", outcome="answered", duration_ms=99)
 
     assert outcome.status == "submitted"
     assert outcome.trace_id == "trace-123"
@@ -146,6 +160,12 @@ def test_langsmith_tracer_submits_without_confirming(tmp_path: Path) -> None:
     assert tree.children[0].posted is True
     assert tree.children[0].ended is True
     assert tree.children[0].patched is True
+    assert tree.kwargs["inputs"]["question_length"] == 42
+    assert tree.kwargs["extra"]["metadata"]["generator_model"] == "qwen3.5:9b"
+    assert tree.kwargs["extra"]["metadata"]["embedding_dim"] == 768
+    assert "secguard-advisor" in tree.kwargs["tags"]
+    assert tree.children[0].outputs["duration_ms"] == 12
+    assert tree.outputs["duration_ms"] == 99
 
 
 def test_start_failure_is_failed_and_does_not_raise(tmp_path: Path) -> None:
@@ -196,20 +216,29 @@ def test_trace_payload_has_no_question_secret_or_absolute_path(tmp_path: Path) -
         case_id="case-1",
         attempt_no=1,
         prompt_version="chat-v4",
+        question_length=10,
+        metadata={"path": path, "token": secret},
     )
     tracer.operation(
         "findings_query",
         run_type="tool",
         inputs={"tool": "findings_query", "argument_keys": ["severity"]},
         outputs={"status": "ok", "total": 4},
+        duration_ms=5,
     )
-    tracer.finish(status="succeeded", outcome="answered")
+    tracer.finish(status="succeeded", outcome="answered", duration_ms=12)
 
     tree = FakeRunTree.instances[0]
-    serialized = repr(tree.kwargs) + repr(tree.outputs) + repr(tree.children[0].inputs)
+    serialized = (
+        repr(tree.kwargs)
+        + repr(tree.outputs)
+        + repr(tree.children[0].inputs)
+        + repr(tree.children[0].outputs)
+    )
     for forbidden in (secret, path, "Traceback", "api_key", "authorization"):
         assert forbidden not in serialized
     assert tree.kwargs["inputs"]["run_id"] == "run-1"
+    assert tree.kwargs["extra"]["metadata"]["app_version"]
 
 
 def test_operation_failure_marks_the_trace_failed(tmp_path: Path) -> None:

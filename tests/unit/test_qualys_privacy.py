@@ -70,7 +70,6 @@ def _assert_clean(blob: str) -> None:
         RESULTS_DECOY,
         FILE_DECOY,
         "PRIVATE-MARKER",
-        "Results",
         "/Users/",
         "Traceback",
     ):
@@ -109,10 +108,17 @@ def test_external_payloads_prompts_and_summary_exclude_private_qualys_data(
     result = execute_turn(context)
     assert result.outcome == "answered"
 
+    assert tracer.starts[0]["question_length"] == len(
+        "¿Cuántos registros importados hay en la instantánea?"
+    )
+    assert tracer.starts[0]["metadata"]["generator_model"] == "fake-generator"
+    assert tracer.starts[0]["metadata"]["embedding_model"] == "fake-embedding"
+    assert tracer.starts[0]["metadata"]["embedding_dim"] == 4
     _assert_clean(json.dumps(tracer.starts, ensure_ascii=False, default=str))
     _assert_clean(json.dumps(tracer.operations, ensure_ascii=False, default=str))
     _assert_clean(json.dumps(tracer.finishes, ensure_ascii=False, default=str))
     _assert_clean("\n".join(generator.prompts))
+    assert "Results" not in "\n".join(generator.prompts)
     _assert_clean("\n".join(generator.decision_prompts))
 
     with env.factory() as session:

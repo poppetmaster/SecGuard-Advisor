@@ -138,6 +138,13 @@ def load_scope(state: dict[str, Any], config) -> dict[str, Any]:
     context = runtime_of(config)
     with context.factory() as session:
         require_case(session, context.scope)
+    tracer_of(config).operation(
+        "load_scope",
+        run_type="chain",
+        inputs={},
+        outputs={"status": "ok"},
+        duration_ms=elapsed_ms(started),
+    )
     return {"steps": record_step(state, "load_scope", "deterministic", "ok", started)}
 
 
@@ -163,6 +170,16 @@ def load_memory(state: dict[str, Any], config) -> dict[str, Any]:
         except Exception:
             status = "failed"
 
+    tracer_of(config).operation(
+        "load_memory",
+        run_type="chain",
+        inputs={
+            "history_max_messages": settings.history_max_messages,
+            "history_max_chars": settings.history_max_chars,
+        },
+        outputs={"messages": len(turns), "memory": status},
+        duration_ms=elapsed_ms(started),
+    )
     return {
         "history": turns,
         "memory_status": status,
@@ -193,11 +210,24 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             min_score=settings.retrieval_min_score,
             token_budget=settings.retrieval_token_budget,
         )
+    origin_counts: dict[str, int] = {}
+    for hit in result.hits:
+        origin_counts[hit.origin] = origin_counts.get(hit.origin, 0) + 1
     tracer_of(config).operation(
         "retrieve",
         run_type="retriever",
-        inputs={"query_length": len(context.question)},
-        outputs={"hits": len(result.hits), "status": result.status},
+        inputs={
+            "query_length": len(context.question),
+            "top_k": settings.retrieval_top_k,
+            "min_score": settings.retrieval_min_score,
+            "token_budget": settings.retrieval_token_budget,
+        },
+        outputs={
+            "hits": len(result.hits),
+            "status": result.status,
+            "origin_counts": origin_counts,
+        },
+        duration_ms=elapsed_ms(started),
     )
     return {
         "hits": result.hits,
@@ -249,15 +279,27 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
         )
         raise
     usage = getattr(context.deps.generator, "last_usage", None) or {}
+    plan_detail = plan.detail()
     tracer.operation(
         "agent.generate",
         run_type="llm",
         inputs={
             "model": context.deps.generator.model,
-            "prompt_version": plan.detail().get("prompt_version"),
-            "admitted_tokens": plan.detail().get("admitted_tokens"),
+            "prompt_version": plan_detail.get("prompt_version"),
+            "admitted_tokens": plan_detail.get("admitted_tokens"),
+            "history_messages": plan_detail.get("history_messages"),
+            "sources": plan_detail.get("sources"),
+            "dropped_history_messages": plan_detail.get("dropped_history_messages"),
+            "dropped_sources": plan_detail.get("dropped_sources"),
+            "limit": plan_detail.get("limit"),
         },
-        outputs={"claims": len(payload.claims), "answer_length": len(payload.answer)},
+        outputs={
+            "claims": len(payload.claims),
+            "answer_length": len(payload.answer),
+            "missing_info": len(payload.missing_info),
+            "recommendations": len(payload.recommendations),
+        },
+        duration_ms=elapsed_ms(started),
     )
     _check_turn_deadline(context)
     return {
@@ -374,11 +416,15 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
         inputs={
             "model": context.deps.generator.model,
             "admitted_tokens": admitted,
+            "history_messages": len(state.get("history", ())),
+            "previous_tool_results": len(state.get("tool_results", ())),
         },
         outputs={
             "use_findings": decision.use_findings,
             "argument_keys": sorted(decision.arguments),
+            "argument_count": len(decision.arguments),
         },
+        duration_ms=elapsed_ms(started),
     )
     _check_turn_deadline(context)
     return {
@@ -460,8 +506,13 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         tracer.operation(
             "findings_query",
             run_type="tool",
-            inputs={"tool": TOOL_NAME, "argument_keys": sorted(arguments)},
+            inputs={
+                "tool": TOOL_NAME,
+                "argument_keys": sorted(arguments),
+                "argument_count": len(arguments),
+            },
             outputs={"status": status, "error_code": exc.code},
+            duration_ms=duration,
         )
     except Exception as exc:
         tracer.operation(
@@ -497,13 +548,27 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         tracer.operation(
             "findings_query",
             run_type="tool",
-            inputs={"tool": TOOL_NAME, "argument_keys": sorted(arguments)},
+            inputs={
+                "tool": TOOL_NAME,
+                "argument_keys": sorted(arguments),
+                "argument_count": len(arguments),
+            },
             outputs={
                 "status": status,
                 "total": summary.get("total"),
                 "groups_count": len(summary.get("groups", ())),
                 "truncated": summary.get("truncated"),
+                "origin": summary.get("origin"),
+                "status_group": summary.get("status_group"),
+                "snapshot_sequence": (summary.get("snapshot") or {}).get("sequence"),
+                "status_counts": summary.get("status_counts"),
+                "severity_counts": summary.get("severity_counts"),
+                "exploitability_counts": summary.get("exploitability_counts"),
+                "malware_counts": summary.get("malware_counts"),
+                "manual_review_rows": summary.get("manual_review_rows"),
+                "priority_counts": summary.get("priority_counts"),
             },
+            duration_ms=duration,
         )
 
     return {
@@ -635,6 +700,18 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
             else:
                 rejected.append(_rejected_draft(session, context, claim, hits))
 
+    reason_codes = sorted({draft.check_reason for draft in rejected if draft.check_reason})
+    tracer_of(config).operation(
+        "validate",
+        run_type="chain",
+        inputs={"claims": len(payload.claims), "hits": len(hits)},
+        outputs={
+            "valid": len(citations),
+            "rejected": len(rejected),
+            "reason_codes": reason_codes,
+        },
+        duration_ms=elapsed_ms(started),
+    )
     return {
         "citations": tuple(citations),
         "rejected": tuple(rejected),
@@ -647,7 +724,7 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
             {
                 "valid": len(citations),
                 "rejected": len(rejected),
-                "reasons": sorted({draft.check_reason for draft in rejected if draft.check_reason}),
+                "reasons": reason_codes,
             },
         ),
     }
@@ -698,15 +775,27 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
         )
         raise
     usage = getattr(context.deps.generator, "last_usage", None) or {}
+    plan_detail = plan.detail()
     tracer.operation(
         "agent.repair",
         run_type="llm",
         inputs={
             "model": context.deps.generator.model,
             "reason_codes": reasons,
-            "admitted_tokens": plan.detail().get("admitted_tokens"),
+            "admitted_tokens": plan_detail.get("admitted_tokens"),
+            "history_messages": plan_detail.get("history_messages"),
+            "sources": plan_detail.get("sources"),
+            "dropped_history_messages": plan_detail.get("dropped_history_messages"),
+            "dropped_sources": plan_detail.get("dropped_sources"),
+            "limit": plan_detail.get("limit"),
         },
-        outputs={"claims": len(payload.claims), "answer_length": len(payload.answer)},
+        outputs={
+            "claims": len(payload.claims),
+            "answer_length": len(payload.answer),
+            "missing_info": len(payload.missing_info),
+            "recommendations": len(payload.recommendations),
+        },
+        duration_ms=elapsed_ms(started),
     )
     _check_turn_deadline(context)
     return {
@@ -729,7 +818,7 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
     }
 
 
-def abstain(state: dict[str, Any]) -> dict[str, Any]:
+def abstain(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     if not state.get("hits"):
         outcome = "insufficient_evidence"
@@ -737,6 +826,13 @@ def abstain(state: dict[str, Any]) -> dict[str, Any]:
     else:
         outcome = "abstained_invalid_citations"
         text = ABSTAINED_CITATIONS_TEXT
+    tracer_of(config).operation(
+        "abstain",
+        run_type="chain",
+        inputs={"hits": len(state.get("hits", ())), "rejected": len(state.get("rejected", ()))},
+        outputs={"outcome": outcome},
+        duration_ms=elapsed_ms(started),
+    )
     return {
         "outcome": outcome,
         "answer": text,
@@ -805,6 +901,22 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
         duration_ms=duration_ms,
     )
     memory_status = _save_memory(config)
+    tracer_of(config).operation(
+        "persist",
+        run_type="chain",
+        inputs={
+            "citations": len(citations),
+            "rejected": len(state.get("rejected", ())),
+            "tool_results": len(state.get("tool_records", ())),
+            "hits": len(state.get("hits", ())),
+        },
+        outputs={
+            "outcome": outcome,
+            "memory_status": memory_status,
+            "answer_length": len(answer_text),
+        },
+        duration_ms=elapsed_ms(started),
+    )
     return {
         "answer_message_id": message_id,
         "persisted": True,

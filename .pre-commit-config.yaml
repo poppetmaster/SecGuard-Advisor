@@ -11,6 +11,8 @@ repos:
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=2048"]
+        # PDF generado de la guía de estudio; se versiona como material de presentación.
+        exclude: ^docs/presentacion/Guia_Estudio_y_Demo_SecGuard_Advisor\.pdf$
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-json
