@@ -37,6 +37,68 @@ def normalize_for_match(text: str) -> str:
     return normalized.strip().casefold()
 
 
+@dataclass(frozen=True, slots=True)
+class QuoteSpan:
+    """Tramo del texto original que corresponde a la cita normalizada."""
+
+    start: int
+    end: int
+
+
+def _fold_char(char: str) -> str:
+    return unicodedata.normalize("NFKC", char).casefold()
+
+
+def find_quote_span(text: str, quote: str) -> QuoteSpan | None:
+    """Localiza la cita normalizada y devuelve su tramo en el texto original.
+
+    Construye una cadena normalizada con un índice hacia el carácter original de
+    cada posición. Si la cita no aparece o el tramo original no vuelve a
+    normalizarse igual, devuelve ``None`` para no resaltar algo engañoso.
+    """
+    cleaned = (quote or "").strip()
+    if not cleaned or not text:
+        return None
+
+    folded_chars: list[str] = []
+    source_indices: list[int] = []
+    previous_space = True
+    for index, char in enumerate(text):
+        if char == "\u00ad":
+            continue
+        folded = _fold_char(char)
+        if not folded:
+            continue
+        if folded.isspace():
+            if previous_space:
+                continue
+            folded_chars.append(" ")
+            source_indices.append(index)
+            previous_space = True
+            continue
+        for out_char in folded:
+            folded_chars.append(out_char)
+            source_indices.append(index)
+        previous_space = False
+
+    while folded_chars and folded_chars[-1] == " ":
+        folded_chars.pop()
+        source_indices.pop()
+
+    needle = normalize_for_match(cleaned)
+    haystack = "".join(folded_chars)
+    position = haystack.find(needle)
+    if position < 0:
+        return None
+
+    end_position = position + len(needle)
+    start = source_indices[position]
+    end = source_indices[end_position - 1] + 1
+    if normalize_for_match(text[start:end]) != needle:
+        return None
+    return QuoteSpan(start=start, end=end)
+
+
 def _rejected(reason: str, **kwargs) -> CitationCheck:
     return CitationCheck(status="rejected", reason=reason, **kwargs)
 

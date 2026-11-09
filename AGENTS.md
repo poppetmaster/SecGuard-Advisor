@@ -59,7 +59,8 @@ uv run alembic upgrade head  # crea/actualiza el esquema
 SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declarada
 ```
 
-Los targets `demo` y `corpus` informan «no implementado» hasta sus tareas. `seed-demo` requiere el
+`make corpus` y `make corpus-ingest` están implementados y son las vías autorizadas para el corpus.
+El target `demo` informa «no implementado» hasta el recorrido de aceptación. `seed-demo` requiere el
 esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicación no ejecuta
 `create_all` al arrancar.
 

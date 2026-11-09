@@ -6,7 +6,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SecGuard Advisor{% endblock %}</title>
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="icon" type="image/svg+xml" href="/static/icons/secguard-icon.svg">
+    <link rel="icon" sizes="16x16 32x32 48x48" href="/static/icons/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/icons/secguard-icon-512.png">
     <link rel="stylesheet" href="/static/css/app.css">
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900">
@@ -27,10 +29,18 @@
         >
           {{ icon("menu") }}
         </button>
-        <a class="shrink-0 text-[15px] font-semibold tracking-tight text-slate-900 sm:text-lg" href="/cases">
-          SecGuard Advisor
+        <a class="flex shrink-0 items-center gap-2 text-[15px] font-semibold tracking-tight text-slate-900 sm:text-lg" href="/cases">
+          <img
+            class="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
+            src="/static/icons/secguard-icon.svg"
+            alt=""
+            aria-hidden="true"
+            width="32"
+            height="32"
+          >
+          <span>SecGuard Advisor</span>
         </a>
-        <span class="ml-1 inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-900 sm:px-2.5 sm:text-xs">
+        <span class="ml-1 hidden shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-900 min-[360px]:inline-flex sm:px-2.5 sm:text-xs">
           Escenario educativo
         </span>
       </div>

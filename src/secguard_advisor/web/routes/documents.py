@@ -26,6 +26,7 @@ from secguard_advisor.documents.validation import (
     DocumentValidationError,
     read_upload,
 )
+from secguard_advisor.retrieval.citations import find_quote_span
 from secguard_advisor.web.errors import ERRORS
 from secguard_advisor.web.navigation import Crumb, case_crumbs, page
 
@@ -284,15 +285,17 @@ def retry_document_view(request: Request, case_id: str, document_id: str):
 
 
 def _highlight(text: str, quote: str) -> Markup:
-    escaped = str(escape(text))
-    if quote:
-        escaped_quote = str(escape(quote))
-        if escaped_quote:
-            escaped = escaped.replace(
-                escaped_quote,
-                f'<mark class="bg-yellow-200">{escaped_quote}</mark>',
-            )
-    return Markup(escaped)
+    """Resalta la cita sobre el texto original, tolerando espacios normalizados."""
+    span = find_quote_span(text, quote)
+    if span is None:
+        return Markup(str(escape(text)))
+    return Markup(
+        str(escape(text[: span.start]))
+        + '<mark class="bg-yellow-200">'
+        + str(escape(text[span.start : span.end]))
+        + "</mark>"
+        + str(escape(text[span.end :]))
+    )
 
 
 @router.get(

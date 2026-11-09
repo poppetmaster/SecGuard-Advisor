@@ -254,3 +254,54 @@ def test_public_corpus_citation_fragment_opens(context) -> None:
     assert "Corpus público" in page.text
     assert "Volver a la consulta" in page.text
     assert 'aria-current="page"' in _aside(page.text)
+
+
+def test_header_uses_the_approved_decorative_icon(context) -> None:
+    client, _factory, _case_id, _document = context
+
+    html = client.get("/cases").text
+
+    assert 'src="/static/icons/secguard-icon.svg"' in html
+    assert 'alt=""' in html
+    assert 'aria-hidden="true"' in html
+    assert 'href="/static/icons/secguard-icon.svg"' in html
+    assert 'href="/static/icons/favicon.ico"' in html
+    assert 'href="/static/icons/secguard-icon-512.png"' in html
+    assert "/static/favicon.svg" not in html
+
+
+def test_icon_resources_are_served_locally(context) -> None:
+    client, _factory, _case_id, _document = context
+
+    svg = client.get("/static/icons/secguard-icon.svg")
+    ico = client.get("/static/icons/favicon.ico")
+    png = client.get("/static/icons/secguard-icon-512.png")
+
+    assert svg.status_code == 200
+    assert "image/svg+xml" in svg.headers["content-type"]
+    assert "<svg" in svg.text
+    assert ico.status_code == 200
+    assert png.status_code == 200
+
+
+def test_fragment_highlights_a_quote_with_normalized_whitespace(context) -> None:
+    client, factory, case_id, _document = context
+    seeded = seed_document(
+        factory,
+        texts=["El marco define funciones centrales:\n  gobernar,   identificar y proteger."],
+        case_id=case_id,
+        pages=[7],
+    )
+    base = (
+        f"/cases/{case_id}/documents/{seeded.document_id}"
+        f"/versions/{seeded.version_id}/fragments/{seeded.chunk_ids[0]}"
+    )
+
+    highlighted = client.get(base, params={"quote": "centrales: gobernar, identificar"})
+    missing = client.get(base, params={"quote": "una frase que no está"})
+
+    assert highlighted.status_code == 200
+    assert "<mark" in highlighted.text
+    assert "centrales:\n  gobernar,   identificar" in highlighted.text
+    assert missing.status_code == 200
+    assert "<mark" not in missing.text

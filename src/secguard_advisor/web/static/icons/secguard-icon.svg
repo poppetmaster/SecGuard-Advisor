@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SecGuard Advisor</title>
+  <desc id="desc">Escudo de contorno azul, símbolo de protección.</desc>
+  <path d="M32 7C25 11.5 18.5 13.8 12 15V31C12 43 19.5 51.5 32 57C44.5 51.5 52 43 52 31V15C45.5 13.8 39 11.5 32 7Z" stroke="#1D4ED8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
