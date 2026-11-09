@@ -176,13 +176,33 @@ make seed-demo      # carga el dataset sintético; requiere el esquema migrado
 make demo           # no implementado: requiere el recorrido de aceptación
 ```
 
+### Navegación
+
+La interfaz usa una cabecera fija con la marca y la leyenda «Escenario educativo», una barra lateral
+persistente en escritorio y un menú lateral desplegable en móvil. Cada sección es una página GET
+propia, accesible por URL y con su ruta de navegación visible:
+
+| Ruta | Sección |
+|---|---|
+| `/cases` | Casos |
+| `/cases/new` | Nuevo caso |
+| `/cases/{case_id}` | Resumen del caso (contexto y activos) |
+| `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
+| `/cases/{case_id}/chat` | Consulta documental (preguntas, citas, revisión) |
+| `/cases/{case_id}/runs/{run_id}` | Evidencia de ejecución, desde cada respuesta |
+| `/cases/{case_id}/documents/{document_id}` | Documento con sus versiones y fragmentos |
+
+El grupo «Caso abierto» de la barra lateral solo aparece dentro de un caso. Las citas abren el
+fragmento correspondiente (del caso o del corpus público) y, cuando vienen de una respuesta, ofrecen
+«Volver a la consulta» con un destino construido por el servidor.
+
 ### Consulta y revisión humana
 
 1. `uv run alembic upgrade head` y `make corpus && make corpus-ingest`.
 2. Con Ollama activo y `qwen3.5:9b` instalado, `make dev`.
-3. Creá un caso, abrí su detalle y usá el panel **Consulta documental**: la respuesta indica si es
-   un borrador, muestra las citas con su control automático y lista los fragmentos recuperados con
-   su procedencia y si fueron citados.
+3. Creá un caso desde **Nuevo caso** y abrí **Consulta documental** en la barra lateral: la respuesta
+   indica si es un borrador, muestra las citas con su control automático y lista los fragmentos
+   recuperados en un bloque desplegable, con procedencia y si fueron citados.
 4. Exportá `SECGUARD_REVIEWER_NAME="Nombre Apellido"` antes de arrancar si querés registrar la
    revisión humana. Sin esa variable la revisión se rechaza con `409` y no se escribe.
 5. Cada cita válida abre el fragmento exacto; la revisión humana es por cita y no adjudica

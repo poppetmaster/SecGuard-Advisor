@@ -378,6 +378,66 @@ intercepción de red en el navegador (sin cambios en producción):
 4. Los errores del servidor no se veían porque HTMX descarta los cuerpos 4xx/5xx; se habilitó el
    reemplazo solo cuando el cuerpo es el fragmento del propio destino.
 
+### Ajuste de navegación y presentación (post-US3, 2026-11-08)
+
+**Alcance**: cabecera, barra lateral de escritorio, menú desplegable móvil, ruta de navegación y
+separación de la ficha del caso en secciones GET independientes. No cambia contratos POST, reglas de
+concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
+
+**Diseño implementado**:
+
+- Cabecera con la marca, la leyenda «Escenario educativo» y botón «Abrir menú» en móvil.
+- Barra lateral con «General» (Casos, Nuevo caso) y, dentro de un caso, «Caso abierto» con el nombre
+  y las secciones Resumen, Documentos y Consulta documental. El elemento activo usa color, fondo,
+  borde y `aria-current="page"`.
+- Ruta de navegación (`nav` + `ol` con separadores) y título de sección en el contenido.
+- Una sola sección visible por página, con navegación GET y renderizado del servidor. HTMX se
+  conserva dentro de cada sección: el panel de documentos y el de consulta siguen siendo fragmentos.
+- Móvil: menú cerrado al cargar, apertura con el botón, cierre con botón, Escape, fondo y selección
+  de destino; foco al panel al abrir y restauración al control de apertura; trampa de Tab.
+- «Fragmentos recuperados» pasa a un bloque `<details>` nativo: sobrevive a los reemplazos HTMX sin
+  reinicializar componentes de Flowbite.
+- Se usan los componentes gratuitos de Flowbite ya instalados (sidebar, drawer, breadcrumbs, botones,
+  formularios, alertas) con Tailwind local; sin CDN ni dependencias nuevas.
+- Iconos SVG locales definidos en `components/icon.html`.
+
+**Rutas**:
+
+- Reutilizadas: `/cases`, `/cases/new`, `/cases/{id}/documents`, `/cases/{id}/documents/{doc}`,
+  `/cases/{id}/documents/{doc}/versions/{v}/fragments/{chunk}`, `/cases/{id}/chat`,
+  `/cases/{id}/runs/{run_id}` y los POST existentes.
+- Ajuste de presentación: `GET /cases/{id}` deja de incluir documentos y conversación y pasa a ser
+  **Resumen**; `GET /cases/{id}/documents` devuelve la página completa cuando no es HTMX y el panel
+  cuando lo es.
+- Sin rutas nuevas: cada sección ya tenía una ruta o se sirve desde la existente.
+
+**Evidencia**:
+
+- `tests/contract/test_navigation.py`: 12 pruebas (grupos de la barra, sección activa, secciones
+  directas, fragmento sin shell, rutas de navegación, aislamiento, nombre largo, recursos locales,
+  fragmento de corpus público y destino de regreso).
+- `make check`: 216 pruebas rápidas en verde; `make test-integration`: 6 en verde.
+- `npm run build`: CSS recompilado; dos ejecuciones producen el mismo SHA-256
+  (`54c515936aba7085f7f1aa9544c0440957b4b50906d14206013c0304eb06c3b6`).
+- Playwright MCP (Chrome) con servidor real sobre almacenamiento temporal y corpus ingerido:
+  escritorio 1440 × 900, móvil 390 × 844 y 320 px, sin desbordamiento horizontal; secciones activas y
+  rutas de navegación verificadas tras recargar; documento cargado y abierto; consulta real con
+  Ollama (dos citas del CSF), indicador y un solo POST con doble clic, revisión humana registrada y
+  persistente; errores 415 y 409 con panel reemplazado y campos conservados; menú móvil con foco,
+  Escape, fondo, cierre al navegar y restauración de foco.
+- Consola: sin errores tras añadir el favicon local; las únicas entradas son las respuestas 4xx
+  provocadas a propósito y el icono faltante previo, ahora resuelto.
+
+**Defectos encontrados y corregidos en la validación**:
+
+1. Las citas al corpus público abrían un `404`: la ruta de fragmentos solo aceptaba documentos del
+   caso. Ahora acepta documentos públicos cuando el alcance del caso está autorizado, sigue
+   rechazando documentos de otro caso y muestra el origen.
+2. Encabezados duplicados («Documentos» en el título y en el panel) y espaciado del formulario de
+   revisión; se ajustaron las plantillas.
+3. El foco inicial del menú móvil caía en el fondo superpuesto en lugar del botón de cierre; el panel
+   ahora recibe el foco y restaura al control de apertura.
+
 ---
 
 ## Phase 6: User Story 4 - Continuar la conversación (Priority: P2)
@@ -451,7 +511,7 @@ intercepción de red en el navegador (sin cambios en producción):
 
 **Purpose**: interfaz integrada, recorrido de aceptación, integración real, documentación y evidencia.
 
-- [ ] T088 Integrar navegación y layout del caso en `src/secguard_advisor/web/templates/` — una página con contexto, documentos y conversación; estados vacíos y errores; **no reescribir** las plantillas ya cubiertas por pruebas de US1–US6 · Dep: T033, T048, T061, T080, T085 · Check: prueba de navegación y ausencia de duplicación de plantillas · Evidence: test en verde
+- [ ] T088 Consolidar la navegación y el layout integrado — el shell (cabecera, barra lateral, menú móvil, rutas de navegación y secciones GET) ya está implementado en el «Ajuste de navegación y presentación»; queda integrar las secciones de US4–US6 cuando existan, revisar estados vacíos y errores de esas historias y ejecutar la revisión visual integrada · Dep: T033, T048, T061, T080, T085 · Check: prueba de navegación y ausencia de duplicación de plantillas · Evidence: shell en verde en `tests/contract/test_navigation.py`; integración pendiente de US4–US6
 - [ ] T089 Escribir la suite de aceptación en `tests/acceptance/test_journey.py` — recorrido con dobles rápidos: caso, documentos, pregunta, seguimiento, hallazgos, abstención, reinicio, dos casos, pregunta nueva, reintento, envío duplicado, generación global ocupada y revisión · Dep: T088 · Check: `make test` · Evidence: recorrido en verde sin Ollama
 - [ ] T090 Ejecutar el recorrido real en `tests/acceptance/test_journey_real.py` — Ollama, embeddings, recuperación y herramienta; registrar resultados observados · Dep: T089, T046 · Check: `make test-integration` · Evidence: reporte con fecha y salidas reales
 - [ ] T091 Confirmar la traza observada con `scripts/confirm_trace.py` — responsabilidad de la persona que ejecuta la aceptación; recibe `run_id` y `trace_id`, verifica por API de lectura que la traza existe en `secguard-advisor-dev` y solo entonces registra `confirmed`; registra su identidad, la fecha y la evidencia (salida del comando e identificador) · Dep: T086, T090 · Check: el script rechaza una traza inexistente y no confirma solo por invocar el SDK · Evidence: salida del comando, identidad y fecha en el reporte de aceptación

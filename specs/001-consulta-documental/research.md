@@ -340,3 +340,22 @@ constitución prohíbe.
 
 **Alternativas consideradas**: marcar `confirmed` tras `flush`; no prueba que la traza exista.
 Revisar la interfaz web y anotarlo a mano sin comando; no deja evidencia reproducible.
+
+## R22. Navegación multipágina con barra lateral
+
+**Decisión**: cada sección es una página GET renderizada por el servidor (`/cases`, `/cases/new`,
+`/cases/{id}` como resumen, `/cases/{id}/documents`, `/cases/{id}/chat`, la evidencia de ejecución y
+las vistas de documento y fragmento). Un shell único aporta cabecera, barra lateral persistente en
+escritorio y menú desplegable en móvil con el mismo marcado. El elemento activo se marca con
+`aria-current="page"` y la ruta de navegación es un `nav` con lista. HTMX queda para las
+interacciones dentro de cada sección.
+
+**Rationale**: URLs direccionables y recargables, menos estado en el cliente y reutilización de los
+contratos existentes. Un shell único evita duplicar plantillas.
+
+**Alternativas consideradas**: SPA con router y navegación HTMX global; añade estado, duplica la
+fuente de verdad de rutas y rompe el renderizado del servidor ya probado.
+
+**Componentes**: Flowbite gratuito ya instalado (sidebar, drawer, breadcrumbs) con Tailwind local. El
+bloque desplegable de fragmentos usa `<details>` nativo para no reinicializar componentes tras cada
+reemplazo HTMX.
