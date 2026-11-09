@@ -117,10 +117,15 @@ explotabilidad, malware, activo, QID, CVE, detalle/límite. Los filtros y conteo
 la tabla.
 
 - `Fixed` y «Revisión manual» se muestran en grupos separados; no se suman a pendientes activos.
+- `manual_review_rows` se presenta como «Registros que requieren revisión de estado o indicadores»:
+  unión única de estado desconocido, explotabilidad indeterminada y malware indeterminado; no es la
+  suma de las categorías y no cambia el grupo `manual_review`.
 - La tabla no usa `Results` completo.
 - El estado vacío distingue «sin registros para estos filtros» de «sin importaciones confirmadas»;
   ninguno afirma ausencia de vulnerabilidades ni riesgo bajo.
-- El detalle recalculado se etiqueta como **«Consulta actual»**; no reemplaza el resumen histórico.
+- El detalle recalculado se etiqueta como **«Consulta actual»**, indica la instantánea utilizada y
+  usa el `snapshot_id` persistido en el resumen; no resuelve de nuevo «la última» ni reemplaza el
+  resumen histórico.
 
 ## Errores y estados
 

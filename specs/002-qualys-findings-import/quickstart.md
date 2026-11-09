@@ -99,6 +99,10 @@ Con `qualys_synthetic_mixed.csv`:
 - Vacío o estructura no reconocida: indeterminado; no se presenta como positivo.
 - Un `Fixed` con ambos indicadores positivos se muestra como antecedente prioritario reportado, no
   como remediación pendiente.
+- `manual_review_rows` se muestra como «Registros que requieren revisión de estado o indicadores»:
+  cuenta una vez la unión de estado desconocido, explotabilidad indeterminada y malware
+  indeterminado. No es la suma de esas categorías ni cambia el grupo `manual_review`, reservado solo
+  a estados desconocidos.
 
 ## 7. Filtros y conteos
 
@@ -202,11 +206,18 @@ uv run alembic upgrade head
 ```bash
 make check
 make test-integration
+uv run pre-commit run --all-files
+make assets
 ```
 
-La suite de integración incluye SQLite temporal. La aceptación local real es una comprobación
-separada: si los archivos autorizados no existen, se registra como no ejecutada, no como aprobada.
-No debe versionar ni imprimir filas reales.
+Resultado observado en este corte: `make check` = 409 passed, 35 deselected; `make test-integration`
+= 34 passed, 1 skipped (LangSmith no configurado). `pre-commit` pasó y `make assets` fue reproducible.
+La aceptación real T039 se ejecutó localmente y aprobó: 662 registros, severidad
+1=20/2=316/3=94/4=162/5=70, explotabilidad 129 positivas/533 indeterminadas, malware 8
+positivos/654 indeterminados, 8 ambos, 179 registros con varios CVE, 10 grupos de repeticiones y 11
+filas adicionales. Las consultas reales con Ollama contrastaron total 662, severidad 5 = 70 y
+prioridad conjunta = 8 con SQLite. La suite de integración incluye SQLite temporal; la aceptación
+local real es una comprobación separada y no debe versionar ni imprimir filas reales.
 
 Además:
 
@@ -231,3 +242,6 @@ Playwright:
 - menú móvil, foco inicial/restauración, Escape, navegación por teclado, etiquetas accesibles y
   recursos locales;
 - consola sin errores y sin recursos faltantes.
+
+Capturas y detalle: `docs/evidencia/002-corte-5/`. Las capturas usan fixtures sintéticos; la
+aceptación real solo registra agregados.

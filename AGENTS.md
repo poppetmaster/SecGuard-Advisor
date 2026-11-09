@@ -22,8 +22,9 @@ confirmables, comparación de manifiesto y posibles repeticiones. La sección «
 formulario, vista previa, confirmación, cancelación, historial, selector de instantáneas, filtros por
 estado, severidad, prioridad e indicadores, y consulta de registros confirmados mediante
 `findings_query` (origen, instantánea, estado, severidad, prioridad e indicadores incluidos). La
-primera consulta de un turno fija el snapshot y las posteriores lo reutilizan. La aceptación integral
-T039 sigue pendiente.
+primera consulta de un turno fija el snapshot y las posteriores lo reutilizan. El corte final añade
+privacidad de payloads, evidencia histórica sobre el snapshot persistido, separación del RAG y
+aceptación real local con el CSV filtrado y Ollama. SC-001, SC-003 y la CI remota no se ejecutaron.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -128,6 +129,15 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   importados exigen `origin=imported`. La UI conserva la instantánea seleccionada y los parámetros en
   la URL, muestra filtros activos y distingue «Sin importaciones confirmadas» de «Sin registros para
   estos filtros».
+- `manual_review_rows` cuenta una vez los registros con estado desconocido, explotabilidad
+  indeterminada o malware indeterminado. Se presenta como «Registros que requieren revisión de estado
+  o indicadores»; no se suma con las distribuciones y no convierte un estado Active/New/Re-Opened/
+  Fixed en revisión manual.
+- La evidencia histórica recalcula el detalle solo sobre el `snapshot_id` del resumen persistido y
+  conserva los filtros originales; muestra la instantánea usada y «Consulta actual» sin sustituir el
+  resumen. La importación no crea documentos, fragmentos, vectores ni citas del RAG. Las trazas
+  externas envían metadatos acotados y nunca pregunta, prompts, documentos, argumentos, resultados de
+  fila, claves ni rutas locales; `Results` completo no llega al modelo ni a la interfaz.
 - La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
   Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y
   la decisión también se mide con el tokenizador del generador.

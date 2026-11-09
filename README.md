@@ -44,11 +44,15 @@ US6 (evidencia de ejecución, límites y trazas). La aceptación local está doc
 SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
 ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
 
-**Funcionalidad 002 — US1–US3 implementadas.** El módulo `vulnerabilities` incorpora lectura y
-validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots confirmables,
-formulario, vista previa, confirmación, cancelación, historial y selector de instantáneas, filtros
-avanzados y consulta mediante `findings_query` (origen, instantánea, estado, severidad, prioridad e
-indicadores). La instantánea se fija por turno. La aceptación integral T039 sigue pendiente.
+**Funcionalidad 002 — US1–US3 y corte final validados localmente.** El módulo `vulnerabilities`
+incorpora lectura y validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots
+confirmables, formulario, vista previa, confirmación, cancelación, historial y selector de
+instantáneas, filtros avanzados y consulta mediante `findings_query` (origen, instantánea, estado,
+severidad, prioridad e indicadores). La instantánea se fija por turno. El corte final añade pruebas
+de privacidad, evidencia histórica sobre el snapshot persistido, separación del RAG y aceptación real
+local con el CSV filtrado y Ollama. `make check` = 409 passed; `make test-integration` = 34 passed y
+1 skipped (LangSmith no configurado). SC-001, SC-003 y la CI remota no se ejecutaron y no se
+presentan como aprobadas.
 
 ### Implementado
 
@@ -83,18 +87,17 @@ indicadores). La instantánea se fija por turno. La aceptación integral T039 si
 - **002 (US1–US3): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
   staging/rechazo, snapshots confirmables, manifiesto, repeticiones, sección «Vulnerabilidades» con
   formulario/preview/confirmación/cancelación, historial, selector de instantáneas y filtros
-  avanzados por estado, severidad, prioridad e indicadores, y consulta importada en `findings_query`
-  con instantánea fija por turno.**
+  avanzados por estado, severidad, prioridad e indicadores, consulta importada en `findings_query`
+  con instantánea fija por turno, privacidad de payloads, evidencia histórica y separación del RAG.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Resto de la funcionalidad 002: filtros avanzados, evidencia histórica frente a detalle actual y
-  aceptación integral T039.
-- Incrementos posteriores (clasificación, entrenamiento o exportaciones) fuera del alcance
-  autorizado del primer incremento.
+- Incremento 3 y funcionalidades posteriores (clasificación, entrenamiento, exportaciones o
+  conectores), fuera del alcance autorizado de este corte.
+- Validaciones humanas SC-001/SC-003 y CI remota, no ejecutadas en este entorno.
 
 El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
 [las tareas](specs/001-consulta-documental/tasks.md).
@@ -113,10 +116,11 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
    invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
    validaciones recomendadas y no bloqueantes, no ejecutadas.
-7. **Implementado (US1–US3):** sección «Vulnerabilidades» con carga del CSV Qualys, validación,
-   vista previa, confirmación, cancelación, historial, selector de instantáneas, filtros por estado,
-   severidad, prioridad e indicadores, y consulta mediante `findings_query` con instantánea fija por
-   turno.
+7. **Implementado (US1–US3 y corte final):** sección «Vulnerabilidades» con carga del CSV Qualys,
+   validación, vista previa, confirmación, cancelación, historial, selector de instantáneas, filtros
+   por estado, severidad, prioridad e indicadores, y consulta mediante `findings_query` con
+   instantánea fija por turno. La aceptación real local, la privacidad con señuelos, la evidencia
+   histórica y la verificación de no-RAG están ejecutadas; SC-001, SC-003 y la CI remota no.
 
 La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso, la
 herramienta de hallazgos y la evidencia de ejecución con trazas están implementadas. La confirmación
@@ -341,10 +345,25 @@ reproducibles en la URL, muestra los filtros activos y nunca cambia en silencio 
 instantánea. Los estados vacíos distinguen «Sin importaciones confirmadas» de «Sin registros para
 estos filtros»; ninguno afirma ausencia de vulnerabilidades ni riesgo bajo.
 
+El agregado `manual_review_rows` se presenta como «Registros que requieren revisión de estado o
+indicadores»: cuenta una vez los registros con estado desconocido, explotabilidad indeterminada o
+malware indeterminado. No es la suma de esas categorías y no cambia el grupo `manual_review`, que
+sigue reservado a estados desconocidos.
+
+La evidencia de ejecución conserva el resumen histórico y recalcula el detalle sobre el `snapshot_id`
+registrado, no sobre «la última»; muestra la instantánea utilizada y la etiqueta «Consulta actual».
+La importación no crea documentos, fragmentos, vectores ni citas del RAG. Las pruebas de privacidad
+inspeccionan trazas, prompts, callbacks, memoria, errores y HTML con señuelos sintéticos; no usan
+`LANGSMITH_TRACING=false` como única prueba.
+
 El CSV real se usa solo en comprobaciones locales con almacenamiento temporal; no se versiona ni se
-envía a servicios externos. La aceptación integral T039 sigue pendiente. Capturas sintéticas de la UI:
-[`docs/evidencia/002-corte-2/`](docs/evidencia/002-corte-2/) y
-[`docs/evidencia/002-corte-3/`](docs/evidencia/002-corte-3/).
+envía a servicios externos. La aceptación real T039 se ejecutó localmente: 662 registros, 631 Active,
+10 New, 21 Re-Opened, severidades 1=20/2=316/3=94/4=162/5=70, explotabilidad 129 positivas y 533
+indeterminadas, malware 8 positivos y 654 indeterminados, 8 ambos positivos, 179 registros con varios
+CVE, 10 grupos de posibles repeticiones y 11 filas adicionales. Capturas sintéticas de la UI:
+[`docs/evidencia/002-corte-2/`](docs/evidencia/002-corte-2/),
+[`docs/evidencia/002-corte-3/`](docs/evidencia/002-corte-3/) y
+[`docs/evidencia/002-corte-5/`](docs/evidencia/002-corte-5/).
 
 ### Evidencia de ejecución y trazas
 
@@ -405,9 +424,9 @@ Estado actual: la base cubre configuración, motor y esquema, alcance, arranque,
 seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
 embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, la
 herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia) y
-la evidencia de ejecución con límites, trazas y redacción de secretos, y la US1 de Qualys
-(lector, políticas, validación, staging, formulario, rutas, manifiesto, repeticiones y consulta
-básica). `make test` incluye la aceptación
+la evidencia de ejecución con límites, trazas y redacción de secretos, y la funcionalidad 002
+(lector, políticas, validación, staging, formulario, rutas, manifiesto, repeticiones, filtros,
+privacidad, evidencia histórica y no-RAG). `make test` incluye la aceptación
 con dobles; la probe del CSV real está marcada como integración y se omite si los archivos externos no
 están disponibles. `make test-integration` ejecuta la aceptación real con Ollama, corpus y herramienta,
 además de las integraciones existentes; no es necesaria para la suite rápida. La confirmación de traza
@@ -416,8 +435,8 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 394 pruebas rápidas
-make test-integration # 29 pruebas de integración, incluida la aceptación, la traza y la probe Qualys
+make check            # lint, formato y 409 pruebas rápidas
+make test-integration # 34 pruebas de integración y 1 skipped (LangSmith no configurado)
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000
 ```
@@ -496,8 +515,9 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   `docs/evidencia/demo-001.md`.
 - `submitted` significa «envío sin error observado», no «traza verificada». La confirmación por API de
   lectura se ejecutó y quedó registrada con la identidad declarada de prueba; no es autenticación.
-- El detalle de herramienta no se persiste; cuando la página lo recalcula, se identifica como
-  consulta actual. Los conteos sí son históricos.
+- El detalle de herramienta no se persiste; cuando la página lo recalcula usa el `snapshot_id`
+  histórico, conserva los filtros, indica la instantánea utilizada y se identifica como «Consulta
+  actual». Los conteos sí son históricos.
 - La selección de herramienta usa una llamada estructurada adicional (`ToolDecision`) porque Ollama
   no emite `tool_calls` nativos junto con `format`; cuesta una llamada corta al modelo por turno y se
   mide con el mismo tokenizador antes de ejecutarse.
