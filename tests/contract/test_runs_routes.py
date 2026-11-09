@@ -80,7 +80,7 @@ def test_documentary_run_shows_model_steps_sources_and_both_controls(tmp_path: P
     html = page.text
     assert "Modelo y configuración" in html
     assert "fake-generator" in html
-    assert "chat-v6" in html
+    assert "chat-v7" in html
     assert "Pasos" in html
     assert "Generación" in html
     assert "Control automático de citas" in html
@@ -117,7 +117,8 @@ def test_tool_run_separates_historical_summary_from_current_detail(tmp_path: Pat
     html = page.text
     assert "findings_query" in html
     assert "Datos educativos sintéticos" in html
-    assert "consulta actual al caso, no el detalle original" in html
+    assert "Consulta actual:" in html
+    assert "detalle recalculado al abrir esta página" in html
     assert "api-gateway" in html
     assert "Sin citas documentales" in html
     assert "respuesta se respalda con el resultado estructurado" in html

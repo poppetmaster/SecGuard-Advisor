@@ -192,6 +192,37 @@ def serialize_sources(session: Session, run_id: str) -> list[dict]:
     return sources
 
 
+def _summary_snapshot(summary: dict | None) -> dict | None:
+    """Instantánea conservada en el resumen, con o sin bloques por origen."""
+    if not summary:
+        return None
+    snapshot = summary.get("snapshot")
+    if isinstance(snapshot, dict) and snapshot.get("id"):
+        return snapshot
+    for block in summary.get("origins") or ():
+        if not isinstance(block, dict):
+            continue
+        snapshot = block.get("snapshot")
+        if isinstance(snapshot, dict) and snapshot.get("id"):
+            return snapshot
+    return None
+
+
+def _detail_arguments(arguments: dict, snapshot: dict | None) -> dict:
+    """Reutiliza los filtros originales y fija la instantánea registrada.
+
+    Sin `snapshot_id`, la consulta actual volvería a resolver «la última» y
+    falsearía el detalle histórico. La instantánea del resumen manda.
+    """
+    detail_arguments = dict(arguments)
+    if snapshot is None:
+        return detail_arguments
+    detail_arguments["snapshot_id"] = snapshot["id"]
+    if detail_arguments.get("origin") in {None, "all"}:
+        detail_arguments["origin"] = "imported"
+    return detail_arguments
+
+
 def serialize_tool_calls(
     session: Session,
     run_id: str,
@@ -217,10 +248,14 @@ def serialize_tool_calls(
         detail_items = None
         detail_error = None
         detail_source = None
+        detail_snapshot = _summary_snapshot(summary)
         if summary and arguments.get("detail") and factory is not None and scope is not None:
             detail_source = "current_query"
+            detail_arguments = _detail_arguments(arguments, detail_snapshot)
             try:
-                detail_items = FindingsQuery(factory, scope).execute(arguments).get("items", [])
+                detail_items = (
+                    FindingsQuery(factory, scope).execute(detail_arguments).get("items", [])
+                )
             except Exception:
                 detail_error = "No se pudo recalcular el detalle de la consulta."
         views.append(
@@ -234,8 +269,11 @@ def serialize_tool_calls(
                 "summary": summary,
                 "detail_items": detail_items,
                 "detail_source": detail_source,
+                "detail_snapshot": detail_snapshot,
                 "detail_error": detail_error,
-                "is_synthetic": True,
+                "is_synthetic": bool(
+                    summary and isinstance(summary.get("dataset"), dict) and summary["dataset"]
+                ),
             }
         )
     return views

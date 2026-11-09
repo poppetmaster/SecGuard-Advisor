@@ -10,7 +10,12 @@
     </p>
     {% if summary.warning_rows or summary.manual_review_rows %}
     <p class="mt-1 text-xs text-amber-800">
-      {{ summary.warning_rows }} advertencias · {{ summary.manual_review_rows }} en revisión manual
+      {{ summary.warning_rows }} advertencias ·
+      {{ summary.manual_review_rows }} registros requieren revisión de estado o indicadores
+    </p>
+    <p class="mt-1 text-xs text-slate-600">
+      Incluye estado desconocido, explotabilidad indeterminada o malware indeterminado.
+      Cada registro se cuenta una vez; no se suman las categorías solapadas.
     </p>
     {% endif %}
   </div>

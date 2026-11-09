@@ -282,6 +282,7 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
 
 def _tool_summary(result: dict) -> dict:
     summary = {
+        "origin": result.get("origin"),
         "total": result.get("total", 0),
         "truncated": result.get("truncated", False),
         "items_count": len(result.get("items", [])),
@@ -296,6 +297,7 @@ def _tool_summary(result: dict) -> dict:
         "severity_counts",
         "exploitability_counts",
         "malware_counts",
+        "manual_review_rows",
         "severity_scale",
         "priority_counts",
         "empty_reason",

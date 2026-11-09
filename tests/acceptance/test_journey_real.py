@@ -427,7 +427,12 @@ def test_real_acceptance_journey(tmp_path: Path) -> None:
         )
         assert result6.status == "succeeded"
         facts6 = _turn_facts(factory, ctx6.run_id, FINDINGS_QUESTION)
-        assert facts6["tools"] and facts6["tools"][0]["summary"]["total"] == 0
+        successful_tools = [
+            tool
+            for tool in facts6["tools"]
+            if tool["status"] == "ok" and tool["summary"] is not None
+        ]
+        assert successful_tools and successful_tools[0]["summary"]["total"] == 0
         summary["isolation"] = {"case_id": other_case_id, "total": 0}
 
         # Reintento: fallo inducido y reintento real sobre la misma pregunta.

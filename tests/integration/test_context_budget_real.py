@@ -155,7 +155,9 @@ def test_the_byte_estimate_is_not_an_admission_control(tmp_path: Path) -> None:
     settings = _settings(tmp_path)
     counter = load_prompt_counter(settings.ollama_model)
     rng = random.Random(11)
-    payload = base64.b64encode(bytes(rng.randrange(256) for _ in range(1200))).decode()
+    # El prompt fijo creció con las reglas de Qualys; el payload debe dominar
+    # la comparación para seguir probando la subestimación de Base64.
+    payload = base64.b64encode(bytes(rng.randrange(256) for _ in range(1800))).decode()
 
     from secguard_advisor.retrieval.search import RetrievedChunk
 

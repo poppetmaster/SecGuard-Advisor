@@ -483,3 +483,30 @@ def test_fixed_with_both_indicators_is_shown_as_antecedent(client) -> None:
     assert "Synthetic fixed" in fixed.text
     assert "Prioritaria: explotabilidad y malware" in fixed.text
     assert "Antecedente prioritario; no es remediación pendiente." in fixed.text
+
+
+def test_manual_review_aggregate_is_explained_and_not_summed(client) -> None:
+    case_id = _create_case(client)
+    _upload(
+        client,
+        case_id,
+        "valid.csv",
+        (FIXTURES / "qualys_synthetic_valid.csv").read_bytes(),
+    )
+    import_id = _records(client, case_id)[0].id
+    client.post(
+        f"/cases/{case_id}/vulnerabilities/imports/{import_id}/confirm",
+        headers=HTMX,
+    )
+
+    page = client.get(f"/cases/{case_id}/vulnerabilities")
+    assert page.status_code == 200
+    assert "3 registros requieren revisión de estado o indicadores" in page.text
+    assert (
+        "Incluye estado desconocido, explotabilidad indeterminada o malware indeterminado"
+        in page.text
+    )
+    assert "Cada registro se cuenta una vez" in page.text
+    assert "Estados" in page.text
+    assert "UnknownState" in page.text
+    assert "Explotabilidad" in page.text and "Malware" in page.text

@@ -36,6 +36,20 @@
       <span class="font-semibold">Total:</span>
       <span class="font-mono">{{ call.summary.total }}</span> registro{{ "" if call.summary.total == 1 else "s" }}
     </p>
+    {% if call.summary.manual_review_rows is not none %}
+    <p class="mt-1 text-xs text-slate-600">
+      Registros que requieren revisión de estado o indicadores:
+      <span class="font-mono">{{ call.summary.manual_review_rows }}</span>.
+      Incluye estado desconocido, explotabilidad indeterminada o malware indeterminado;
+      cada registro se cuenta una vez.
+    </p>
+    {% endif %}
+    {% if call.summary.priority_counts %}
+    <p class="mt-1 text-xs text-slate-600">
+      Ambos positivos (explotabilidad y malware):
+      <span class="font-mono">{{ call.summary.priority_counts.both_positive }}</span>.
+    </p>
+    {% endif %}
 
     {% if call.summary.origins %}
     <div class="mt-2 space-y-2">
@@ -87,9 +101,16 @@
     {% endif %}
     {% if call.detail_source == "current_query" %}
     <p class="mt-2 rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
-      Detalle recalculado al abrir esta página: es una consulta actual al caso, no el detalle original
-      preservado. Los totales y grupos de arriba sí son el resultado histórico registrado.
+      <span class="font-semibold">Consulta actual:</span> detalle recalculado al abrir esta página
+      sobre la instantánea histórica indicada, no el detalle original preservado. Los totales y
+      grupos de arriba sí son el resultado histórico registrado.
     </p>
+    {% if call.detail_snapshot %}
+    <p class="mt-1 text-xs text-slate-600">
+      Instantánea utilizada: <span class="font-mono">#{{ call.detail_snapshot.sequence }}</span>
+      {% if call.detail_snapshot.id %}· <span class="font-mono">{{ call.detail_snapshot.id[:12] }}…</span>{% endif %}
+    </p>
+    {% endif %}
     {% endif %}
     {% if call.detail_error %}
     <p class="mt-2 text-xs text-slate-600">{{ call.detail_error }}</p>

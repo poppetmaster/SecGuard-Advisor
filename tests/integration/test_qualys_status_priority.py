@@ -100,3 +100,42 @@ def test_fixed_with_both_indicators_is_context_not_remediation(tmp_path: Path) -
     assert item["priority"] is True
     assert item["priority_reason"] == "Explotabilidad positiva y malware positivo"
     engine.dispose()
+
+
+def test_manual_review_rows_are_unique_union_not_sum(tmp_path: Path) -> None:
+    _factory, query, engine = _query(tmp_path, "qualys_synthetic_valid.csv")
+    all_rows = query.execute({"origin": "imported", "status_group": "all"})
+    assert all_rows["total"] == 5
+    assert all_rows["status_counts"] == {
+        "Active": 1,
+        "New": 1,
+        "Re-Opened": 1,
+        "Fixed": 1,
+        "UnknownState": 1,
+    }
+    assert all_rows["exploitability_counts"] == {"positive": 3, "indeterminate": 2}
+    assert all_rows["malware_counts"] == {
+        "positive": 2,
+        "negative_no_info": 1,
+        "indeterminate": 2,
+    }
+    # Filas 3, 4 y 5: la unión es 3, no la suma 1 + 2 + 2.
+    assert all_rows["manual_review_rows"] == 3
+    assert query.execute({"origin": "imported", "status_group": "manual_review"})["total"] == 1
+    assert (
+        query.execute(
+            {
+                "origin": "imported",
+                "status_group": "all",
+                "exploitability": "indeterminate",
+            }
+        )["total"]
+        == 2
+    )
+    assert (
+        query.execute({"origin": "imported", "status_group": "all", "malware": "indeterminate"})[
+            "total"
+        ]
+        == 2
+    )
+    engine.dispose()
