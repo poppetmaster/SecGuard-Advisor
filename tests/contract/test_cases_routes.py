@@ -62,6 +62,13 @@ def test_new_form(client) -> None:
     assert response.status_code == 200
     assert 'name="title"' in response.text
     assert 'name="assets"' in response.text
+    assert "Nombre del caso" in response.text
+    assert "Objetivo y contexto" in response.text
+    assert "Alcance del análisis" in response.text
+    assert "Información y datos involucrados" in response.text
+    assert "Aplicación de IA analizada" not in response.text
+    assert "los procesos, servicios, infraestructura, sistemas o aplicaciones" in response.text
+    assert "No es necesario que exista una aplicación de IA." in response.text
 
 
 def test_create_redirects_and_detail(client) -> None:
@@ -74,20 +81,70 @@ def test_create_redirects_and_detail(client) -> None:
     detail = client.get(location)
     assert detail.status_code == 200
     assert "Evaluación de un asistente" in detail.text
+    assert "Objetivo y contexto" in detail.text
     assert "Contexto educativo sintético" in detail.text
+    assert "Alcance del análisis" in detail.text
+    assert "Asistente interno" in detail.text
+    assert "Información y datos involucrados" in detail.text
     assert "api-gateway" in detail.text
     assert "portal" in detail.text
     assert "Escenario educativo sintético" in detail.text
+    assert "Aplicación de IA analizada" not in detail.text
 
     listing = client.get("/cases")
     assert "Evaluación de un asistente" in listing.text
+
+
+def test_create_general_case_without_ai_application(client) -> None:
+    response = _create(
+        client,
+        title="Análisis de ciberseguridad empresarial",
+        description="Revisión del acceso remoto y la gestión de vulnerabilidades.",
+        ai_application="",
+        data_processed="",
+    )
+
+    assert response.status_code == 303
+    detail = client.get(response.headers["location"])
+
+    assert detail.status_code == 200
+    assert "Análisis de ciberseguridad empresarial" in detail.text
+    assert "Alcance del análisis" in detail.text
+    assert "Desconocido" in detail.text
+
+
+def test_existing_ai_content_is_preserved_as_scope(client) -> None:
+    response = _create(
+        client,
+        title="Evaluación de un asistente de IA",
+        ai_application="Asistente interno de consulta documental",
+    )
+
+    detail = client.get(response.headers["location"])
+
+    assert "Asistente interno de consulta documental" in detail.text
+    assert "Alcance del análisis" in detail.text
+
+
+def test_form_values_survive_validation_errors(client) -> None:
+    response = _create(
+        client,
+        title="Caso conservado",
+        ai_application="Infraestructura y acceso remoto",
+        assets="x" * 121,
+    )
+
+    assert response.status_code == 422
+    assert "Caso conservado" in response.text
+    assert "Infraestructura y acceso remoto" in response.text
+    assert "120 caracteres" in response.text
 
 
 def test_title_is_required(client) -> None:
     response = _create(client, title="   ")
 
     assert response.status_code == 422
-    assert "El título es obligatorio." in response.text
+    assert "El nombre del caso es obligatorio." in response.text
     assert "Todavía no hay casos" in client.get("/cases").text
 
 

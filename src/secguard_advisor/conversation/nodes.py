@@ -259,6 +259,7 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
         settings=context.deps.settings,
         counter=context.deps.token_counter,
         tool_results=state.get("tool_results", ()),
+        case_context=context.case_context,
     )
     timeout = _model_timeout(context)
     tracer = tracer_of(config)
@@ -755,6 +756,7 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
         settings=context.deps.settings,
         counter=context.deps.token_counter,
         repair_reasons=reasons,
+        case_context=context.case_context,
     )
     timeout = _model_timeout(context)
     tracer = tracer_of(config)

@@ -145,9 +145,11 @@ def test_missing_digest_is_not_invented(monkeypatch) -> None:
 
 
 def test_prompt_version_and_rules() -> None:
-    assert PROMPT_VERSION == "chat-v7"
+    assert PROMPT_VERSION == "chat-v8"
     folded = SYSTEM_PROMPT.casefold()
     for rule in (
+        "ciberseguridad empresarial",
+        "suponés que el caso involucra ia",
         "cita literal",
         "missing_info",
         "parafrasear",
@@ -185,6 +187,38 @@ def test_user_prompt_lists_sources_with_ids() -> None:
     assert "a" * 32 in prompt
     assert "página 12" in prompt
     assert "Texto del fragmento" in prompt
+
+
+def test_case_context_is_presented_as_scope_not_evidence() -> None:
+    prompt = build_user_prompt(
+        "¿Qué controles aplican?",
+        (),
+        case_context={
+            "title": "Análisis de ciberseguridad empresarial",
+            "objective": "Revisar el acceso remoto.",
+            "analysis_scope": "Infraestructura tecnológica y gestión de vulnerabilidades.",
+            "data_involved": None,
+            "restrictions": "Sin acceso a producción.",
+        },
+    )
+
+    assert "Contexto declarado del caso" in prompt
+    assert "no es evidencia documental y no se cita" in prompt
+    assert "Nombre del caso: Análisis de ciberseguridad empresarial" in prompt
+    assert (
+        "Alcance del análisis: Infraestructura tecnológica y gestión de vulnerabilidades." in prompt
+    )
+    assert "Información y datos involucrados" not in prompt
+    assert "Restricciones conocidas: Sin acceso a producción." in prompt
+    assert "aplicación de IA" not in prompt.casefold()
+
+
+def test_case_context_without_values_adds_nothing() -> None:
+    expected = build_user_prompt("¿Qué controles aplican?", ())
+
+    assert build_user_prompt("¿Qué controles aplican?", (), case_context=None) == expected
+    assert build_user_prompt("¿Qué controles aplican?", (), case_context={}) == expected
+    assert "Contexto declarado del caso" not in expected
 
 
 def test_observed_usage_is_recorded(monkeypatch) -> None:

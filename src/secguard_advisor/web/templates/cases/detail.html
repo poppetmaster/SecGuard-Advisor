@@ -10,19 +10,19 @@
 
 <dl class="mt-6 grid gap-5 md:grid-cols-2">
   <div>
-    <dt class="text-sm font-medium text-slate-600">Descripción</dt>
+    <dt class="text-sm font-medium text-slate-600">Objetivo y contexto</dt>
     <dd class="mt-1 whitespace-pre-line break-words text-slate-900">
       {% if case.description %}{{ case.description }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
     </dd>
   </div>
   <div>
-    <dt class="text-sm font-medium text-slate-600">Aplicación de IA analizada</dt>
+    <dt class="text-sm font-medium text-slate-600">Alcance del análisis</dt>
     <dd class="mt-1 whitespace-pre-line break-words text-slate-900">
       {% if case.ai_application %}{{ case.ai_application }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
     </dd>
   </div>
   <div>
-    <dt class="text-sm font-medium text-slate-600">Datos tratados</dt>
+    <dt class="text-sm font-medium text-slate-600">Información y datos involucrados</dt>
     <dd class="mt-1 whitespace-pre-line break-words text-slate-900">
       {% if case.data_processed %}{{ case.data_processed }}{% else %}<span class="text-slate-500">Desconocido</span>{% endif %}
     </dd>

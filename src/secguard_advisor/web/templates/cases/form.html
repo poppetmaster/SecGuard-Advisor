@@ -8,7 +8,7 @@
   class="space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
 >
   <div>
-    <label class="block text-sm font-medium text-slate-800" for="title">Título *</label>
+    <label class="block text-sm font-medium text-slate-800" for="title">Nombre del caso *</label>
     <input
       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       id="title"
@@ -24,33 +24,42 @@
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-slate-800" for="description">Descripción</label>
+    <label class="block text-sm font-medium text-slate-800" for="description">Objetivo y contexto</label>
     <textarea
       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       id="description"
       name="description"
       rows="3"
     >{{ values.get('description', '') }}</textarea>
+    <p class="mt-1 text-xs text-slate-500">Qué se quiere analizar y por qué. Es opcional.</p>
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-slate-800" for="ai_application">Aplicación de IA analizada</label>
+    <label class="block text-sm font-medium text-slate-800" for="ai_application">Alcance del análisis</label>
     <textarea
       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       id="ai_application"
       name="ai_application"
       rows="2"
+      placeholder="Infraestructura tecnológica, acceso remoto y gestión de vulnerabilidades."
     >{{ values.get('ai_application', '') }}</textarea>
+    <p class="mt-1 text-xs text-slate-500">
+      Indica los procesos, servicios, infraestructura, sistemas o aplicaciones incluidos en este
+      caso. No es necesario que exista una aplicación de IA.
+    </p>
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-slate-800" for="data_processed">Datos tratados</label>
+    <label class="block text-sm font-medium text-slate-800" for="data_processed">Información y datos involucrados</label>
     <textarea
       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       id="data_processed"
       name="data_processed"
       rows="2"
     >{{ values.get('data_processed', '') }}</textarea>
+    <p class="mt-1 text-xs text-slate-500">
+      Información que se procesa o se quiere proteger. Si no se conoce, queda como desconocida.
+    </p>
   </div>
 
   <div>
@@ -76,6 +85,9 @@
       name="restrictions"
       rows="2"
     >{{ values.get('restrictions', '') }}</textarea>
+    <p class="mt-1 text-xs text-slate-500">
+      Limitaciones de acceso, tiempo, normativa o datos disponibles para el análisis.
+    </p>
   </div>
 
   <div class="flex items-center gap-3">

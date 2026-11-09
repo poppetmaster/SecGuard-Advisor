@@ -9,6 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from secguard_advisor.cases.scope import CaseScope
+from secguard_advisor.cases.service import case_context as build_case_context
+from secguard_advisor.cases.service import get_case
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.context import TurnContext, TurnDependencies
 from secguard_advisor.conversation.prompts import PROMPT_VERSION
@@ -79,6 +81,7 @@ def start_retry_turn(
         original = session.get(Run, plan.run_id)
         if original is None or original.case_id != scope.case_id:
             raise RunNotFound(plan.run_id)
+        case = get_case(session, scope)
         try:
             run = create_run(
                 session,
@@ -117,4 +120,5 @@ def start_retry_turn(
             question=plan.question,
             started_perf=time.perf_counter(),
             started_at=utc_now_iso(),
+            case_context=build_case_context(case),
         )

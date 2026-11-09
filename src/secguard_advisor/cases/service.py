@@ -48,6 +48,21 @@ def list_assets(session: Session, case_id: str) -> list[Asset]:
     )
 
 
+def case_context(case: Case) -> dict[str, str | None]:
+    """Contexto de alcance para el agente; ``ai_application`` es el nombre histórico.
+
+    La columna ``ai_application`` se conserva por compatibilidad y ahora almacena el
+    alcance del análisis, sin exigir que exista una aplicación de IA.
+    """
+    return {
+        "title": case.title,
+        "objective": case.description,
+        "analysis_scope": case.ai_application,
+        "data_involved": case.data_processed,
+        "restrictions": case.restrictions,
+    }
+
+
 def display_value(value: str | None) -> str:
     """Representa un campo vacío como desconocido."""
     if value is None or not value.strip():

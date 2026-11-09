@@ -48,9 +48,9 @@ class CaseInput:
 
         clean_title = (title or "").strip()
         if not clean_title:
-            errors["title"] = "El título es obligatorio."
+            errors["title"] = "El nombre del caso es obligatorio."
         elif len(clean_title) > MAX_TITLE:
-            errors["title"] = f"El título no puede superar los {MAX_TITLE} caracteres."
+            errors["title"] = f"El nombre del caso no puede superar los {MAX_TITLE} caracteres."
 
         names: list[str] = []
         seen: set[str] = set()

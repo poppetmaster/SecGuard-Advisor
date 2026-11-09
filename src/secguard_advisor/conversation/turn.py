@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session, sessionmaker
 
 from secguard_advisor.cases.scope import CaseScope
+from secguard_advisor.cases.service import case_context as build_case_context
+from secguard_advisor.cases.service import get_case
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation import service
 from secguard_advisor.conversation.budget import (
@@ -58,6 +60,7 @@ def start_question_turn(
     """Crea conversación, pregunta y ejecución en una transacción corta."""
     with factory() as session:
         conversation = service.get_or_create_conversation(session, scope.case_id)
+        case = get_case(session, scope)
         message = service.create_question_message(session, conversation.id, question)
 
         try:
@@ -98,6 +101,7 @@ def start_question_turn(
             question=question,
             started_perf=time.perf_counter(),
             started_at=utc_now_iso(),
+            case_context=build_case_context(case),
         )
 
 

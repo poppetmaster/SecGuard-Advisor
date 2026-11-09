@@ -35,3 +35,4 @@ class TurnContext:
     question: str
     started_perf: float
     started_at: str
+    case_context: dict[str, str | None] | None = None

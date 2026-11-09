@@ -12,6 +12,7 @@ from secguard_advisor.cases.schemas import (
 )
 from secguard_advisor.cases.scope import CaseNotFoundError, resolve_case_scope
 from secguard_advisor.cases.service import (
+    case_context,
     create_case,
     display_value,
     get_case,
@@ -91,6 +92,57 @@ def test_create_case_persists_context_and_assets(session) -> None:
         "api-gateway",
         "portal",
     ]
+
+
+def test_general_case_without_ai_application(session) -> None:
+    data = CaseInput.from_form(
+        title="Análisis de ciberseguridad empresarial",
+        description="Revisión del acceso remoto y la gestión de vulnerabilidades.",
+        ai_application="Infraestructura tecnológica y acceso remoto",
+        data_processed="",
+        restrictions="",
+        assets="vpn\nservidor-de-gestión",
+    )
+
+    case = create_case(session, data)
+    session.commit()
+    context = case_context(case)
+
+    assert case.ai_application == "Infraestructura tecnológica y acceso remoto"
+    assert context["objective"] == case.description
+    assert context["analysis_scope"] == case.ai_application
+    assert context["data_involved"] is None
+    assert context["restrictions"] is None
+    assert sorted(asset.name for asset in list_assets(session, case.id)) == [
+        "servidor-de-gestión",
+        "vpn",
+    ]
+
+
+def test_existing_ai_scope_content_is_preserved(session) -> None:
+    data = CaseInput.from_form(
+        title="Evaluación de un asistente de IA",
+        ai_application="Asistente interno de consulta documental",
+    )
+
+    case = create_case(session, data)
+    session.commit()
+
+    assert case.ai_application == "Asistente interno de consulta documental"
+    assert case_context(case)["analysis_scope"] == "Asistente interno de consulta documental"
+
+
+def test_case_context_reports_unknown_fields_as_none(session) -> None:
+    case = create_case(session, CaseInput.from_form(title="Caso mínimo"))
+    session.commit()
+
+    assert case_context(case) == {
+        "title": "Caso mínimo",
+        "objective": None,
+        "analysis_scope": None,
+        "data_involved": None,
+        "restrictions": None,
+    }
 
 
 def test_list_and_get_case(session) -> None:

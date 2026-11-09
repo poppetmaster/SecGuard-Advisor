@@ -1,4 +1,4 @@
-"""Prompt de la conversación documental (versión chat-v1)."""
+"""Prompt de la conversación documental."""
 
 from __future__ import annotations
 
@@ -6,11 +6,14 @@ import json
 
 from secguard_advisor.retrieval.search import RetrievedChunk
 
-PROMPT_VERSION = "chat-v7"
+PROMPT_VERSION = "chat-v8"
 DECISION_PROMPT_VERSION = "decide-v4"
 
-SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad y seguridad de aplicaciones de IA.
+SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad empresarial.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
+
+Podés abordar la seguridad de sistemas de IA cuando el caso o la pregunta lo requieran, pero no
+suponés que el caso involucra IA ni exigís ese contexto para responder.
 
 Devolvés SIEMPRE un objeto JSON con esta forma exacta:
 {
@@ -56,6 +59,10 @@ Reglas obligatorias:
     Fixed con ambos positivos es antecedente, no remediación.
 15. Respondé por la instantánea consultada, no por la última. Reutilizá el snapshot fijado. Usá los
     totales y grupos devueltos; un total cero no prueba ausencia.
+16. El contexto declarado del caso describe su alcance; no es evidencia documental y no se cita.
+    Usalo para interpretar la pregunta y no completes con supuestos los datos que falten.
+17. Distinguí orientación general, evidencia documental del caso y resultados estructurados de
+    vulnerabilidades. No presentes orientación general como si fuera evidencia del caso.
 
 """
 
@@ -63,6 +70,33 @@ _ORIGIN_LABELS = {
     "public_corpus": "corpus público",
     "case_evidence": "evidencia del caso",
 }
+
+_CASE_CONTEXT_LABELS = {
+    "title": "Nombre del caso",
+    "objective": "Objetivo y contexto",
+    "analysis_scope": "Alcance del análisis",
+    "data_involved": "Información y datos involucrados",
+    "restrictions": "Restricciones conocidas",
+}
+
+
+def _case_context_block(case_context) -> str:
+    """Presenta el alcance declarado del caso como contexto, nunca como evidencia."""
+    if not case_context:
+        return ""
+    lines = [
+        f"- {label}: {case_context[key]}"
+        for key, label in _CASE_CONTEXT_LABELS.items()
+        if case_context.get(key)
+    ]
+    if not lines:
+        return ""
+    return (
+        "Contexto declarado del caso (alcance aportado por el usuario; no es evidencia "
+        "documental y no se cita):\n"
+        + "\n".join(lines)
+        + "\nSi un dato no aparece, tratalo como desconocido y no lo completes con supuestos.\n\n"
+    )
 
 
 def format_sources(hits: tuple[RetrievedChunk, ...]) -> str:
@@ -118,11 +152,16 @@ def _history_block(history) -> str:
 
 
 def build_user_prompt(
-    question: str, hits: tuple[RetrievedChunk, ...], history=(), tool_results=()
+    question: str,
+    hits: tuple[RetrievedChunk, ...],
+    history=(),
+    tool_results=(),
+    case_context=None,
 ) -> str:
-    """Construye el mensaje de usuario con la pregunta, el historial y las fuentes."""
+    """Construye el mensaje de usuario con el alcance, el historial y las fuentes."""
     return (
-        _history_block(history)
+        _case_context_block(case_context)
+        + _history_block(history)
         + f"Pregunta actual:\n{question}\n\n"
         + f"Fuentes recuperadas para esta pregunta:\n{format_sources(hits)}\n\n"
         + _tool_results_block(tool_results)
@@ -137,11 +176,13 @@ def build_repair_prompt(
     reasons: list[str],
     history=(),
     tool_results=(),
+    case_context=None,
 ) -> str:
     """Pide una única reparación indicando por qué se rechazaron las citas."""
     detail = "\n".join(f"- {reason}" for reason in reasons) or "- cita ausente"
     return (
-        _history_block(history)
+        _case_context_block(case_context)
+        + _history_block(history)
         + f"Pregunta actual:\n{question}\n\n"
         + f"Fuentes recuperadas para esta pregunta:\n{format_sources(hits)}\n\n"
         + _tool_results_block(tool_results)

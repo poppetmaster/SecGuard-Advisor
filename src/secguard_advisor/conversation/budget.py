@@ -122,12 +122,14 @@ def plan_prompt(
     counter,
     repair_reasons: list[str] | None = None,
     tool_results=(),
+    case_context=None,
 ) -> PromptPlan:
     """Construye el prompt y lo reduce hasta que el tokenizador lo admita.
 
     Orden de reducción: primero el historial más antiguo (turnos completos) y
-    después las fuentes de menor rango. La pregunta actual y los textos de las
-    fuentes incluidas nunca se recortan. El historial persistido no se modifica.
+    después las fuentes de menor rango. La pregunta actual, el contexto declarado
+    del caso y los textos de las fuentes incluidas nunca se recortan. El historial
+    persistido no se modifica.
     """
     limit = prompt_limit(settings)
     if limit <= 0:
@@ -150,7 +152,11 @@ def plan_prompt(
     while True:
         if repair_reasons is None:
             user_prompt = build_user_prompt(
-                question, tuple(kept_hits), tuple(kept_history), tool_results
+                question,
+                tuple(kept_hits),
+                tuple(kept_history),
+                tool_results,
+                case_context,
             )
         else:
             user_prompt = build_repair_prompt(
@@ -159,6 +165,7 @@ def plan_prompt(
                 repair_reasons,
                 tuple(kept_history),
                 tool_results,
+                case_context,
             )
         try:
             admitted = counter.count(SYSTEM_PROMPT, user_prompt)

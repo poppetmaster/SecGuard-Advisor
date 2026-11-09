@@ -41,6 +41,7 @@ class Case(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
+    # Nombre histórico: almacena el alcance del análisis. Se conserva por compatibilidad.
     ai_application: Mapped[str | None] = mapped_column(Text)
     data_processed: Mapped[str | None] = mapped_column(Text)
     restrictions: Mapped[str | None] = mapped_column(Text)
