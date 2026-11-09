@@ -379,27 +379,42 @@ aprobado.
 usar un modelo auxiliar para reescribir la consulta (fuera de alcance); confiar en el checkpoint como
 fuente de verdad (una pérdida o un fallo entre bases rompería la conversación).
 
-## R24. Presupuesto de contexto previo a la generación
+## R24. Admisión de contexto con el tokenizador del generador
 
-**Decisión**: antes de cada llamada al generador —incluida la reparación de citas— se construye el
-prompt con `conversation/budget.py` y se comprueba su tamaño. La estimación es **conservadora, no
-exacta**: `ceil(bytes UTF-8 / 2,4)` más 32 tokens de envoltorio de chat y 8 por mensaje o fuente. El
-límite es `num_ctx - num_predict - 320` (8192 - 1200 - 320 = 6672).
+**Decisión**: antes de cada llamada al generador —incluida la reparación de citas— se mide el prompt
+completo con el **tokenizador del propio modelo** y no con una estimación por bytes. El vocabulario y
+las fusiones BPE se leen del GGUF ya instalado por Ollama (`~/.ollama/models`, respetando
+`OLLAMA_MODELS`); no se descargan modelos. La pre-tokenización usa la expresión regular de bytes
+presente en el binario de Ollama y se registran los tokens especiales del vocabulario. La plantilla
+reproduce el renderizador `Qwen35Renderer` de Ollama (system + user + turno de asistente con bloque de
+razonamiento vacío).
 
-**Calibración**: con `qwen3.5:9b` y el prompt de chat-v2, 5689 bytes produjeron 1537 tokens
-(3,70 bytes/token); la prueba real midió 3,8. Estimar con 2,4 deja ~54 % de holgura. El conteo de
-EmbeddingGemma medido al ingerir no se usa como tokens del generador.
+**Elementos incluidos**: instrucciones del sistema, pregunta actual, historial seleccionado, fuentes
+con título, identificador y localizador, envoltorio de la plantilla, reserva de salida
+(`num_predict=1200`) y un margen de 320 tokens para variaciones de plantilla o versión del
+renderizador. El margen **no** cubre incertidumbre del tokenizador: la medición ya usa el tokenizador
+del modelo.
+
+**Verificación**: con `qwen3.5:9b`, un prompt mínimo dio 24 tokens en el conteo y 24 en
+`prompt_eval_count`; español +1; texto técnico y Base64 quedaron 17-21 tokens **por encima** del
+observado. La admisión es por tanto conservadora en la calibración. La diferencia se registra
+(`admitted_tokens` frente a `observed_prompt_tokens`) y no se oculta.
 
 **Reducción**: primero el historial más antiguo por turnos completos; después las fuentes de menor
-rango, conservando `S1..Sk` estables. La pregunta y los textos de las fuentes incluidas no se
-recortan; el historial persistido no se modifica. Si el contenido mínimo no cabe, se lanza
-`ContextBudgetExceeded` y la ejecución termina `failed` con `context_budget_exceeded` sin invocar al
-modelo.
+rango, conservando `S1..Sk`. La pregunta y los textos incluidos no se recortan; el historial persistido
+no se modifica.
 
-El `retrieval_token_budget` de 3500 sigue como prefiltro grueso con el conteo del ingestor; no
-sustituye la comprobación previa ni se presenta como tokens de Qwen3.5.
+**Si el tokenizador no está disponible** (modelo no instalado o GGUF ilegible), la ejecución falla con
+`context_budget_unavailable` (503) sin estimar ni llamar al modelo. Si el contenido mínimo no cabe,
+falla con `context_budget_exceeded` (500) sin llamar al modelo; ambos permiten reintento.
 
-**Límites**: no es una cota matemática. Texto aleatorio o Base64 puede acercarse a 1-2 bytes/token;
-el margen y la reducción cubren esa frontera para el corpus y las evidencias previstas. Ollama
-informa `prompt_eval_count` después de cada llamada y ese valor se registra en el paso para detectar
-deriva; no se usa para decidir antes de la llamada.
+**Diagnóstico**: `estimate_tokens` (bytes/2,4) se conserva solo para observación. No decide la
+admisión: en la regresión con Base64 aleatorio subestima (1534 frente a 1753 tokens reales) y en el
+prompt real sobrestima (9670 frente a 6074). Por eso no puede presentarse como cota.
+
+**Límites**: el conteo depende del vocabulario y del renderizador de la versión instalada; una
+actualización de Ollama o del modelo exige recalibrar. La implementación de BPE de `tokenizers` puede
+diferir de la de llama.cpp: en la calibración la diferencia fue a favor de la seguridad (conteo ≥
+observado), pero no es una cota matemática para cualquier secuencia de bytes. Las dependencias
+`gguf` (lectura del GGUF instalado) y `tokenizers` (BPE) se declaran explícitamente; no hay descargas
+en tiempo de ejecución ni llamadas pagadas.

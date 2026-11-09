@@ -230,13 +230,15 @@ interpretar referencias, nunca como evidencia: las citas se validan solo contra 
 recuperados en el turno actual. La recuperación de cada pregunta se amplía con la última pregunta
 confirmada para interpretar seguimientos.
 
-Antes de cada generación —incluida la reparación de citas— se comprueba el presupuesto completo:
-instrucciones, pregunta, historial, fuentes, envoltorio, salida reservada (`num_predict=1200`) y un
-margen de 320 tokens dentro de `num_ctx=8192`. La estimación es conservadora por bytes UTF-8
-(2,4 bytes/token, calibrada contra 3,7-3,8 reales de Qwen3.5), no un conteo exacto. Si no cabe, se
-quita primero el historial más antiguo por turnos completos y después las fuentes de menor rango; la
-pregunta y los textos incluidos no se recortan y el historial persistido no se altera. Si el contenido
-mínimo no cabe, la ejecución falla con `context_budget_exceeded` sin invocar al modelo.
+Antes de cada generación —incluida la reparación de citas— se mide el prompt completo con el
+**tokenizador del propio modelo**: vocabulario y fusiones BPE leídos del GGUF instalado por Ollama, con
+la plantilla de conversación del renderizador. Se incluyen instrucciones, pregunta, historial, fuentes,
+envoltorio, la salida reservada (`num_predict=1200`) y un margen de 320 tokens para variaciones de
+plantilla. Si no cabe, se quita primero el historial más antiguo por turnos completos y después las
+fuentes de menor rango; la pregunta y los textos incluidos no se recortan y el historial persistido no
+se altera. Si el contenido mínimo no cabe, la ejecución falla con `context_budget_exceeded` sin
+invocar al modelo; si el tokenizador no está disponible, falla con `context_budget_unavailable` (503)
+en lugar de estimar.
 
 Reiniciar la aplicación no pierde mensajes confirmados ni genera respuestas: el historial se lee de
 SQLite y los reintentos reutilizan la pregunta original.

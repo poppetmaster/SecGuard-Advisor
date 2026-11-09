@@ -519,31 +519,50 @@ concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
 ### Ajuste del presupuesto de contexto (post-US4, 2026-11-08)
 
 **Causa**: el historial se limitaba por caracteres y la evidencia por `token_count` medido con
-EmbeddingGemma. No existía una comprobación del total antes de invocar a Qwen3.5, por lo que el
-presupuesto dependía de un conteo de otro modelo y del posible truncado silencioso de Ollama.
+EmbeddingGemma. No existía una comprobación del total antes de invocar a Qwen3.5. Un primer cierre usó
+`ceil(bytes / 2,4)`, calibrado con pocas muestras; **no era una garantía**: hay entradas con menos
+bytes por token y el margen de 320 no estaba demostrado para esa frontera. Esta corrección sustituye
+esa estimación por el tokenizador del propio generador.
 
-**Solución**: `conversation/budget.py` planifica el prompt antes de cada llamada (incluida la
-reparación). Estimación **conservadora, no exacta**: `ceil(bytes UTF-8 / 2,4)` + 32 tokens de
-envoltorio + 8 por mensaje o fuente; límite `num_ctx - num_predict - 320` = 6672 con la configuración
-vigente. Calibración real: 5689 bytes → 1537 tokens (3,70 B/token) y 3,8 B/token en la prueba de
-integración. El conteo del ingestor no se usa como tokens del generador.
+**Solución**: `conversation/budget.py` mide el prompt completo antes de cada llamada (incluida la
+reparación) con `conversation/tokenizer.py`:
 
-**Reducción**: primero el historial más antiguo por turnos completos; después las fuentes de menor
-rango, conservando `S1..Sk`. La pregunta y los textos incluidos no se recortan; el historial
-persistido no se modifica. Si el mínimo no cabe, `ContextBudgetExceeded` cierra la ejecución como
-`failed` con `context_budget_exceeded` sin invocar al modelo y permite reintento. Ollama informa
-`prompt_eval_count` tras la llamada y se registra en el paso (`observed_prompt_tokens`), sin contenido.
+- vocabulario y fusiones BPE leídos del GGUF ya instalado por Ollama (`gguf`); sin descargas en
+  ejecución ni llamadas pagadas;
+- pre-tokenización de bytes con la misma expresión regular que el binario de Ollama y tokens
+  especiales registrados (`tokenizers`, ya presente como dependencia transitiva, ahora explícita);
+- plantilla de conversación que reproduce el renderizador `Qwen35Renderer` (system + user + turno de
+  asistente con bloque de razonamiento vacío), verificada contra `prompt_eval_count`;
+- límite `num_ctx - num_predict - 320` = 6672. El margen cubre variaciones de plantilla o versión del
+  renderizador, **no** incertidumbre del tokenizador.
+
+**Elementos incluidos**: instrucciones, pregunta, historial, fuentes con título, identificador y
+localizador, envoltorio de plantilla, salida reservada (1200) y margen (320).
+
+**Reducción**: sin cambios. Primero el historial más antiguo por turnos completos; después las fuentes
+de menor rango, conservando `S1..Sk`. La pregunta y los textos incluidos no se recortan; el historial
+persistido no se modifica. Si el mínimo no cabe, `context_budget_exceeded` (500) sin llamar al modelo.
+Si el tokenizador no está disponible, `context_budget_unavailable` (503) sin estimar ni llamar.
+
+**Regresión del divisor 2,4**: con 1200 bytes aleatorios en Base64, el diagnóstico por bytes da 1534
+tokens y el tokenizador 1753. Con un límite de 1534 el control anterior habría admitido la llamada y
+el nuevo la rechaza. En el prompt real, en cambio, el diagnóstico sobrestima (9670 frente a 6074), lo
+que confirma que no sirve como cota en ninguna dirección.
 
 **Evidencia**:
 
-- `tests/unit/test_context_budget.py` (10): estimación por bytes y Unicode, ajuste completo, recorte
-  de historial por turnos completos, recorte determinista de fuentes, presupuesto en reparación,
-  pregunta y fuentes íntegras, mínimo que no cabe, pregunta gigante y entradas sin mutar.
+- `tests/unit/test_context_budget.py` (11): estimación solo diagnóstica, ajuste completo, historial
+  por turnos completos, fuentes deterministas, reparación, pregunta y fuentes íntegras, mínimo que no
+  cabe, pregunta gigante, entradas sin mutar y tokenizador no disponible.
 - `tests/integration/test_context_budget_pipeline.py` (3): prompt acotado con historial persistido
   intacto, reparación acotada y fallo `context_budget_exceeded` sin llamar al generador.
-- `tests/integration/test_context_budget_real.py`: estimado 6654, observado 3685, límite 6672,
-  reserva 1200, margen 320, 8 mensajes de historial descartados y 0 fuentes; 3,8 bytes/token.
-- `make check`: 255 en verde; `make test-integration`: 16 en verde (7 min 45 s).
+- `tests/contract/test_chat_routes.py`: 500 con `context_budget_exceeded` y 503 con
+  `context_budget_unavailable`, ambos sin invocar al generador.
+- `tests/integration/test_context_budget_real.py` (2): admisión 6074, observado 6013, límite 6672,
+  reserva 1200, margen 320, 0 turnos y 0 fuentes descartados; y la regresión Base64 (1534 frente a
+  1753). La calibración del tokenizador dio 24 = 24 en el prompt mínimo, +1 en español y +17-21 en
+  técnico/Base64 (conteo por encima del observado).
+- `make check`: 258 en verde; `make test-integration`: 17 en verde (6 min 55 s).
 
 **Checkpoint**: US4 funcional.
 
