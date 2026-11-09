@@ -418,3 +418,45 @@ diferir de la de llama.cpp: en la calibración la diferencia fue a favor de la s
 observado), pero no es una cota matemática para cualquier secuencia de bytes. Las dependencias
 `gguf` (lectura del GGUF instalado) y `tokenizers` (BPE) se declaran explícitamente; no hay descargas
 en tiempo de ejecución ni llamadas pagadas.
+
+## R25. Herramienta de hallazgos: decisión estructurada, bucle acotado y presentación
+
+**Contexto**: US5 incorpora `findings_query` sobre los hallazgos sintéticos del caso activo. El
+contrato exige alcance capturado en el servidor, argumentos estrictos, conteos calculados en SQLite y
+ninguna exposición de `case_id` al modelo.
+
+**Selección de la herramienta**: se probaron dos caminos con el modelo real. Primero, `bind_tools` de
+`ChatOllama` junto con `format` para la respuesta estructurada devolvió `tool_calls: []` de forma
+repetida: Ollama prioriza el esquema de salida y no emite la llamada. Segundo, incluir
+`tool_requests` en el esquema de respuesta tampoco fue fiable: las reglas de citas y `missing_info`
+sesgaban al modelo a abstenerse aunque la pregunta fuera de conteos. La solución vigente separa la
+decisión en una llamada estructurada propia (`ToolDecision`: `use_findings` + `arguments`) ejecutada
+antes de la respuesta. No hay heurísticas por palabra ni preguntas codificadas: el modelo real decide
+y aporta los argumentos.
+
+**Bucle**: `retrieve → decide → tools → decide … → agent → validate`. Como máximo dos ejecuciones por
+turno (`max_tool_calls=2`). Un error de argumentos se devuelve al decisor con el código
+(`invalid_severity`, `invalid_qid`, …) para que corrija dentro del límite. Un fallo de base cierra el
+turno como `failed/tool_failed` (500) y un timeout como `timeout/tool_timeout` (504). `origin` es
+`model_requested` solo cuando hubo una decisión real del modelo; una decisión sin ejecución no
+registra llamada.
+
+**Presupuesto**: la decisión también se mide con el tokenizador del modelo (`check_prompt`) antes de
+llamarlo. El prompt de respuesta incluye la definición de la herramienta, los argumentos, los
+resultados y los envoltorios; se mide completo con `plan_prompt`. Con los resultados de la consulta
+real, la segunda llamada admitió 817 tokens y el modelo observó 802. Los conteos se conservan siempre:
+si el detalle no cupiera, se reduce lo enviado al modelo, no el resultado persistido; si no cabe una
+llamada admisible se aplica `context_budget_exceeded` o `context_budget_unavailable`.
+
+**Resultado determinista**: el `case_id` se captura en una clausura y no existe en el esquema ni en el
+resultado. Los filtros usan parámetros enlazados; el filtro por CVE usa una subconsulta para que un
+hallazgo con varios CVE no multiplique filas. Totales y grupos se calculan con `COUNT`/`GROUP BY` sobre
+exactamente los filtros aplicados; `limit` afecta solo al detalle y `truncated` indica si se recortó.
+Un caso sin hallazgos devuelve total 0 y no inventa dataset ni valores.
+
+**Persistencia y presentación**: cada invocación se registra en `run_tool_calls` (nombre, origen,
+argumentos validados, resumen, estado, error y duración). El resumen guarda total, grupos, dataset,
+`truncated` e `items_count`, nunca las filas. La interfaz recalcula el detalle en modo lectura cuando
+`detail=true` y lo muestra con la etiqueta «Datos educativos sintéticos», los filtros, la procedencia y
+el aviso de que no es una importación de Qualys. Un total 0 se acompaña de la nota de que no demuestra
+ausencia de vulnerabilidades ni riesgo bajo.

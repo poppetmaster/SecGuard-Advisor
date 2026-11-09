@@ -576,17 +576,49 @@ que confirma que no sirve como cota en ninguna dirección.
 
 ### Tests for User Story 5
 
-- [ ] T075 [P] [US5] Pruebas de la herramienta en `tests/unit/test_findings_tool.py` — argumentos, filtros, conteos vs recálculo, límite, caso ajeno, caso sin hallazgos y **ausencia de `case_id` en el resultado** · Dep: T023, T015 · Check: fallan antes de T076 · Evidence: rojo y verde
+- [X] T075 [P] [US5] Pruebas de la herramienta en `tests/unit/test_findings_tool.py` — argumentos, filtros, conteos vs recálculo, límite, caso ajeno, caso sin hallazgos y **ausencia de `case_id` en el resultado** · Dep: T023, T015 · Check: fallan antes de T076 · Evidence: rojo y verde
 
 ### Implementation for User Story 5
 
-- [ ] T076 [US5] Implementar la herramienta en `src/secguard_advisor/tools/findings.py` — alcance en clausura, esquema sin `case_id`, ORM parametrizado, `COUNT(*)`, resultado sin identificador de caso · Dep: T075 · Check: T075 en verde · Evidence: test en verde
-- [ ] T077 [US5] Vincular la herramienta al grafo en `conversation/graph.py` — máximo 2 llamadas, `origin=model_requested`, error de argumentos al modelo, traza interna en `run_tool_calls` · Dep: T076, T060 · Check: `tests/unit/test_tool_binding.py` · Evidence: test en verde
-- [ ] T078 [US5] Prueba de pregunta solo-herramienta en `tests/integration/test_tool_only_question.py` — sin candidatos documentales, la herramienta responde y no se abstiene · Dep: T077 · Check: `outcome=answered` con evidencia estructurada · Evidence: test en verde
-- [ ] T079 [US5] Prueba de aislamiento y vacío en `tests/integration/test_findings_isolation.py` — caso ajeno sin datos; caso sin hallazgos `total=0` · Dep: T077 · Check: cero filas ajenas · Evidence: test en verde
-- [ ] T080 [US5] Mostrar resultado de la herramienta y etiqueta sintética en `templates/chat/message.html` · Dep: T077 · Check: aserciones sobre HTML · Evidence: test en verde
+- [X] T076 [US5] Implementar la herramienta en `src/secguard_advisor/tools/findings.py` — alcance en clausura, esquema sin `case_id`, ORM parametrizado, `COUNT(*)`, resultado sin identificador de caso · Dep: T075 · Check: T075 en verde · Evidence: test en verde
+- [X] T077 [US5] Vincular la herramienta al grafo en `conversation/graph.py` — máximo 2 llamadas, `origin=model_requested`, error de argumentos al modelo, traza interna en `run_tool_calls` · Dep: T076, T060 · Check: `tests/unit/test_tool_binding.py` · Evidence: test en verde
+- [X] T078 [US5] Prueba de pregunta solo-herramienta en `tests/integration/test_tool_only_question.py` — sin candidatos documentales, la herramienta responde y no se abstiene · Dep: T077 · Check: `outcome=answered` con evidencia estructurada · Evidence: test en verde
+- [X] T079 [US5] Prueba de aislamiento y vacío en `tests/integration/test_findings_isolation.py` — caso ajeno sin datos; caso sin hallazgos `total=0` · Dep: T077 · Check: cero filas ajenas · Evidence: test en verde
+- [X] T080 [US5] Mostrar resultado de la herramienta y etiqueta sintética en `templates/chat/message.html` · Dep: T077 · Check: aserciones sobre HTML · Evidence: test en verde
 
-**Checkpoint**: US5 funcional; memoria y herramienta completas.
+**Evidencia de US5 (2026-11-08)**
+
+- `tests/unit/test_findings_tool.py` (21): esquema estricto sin `case_id`, filtros individuales y
+  combinados, conteos contrastados con un recálculo independiente en SQLite, CVE múltiple sin
+  multiplicar filas, agrupaciones por severidad y activo, límite y `truncated`, valores ausentes sin
+  inventar, caso vacío, aislamiento entre dos casos, argumentos inválidos y timeout.
+- `tests/unit/test_tool_binding.py` (9): la decisión del modelo ejecuta la herramienta y registra
+  `origin=model_requested`, argumentos validados y resumen sin filas; corrección tras error de
+  argumentos; rechazo de `case_id`; máximo de dos llamadas; fallos de base y timeout.
+- `tests/integration/test_tool_only_question.py`: pregunta respondida solo con la herramienta, cero
+  citas documentales y cifras contrastadas.
+- `tests/integration/test_findings_isolation.py`: dos casos con activos distintivos sin fuga y caso
+  sin hallazgos con total 0.
+- `tests/contract/test_findings_ui.py` (5): etiqueta sintética, filtros, totales y grupos, detalle
+  limitado, procedencia, aviso de que no es Qualys, estado vacío y error de argumentos; la página de
+  ejecución muestra la invocación.
+- `tests/integration/test_findings_real.py` (Ollama): el modelo solicitó `findings_query` con
+  `severity=High, group_by=asset`; total 4 y grupos `api-gateway 2`, `customer-portal 1`,
+  `internal-wiki 1`, idénticos al recálculo en SQLite. Presupuesto del segundo turno: admitido 817,
+  observado 802.
+- `make check`: 292 en verde; `make test-integration`: 21 en verde (9 min 24 s).
+- Playwright con el caso de demostración (`make seed-demo`) en almacenamiento temporal: doble clic
+  produce un solo POST con indicador y botón deshabilitado; el bloque muestra «Herramienta consultada:
+  findings_query», «Datos educativos sintéticos», «Total: 4», los tres grupos, la procedencia y el
+  aviso de que no es una importación de Qualys; recarga y página de ejecución conservan la
+  invocación; un caso sin hallazgos muestra «Total: 0», «Sin dataset asociado» y la nota de que no
+  demuestra ausencia de vulnerabilidades; móvil 390 sin desbordamiento; 0 errores de consola.
+- **Adaptación documentada (R25)**: con `format` (salida estructurada) Ollama no emite `tool_calls`
+  nativos, y las reglas de respuesta sesgaban al modelo hacia `missing_info`. La selección se separa
+  en una llamada estructurada `ToolDecision` (sin heurísticas por palabra) y una llamada de respuesta
+  con el resultado. Se conservan los argumentos estrictos, el máximo de dos llamadas, la corrección
+  de errores y el control de presupuesto (también para la decisión y para los resultados).
+- Capturas: `docs/evidencia/us5/carga.png`, `herramienta.png`, `vacio.png` y `movil.png`.
 
 ---
 

@@ -408,6 +408,8 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-08 | La recuperación de una pregunta de seguimiento se amplía con la última pregunta confirmada | Parámetro | IV, V | Interpreta referencias sin un segundo modelo; la evidencia se recupera y valida igual contra los fragmentos del turno |
 | 2026-11-08 | Admisión de contexto con el tokenizador del generador (vocabulario y BPE del GGUF instalado), reserva de salida 1200 y margen 320 para la plantilla | Parámetro | IV | Verificado contra `prompt_eval_count` de qwen3.5:9b (24 = 24 en el mínimo; +1 en español; +17-21 en técnico/Base64). El margen cubre variaciones de plantilla, no incertidumbre del tokenizador |
 | 2026-11-08 | Dependencias `gguf` y `tokenizers` para leer el tokenizador del modelo instalado | Parámetro | IV, III | No hay descargas en tiempo de ejecución ni llamadas pagadas; `tokenizers` ya era transitiva y `gguf` solo lee el GGUF local |
+| 2026-11-09 | Selección de herramienta en una llamada estructurada previa (`ToolDecision`) y presupuesto también para la decisión y los resultados | Permanente | IV, VIII | Ollama no emite `tool_calls` nativos junto con `format`; la decisión separada evita el sesgo de las reglas de respuesta y conserva argumentos estrictos, máximo de dos llamadas y medición con el tokenizador |
+| 2026-11-09 | `findings_query` acotada por clausura, con conteos en SQLite y resultado sintético con procedencia | Permanente | V, VII, VIII | Sin `case_id` en esquema ni resultado; CVE por subconsulta; el límite afecta solo al detalle; un total 0 no demuestra ausencia de vulnerabilidades |
 | Pendiente | Política P1–P4: significado, condiciones, excepciones, datos mínimos y ejemplos | Pendiente | IX, X | Bloquea el entrenamiento del incremento 3 |
 | Pendiente | Formato CSV de Qualys a soportar | Pendiente | XII | Bloquea el adaptador del incremento 2 |
 | Pendiente | Generador definitivo tras la comparación | Pendiente | IV | Requiere evidencia de calidad, herramientas, fundamentación, memoria y latencia |
@@ -422,4 +424,4 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | Pendiente | Destino GitHub y autorización de publicación | Pendiente | Flujo de trabajo | Sin repo no hay badges de CI verificables |
 | Pendiente | Presupuesto aprobado para DeepSeek (proveedor externo opcional) | Pendiente | XI | No se activan llamadas pagadas sin aprobación |
 
-**Version**: 1.0.5 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-08
+**Version**: 1.0.6 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09

@@ -36,9 +36,10 @@ una persona.
 
 ## Estado del proyecto
 
-**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T068: base técnica,
-US1 (casos), US2 (documentos, corpus e índice) y US3 (consulta con citas y revisión humana). Las
-historias de memoria y hallazgos siguen pendientes.
+**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T080: base técnica,
+US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y revisión humana), US4
+(memoria por caso y navegación) y US5 (herramienta de hallazgos sintéticos). La traza real con
+LangSmith y el recorrido de aceptación siguen pendientes.
 
 ### Implementado
 
@@ -61,14 +62,16 @@ historias de memoria y hallazgos siguen pendientes.
   respuestas estructuradas, control automático de citas, abstención ante evidencia insuficiente,
   reintento de turnos fallidos, permiso global de generación y revisión humana del respaldo
   semántico.**
+- **US4: conversación con memoria por caso en checkpoints separados, reconciliada antes de cada
+  turno, y navegación multipágina con barra lateral persistente y menú móvil.**
+- **US5: herramienta `findings_query` acotada al caso, con filtros, conteos calculados en SQLite,
+  procedencia sintética y presentación en la consulta documental.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Conversación con memoria persistente por caso.
-- Herramienta de lectura de hallazgos sintéticos.
 - Trazas reales con LangSmith y confirmación de la traza observada.
 - Interfaz integrada y recorrido de aceptación completo.
 
@@ -84,13 +87,14 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
    público se adquiere e ingesta por separado.
 3. **Implementado:** preguntar en español y recibir respuestas con citas localizables, con
    abstención explícita cuando la evidencia no alcanza.
-4. **Previsto:** continuar la conversación con memoria separada por caso.
-5. **Previsto:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
-6. **Parcial:** la ejecución ya muestra modelo, duración, pasos, fuentes y errores; la traza real
-   con LangSmith queda pendiente.
+4. **Implementado:** continuar la conversación con memoria separada por caso.
+5. **Implementado:** consultar hallazgos sintéticos mediante una herramienta acotada al caso.
+6. **Parcial:** la ejecución ya muestra modelo, duración, pasos, fuentes, invocaciones de
+   herramienta y errores; la traza real con LangSmith queda pendiente.
 
-La creación de casos, la ingesta documental y la consulta con citas están implementadas. Las
-capacidades 4 a 6 siguen pendientes.
+La creación de casos, la ingesta documental, la consulta con citas, la memoria por caso y la
+herramienta de hallazgos están implementadas. La traza real y el recorrido de aceptación siguen
+pendientes.
 
 ## Arquitectura
 
@@ -246,6 +250,23 @@ SQLite y los reintentos reutilizan la pregunta original.
 El umbral de recuperación (`retrieval_min_score`, 0,35 por defecto) filtra candidatos débiles con
 datos de humo; no demuestra que no exista evidencia.
 
+### Hallazgos sintéticos
+
+`make seed-demo` carga el dataset educativo determinista: 12 hallazgos sobre 3 activos, con nombre,
+versión y checksum de procedencia. En **Consulta documental** podés preguntar, por ejemplo, «¿Cuántos
+hallazgos de severidad High están registrados en este caso? Agrúpalos por activo».
+
+El modelo decide si necesita `findings_query` mediante una llamada estructurada propia y aporta los
+argumentos; no hay preguntas codificadas. La herramienta fija el caso en el servidor (`case_id` no es
+argumento ni aparece en el resultado), acepta `asset`, `severity`, `qid`, `cve`, `group_by`, `detail` y
+`limit`, y calcula totales y grupos en SQLite sobre exactamente los filtros aplicados. El límite afecta
+solo al detalle y `truncated` avisa cuando se recortó. Un hallazgo con varios CVE no multiplica filas.
+
+El resultado se muestra con la etiqueta «Datos educativos sintéticos», los filtros aplicados, el total,
+las agrupaciones, la procedencia del dataset y el aviso de que no es una importación de Qualys. Un caso
+sin hallazgos devuelve total 0 y advierte que eso no demuestra ausencia de vulnerabilidades ni riesgo
+bajo. Cada invocación queda registrada en la evidencia de ejecución.
+
 ## Base de datos
 
 El esquema se crea y evoluciona solo con Alembic. La aplicación no crea tablas al arrancar; al
@@ -277,9 +298,11 @@ make check             # lint + formato + pruebas
 ```
 
 Estado actual: la base cubre configuración, motor y esquema, alcance, arranque, transacciones,
-seed, fixtures, ciclo de vida de ejecuciones, casos y documentos (validación, extracción,
-fragmentación, embeddings, índice, versiones, corpus y rutas). Las pruebas de integración se
-ejecutan con `make test-integration` y requieren Ollama con el modelo de embeddings.
+seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
+embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, y la
+herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia).
+Las pruebas de integración se ejecutan con `make test-integration` y requieren Ollama con el modelo de
+embeddings y el generador; la prueba real de la herramienta verifica que el modelo la solicite.
 
 ## Estructura
 
@@ -330,9 +353,11 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación implementa US1, US2 y US3; la memoria por caso, la herramienta de hallazgos,
-  la traza real con LangSmith y el recorrido de aceptación siguen sin implementar. `demo` sigue sin
-  implementar.
+- La aplicación implementa US1–US5; la traza real con LangSmith, parte de la integración de T088 y
+  el recorrido de aceptación siguen sin implementar. `demo` sigue sin implementar.
+- La selección de herramienta usa una llamada estructurada adicional (`ToolDecision`) porque Ollama
+  no emite `tool_calls` nativos junto con `format`; cuesta una llamada corta al modelo por turno y se
+  mide con el mismo tokenizador antes de ejecutarse.
 - No hay OCR: los PDF escaneados se reportan como «sin texto utilizable».
 - El umbral de recuperación está calibrado con datos de humo; una pregunta sin candidatos no
   demuestra por sí sola que la evidencia no exista.

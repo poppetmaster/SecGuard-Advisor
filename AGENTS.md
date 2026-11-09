@@ -8,10 +8,10 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica, US1–US4 (cortes T001–T074) y la navegación aprobada. La
-aplicación arranca con `/healthz`, casos, documentos, consulta documental con citas y revisión humana
-del respaldo, con memoria por caso en checkpoints separados. Todavía no hay herramienta de
-hallazgos, traza real ni recorrido de aceptación.
+**Estado actual**: base técnica, US1–US5 (cortes T001–T080) y la navegación aprobada. La aplicación
+arranca con `/healthz`, casos, documentos, consulta documental con citas y revisión humana del
+respaldo, memoria por caso en checkpoints separados y la herramienta `findings_query` acotada al
+caso. Todavía no hay traza real ni recorrido de aceptación; T088 conserva pendientes de integración.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -95,6 +95,14 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   `context_budget_exceeded`; si falta el tokenizador, `context_budget_unavailable` (503).
 - El umbral de recuperación es un filtro de candidatos débiles; una recuperación vacía no demuestra
   ausencia de evidencia. El generador configurado es `qwen3.5:9b`, con razonamiento desactivado.
+- `findings_query` recibe el alcance por clausura: `case_id` no es argumento ni aparece en el resultado
+  expuesto al modelo. Los conteos se calculan en SQLite sobre los filtros aplicados; el límite afecta
+  solo al detalle y un CVE con varias relaciones no multiplica filas. El resultado se presenta como
+  «Datos educativos sintéticos», nunca como una importación de Qualys; un total 0 no demuestra
+  ausencia de vulnerabilidades.
+- La selección de herramienta usa una llamada estructurada `ToolDecision` antes de la respuesta:
+  Ollama no emite `tool_calls` nativos junto con `format`. Son como máximo dos ejecuciones por turno y
+  la decisión también se mide con el tokenizador del generador.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit
