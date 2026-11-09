@@ -1,5 +1,9 @@
 # Guía de SC-001 — recorrido cronometrado por una persona
 
+> **Nota de alcance (2026-11-09).** Esta guía conserva el recorrido histórico con el caso particular
+> de IA. La definición vigente no exige una aplicación de IA; el caso se mantiene como ejemplo válido
+> dentro del alcance general.
+
 **Validación recomendada y no bloqueante**. El umbral de referencia sigue siendo **15 minutos o
 menos** para una persona que conoce el producto; no se cambia el umbral ni se excluyen pasos. La
 decisión de gobierno del 2026-11-09 indica que su resultado no bloquea el segundo incremento.

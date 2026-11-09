@@ -8,6 +8,12 @@
 
 **Input**: Definición de la funcionalidad 001 entregada por el equipo: «consulta documental con evidencias, memoria por caso y herramientas de lectura de hallazgos». El texto completo del encargo está en la conversación de origen; esta especificación lo traduce a comportamiento verificable.
 
+> **Nota de alcance (2026-11-09).** Este documento es histórico y conserva el alcance original de la
+> funcionalidad 001. La definición vigente es la de `README.md` y `AGENTS.md`: el alcance del análisis
+> puede ser cualquier proceso, servicio, infraestructura, sistema o aplicación, sin exigir una
+> aplicación de IA. El campo interno `ai_application` se conserva por compatibilidad y se presenta
+> como «Alcance del análisis». No se reescriben los acuerdos ni los casos ya creados.
+
 ## Contexto y propósito del incremento
 
 Un responsable de TI o seguridad trabaja localmente. Crea un caso con contexto educativo

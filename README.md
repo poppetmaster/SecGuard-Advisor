@@ -12,9 +12,13 @@ Cristian Camilo Quebrada · Rubén Darío Sabogal · Edwin Pérez L.
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Agente consultor defensivo para ciberseguridad empresarial y seguridad de aplicaciones de IA.
+SecGuard Advisor ayuda a las empresas a consultar documentos de ciberseguridad, analizar reportes
+de vulnerabilidades y obtener respuestas con evidencia verificable para apoyar sus decisiones.
+
 Analiza documentación, contexto organizacional y hallazgos técnicos, identifica brechas y prepara
-recomendaciones respaldadas por evidencia, con supervisión humana.
+recomendaciones respaldadas por evidencia, con supervisión humana. Puede abordar seguridad de
+sistemas de IA cuando corresponda al caso, sin exigir que exista una aplicación de IA. No certifica
+aplicaciones, empresas ni cumplimiento normativo.
 
 ## Tabla de contenidos
 
@@ -39,9 +43,14 @@ recomendaciones respaldadas por evidencia, con supervisión humana.
 ## Propósito
 
 SecGuard Advisor ayuda a responsables de TI y seguridad a convertir documentación oficial, contexto
-organizacional y hallazgos técnicos en recomendaciones trazables. No ejecuta remediaciones, no
-aprueba informes y no certifica cumplimiento: propone y fundamenta, y la decisión queda en manos de
-una persona.
+organizacional y hallazgos técnicos en recomendaciones trazables. El alcance del análisis puede ser
+cualquier proceso, servicio, infraestructura, sistema o aplicación; la seguridad de sistemas de IA es
+un caso posible, no un requisito. No ejecuta remediaciones, no aprueba informes y no certifica
+cumplimiento: propone y fundamenta, y la decisión queda en manos de una persona.
+
+El campo histórico `ai_application` almacena el **alcance del análisis** y se conserva por
+compatibilidad. Los casos creados antes de esta corrección mantienen su contenido y se presentan como
+casos particulares dentro del alcance general.
 
 ## Estado del proyecto
 
@@ -66,7 +75,7 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **409 passed**, 35 deselected.
+- Pruebas rápidas: `make check` → **417 passed**, 35 deselected.
 - Integraciones: `make test-integration` → **34 passed**, 1 skipped por LangSmith desactivado en esa
   ejecución de aceptación real.
 - Aceptación real 002: CSV autorizado de **662 registros**, flujo formulario → validación → vista

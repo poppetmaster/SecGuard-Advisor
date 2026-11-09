@@ -3,6 +3,10 @@
 Guía de ejecución y validación. Los comandos descritos existen y se ejecutaron en almacenamiento
 separado; los resultados observados están en `docs/evidencia/demo-001.md`.
 
+> **Nota de alcance (2026-11-09).** Los nombres de campos y el caso de ejemplo pertenecen al alcance
+> histórico de la funcionalidad 001. La definición vigente presenta `ai_application` como «Alcance del
+> análisis» y no exige una aplicación de IA.
+
 ## 1. Prerrequisitos
 
 - Python 3.14.6 y `uv`.

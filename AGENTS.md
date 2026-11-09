@@ -4,9 +4,18 @@ Contexto del proyecto para sesiones con asistentes LLM. Está versionado en el r
 
 ## Proyecto
 
-SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresarial y seguridad de
-aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
-brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
+SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresarial. Ayuda a las
+empresas a consultar documentos de ciberseguridad, analizar reportes de vulnerabilidades y obtener
+respuestas con evidencia verificable para apoyar sus decisiones. Analiza documentación, contexto
+organizacional y hallazgos técnicos, identifica brechas y prepara recomendaciones respaldadas por
+evidencia, con supervisión humana.
+
+El alcance del análisis puede ser cualquier proceso, servicio, infraestructura, sistema o aplicación.
+Puede abordar seguridad de sistemas de IA cuando corresponda al caso, pero no exige que exista una
+aplicación de IA y no certifica aplicaciones, empresas ni cumplimiento normativo.
+
+Los artefactos de `specs/001-consulta-documental/` y `docs/evidencia/` documentan el alcance original
+y se conservan como registro histórico. La definición vigente es la de este archivo y el README.
 
 **Estado actual**: base técnica, US1–US6 y T088–T095 (cortes T001–T095). La aplicación arranca con
 `/healthz`, casos, documentos, consulta documental con citas y revisión humana del respaldo, memoria
@@ -99,6 +108,9 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   definida.
 - `SECGUARD_REVIEWER_NAME` es una identidad local declarada para la revisión humana; no es
   autenticación. Sin esa variable no se escribe ninguna revisión.
+- `ai_application` es el nombre histórico del alcance del análisis. Se conserva por compatibilidad y
+  se presenta como «Alcance del análisis»; no se renombra la columna, no se agrega un campo nuevo y
+  no se reescribe el contenido de casos existentes.
 - El historial visible es la fuente autoritativa (`messages`). `storage/checkpoints.sqlite` es
   memoria operativa y se reconcilia antes de cada turno; no hay atomicidad entre bases.
 - El historial del prompt se acota a 8 mensajes y 6000 caracteres. El historial no es evidencia:

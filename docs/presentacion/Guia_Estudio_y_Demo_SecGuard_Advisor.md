@@ -1,19 +1,21 @@
 # Guía de estudio y demo — SecGuard Advisor
 
 **Fecha de preparación:** 2026-11-09  
-**Instancia usada para las capturas:** `$HOME/.local/share/secguard-presentacion`  
+**Instancia usada para las capturas:** `$HOME/.local/share/secguard-presentacion-general`  
 **Servidor de la demo:** `http://127.0.0.1:8767`  
 **Naturaleza de los datos:** escenario educativo ficticio y corpus público oficial. No hay datos de una empresa real en las capturas.
 
 > Esta guía es material de estudio y respaldo. No sustituye la demo en vivo ni presenta la funcionalidad 003, la política P1–P4, el clasificador, el entrenamiento, MLflow o Prefect como disponibles.
 
+> **Alcance vigente.** SecGuard Advisor ayuda a las empresas a consultar documentos de ciberseguridad, analizar reportes de vulnerabilidades y obtener respuestas con evidencia verificable para apoyar sus decisiones. El alcance del análisis puede ser cualquier proceso, servicio, infraestructura, sistema o aplicación. La seguridad de sistemas de IA es un caso posible, no un requisito. El producto no certifica aplicaciones, empresas ni cumplimiento normativo.
+
 ## 1. Resumen oral de 60 segundos
 
 ### Guion para decir
 
-> SecGuard Advisor nace de un problema concreto: revisar la seguridad de una aplicación de IA exige cruzar políticas, documentos y hallazgos técnicos, y muchas veces no se sabe de dónde sale una respuesta. El producto convierte ese trabajo en un caso acotado: recibe documentos y un CSV de Qualys, conserva la procedencia y permite preguntar en español. Cada respuesta documental muestra citas literales y permite abrir el fragmento; las consultas de vulnerabilidades se responden con una herramienta que cuenta en SQLite, no con el modelo. Todo queda en una ejecución visible: modelo, pasos, duración y estado de la traza. Usa modelos locales, así que no hay factura de API por consulta; el equipo, la electricidad y el tiempo no están medidos. Hoy reduce búsqueda manual y mejora la trazabilidad; no prioriza automáticamente ni garantiza seguridad.
+> SecGuard Advisor nace de un problema concreto: responder preguntas de ciberseguridad exige cruzar políticas, procedimientos y reportes de vulnerabilidades, y muchas veces no se sabe de dónde sale una respuesta. El producto convierte ese trabajo en un caso acotado: recibe documentos y un CSV de Qualys, conserva la procedencia y permite preguntar en español. Cada respuesta documental muestra citas literales y permite abrir el fragmento; las consultas de vulnerabilidades se responden con una herramienta que cuenta en SQLite, no con el modelo. Todo queda en una ejecución visible: modelo, pasos, duración y estado de la traza. Usa modelos locales, así que no hay factura de API por consulta; el equipo, la electricidad y el tiempo no están medidos. Hoy reduce búsqueda manual y mejora la trazabilidad; no prioriza automáticamente ni garantiza seguridad.
 
-**Conteo aproximado:** 126 palabras.
+**Conteo aproximado:** 124 palabras.
 
 ### Cuatro frases para memorizar
 
@@ -27,6 +29,7 @@
 - «El sistema prioriza automáticamente con P1–P4.» **No está implementado.**
 - «Elimina vulnerabilidades.» **No ejecuta remediaciones.**
 - «Garantiza seguridad.» **Es un consultor defensivo, no una certificación.**
+- «Solo sirve para aplicaciones de IA.» **El alcance es cualquier proceso, servicio, infraestructura, sistema o aplicación; la seguridad de IA es un caso posible.**
 - «El proyecto cuesta cero.» **No hay factura de API por las llamadas locales, pero el equipo, la electricidad y el tiempo tienen costo no medido.**
 
 ## 2. Qué está construido hoy
@@ -35,7 +38,7 @@
 
 Está implementada y validada localmente:
 
-- creación y reapertura de casos con contexto educativo;
+- creación y reapertura de casos con objetivo, alcance, datos, activos y restricciones;
 - carga de PDF textual y Markdown, estados, versiones y fragmentos localizables;
 - ingesta de corpus público oficial;
 - consulta en español con recuperación documental;
@@ -78,14 +81,14 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 ### 3.1. Casos
 
-![Pantalla de casos con el caso educativo de demostración](imagenes/01-casos.png)
-*Figura 1. Casos: el escenario educativo y su marca sintética.*
+![Pantalla de casos con el caso general de demostración](imagenes/01-casos.png)
+*Figura 1. Casos: el escenario educativo general y su marca sintética.*
 
 **Qué hacer:** abrir `http://127.0.0.1:8767/cases`.
 
-**Qué decir:** «El producto trabaja por caso. Este es un escenario educativo ficticio sobre un asistente interno de IA; no es una empresa real.»
+**Qué decir:** «El producto trabaja por caso. Este es un escenario educativo ficticio de ciberseguridad empresarial; no es una empresa real.»
 
-**Qué debería verse:** un caso, «Evaluación de un asistente interno de IA», con la marca «Escenario educativo sintético».
+**Qué debería verse:** el caso «Análisis de ciberseguridad empresarial», con la marca «Escenario educativo sintético». Puede aparecer también el caso particular de IA del seed, que sigue siendo válido.
 
 **Qué evidencia demuestra:** el alcance por caso y la separación entre contexto educativo y datos reales.
 
@@ -95,14 +98,14 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 ### 3.2. Resumen del caso
 
-![Resumen del caso con contexto, aplicación de IA y activos](imagenes/02-resumen-caso.png)
-*Figura 2. Resumen del caso: contexto, aplicación de IA, restricciones y activos.*
+![Resumen del caso con objetivo, alcance y activos](imagenes/02-resumen-caso.png)
+*Figura 2. Resumen del caso: objetivo, alcance, información involucrada, restricciones y activos.*
 
 **Qué hacer:** abrir el caso.
 
-**Qué decir:** «El caso guarda el contexto mínimo: qué aplicación de IA se evalúa, qué datos trata, qué restricciones existen y qué activos son relevantes. Los campos que faltan se muestran como desconocidos; no se inventan.»
+**Qué decir:** «El caso guarda el contexto mínimo: qué se quiere analizar, qué alcance tiene, qué información y datos están involucrados, qué restricciones existen y qué activos son relevantes. Los campos que faltan se muestran como desconocidos; no se inventan.»
 
-**Qué debería verse:** descripción, aplicación de IA, datos tratados, restricciones y tres activos: `api-gateway`, `customer-portal` e `internal-wiki`.
+**Qué debería verse:** objetivo y contexto, alcance del análisis, información y datos involucrados, restricciones y los activos registrados.
 
 **Qué evidencia demuestra:** que el agente no responde en el vacío: el alcance y el contexto están persistidos y se imponen en el servidor.
 
@@ -117,9 +120,9 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 **Qué hacer:** entrar en «Documentos».
 
-**Qué decir:** «Cargamos dos documentos ficticios de DemoSeguridad: la política de respaldo y la ficha del asistente. Ambos quedan disponibles, con versión y estado. El corpus público oficial se ingesta aparte y también tiene procedencia.»
+**Qué decir:** «Cargamos dos documentos ficticios de DemoSeguridad: la política de acceso remoto y el procedimiento de gestión de vulnerabilidades. Ambos quedan disponibles, con versión y estado. El corpus público oficial se ingesta aparte y también tiene procedencia.»
 
-**Qué debería verse:** los documentos «Política de respaldo — DemoSeguridad (ficticia)» y «Ficha del asistente interno — DemoSeguridad (ficticia)», en estado «Disponible».
+**Qué debería verse:** los documentos «Política de acceso remoto — DemoSeguridad (ficticia)» y «Procedimiento de gestión de vulnerabilidades — DemoSeguridad (ficticia)», en estado «Disponible».
 
 **Qué evidencia demuestra:** carga, extracción, fragmentación y estado de procesamiento; el contenido del caso no se mezcla con el corpus público.
 
@@ -132,15 +135,15 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 ![Respuesta documental con cita del caso](imagenes/04-consulta-documental.png)
 *Figura 4. Respuesta documental real con cita literal del caso.*
 
-**Acción realizada:** preguntar «¿Cada cuánto se prueba la restauración de las copias de seguridad?».
+**Acción realizada:** preguntar «¿Cada cuánto se revisan los accesos remotos?».
 
 **Respuesta observada:**
 
-> «La organización prueba la restauración de las copias de seguridad cada trimestre.»
+> «El equipo de seguridad revisa los accesos remotos cada seis meses.»
 
 **Qué decir:** «La respuesta no es una afirmación suelta: trae una cita literal del documento del caso, muestra la procedencia y separa el control automático de la revisión humana.»
 
-**Qué debería verse:** respuesta, cita de «Política de respaldo — DemoSeguridad (ficticia)», control automático «válida» y respaldo semántico «pendiente de revisión».
+**Qué debería verse:** respuesta, cita de «Política de acceso remoto — DemoSeguridad (ficticia)», control automático «válida» y respaldo semántico «pendiente de revisión».
 
 **Qué evidencia demuestra:** recuperación documental, cita verificable y distinción entre control automático y revisión humana.
 
@@ -170,15 +173,15 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 ![Segunda pregunta respondida con el historial del caso](imagenes/06-memoria-seguimiento.png)
 *Figura 6. Segunda pregunta respondida con el historial del caso.*
 
-**Acción realizada:** preguntar «¿Y quién conserva el registro de esas pruebas?».
+**Acción realizada:** preguntar «¿Y quién aprueba las excepciones?».
 
 **Respuesta observada:**
 
-> «El responsable de infraestructura conserva el registro de cada prueba y lo revisa con el equipo de seguridad.»
+> «Las excepciones a las políticas de acceso remoto y a los plazos de remediación de vulnerabilidades son aprobadas por el comité de seguridad.»
 
-**Qué decir:** «La segunda pregunta usa el contexto de la primera. La conversación no empieza de cero: el historial del caso se conserva y se reconcilia antes del turno.»
+**Qué decir:** «La segunda pregunta usa el contexto de la primera. La conversación no empieza de cero: el historial del caso se conserva y se reconcilia antes del turno. La respuesta combina dos documentos del caso y cada afirmación conserva su cita.»
 
-**Qué debería verse:** dos preguntas y dos respuestas en el mismo historial, con citas del mismo documento.
+**Qué debería verse:** dos preguntas y dos respuestas en el mismo historial, con citas de la política de acceso remoto y del procedimiento de vulnerabilidades.
 
 **Qué evidencia demuestra:** memoria por caso y continuidad conversacional; el historial no se usa como evidencia documental, las citas se validan contra los fragmentos del turno.
 
@@ -229,7 +232,7 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 **Qué decir:** «La tabla conserva la instantánea confirmada y su procedencia. El filtro de prioridad conjunta muestra solo los registros con explotabilidad y malware positivos; los conteos se calculan en SQLite.»
 
-**Qué debería verse:** «Importación confirmada», la instantánea #1, el filtro activo y los registros con prioridad conjunta.
+**Qué debería verse:** «Instantánea confirmada #1», el filtro activo «Prioridad: Sí» y los registros con prioridad conjunta.
 
 **Qué evidencia demuestra:** instantáneas independientes, filtros, prioridad conjunta y procedencia. La bandera de prioridad conjunta **no** es una prioridad P1–P4.
 
@@ -246,11 +249,11 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 **Respuesta observada:**
 
-> «En la instantánea confirmada (ID: 99e82f9f6fc14c11ba5ab8957dd20dc5, confirmada el 2026-11-09T18:47:19.632331+00:00), hay un total de 5 registros importados.»
+> «En la instantánea confirmada (snapshot id: c0f6cad641e2489b9b4da240a26be5c4, confirmado el 2026-11-09T23:48:50.096491+00:00), hay un total de 5 registros importados.»
 
-**Qué decir:** «El modelo no contó a mano: solicitó `findings_query`. La herramienta devolvió total 5, la instantánea #1 y la procedencia. El resultado coincide con SQLite: 5 registros.»
+**Qué decir:** «El modelo no contó a mano: solicitó `findings_query`. La herramienta devolvió total 5, la instantánea #1 y la procedencia. El resultado coincide con SQLite: 5 registros. En este ensayo hizo dos consultas equivalentes; ambas devolvieron el mismo total.»
 
-**Qué debería verse:** la respuesta, la tarjeta «Herramienta consultada: findings_query», total 5, distribución de severidad, «Instantánea #1 · origen importado» y «Procedencia: instantánea Qualys #1».
+**Qué debería verse:** la respuesta, dos tarjetas «Herramienta consultada: findings_query», total 5, distribución de severidad, «Instantánea #1 · origen importado» y «Procedencia: instantánea Qualys #1».
 
 **Qué evidencia demuestra:** consulta estructurada, conteo en SQLite, procedencia y separación del RAG. La respuesta no tiene citas documentales porque los registros Qualys no son documentos RAG.
 
@@ -265,7 +268,7 @@ Las capturas se tomaron en una instancia separada, con `LANGSMITH_TRACING=false`
 
 **Qué hacer:** pulsar «Ver ejecución» en la pregunta de vulnerabilidades.
 
-**Qué decir:** «La ejecución muestra el modelo `qwen3.5:9b`, su digest, el contexto, la temperatura, la semilla, los embeddings, la versión del prompt, la duración de 32.998 s, los pasos y la herramienta. La traza externa está “No configurada”: no se inventó una traza.»
+**Qué decir:** «La ejecución muestra el modelo `qwen3.5:9b`, su digest, el contexto, la temperatura, la semilla, los embeddings, la versión del prompt `chat-v8`, la duración de 16.444 s, los pasos y la herramienta. La traza externa está “No configurada”: no se inventó una traza.»
 
 **Qué debería verse:** modelo, configuración, presupuesto, pasos (decisión, herramienta, generación), duración total y estado de traza «No configurada».
 
@@ -375,11 +378,11 @@ El CSV de Qualys **no** se incorpora al RAG, no se convierte en documento, no se
 | Fuente | Qué es | Dónde vive | Qué demuestra | Límite |
 |---|---|---|---|---|
 | Corpus público oficial | NIST CSWP 29, NIST AI 100-1, NIST AI 600-1 y OWASP Top 10 LLM 2025 | `data/corpus`, ingerido en SQLite/Chroma | Recuperación con procedencia pública y citas | No es evidencia del caso |
-| Evidencias del caso | Dos documentos Markdown ficticios de DemoSeguridad | SQLite del caso; índice del caso | Consulta documental con citas del caso | Son ficticios y educativos |
+| Evidencias del caso | Política de acceso remoto y procedimiento de gestión de vulnerabilidades, ficticios | SQLite del caso; índice del caso | Consulta documental con citas del caso | Son ficticios y educativos |
 | CSV ficticio de demo | `hallazgos-demo-ficticios.csv`, 5 filas, 41 columnas | SQLite como instantánea importada | Formulario, validación, confirmación, tabla y `findings_query` | No es un CSV real |
 | CSV real autorizado | CSV filtrado de Qualys de 662 registros | Solo aceptación local separada | Agregados de validación y consulta real | No se versiona ni se muestra por filas |
 | Hallazgos sintéticos | Dataset `demo-findings`, 12 hallazgos y 3 activos | SQLite del caso | Herramienta y procedencia sintética | No es una empresa real |
-| Datos faltantes | Exposición, criticidad, contexto de IA, P1–P4, etiquetas revisadas | — | Límites declarados | No se inventan |
+| Datos faltantes | Exposición, criticidad, P1–P4, etiquetas revisadas y contexto no informado | — | Límites declarados | No se inventan |
 
 ### Evidencia de aceptación con el CSV real
 
@@ -404,7 +407,7 @@ Reporte: [`../evidencia/002-corte-5/aceptacion-real.md`](../evidencia/002-corte-
 
 | Tipo | Resultado observado | Cómo interpretarlo |
 |---|---|---|
-| Pruebas rápidas | `make check` → 409 passed, 35 deselected | Suite sin integración real |
+| Pruebas rápidas | `make check` → 417 passed, 35 deselected | Suite sin integración real |
 | Integraciones | `make test-integration` → 34 passed, 1 skipped en 13:41 | La omitida es LangSmith real, no configurado |
 | Aceptación real 002 | `test_qualys_import_real.py` → 1 passed en 1:35 | CSV real y tres consultas Ollama; agregados |
 | Aceptación real 001 | Histórica: 25 passed en 881 s y recorrido real con Ollama | Ver [`../evidencia/demo-001.md`](../evidencia/demo-001.md) |
@@ -440,10 +443,10 @@ Reporte: [`../evidencia/002-corte-5/aceptacion-real.md`](../evidencia/002-corte-
 
 | Pregunta | Duración | Observación |
 |---|---:|---|
-| Restauración de copias | 39,360 s | Primera consulta de la sesión; el modelo se cargó durante el ensayo |
-| Seguimiento de memoria | 23,762 s | Modelo ya cargado |
-| Conteo importado con `findings_query` | 32,998 s | Dos llamadas a `findings_query` y varias decisiones |
-| Abstención | 16,416 s | Sin generación de citas |
+| Revisión de accesos remotos | 17,299 s | Primera consulta de la sesión; el modelo se cargó durante el ensayo |
+| Seguimiento de memoria | 17,597 s | Modelo ya cargado; dos documentos citados |
+| Conteo importado con `findings_query` | 16,444 s | Dos llamadas a `findings_query` y varias decisiones |
+| Abstención | 20,365 s | Sin generación de citas |
 
 No se presenta una medición individual como p95. La latencia depende del equipo, la carga del modelo y la longitud de la respuesta.
 
@@ -501,7 +504,7 @@ La siguiente distribución es una **sugerencia**; no fue acordada por el equipo.
 La instancia de esta guía está fuera del repositorio y es separada de `storage/` y `storage/demo`:
 
 ```bash
-export DEMO_DIR="$HOME/.local/share/secguard-presentacion"
+export DEMO_DIR="$HOME/.local/share/secguard-presentacion-general"
 export REPO="/Users/edwinandperez/Documents/InfoArbegas/Documents/ICESI/CLASES/SEM III/Proyecto III/Proyecto Final/secguard-advisor"
 ```
 
@@ -521,6 +524,8 @@ SECGUARD_STORAGE_DIR="$DEMO_DIR" LANGSMITH_TRACING=false uv run python scripts/p
 ```
 
 `prepare_demo.py` requiere el corpus oficial ya descargado. No descarga el reporte original ni toca `storage/demo`.
+
+Después de preparar la instancia, crear por la interfaz el caso **«Análisis de ciberseguridad empresarial»** y cargar los dos documentos generales de `docs/presentacion/insumos-demo/`. No se renombra el caso particular de IA que crea el seed: ambos pueden coexistir y el segundo sigue siendo válido.
 
 ### Arrancar la misma instancia de las capturas
 
@@ -548,7 +553,7 @@ Abrir `http://127.0.0.1:8767/cases`.
 - Servidor arrancado y `/healthz` en 200.
 - Ollama con `qwen3.5:9b` y `embeddinggemma` disponibles.
 - Pestañas abiertas: casos, documentos, consulta documental, vulnerabilidades y la carpeta de capturas.
-- Caso «Evaluación de un asistente interno de IA» abierto.
+- Caso «Análisis de ciberseguridad empresarial» abierto.
 - Documentos ficticios cargados y en estado «Disponible».
 - Conversación de ensayo visible o lista para empezar.
 - CSV ficticio localizado en `docs/presentacion/insumos-demo/hallazgos-demo-ficticios.csv`.
@@ -597,12 +602,12 @@ Estos compromisos son **propuestas por acordar**, no promesas del equipo ni apro
 
 | Archivo | Texto alternativo | Qué demuestra | Acción o pregunta |
 |---|---|---|---|
-| `imagenes/01-casos.png` | Pantalla de casos con el caso educativo | Alcance por caso y marca sintética | Abrir `/cases` |
-| `imagenes/02-resumen-caso.png` | Resumen del caso con contexto y activos | Contexto persistido | Abrir el caso |
-| `imagenes/03-documentos.png` | Documentos ficticios disponibles | Carga, estado y procedencia | Subir los dos Markdown |
-| `imagenes/04-consulta-documental.png` | Respuesta documental con cita | Recuperación y cita | «¿Cada cuánto se prueba la restauración?» |
+| `imagenes/01-casos.png` | Pantalla de casos con el caso general | Alcance por caso y marca sintética | Abrir `/cases` |
+| `imagenes/02-resumen-caso.png` | Resumen del caso con objetivo, alcance y activos | Contexto persistido | Abrir el caso |
+| `imagenes/03-documentos.png` | Documentos generales ficticios disponibles | Carga, estado y procedencia | Subir los dos Markdown |
+| `imagenes/04-consulta-documental.png` | Respuesta documental con cita | Recuperación y cita | «¿Cada cuánto se revisan los accesos remotos?» |
 | `imagenes/05-cita-fragmento.png` | Fragmento fuente abierto | Trazabilidad de la cita | Pulsar «Abrir fragmento» |
-| `imagenes/06-memoria-seguimiento.png` | Segunda pregunta con historial | Memoria por caso | «¿Y quién conserva el registro?» |
+| `imagenes/06-memoria-seguimiento.png` | Segunda pregunta con historial | Memoria por caso | «¿Y quién aprueba las excepciones?» |
 | `imagenes/07-formulario-vulnerabilidades.png` | Formulario de carga del CSV | Validación local | Abrir «Cargar reporte» |
 | `imagenes/08-vulnerabilidades-preview.png` | Vista previa del CSV ficticio | Validación y confirmación separadas | Validar el CSV |
 | `imagenes/09-vulnerabilidades-tabla.png` | Tabla con filtro y snapshot | Filtros, prioridad conjunta y procedencia | Confirmar y filtrar «Prioridad: Sí» |
@@ -633,6 +638,7 @@ Documentos externos consultados, no versionados en este repositorio:
 - Las preguntas documentales, la memoria, la consulta `findings_query` y la abstención se ejecutaron con Ollama local.
 - La tabla de vulnerabilidades se contrastó con SQLite: 5 registros.
 - La traza externa se muestra como «No configurada»; no se inventó una traza.
-- Las capturas usan el caso ficticio y el CSV ficticio; no muestran filas del CSV real.
+- Las capturas usan el caso general ficticio y el CSV ficticio; no muestran filas del CSV real.
+- El caso de demostración no exige una aplicación de IA; el caso particular de IA del seed se conserva como ejemplo válido.
 - La aceptación real de 002 se reporta solo con agregados.
 - La funcionalidad 003, P1–P4, el clasificador, el entrenamiento, MLflow y Prefect se presentan como pendientes, no como disponibles.
