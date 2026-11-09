@@ -4,6 +4,12 @@
 Cristian Camilo Quebrada · Rubén Darío Sabogal · Edwin Pérez L.
 
 [![Python](https://img.shields.io/badge/python-3.14.6-blue)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/uv-0.13.0-5C4EE5)](https://docs.astral.sh/uv/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.162.2-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![LangChain](https://img.shields.io/badge/LangChain-1.4.9-1C3C3C?logo=langchain&logoColor=white)](https://python.langchain.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.2.20-1C3C3C)](https://langchain-ai.github.io/langgraph/)
+[![Ollama](https://img.shields.io/badge/Ollama-local-black)](https://ollama.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Agente consultor defensivo para ciberseguridad empresarial y seguridad de aplicaciones de IA.
@@ -39,75 +45,60 @@ una persona.
 
 ## Estado del proyecto
 
-**Funcionalidad 001 implementada y validada localmente.** El repositorio contiene los cortes
-T001–T095: base técnica, US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y
-revisión humana), US4 (memoria por caso y navegación), US5 (herramienta de hallazgos sintéticos) y
-US6 (evidencia de ejecución, límites y trazas). La aceptación local está documentada en
-[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md). SC-001 (recorrido humano cronometrado) y
-SC-003 (diez revisiones semánticas) son validaciones **recomendadas y no bloqueantes**; no se
-ejecutaron y no se presentan como aprobadas. La revisión en otros navegadores sigue pendiente.
+SecGuard Advisor se encuentra en **estado funcional local, orientado a demostración y validación
+académica**. No es un servicio en producción, no certifica cumplimiento y no sustituye la decisión
+humana. El escenario de demostración es educativo y no está ligado a una empresa real.
 
-**Funcionalidad 002 — US1–US3 y corte final validados localmente.** El módulo `vulnerabilities`
-incorpora lectura y validación del CSV filtrado, políticas versionadas, staging/rechazo, snapshots
-confirmables, formulario, vista previa, confirmación, cancelación, historial y selector de
-instantáneas, filtros avanzados y consulta mediante `findings_query` (origen, instantánea, estado,
-severidad, prioridad e indicadores). La instantánea se fija por turno. El corte final añade pruebas
-de privacidad, evidencia histórica sobre el snapshot persistido, separación del RAG y aceptación real
-local con el CSV filtrado y Ollama. `make check` = 409 passed; `make test-integration` = 34 passed y
-1 skipped (LangSmith desactivado en esa ejecución para la aceptación real). SC-001, SC-003 y la
-CI remota no se ejecutaron y no se presentan como aprobadas.
+### Capacidades disponibles
 
-### Implementado
+| Capacidad | Qué permite | Estado |
+|---|---|---|
+| Gestión de casos | Crear, listar, consultar y recuperar casos con contexto, activos y campos desconocidos explícitos | Disponible localmente |
+| Consulta documental | Cargar PDF textual y Markdown, conservar versiones y fragmentos, y consultar el corpus público | Disponible localmente |
+| Respuestas con evidencia | Responder en español con citas literales, abrir el fragmento fuente y abstenerse si la evidencia no alcanza | Disponible localmente |
+| Memoria por caso | Mantener continuidad conversacional con checkpoints separados y reconciliación antes de cada turno | Disponible localmente |
+| Hallazgos sintéticos | Consultar el dataset educativo con `findings_query` y conteos calculados en SQLite | Disponible localmente |
+| Vulnerabilidades Qualys | Importar CSV validado, revisar una vista previa, confirmar instantáneas, filtrar y consultar registros | Disponible localmente |
+| Evidencia de ejecución | Consultar modelo, configuración, pasos, fuentes, herramientas, duración, presupuesto y citas | Disponible localmente |
+| Trazabilidad externa | Enviar trazas acotadas a LangSmith y confirmarlas por lectura externa | Disponible; LangSmith es opcional |
+| Revisión humana de citas | Registrar respaldo semántico por cita con identidad declarada | Disponible; SC-003 pendiente |
+| Privacidad y separación | Mantener datos del caso, corpus, hallazgos y evidencia en espacios separados | Controles implementados; no es una auditoría externa |
 
-- Estructura del paquete con src-layout y `uv_build`.
-- Configuración de Ruff, pytest, pre-commit y Makefile.
-- Recursos de interfaz locales: CSS compilado con Tailwind, HTMX y Flowbite vendorizados.
-- Configuración tipada con secretos protegidos.
-- SQLite con 20 tablas, restricciones e índices, y migraciones con Alembic.
-- Alcance por caso y reconciliación de estado al arrancar.
-- Fábrica FastAPI, `/healthz`, manejo de errores y plantillas base.
-- Unidad de trabajo de transacción corta.
-- Dataset sintético determinista e idempotente para la demostración.
-- Ciclo de vida mínimo de las ejecuciones.
-- **US1: creación, listado, detalle y recuperación de casos con contexto, activos, campos
-  desconocidos explícitos y persistencia tras reiniciar.**
-- **US2: carga de PDF textual y Markdown, validación, extracción, estados, deduplicación,
-  versiones, fragmentos localizables, embeddings locales e índice Chroma; adquisición e ingesta
-  del corpus público con manifiesto verificable.**
-- **US3: consulta documental en español con recuperación fusionada del corpus público y del caso,
-  respuestas estructuradas, control automático de citas, abstención ante evidencia insuficiente,
-  reintento de turnos fallidos, permiso global de generación y revisión humana del respaldo
-  semántico.**
-- **US4: conversación con memoria por caso en checkpoints separados, reconciliada antes de cada
-  turno, y navegación multipágina con barra lateral persistente y menú móvil.**
-- **US5: herramienta `findings_query` acotada al caso, con filtros, conteos calculados en SQLite,
-  procedencia sintética y presentación en la consulta documental.**
-- **US6: evidencia de ejecución con intentos, pasos, fuentes, herramientas, presupuesto, citas y
-  controles separados; límites de operaciones y tiempos; traza externa con estados `disabled`,
-  `submitted`, `confirmed` y `failed`, y degradación local cuando LangSmith no está disponible.**
-- **Aceptación local: recorrido con dobles y recorrido real con Ollama, corpus, hallazgos,
-  reinicio y aislamiento; confirmación de traza por API de lectura con identidad declarada.**
-- **002 (US1–US3): lector CSV, políticas de severidad/estado/indicadores, validación por fila,
-  staging/rechazo, snapshots confirmables, manifiesto, repeticiones, sección «Vulnerabilidades» con
-  formulario/preview/confirmación/cancelación, historial, selector de instantáneas y filtros
-  avanzados por estado, severidad, prioridad e indicadores, consulta importada en `findings_query`
-  con instantánea fija por turno, privacidad de payloads, evidencia histórica y separación del RAG.**
-- Pruebas rápidas y fixtures.
-- Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
-- Documentación normativa y de planificación.
+### Evidencia de validación
 
-### Previsto
+- Pruebas rápidas: `make check` → **409 passed**, 35 deselected.
+- Integraciones: `make test-integration` → **34 passed**, 1 skipped por LangSmith desactivado en esa
+  ejecución de aceptación real.
+- Aceptación real 002: CSV autorizado de **662 registros**, flujo formulario → validación → vista
+  previa → confirmación → consulta, y tres consultas reales con Ollama contrastadas con SQLite.
+- Navegador: capturas sintéticas y recorrido con Playwright MCP; consola sin errores y recursos
+  locales sin fallos.
+- Traza LangSmith: integración verificada con datos sintéticos; una ejecución quedó `submitted` y
+  luego `confirmed` por lectura externa.
 
-- Incremento 3 y funcionalidades posteriores (clasificación, entrenamiento, exportaciones o
-  conectores), fuera del alcance autorizado de este corte.
-- Validaciones humanas SC-001/SC-003 y CI remota, no ejecutadas en este entorno.
+Evidencia localizable:
 
-El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
-[las tareas](specs/001-consulta-documental/tasks.md).
+- [`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md)
+- [`docs/evidencia/002-corte-5/aceptacion-real.md`](docs/evidencia/002-corte-5/aceptacion-real.md)
+- [`specs/001-consulta-documental/spec.md`](specs/001-consulta-documental/spec.md)
+- [`specs/002-qualys-findings-import/spec.md`](specs/002-qualys-findings-import/spec.md)
+
+### Pendiente y límites
+
+- La funcionalidad 003 —política P1–P4 y formulario de revisión— está **suspendida** y no se presenta
+  como disponible.
+- Clasificador, entrenamiento, reentrenamiento, MLflow, Prefect, promoción, rollback, exportación y
+  empaquetado operativo siguen fuera de este alcance.
+- SC-001 (recorrido humano cronometrado) y SC-003 (diez revisiones semánticas) son validaciones
+  recomendadas y no bloqueantes; no se ejecutaron.
+- La CI remota no se verificó y no se declara en verde.
+- La revisión en navegadores distintos de Chromium sigue pendiente.
+- El repositorio es privado y la protección de rama de GitHub no está disponible en el plan actual;
+  GitHub la ofrece al pasar a público o a un plan con esa capacidad.
 
 ## Funcionalidades
 
-La funcionalidad 001 se construye por incrementos verificables. El producto final permitirá:
+El producto ofrece las siguientes capacidades:
 
 1. **Implementado:** crear un caso con contexto educativo y reabrirlo tras reiniciar.
 2. **Implementado:** cargar PDF textuales y Markdown, conocer su estado y versiones; el corpus
@@ -119,7 +110,7 @@ La funcionalidad 001 se construye por incrementos verificables. El producto fina
 6. **Implementado:** la ejecución muestra modelo, digest, parámetros, duración, pasos, fuentes,
    invocaciones de herramienta, presupuesto, citas y traza real con sus estados. SC-001 y SC-003 son
    validaciones recomendadas y no bloqueantes, no ejecutadas.
-7. **Implementado (US1–US3 y corte final):** sección «Vulnerabilidades» con carga del CSV Qualys,
+7. **Implementado:** sección «Vulnerabilidades» con carga del CSV Qualys,
    validación, vista previa, confirmación, cancelación, historial, selector de instantáneas, filtros
    por estado, severidad, prioridad e indicadores, y consulta mediante `findings_query` con
    instantánea fija por turno. La aceptación real local, la privacidad con señuelos, la evidencia
