@@ -217,6 +217,23 @@ envío para evitar duplicados y conservan los valores de texto cuando hay que co
 servidor (`409`, `429`, `503`, `504`) se muestran dentro del panel afectado. La selección de archivo no
 puede restaurarse tras un error: hay que volver a elegirla.
 
+### Memoria de la conversación
+
+Cada caso tiene una sola conversación. El historial visible vive en SQLite y es la fuente
+autoritativa; el checkpointer de LangGraph (`storage/checkpoints.sqlite`, `thread_id` =
+`conversation_id`) guarda una instantánea operativa que se reconcilia antes de cada turno: si falta
+se reconstruye, si quedó adelantado se recorta y si pertenece a otra conversación se reemplaza. No hay
+atomicidad entre ambas bases.
+
+El prompt recibe los últimos turnos completos (máximo 8 mensajes y 6000 caracteres) como contexto para
+interpretar referencias, nunca como evidencia: las citas se validan solo contra los fragmentos
+recuperados en el turno actual. La recuperación de cada pregunta se amplía con la última pregunta
+confirmada para interpretar seguimientos, y la evidencia se limita a 3500 tokens medidos al ingerir,
+dentro de `num_ctx=8192` y `num_predict=1200`.
+
+Reiniciar la aplicación no pierde mensajes confirmados ni genera respuestas: el historial se lee de
+SQLite y los reintentos reutilizan la pregunta original.
+
 El umbral de recuperación (`retrieval_min_score`, 0,35 por defecto) filtra candidatos débiles con
 datos de humo; no demuestra que no exista evidencia.
 

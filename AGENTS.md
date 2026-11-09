@@ -8,10 +8,10 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica, US1, US2 y US3 (cortes T001–T068) y la navegación aprobada. La
+**Estado actual**: base técnica, US1–US4 (cortes T001–T074) y la navegación aprobada. La
 aplicación arranca con `/healthz`, casos, documentos, consulta documental con citas y revisión humana
-del respaldo. Todavía no hay memoria por caso, herramienta de hallazgos, traza real ni recorrido de
-aceptación.
+del respaldo, con memoria por caso en checkpoints separados. Todavía no hay herramienta de
+hallazgos, traza real ni recorrido de aceptación.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -85,6 +85,11 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   definida.
 - `SECGUARD_REVIEWER_NAME` es una identidad local declarada para la revisión humana; no es
   autenticación. Sin esa variable no se escribe ninguna revisión.
+- El historial visible es la fuente autoritativa (`messages`). `storage/checkpoints.sqlite` es
+  memoria operativa y se reconcilia antes de cada turno; no hay atomicidad entre bases.
+- El historial del prompt se acota a 8 mensajes y 6000 caracteres, y la evidencia a 3500 tokens
+  medidos al ingerir. El historial no es evidencia: las citas se validan contra los fragmentos del
+  turno actual.
 - El umbral de recuperación es un filtro de candidatos débiles; una recuperación vacía no demuestra
   ausencia de evidencia. El generador configurado es `qwen3.5:9b`, con razonamiento desactivado.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.

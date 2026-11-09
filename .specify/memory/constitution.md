@@ -404,6 +404,8 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-08 | Qwen3.5 9B como generador inicial; Gemma 4 de 7,5B Q4_K_M como comparación | Parámetro | IV | Candidatos definidos en el brief; selección final pendiente de medición |
 | 2026-11-08 | Razonamiento desactivado en el generador configurado (`reasoning=False`) | Parámetro | IV | Con razonamiento activo la salida estructurada no se producía dentro del presupuesto (400 tokens, 29 s, contenido vacío); desactivado respondió en 2,7 s |
 | 2026-11-08 | Umbral de recuperación por similitud coseno en 0,35 | Parámetro | V, X | Datos de humo con corpus real: preguntas pertinentes ≥ 0,58; fuera de dominio ≤ 0,05. Filtra candidatos débiles, no prueba ausencia de evidencia |
+| 2026-11-08 | Historial de conversación acotado a 8 mensajes y 6000 caracteres; evidencia limitada a 3500 tokens | Parámetro | IV | `num_ctx=8192` y `num_predict=1200` dejan margen para instrucciones e historial; los tokens de evidencia se miden con Ollama al ingerir |
+| 2026-11-08 | La recuperación de una pregunta de seguimiento se amplía con la última pregunta confirmada | Parámetro | IV, V | Interpreta referencias sin un segundo modelo; la evidencia se recupera y valida igual contra los fragmentos del turno |
 | Pendiente | Política P1–P4: significado, condiciones, excepciones, datos mínimos y ejemplos | Pendiente | IX, X | Bloquea el entrenamiento del incremento 3 |
 | Pendiente | Formato CSV de Qualys a soportar | Pendiente | XII | Bloquea el adaptador del incremento 2 |
 | Pendiente | Generador definitivo tras la comparación | Pendiente | IV | Requiere evidencia de calidad, herramientas, fundamentación, memoria y latencia |

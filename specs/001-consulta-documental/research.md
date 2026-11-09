@@ -359,3 +359,22 @@ fuente de verdad de rutas y rompe el renderizado del servidor ya probado.
 **Componentes**: Flowbite gratuito ya instalado (sidebar, drawer, breadcrumbs) con Tailwind local. El
 bloque desplegable de fragmentos usa `<details>` nativo para no reinicializar componentes tras cada
 reemplazo HTMX.
+
+## R23. Memoria operativa, historial acotado y consulta de seguimiento
+
+**Decisión**: la conversación visible vive en `messages` y es la fuente autoritativa. El checkpointer
+de LangGraph guarda una instantánea acotada del historial con `thread_id = conversation_id` y se
+reconcilia antes de cada turno (reconstruir si falta, recortar si está adelantado, reemplazar si
+pertenece a otra conversación). El prompt recibe los últimos turnos completos con dos límites
+explícitos: 8 mensajes y 6000 caracteres. La recuperación de cada pregunta se amplía con la última
+pregunta confirmada para interpretar referencias, sin reutilizar respuestas como evidencia. La
+evidencia se limita a 3500 tokens medidos al ingerir.
+
+**Rationale**: `num_ctx=8192` y `num_predict=1200` dejan un margen para instrucciones (~500), historial
+(~1500) y evidencia (≤3500). El historial ayuda a interpretar la pregunta, pero las citas siguen
+validándose solo contra los fragmentos recuperados en el turno. Sin un segundo modelo ni un resumen no
+aprobado.
+
+**Alternativas consideradas**: enviar todo el historial (crece sin control y desplaza la evidencia);
+usar un modelo auxiliar para reescribir la consulta (fuera de alcance); confiar en el checkpoint como
+fuente de verdad (una pérdida o un fallo entre bases rompería la conversación).

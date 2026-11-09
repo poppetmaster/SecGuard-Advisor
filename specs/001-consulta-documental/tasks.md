@@ -476,15 +476,45 @@ concurrencia, persistencia, aislamiento por caso ni el tratamiento de citas.
 
 ### Tests for User Story 4
 
-- [ ] T069 [P] [US4] Pruebas de memoria en `tests/unit/test_memory.py` — `thread_id` correcto, reconstrucción desde mensajes, rechazo de checkpoint ajeno · Dep: T019 · Check: fallan antes de T070 · Evidence: rojo y verde
+- [X] T069 [P] [US4] Pruebas de memoria en `tests/unit/test_memory.py` — `thread_id` correcto, reconstrucción desde mensajes, rechazo de checkpoint ajeno · Dep: T019 · Check: fallan antes de T070 · Evidence: rojo y verde
 
 ### Implementation for User Story 4
 
-- [ ] T070 [US4] Configurar el checkpointer en `src/secguard_advisor/conversation/memory.py` — `storage/checkpoints.sqlite`, `SqliteSaver`, `thread_id = conversation_id`, verificación de identidad · Dep: T069 · Check: T069 en verde · Evidence: test en verde
-- [ ] T071 [US4] Implementar persistencia de conversación en `src/secguard_advisor/conversation/service.py` — conversación única por caso, `seq`, reutilización de la pregunta en reintentos, reconciliación del checkpoint desde `messages` (recortar si está adelantado, reconstruir si falta), sin prometer atomicidad entre bases · Dep: T070, T027 · Check: `tests/unit/test_conversation_persistence.py` · Evidence: test en verde
-- [ ] T072 [US4] Integrar memoria en el grafo y el historial visible en `graph.py` y `templates/chat/history.html` · Dep: T071, T060 · Check: `tests/integration/test_memory_followup.py` · Evidence: test en verde
-- [ ] T073 [US4] Prueba de reinicio y aislamiento en `tests/integration/test_memory_restart_isolation.py` — conversación intacta; dos casos sin fuga · Dep: T072, T018 · Check: historial y contexto separados · Evidence: test en verde
-- [ ] T074 [US4] Prueba de fallo a mitad de turno en `tests/integration/test_midturn_failure.py` — fallo de la transacción final: sin mensaje asistente ni citas, ejecución `failed` o `interrupted`, reintento permitido; checkpoint adelantado: se recorta desde `messages`; sin duplicados · Dep: T073, T063 · Check: estado consistente y conteo de mensajes · Evidence: test en verde
+- [X] T070 [US4] Configurar el checkpointer en `src/secguard_advisor/conversation/memory.py` — `storage/checkpoints.sqlite`, `SqliteSaver`, `thread_id = conversation_id`, verificación de identidad · Dep: T069 · Check: T069 en verde · Evidence: test en verde
+- [X] T071 [US4] Implementar persistencia de conversación en `src/secguard_advisor/conversation/service.py` — conversación única por caso, `seq`, reutilización de la pregunta en reintentos, reconciliación del checkpoint desde `messages` (recortar si está adelantado, reconstruir si falta), sin prometer atomicidad entre bases · Dep: T070, T027 · Check: `tests/unit/test_conversation_persistence.py` · Evidence: test en verde
+- [X] T072 [US4] Integrar memoria en el grafo y el historial visible en `graph.py` y `templates/chat/history.html` · Dep: T071, T060 · Check: `tests/integration/test_memory_followup.py` · Evidence: test en verde
+- [X] T073 [US4] Prueba de reinicio y aislamiento en `tests/integration/test_memory_restart_isolation.py` — conversación intacta; dos casos sin fuga · Dep: T072, T018 · Check: historial y contexto separados · Evidence: test en verde
+- [X] T074 [US4] Prueba de fallo a mitad de turno en `tests/integration/test_midturn_failure.py` — fallo de la transacción final: sin mensaje asistente ni citas, ejecución `failed` o `interrupted`, reintento permitido; checkpoint adelantado: se recorta desde `messages`; sin duplicados · Dep: T073, T063 · Check: estado consistente y conteo de mensajes · Evidence: test en verde
+
+**Evidencia de US4 (2026-11-08)**
+
+- `tests/unit/test_memory.py` (9): instantánea por conversación, checkpoint ajeno rechazado,
+  reconstrucción desde `messages`, exclusión de la pregunta actual, recorte por mensajes y
+  caracteres, solo turnos completos, huella del último mensaje y estados `rebuilt_missing`,
+  `rebuilt_stale`, `trimmed_ahead` y `rebuilt_foreign`.
+- `tests/unit/test_conversation_persistence.py` (6): una conversación por caso, secuencia, pregunta
+  persistida, exclusión de la pregunta reintentada, historial sin mensajes de otro caso y consulta de
+  recuperación ampliada.
+- `tests/integration/test_memory_followup.py`: seguimiento con historial confirmado en el prompt y
+  citas nuevas asociadas a la respuesta correcta.
+- `tests/integration/test_memory_restart_isolation.py`: reinicio con historial y contexto intactos;
+  dos casos con marcas distintivas sin fuga entre prompts, mensajes ni checkpoints.
+- `tests/integration/test_midturn_failure.py`: fallo de la transacción final sin mensaje asistente ni
+  citas, ejecución `failed`, reintento permitido y sin duplicados; checkpoint adelantado recortado y
+  desactualizado reconstruido, verificado en el paso `load_memory`.
+- `tests/integration/test_memory_followup_real.py`: con Ollama y CSF 2.0 ingerido, Q1 y Q2
+  respondidas con citas; reinicio de motor y memoria; Q3 «¿Cuál de las funciones acabamos de
+  profundizar?» responde GOVERN con cita válida.
+- `make check`: 243 pruebas rápidas en verde; `make test-integration`: 12 en verde.
+- Playwright con servidor real y almacenamiento temporal: doble clic en la primera pregunta produce
+  un solo POST con spinner y botón deshabilitado; recarga conserva el historial; reinicio del
+  servidor conserva 2 turnos y la tercera pregunta responde GOVERN con 4 citas; el otro caso aparece
+  vacío y al volver el historial sigue completo; revisión humana persistente; 0 errores de consola;
+  móvil sin desbordamiento.
+- Defecto corregido: una cita rechazada sin fragmento resoluble rompía la transacción final por
+  clave foránea y devolvía 500; ahora la fila se omite y el motivo queda en el paso `validate`.
+- Capturas en `docs/evidencia/us4/`: `carga.png`, `primera-pregunta.png`, `segunda-pregunta.png`,
+  `tras-reinicio.png`, `tercera-pregunta.png`, `caso-a-completo.png` y `movil.png`.
 
 **Checkpoint**: US4 funcional.
 
