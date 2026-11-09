@@ -34,19 +34,23 @@
   {% endif %}
 
   {% if message.sources %}
-  <h3 class="mt-4 text-sm font-semibold text-slate-800">Fragmentos recuperados</h3>
-  <ul class="mt-2 space-y-1 text-xs text-slate-600">
-    {% for source in message.sources %}
-    <li>
-      <span class="font-medium text-slate-800">{{ source.rank }}.</span>
-      {{ source.title }} · {{ source.origin_label }}
-      {% if source.page %}· página {{ source.page }}{% endif %}
-      {% if source.section %}· {{ source.section }}{% endif %}
-      · similitud {{ source.score }}
-      · {% if source.used_in_answer %}citado en la respuesta{% else %}no citado{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
+  <details class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <summary class="cursor-pointer text-sm font-semibold text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+      Fragmentos recuperados ({{ message.sources|length }})
+    </summary>
+    <ul class="mt-2 space-y-1 text-xs text-slate-600">
+      {% for source in message.sources %}
+      <li class="break-words">
+        <span class="font-medium text-slate-800">{{ source.rank }}.</span>
+        {{ source.title }} · {{ source.origin_label }}
+        {% if source.page %}· página {{ source.page }}{% endif %}
+        {% if source.section %}· {{ source.section }}{% endif %}
+        · similitud {{ source.score }}
+        · {% if source.used_in_answer %}citado en la respuesta{% else %}no citado{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
   {% endif %}
 
   {% if message.run_id %}

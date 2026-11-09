@@ -140,6 +140,7 @@ def test_question_with_valid_citation_returns_200(context) -> None:
     assert "válida" in response.text
     assert "pendiente de revisión" in response.text
     assert f"/cases/{case_id}/documents/{seeded.document_id}/versions/" in response.text
+    assert "from=consultation" in response.text
 
     with factory() as session:
         run = session.scalar(select(Run).where(Run.case_id == case_id))

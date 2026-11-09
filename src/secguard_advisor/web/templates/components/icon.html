@@ -1,0 +1,27 @@
+{% macro icon(name, classes="h-5 w-5") %}
+<svg class="{{ classes }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {% if name == "menu" %}
+  <path d="M4 7h16M4 12h16M4 17h16"></path>
+  {% elif name == "close" %}
+  <path d="M6 6l12 12M18 6L6 18"></path>
+  {% elif name == "folder" %}
+  <path d="M4 7a2 2 0 0 1 2-2h3l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path>
+  {% elif name == "plus" %}
+  <path d="M12 5v14M5 12h14"></path>
+  {% elif name == "home" %}
+  <path d="M4 11l8-7 8 7"></path>
+  <path d="M6 10v9h12v-9"></path>
+  {% elif name == "document" %}
+  <path d="M7 3h7l4 4v14H7z"></path>
+  <path d="M14 3v5h4M10 13h5M10 17h5"></path>
+  {% elif name == "chat" %}
+  <path d="M5 5h14v10H9l-4 4z"></path>
+  <path d="M9 10h6"></path>
+  {% elif name == "chevron" %}
+  <path d="M9 6l6 6-6 6"></path>
+  {% elif name == "arrow-left" %}
+  <path d="M10 6l-6 6 6 6"></path>
+  <path d="M4 12h16"></path>
+  {% endif %}
+</svg>
+{% endmacro %}

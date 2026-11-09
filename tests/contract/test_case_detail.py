@@ -42,6 +42,8 @@ def test_unknown_fields_and_synthetic_mark_are_visible(client) -> None:
     assert "No corresponde a una empresa real" in detail.text
     assert detail.text.count("Desconocido") >= 4
     assert "Sin activos registrados" in detail.text
+    assert 'id="documents-panel"' not in detail.text
+    assert 'id="chat-panel"' not in detail.text
 
 
 def test_assets_are_listed_when_present(client) -> None:

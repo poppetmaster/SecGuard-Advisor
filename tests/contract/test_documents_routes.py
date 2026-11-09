@@ -113,9 +113,10 @@ def test_upload_and_detail(client) -> None:
     assert "Versiones" in detail.text
     assert "Fragmentos" in detail.text
 
-    case_page = client.get(f"/cases/{case_id}")
-    assert case_page.status_code == 200
-    assert "Documentos" in case_page.text
+    section = client.get(f"/cases/{case_id}/documents")
+    assert section.status_code == 200
+    assert 'id="documents-panel"' in section.text
+    assert document.id in section.text
 
     fragment = client.get(
         f"/cases/{case_id}/documents/{document.id}/versions/{version.id}/fragments/{chunks[0].id}",

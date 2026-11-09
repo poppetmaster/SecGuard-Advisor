@@ -1,23 +1,104 @@
+{% from "components/navigation.html" import sidebar %}
+{% from "components/icon.html" import icon %}
 <!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SecGuard Advisor{% endblock %}</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/static/css/app.css">
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <a class="text-lg font-semibold" href="/">SecGuard Advisor</a>
-        <span class="text-sm text-slate-500">Consulta documental con evidencia</span>
+  <body class="min-h-screen bg-slate-100 text-slate-900">
+    <a
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-medium focus:text-blue-800 focus:shadow"
+      href="#main"
+    >Saltar al contenido</a>
+
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white">
+      <div class="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6">
+        <button
+          type="button"
+          id="nav-toggle"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 lg:hidden"
+          aria-controls="mobile-nav"
+          aria-expanded="false"
+          aria-label="Abrir menú"
+        >
+          {{ icon("menu") }}
+        </button>
+        <a class="shrink-0 text-[15px] font-semibold tracking-tight text-slate-900 sm:text-lg" href="/cases">
+          SecGuard Advisor
+        </a>
+        <span class="ml-1 inline-flex shrink-0 items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-900 sm:px-2.5 sm:text-xs">
+          Escenario educativo
+        </span>
       </div>
     </header>
-    <main class="mx-auto max-w-6xl px-4 py-8">
-      {% block content %}{% endblock %}
-    </main>
+
+    <div class="mx-auto flex w-full max-w-7xl">
+      <aside class="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white px-3 py-5 lg:block">
+        {{ sidebar(nav_case, active_section) }}
+      </aside>
+
+      <div id="mobile-nav" class="fixed inset-0 z-50 lg:hidden" hidden>
+        <div class="absolute inset-0 bg-slate-900/50" data-drawer-close aria-hidden="true"></div>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mobile-nav-title"
+          class="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col overflow-y-auto border-r border-slate-200 bg-white shadow-xl"
+        >
+          <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-3">
+            <p id="mobile-nav-title" class="text-sm font-semibold uppercase tracking-wide text-slate-600">
+              Menú
+            </p>
+            <button
+              type="button"
+              class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+              data-drawer-close
+              aria-label="Cerrar menú"
+            >
+              {{ icon("close") }}
+            </button>
+          </div>
+          <div class="px-3 py-5">
+            {{ sidebar(nav_case, active_section) }}
+          </div>
+        </div>
+      </div>
+
+      <main id="main" class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div class="mx-auto w-full max-w-4xl">
+          {% if breadcrumbs %}
+          <nav aria-label="Ruta de navegación">
+            <ol class="flex flex-wrap items-center gap-1 text-sm text-slate-600">
+              {% for crumb in breadcrumbs %}
+              <li class="flex items-center gap-1">
+                {% if not loop.first %}{{ icon("chevron", "h-4 w-4 text-slate-400") }}{% endif %}
+                {% if crumb.href and not loop.last %}
+                <a class="rounded px-1 py-0.5 hover:text-blue-800 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" href="{{ crumb.href }}">{{ crumb.label }}</a>
+                {% else %}
+                <span class="px-1 py-0.5 {% if loop.last %}font-medium text-slate-900{% endif %}" {% if loop.last %}aria-current="page"{% endif %}>{{ crumb.label }}</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ol>
+          </nav>
+          {% endif %}
+
+          {% if page_title %}
+          <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{{ page_title }}</h1>
+          {% endif %}
+
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+
     <script src="/static/js/htmx.min.js" defer></script>
     <script src="/static/js/flowbite.min.js" defer></script>
+    <script src="/static/js/navigation.js" defer></script>
     <script src="/static/js/forms.js" defer></script>
   </body>
 </html>

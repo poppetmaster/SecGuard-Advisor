@@ -57,7 +57,7 @@ def _locator_url(case_id: str, citation: MessageCitation) -> str:
         f"/cases/{case_id}/documents/{citation.document_id}"
         f"/versions/{citation.document_version_id}/fragments/{citation.chunk_id}"
     )
-    return f"{base}?quote={url_quote(citation.quote)}"
+    return f"{base}?quote={url_quote(citation.quote)}&from=consultation"
 
 
 def citation_view(session: Session, case_id: str, citation: MessageCitation) -> dict:

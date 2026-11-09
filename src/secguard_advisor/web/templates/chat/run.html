@@ -3,14 +3,11 @@
 {% block title %}Ejecución {{ run.id }} — SecGuard Advisor{% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-  <div>
-    <h1 class="text-2xl font-semibold">Evidencia de ejecución</h1>
-    <p class="mt-1 text-sm text-slate-500">
-      Intento {{ run.attempt_no }} · {{ run.status_label }}{% if run.outcome_label %} · {{ run.outcome_label }}{% endif %}
-    </p>
-  </div>
-  <a class="text-sm text-blue-700 hover:underline" href="/cases/{{ case_id }}/chat">Volver a la conversación</a>
+<div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  <p class="text-sm text-slate-600">
+    Intento {{ run.attempt_no }} · {{ run.status_label }}{% if run.outcome_label %} · {{ run.outcome_label }}{% endif %}
+  </p>
+  <a class="text-sm font-medium text-blue-800 hover:underline" href="/cases/{{ case_id }}/chat">Volver a la conversación</a>
 </div>
 
 {% if run.error_message %}

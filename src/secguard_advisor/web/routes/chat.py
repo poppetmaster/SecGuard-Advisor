@@ -7,7 +7,12 @@ from typing import Annotated
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
-from secguard_advisor.cases.scope import CaseNotFoundError, CaseScope, resolve_case_scope
+from secguard_advisor.cases.scope import (
+    CaseNotFoundError,
+    CaseScope,
+    require_case,
+    resolve_case_scope,
+)
 from secguard_advisor.conversation.concurrency import find_active_run
 from secguard_advisor.conversation.retry import (
     RetryNotAllowed,
@@ -18,6 +23,7 @@ from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.conversation.views import conversation_view, run_view
 from secguard_advisor.evidence.runs import ActiveRunConflict
 from secguard_advisor.web.errors import message_for
+from secguard_advisor.web.navigation import Crumb, case_crumbs, page
 
 router = APIRouter(tags=["chat"])
 
@@ -47,17 +53,26 @@ def _panel_context(
 ) -> dict:
     settings = request.app.state.settings
     with request.app.state.session_factory() as session:
+        case = require_case(session, CaseScope(case_id=case_id))
         view = conversation_view(
             session,
             CaseScope(case_id=case_id),
             reviewer_configured=bool(settings.reviewer_name),
         )
+        case_title = case.title
     return {
         "case_id": case_id,
         "errors": errors or {},
         "notice": notice,
         "failure": failure,
         **view,
+        **page(
+            title="Consulta documental",
+            section="chat",
+            case_id=case_id,
+            case_title=case_title,
+            crumbs=case_crumbs(case_id, case_title, Crumb("Consulta documental")),
+        ),
     }
 
 
@@ -249,12 +264,29 @@ def run_evidence_view(request: Request, case_id: str, run_id: str):
         return _not_found(request)
 
     with request.app.state.session_factory() as session:
+        case = require_case(session, scope)
         view = run_view(session, scope, run_id)
+        case_title = case.title
     if view is None:
         return _not_found(request)
 
     return _templates(request).TemplateResponse(
         request=request,
         name="chat/run.html",
-        context={"case_id": case_id, "run": view},
+        context={
+            "case_id": case_id,
+            "run": view,
+            **page(
+                title="Evidencia de ejecución",
+                section="chat",
+                case_id=case_id,
+                case_title=case_title,
+                crumbs=case_crumbs(
+                    case_id,
+                    case_title,
+                    Crumb("Consulta documental", f"/cases/{case_id}/chat"),
+                    Crumb("Ejecución"),
+                ),
+            ),
+        },
     )

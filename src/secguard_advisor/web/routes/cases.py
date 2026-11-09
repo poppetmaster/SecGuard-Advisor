@@ -11,9 +11,8 @@ from secguard_advisor.cases.service import (
     list_assets,
     list_cases,
 )
-from secguard_advisor.conversation.views import conversation_view
 from secguard_advisor.db.transaction import unit_of_work
-from secguard_advisor.documents.service import documents_overview
+from secguard_advisor.web.navigation import Crumb, case_crumbs, page
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -52,7 +51,14 @@ def list_case_view(request: Request):
     return _templates(request).TemplateResponse(
         request=request,
         name="cases/list.html",
-        context={"cases": cases},
+        context={
+            "cases": cases,
+            **page(
+                title="Casos",
+                section="cases",
+                crumbs=(Crumb("Casos"),),
+            ),
+        },
     )
 
 
@@ -61,7 +67,15 @@ def new_case_view(request: Request):
     return _templates(request).TemplateResponse(
         request=request,
         name="cases/new.html",
-        context={"values": {}, "errors": {}},
+        context={
+            "values": {},
+            "errors": {},
+            **page(
+                title="Nuevo caso",
+                section="new",
+                crumbs=(Crumb("Casos", "/cases"), Crumb("Nuevo caso")),
+            ),
+        },
     )
 
 
@@ -97,7 +111,15 @@ def create_case_view(
         return _templates(request).TemplateResponse(
             request=request,
             name="cases/new.html",
-            context={"values": values, "errors": exc.errors},
+            context={
+                "values": values,
+                "errors": exc.errors,
+                **page(
+                    title="Nuevo caso",
+                    section="new",
+                    crumbs=(Crumb("Casos", "/cases"), Crumb("Nuevo caso")),
+                ),
+            },
             status_code=422,
         )
 
@@ -118,12 +140,6 @@ def detail_case_view(request: Request, case_id: str):
             scope = resolve_case_scope(session, case_id)
             case = get_case(session, scope)
             assets = [asset.name for asset in list_assets(session, case.id)]
-            documents = documents_overview(session, case.id)
-            conversation = conversation_view(
-                session,
-                scope,
-                reviewer_configured=bool(request.app.state.settings.reviewer_name),
-            )
             view = {
                 "id": case.id,
                 "title": case.title,
@@ -149,8 +165,12 @@ def detail_case_view(request: Request, case_id: str):
         context={
             "case": view,
             "case_id": view["id"],
-            "documents": documents,
-            "errors": {},
-            "chat": conversation,
+            **page(
+                title="Resumen",
+                section="summary",
+                case_id=view["id"],
+                case_title=view["title"],
+                crumbs=case_crumbs(view["id"], view["title"], Crumb("Resumen")),
+            ),
         },
     )

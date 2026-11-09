@@ -9,7 +9,12 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from secguard_advisor.cases.scope import CaseNotFoundError, CaseScope, resolve_case_scope
+from secguard_advisor.cases.scope import (
+    CaseNotFoundError,
+    CaseScope,
+    require_case,
+    resolve_case_scope,
+)
 from secguard_advisor.conversation.views import citation_view, conversation_view
 from secguard_advisor.db.models import Conversation, Message, MessageCitation
 from secguard_advisor.retrieval.review import (
@@ -18,6 +23,7 @@ from secguard_advisor.retrieval.review import (
     ReviewNotConfigured,
     review_citation,
 )
+from secguard_advisor.web.navigation import Crumb, case_crumbs, page
 
 router = APIRouter(tags=["review"])
 
@@ -86,11 +92,14 @@ def _citation_response(
 def _page(request: Request, case_id: str, *, notice: str | None, status_code: int):
     settings = request.app.state.settings
     with request.app.state.session_factory() as session:
+        scope = resolve_case_scope(session, case_id)
+        case = require_case(session, scope)
         view = conversation_view(
             session,
-            resolve_case_scope(session, case_id),
+            scope,
             reviewer_configured=bool(settings.reviewer_name),
         )
+        case_title = case.title
     return _templates(request).TemplateResponse(
         request=request,
         name="chat/index.html",
@@ -100,6 +109,13 @@ def _page(request: Request, case_id: str, *, notice: str | None, status_code: in
             "notice": notice,
             "failure": None,
             **view,
+            **page(
+                title="Consulta documental",
+                section="chat",
+                case_id=case_id,
+                case_title=case_title,
+                crumbs=case_crumbs(case_id, case_title, Crumb("Consulta documental")),
+            ),
         },
         status_code=status_code,
     )

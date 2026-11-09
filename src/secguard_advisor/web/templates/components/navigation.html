@@ -1,0 +1,38 @@
+{% from "components/icon.html" import icon %}
+
+{% macro nav_link(href, label, icon_name, active) %}
+<a
+  href="{{ href }}"
+  {% if active %}aria-current="page"{% endif %}
+  class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 {% if active %}bg-blue-50 font-semibold text-blue-800 ring-1 ring-inset ring-blue-200{% else %}text-slate-700 hover:bg-slate-100 hover:text-slate-900{% endif %}"
+>
+  {{ icon(icon_name) }}
+  <span class="truncate">{{ label }}</span>
+</a>
+{% endmacro %}
+
+{% macro sidebar(nav_case, active_section) %}
+<nav aria-label="Navegación principal" class="flex flex-col gap-6">
+  <div>
+    <p class="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">General</p>
+    <ul class="mt-2 space-y-1">
+      <li>{{ nav_link("/cases", "Casos", "folder", active_section == "cases") }}</li>
+      <li>{{ nav_link("/cases/new", "Nuevo caso", "plus", active_section == "new") }}</li>
+    </ul>
+  </div>
+
+  {% if nav_case %}
+  <div>
+    <p class="px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Caso abierto</p>
+    <p class="mt-2 truncate px-3 text-sm font-semibold text-slate-900" title="{{ nav_case.title }}">
+      {{ nav_case.title }}
+    </p>
+    <ul class="mt-2 space-y-1">
+      <li>{{ nav_link("/cases/" ~ nav_case.id, "Resumen", "home", active_section == "summary") }}</li>
+      <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/documents", "Documentos", "document", active_section == "documents") }}</li>
+      <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/chat", "Consulta documental", "chat", active_section == "chat") }}</li>
+    </ul>
+  </div>
+  {% endif %}
+</nav>
+{% endmacro %}
