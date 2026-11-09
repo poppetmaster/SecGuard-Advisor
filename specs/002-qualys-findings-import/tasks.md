@@ -132,6 +132,9 @@ rechaza.
 - **T045**: comparación de manifiesto por hash, bytes, filas, columnas y estados; `absent`, `matched`, `mismatch`, `invalid`.
 - **T046**: posibles repeticiones conservadas; sin deduplicación.
 - **T012**: README y AGENTS actualizados sin presentar formulario ni consulta importada como disponibles.
+- **Ajuste de alcance autorizado**: el responsable autorizó usar el CSV real filtrado en el corte 1
+  para inspección estructural, construcción, validación local y comprobación en almacenamiento
+  temporal. No se versionó, no se envió a servicios externos y no cierra T039.
 - **Pruebas del corte**: 36 pruebas focalizadas verdes; `make check` = 372 passed, 26 deselected.
 - **Probe local del CSV real**: 1 passed con `LANGSMITH_TRACING=false`, almacenamiento temporal y sin copiar el CSV.
 - **Aceptación real T039**: no ejecutada; el corte no cierra aceptación integral ni funcionalidades posteriores.
