@@ -138,9 +138,14 @@ demostrable).
 - `origin=all`: devuelve un bloque por origen (`origins[]`) con totales y grupos independientes, sin
   fusionar escalas. `total` puede ser la suma, pero siempre acompañado del desglose.
 - Un filtro de severidad con `origin=all` devuelve `ambiguous_severity_filter`.
-- `status_group`, `priority`, indicadores y `snapshot_id` solo aplican a `imported`; usarlos con
-  `origin=synthetic` devuelve `filter_not_applicable`.
-- `snapshot_id` debe pertenecer al caso y estar confirmado; si no, `snapshot_not_found`.
+- `snapshot_id`, `priority`, `exploitability` y `malware` requieren `origin=imported`; usarlos con
+  `origin=all` o `origin=synthetic` devuelve `filter_not_applicable`.
+- `status_group` con `origin=all` solo admite `all`; cualquier otro valor devuelve
+  `origin_required_for_status_filter`. Con `origin=imported` el default es `pending_known`; con
+  `origin=all` el default es `all`; con `origin=synthetic` no aplica y devuelve
+  `filter_not_applicable`.
+- `snapshot_id` debe pertenecer al caso y estar confirmado; si no, `snapshot_not_found`. Una vez
+  fijada la instantánea del turno, un `snapshot_id` distinto devuelve `snapshot_locked`.
 
 **Conteos**: `COUNT(*)` sobre la tabla correspondiente con los filtros aplicados; CVE con
 subconsulta `EXISTS`/`IN`, nunca join que multiplique filas.
@@ -152,10 +157,11 @@ convertir etiquetas sintéticas a 1–5 (conversión silenciosa); devolver solo 
 ## R8. Fijación del snapshot y reproducibilidad
 
 **Decisión**: en la primera ejecución de `findings_query` de un turno, resolver la última instantánea
-confirmada y guardar `selected_import_id` en el estado del grafo. Las llamadas posteriores del mismo
-turno reutilizan ese id salvo que el modelo seleccione uno explícito. Cada `run_tool_calls` guarda el
-snapshot usado y el resumen; la respuesta se construye con ese resultado y no se vuelve a consultar
-la base al renderizar la evidencia.
+confirmada y guardar `selected_import_id` en el estado del grafo. Todas las llamadas posteriores del
+mismo turno reutilizan ese id. Un `snapshot_id` distinto devuelve `snapshot_locked`; el modelo no
+puede cambiar la instantánea de forma silenciosa. Un turno nuevo puede seleccionar otra importación.
+Cada `run_tool_calls` guarda el snapshot usado y el resumen; la respuesta se construye con ese
+resultado y no se vuelve a consultar la base al renderizar la evidencia.
 
 **Rationale**: si otra importación se confirma mientras el modelo responde, la respuesta no cambia de
 snapshot de forma invisible. La página de ejecución lee el resumen histórico; el detalle recalculado
@@ -180,8 +186,14 @@ preserva los valores originales.
 sus filas/issues se eliminan en la limpieza. Las confirmadas nunca se borran ni se sobrescriben.
 
 **Sin aceptación parcial**: no hay control para importar solo filas válidas. Un error estructural,
-de encabezado, contenido obligatorio, hash, cantidad o límite deja la importación en `rejected` y no
-permite confirmar. La persona cancela o carga un archivo corregido.
+de encabezado, contenido obligatorio, hash, cantidad, límite o archivo vacío deja la importación en
+`rejected` y no permite confirmar. La persona cancela o carga un archivo corregido. Un archivo vacío
+se registra con `csv_bytes=0`, `row_count=0` y `empty_file`.
+
+**Manifiesto**: la comparación es una capacidad del servicio de validación/aceptación, no un campo
+del formulario ni una ruta HTTP. Estados: `absent` (sin manifiesto), `matched`, `mismatch`
+(manifiesto válido que no coincide) e `invalid` (manifiesto malformado). `mismatch` e `invalid` dejan
+la importación en `rejected`; `absent` no impide validar el CSV.
 
 **Idempotencia**: índice único parcial `(case_id, csv_sha256)` para `confirmed`; el servicio reutiliza
 un `staged` con el mismo hash o devuelve la confirmación existente. Un `rejected` no bloquea una
@@ -249,18 +261,19 @@ aceptación real opcional con el CSV autorizado fuera de Git; Playwright para fo
 confirmación, historial, selector, tabla, móvil 390/320 y doble envío.
 
 **Fixtures sintéticos**: CSV con BOM, comas, comillas, multilínea, `Active/New/Re-Opened/Fixed`,
-estado desconocido, severidades 1–5, varios CVE, ambos/solo uno/vacío/negativo/indeterminado en
-indicadores, filas repetidas por combinaciones parciales y errores estructurales. Se añaden
-manifiesto sintético, escenarios de repetición, evidencia histórica/actual, estados vacíos y una
-prueba de que los registros no entran en Chroma ni en citas. El fixture de errores debe quedar
-`rejected` y no confirmarse.
+estado desconocido, severidades 1–5, varios CVE con longitudes de 4–7 dígitos, ambos/solo
+uno/vacío/negativo/indeterminado en indicadores, filas repetidas por combinaciones parciales,
+archivo vacío y errores estructurales. Se añaden manifiesto sintético, escenarios de repetición,
+evidencia histórica/actual, estados vacíos y una prueba de que los registros no entran en Chroma ni
+en citas. El fixture de errores y el archivo vacío deben quedar `rejected` y no confirmarse.
 
 **Aceptación real**: se ejecuta después de las pruebas de privacidad y manifiesto, con
-`LANGSMITH_TRACING=false`; leer el CSV y el manifiesto desde `../` solo si existen; verificar hash y
-conteos; importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a
-documentación; no enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no
-resultados forzados. Un archivo con error de integridad queda `rejected`; no se permite una
-aceptación parcial. El resultado se registra como ejecutada aprobada, ejecutada fallida o no
+`LANGSMITH_TRACING=false`; leer el CSV desde `../` y pasar la ruta del manifiesto al servicio de
+validación de la aceptación local, nunca al formulario ni a una ruta HTTP. Verificar hash y conteos;
+importar en almacenamiento temporal; no versionar, no copiar filas a logs ni a documentación; no
+enviar a LangSmith. Los conteos 662/129/8/8 son referencias de inspección, no resultados forzados.
+Un archivo con error de integridad o manifiesto inválido/discrepante queda `rejected`; no se permite
+una aceptación parcial. El resultado se registra como ejecutada aprobada, ejecutada fallida o no
 ejecutada con motivo; un skip no acredita la aceptación.
 
 ## R15. Riesgos y decisiones pendientes de implementación
@@ -273,4 +286,7 @@ ejecutada con motivo; un skip no acredita la aceptación.
 - La fecha no tiene zona horaria; se conserva el valor y se marca la limitación.
 - El soporte de `Fixed` y estados desconocidos se acredita con fixtures, no con el archivo de
   referencia.
+- P1–P4 y su formulario están diferidos al incremento 3; 002 no los implementa.
+- El formato CSV está definido; el adaptador es una implementación de 002, no una decisión pendiente.
+- La instantánea fijada en el turno no cambia; un `snapshot_id` distinto devuelve `snapshot_locked`.
 - La respuesta del agente debe mencionar snapshot, origen, estado y prioridad cuando corresponda.

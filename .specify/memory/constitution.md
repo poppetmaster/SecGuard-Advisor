@@ -1,21 +1,3 @@
-<!--
-Sync Impact Report
-==================
-Versión: 1.0.4 → 1.0.5
-Tipo de cambio: PATCH — registro de una decisión de parámetros, sin cambios de principios
-Principios modificados: ninguno
-Secciones modificadas:
-  - Registro de decisiones: Node unificado en 26.11.1 para local y CI
-Secciones añadidas: ninguna
-Secciones eliminadas: ninguna
-Plantillas dependientes: sin cambios; leen esta constitución en tiempo de ejecución
-TODOs diferidos: política P1–P4, formato CSV de Qualys, generador definitivo, destino
-  GitHub y presupuesto de DeepSeek. Se registran como pendientes, no como decisiones
-  tomadas.
-Este informe es material temporal de revisión y DEBE eliminarse antes del commit de la
-enmienda.
--->
-
 # SecGuard Advisor Constitution
 
 ## Core Principles
@@ -211,11 +193,12 @@ El producto se construye por funcionalidades verificables, en este orden:
    persistente; consulta de hallazgos sintéticos precargados mediante herramienta controlada;
    abstención cuando falta información; registro de ejecución y traza real cuando exista
    configuración válida.
-2. **Importación y revisión humana**: adaptador para un formato CSV de Qualys seleccionado y
+2. **Importación y consulta de hallazgos**: adaptador para un formato CSV de Qualys seleccionado y
    documentado, con validación de tipos, campos, rangos, fechas, duplicados y procedencia;
    separación de severidad de Qualys, CVSS, QID y CVE; pantalla de hallazgos con filtros y
-   detalle; formulario de revisión con decisión, prioridad P1–P4 y justificación.
-3. **Clasificación, aprendizaje y operación**: política P1–P4 acordada; clasificador ligero con
+   detalle. La importación no incluye el formulario de revisión P1–P4.
+3. **Clasificación, aprendizaje y operación**: política P1–P4 acordada; formulario de revisión
+   con decisión, prioridad P1–P4 y justificación; clasificador ligero con
    scikit-learn; comparación con líneas base; pantalla administrativa de etiquetas,
    entrenamiento, versiones, métricas, activación y rollback; MLflow con backend SQLite y
    artefactos locales; flujos Prefect; exportación, cola acotada, cancelación, expiración,
@@ -416,8 +399,9 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-09 | Confirmación de traza únicamente por `scripts/confirm_trace.py` con lectura externa, identidad declarada, fecha y evidencia | Permanente | VIII, XI | La aplicación nunca escribe `confirmed`; se rechaza una traza inexistente, de otro proyecto o no correlacionada con `run_id`, `case_id` e intento |
 | 2026-11-09 | Aceptación en almacenamiento separado y `make demo-prepare`/`make demo` sobre `storage/demo` | Permanente | II, VIII | No se tocan los casos del usuario; preparación y arranque usan la misma instancia y el recorrido queda reproducible desde el Makefile |
 | 2026-11-09 | SC-001 (recorrido humano cronometrado) y SC-003 (diez revisiones semánticas) son validaciones recomendadas y no bloqueantes; resultados reales no ejecutados | Recomendada | IX, X | Decisión del responsable; no implican aprobación académica ni cumplimiento adicional; se conservan plantillas, umbral de 15 minutos y revisión humana por cita |
+| 2026-11-09 | 002 importa y consulta hallazgos Qualys; el formulario de revisión con prioridad P1–P4 se difiere al incremento 3, condicionado a la política P1–P4 | Decisión de alcance | IX, XII | Acuerdo de Edwin Perez L., Cristian Quebrada y Ruben Dario Sabogal, confirmado por Edwin Perez L. en esta conversación e incorporado al registro el 2026-11-09. El alcance aprobado de 002 excluye P1–P4; la política sigue pendiente y bloquea el entrenamiento del incremento 3. No se registran fecha de reunión, firmas, actas ni aprobación académica |
+| 2026-11-09 | Formato CSV de Qualys definido: archivo filtrado, encabezado inicial de 41 columnas, sin preámbulo ni pie del reporte original; manifiesto opcional para la aceptación local, no campo del formulario | Parámetro | XII | Insumo verificado en `specs/002-qualys-findings-import/spec.md`; el adaptador se implementará en 002. Registrada por instrucción del responsable del producto; no implica aprobación académica |
 | Pendiente | Política P1–P4: significado, condiciones, excepciones, datos mínimos y ejemplos | Pendiente | IX, X | Bloquea el entrenamiento del incremento 3 |
-| Pendiente | Formato CSV de Qualys a soportar | Pendiente | XII | Bloquea el adaptador del incremento 2 |
 | Pendiente | Generador definitivo tras la comparación | Pendiente | IV | Requiere evidencia de calidad, herramientas, fundamentación, memoria y latencia |
 | 2026-11-08 | LangSmith parametrizado: `LANGSMITH_ENDPOINT=https://api.smith.langchain.com`, proyecto `secguard-advisor-dev`, traza real verificada con estado `success` | Parámetro | XI | Prueba sintética sin datos de caso; la clave vive solo en `.env`, ignorado por Git |
 | 2026-11-08 | Una sola consulta activa por caso y una generación local a la vez; liberación en éxito, error, timeout y reinicio | Parámetro | IV, XI | Evita concurrencia de escritura sobre SQLite y carga simultánea de modelos |
@@ -430,4 +414,4 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | Pendiente | Destino GitHub y autorización de publicación | Pendiente | Flujo de trabajo | Sin repo no hay badges de CI verificables |
 | Pendiente | Presupuesto aprobado para DeepSeek (proveedor externo opcional) | Pendiente | XI | No se activan llamadas pagadas sin aprobación |
 
-**Version**: 1.0.9 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09
+**Version**: 1.1.1 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09

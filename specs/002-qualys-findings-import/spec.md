@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-09
 
-**Status**: Draft
+**Status**: Draft — planificación documental; implementación no iniciada; sin verificación funcional
 
 **Input**: Importar el CSV filtrado de Qualys ya verificado, conservarlo como instantánea del caso,
 previsualizarlo, confirmarlo y consultarlo mediante `findings_query` con severidad, estado,
@@ -78,7 +78,19 @@ Datos agregados de verificación, sin filas ni valores de activos:
   originales, evaluación, motivo y versión de regla. Un campo vacío o indeterminado no es positivo.
 - Q: ¿El manifiesto es obligatorio en cada importación futura? → A: No. Se usa para verificar el
   insumo de referencia; el producto calcula hash, bytes y filas y conserva el hash del manifiesto
-  cuando se aporta.
+  cuando se aporta. La comparación es una capacidad del servicio de validación/aceptación, no un
+  campo del formulario ni una ruta HTTP.
+
+### Session 2026-11-09 — correcciones de consistencia
+
+- Q: ¿P1–P4 forman parte de 002? → A: No. El formulario de revisión con prioridad P1–P4 se difiere
+  al incremento 3, condicionado a la política P1–P4. 002 importa, consulta y conserva procedencia.
+- Q: ¿Puede cambiar la instantánea durante un turno? → A: No. La primera resolución fija la
+  instantánea del turno; una solicitud distinta devuelve `snapshot_locked`. Un turno nuevo puede
+  seleccionar otra importación.
+- Q: ¿Qué formato de CVE se admite? → A: `CVE-AAAA-NNNN`, con 4 a 7 dígitos en la secuencia final.
+- Q: ¿Cómo se rechaza un archivo vacío? → A: Como `rejected` con `empty_file`, `csv_bytes=0`,
+  `row_count=0` y sin filas consultables.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -198,8 +210,10 @@ muestra el indicador sin la bandera conjunta.
   coma, encabezado en el primer registro, 41 columnas en el orden verificado y campos multilínea.
 - **FR-003**: El sistema MUST calcular y registrar SHA-256, bytes y cantidad de filas del CSV; cuando
   se aporte el manifiesto de referencia, MUST comparar hash, bytes, filas, columnas y conteos de
-  estado, y rechazar la importación si no coinciden. El manifiesto no es obligatorio para cada
-  importación futura.
+  estado, y rechazar la importación si no coinciden. Un manifiesto malformado MUST rechazar con
+  `manifest_invalid`; uno válido que no coincide MUST rechazar con `manifest_mismatch`. La
+  comparación es una capacidad del servicio de validación/aceptación, no un campo del formulario ni
+  una ruta HTTP. El manifiesto no es obligatorio para cada importación futura.
 - **FR-004**: El sistema MUST leer comas, comillas, comillas escapadas y campos multilínea sin
   convertir una fila en varias ni perder contenido.
 - **FR-005**: El sistema MUST clasificar las columnas en obligatorias, opcionales y desconocidas. Para
@@ -219,16 +233,22 @@ muestra el indicador sin la bandera conjunta.
 - **FR-010**: El sistema MUST conservar filas diferentes aunque compartan QID, IP, puerto y protocolo;
   MUST informar posibles repeticiones y no puede eliminar filas por esa coincidencia.
 - **FR-011**: La vista previa MUST mostrar filas detectadas, válidas, inválidas estructurales,
-  posibles repeticiones y conteos por estado, además de la comparación con el manifiesto cuando se
-  aporte, antes de escribir datos. La validación MUST distinguir una preparación `staged` (todo el
-  archivo válido y confirmable) de un archivo `rejected` (con errores bloqueantes, no confirmable).
+  posibles repeticiones y conteos por estado, antes de incorporar registros a una instantánea
+  consultable. La vista previa web no promete comparación con el manifiesto; esa comparación se
+  realiza en el servicio de validación/aceptación cuando recibe el manifiesto. La validación MUST distinguir
+  una preparación `staged` (todo el archivo válido y confirmable) de un archivo `rejected` (con
+  errores bloqueantes, no confirmable). El almacenamiento temporal de validación se rige por
+  FR-016b.
 - **FR-012**: El sistema MUST exigir una confirmación explícita después de la vista previa; ninguna
-  fila puede incorporarse antes de esa confirmación. Solo un archivo `staged` puede confirmarse.
+  fila puede formar parte de una instantánea consultable antes de esa confirmación. Solo un archivo
+  `staged` puede confirmarse. El almacenamiento temporal de validación conforme a FR-016b no es una
+  instantánea consultable.
 - **FR-013**: La política MUST ser rechazo del archivo ante cualquier error estructural, de encabezado,
   hash, cantidad o contenido obligatorio que invalide registros. No existe aceptación parcial, no hay
   un control para «aceptar solo filas válidas» y no se incorpora una instantánea parcial. Un fallo de
-  integridad frente al manifiesto de referencia tampoco puede eludirse. La vista previa de un archivo
-  rechazado muestra cantidades y motivos y permite cancelar o cargar un archivo corregido.
+  integridad frente al manifiesto de referencia tampoco puede eludirse. Un archivo vacío o sin filas
+  MUST rechazarse con `empty_file` y sin snapshot parcial. La vista previa de un archivo rechazado
+  muestra cantidades y motivos y permite cancelar o cargar un archivo corregido.
 - **FR-014**: El sistema MUST validar valores ausentes, tipos, longitudes, QID numérico, severidad
   entera, fechas y CVEs; cada fila inválida MUST tener número de fila y motivo. Una fila inválida
   bloquea la confirmación del archivo completo; no se omite para crear una instantánea parcial.
@@ -259,8 +279,9 @@ muestra el indicador sin la bandera conjunta.
   etiqueta inventada.
 - **FR-019**: El sistema MUST conservar las fechas originales y una forma normalizada del patrón
   `MM/DD/YYYY HH:MM:SS`; no puede convertir a UTC ni inventar una zona horaria no declarada.
-- **FR-020**: El sistema MUST dividir `CVE ID` por comas, validar el formato `CVE-AAAA-NNNN`, conservar
-  todos los CVE de un registro y contabilizar el registro una sola vez aunque tenga varios CVE.
+- **FR-020**: El sistema MUST dividir `CVE ID` por comas, validar el formato `CVE-AAAA-NNNN` con 4 a
+  7 dígitos en la secuencia final, conservar todos los CVE de un registro y contabilizar el registro
+  una sola vez aunque tenga varios CVE.
 - **FR-021**: El sistema MUST evaluar `Exploitability` y `Associated Malware` por separado y conservar
   sus valores originales y una evaluación `positiva`, `negativa_no_informada` o `indeterminada`.
 - **FR-022**: `Exploitability` MUST considerarse positiva cuando exista al menos un bloque
@@ -283,10 +304,15 @@ muestra el indicador sin la bandera conjunta.
   explotación efectiva en la organización ni ejecutar remediación.
 - **FR-027**: `findings_query` MUST consultar por defecto la última instantánea confirmada del caso
   según la secuencia local de confirmación y MUST permitir seleccionar una instantánea anterior.
-  Siempre MUST mostrar la instantánea consultada. No puede sumar instantáneas silenciosamente.
+  Siempre MUST mostrar la instantánea consultada. La primera resolución de importación fija la
+  instantánea del turno; una solicitud distinta MUST devolver `snapshot_locked`. Un turno nuevo
+  puede seleccionar otra importación. No puede sumar instantáneas silenciosamente.
 - **FR-028**: `findings_query` MUST aceptar filtros de instantánea, estado, severidad numérica,
   etiqueta de severidad, prioridad, indicadores, activo, QID, CVE, origen, agrupación, detalle y
-  límite, conservando el alcance y los filtros existentes compatibles.
+  límite, conservando el alcance y los filtros existentes compatibles. Los filtros exclusivos de
+  importados (`snapshot_id`, `priority`, `exploitability`, `malware`) MUST requerir
+  `origin=imported`; con `origin=all` solo se admite `status_group=all`; con `origin=synthetic`,
+  `status_group` no aplica y devuelve `filter_not_applicable`.
 - **FR-029**: Los resultados MUST distinguir origen `synthetic` e `imported`, incluir el desglose por
   origen y, para importados, snapshot e importación. MUST evitar conversiones silenciosas entre
   escalas de severidad.
@@ -314,9 +340,9 @@ muestra el indicador sin la bandera conjunta.
   pueden copiarse al repositorio, fixtures, logs, respuestas externas ni trazas de LangSmith. La
   operación de importación es local; la traza externa solo puede registrar metadatos acotados.
 - **FR-040**: Las pruebas y fixtures MUST usar datos sintéticos representativos del formato, con BOM,
-  comas, comillas, multilínea, estados, CVEs múltiples, valores `N/A`/`None`/`No`, campos vacíos,
-  indicadores indeterminados y ambos/solo uno positivos. MUST incluir fixtures para `Fixed`, estados
-  desconocidos y la regla conjunta.
+  comas, comillas, multilínea, estados, CVEs de 4–7 dígitos, valores `N/A`/`None`/`No`, campos vacíos,
+  archivo vacío, manifiesto sintético, indicadores indeterminados y ambos/solo uno positivos. MUST
+  incluir fixtures para `Fixed`, estados desconocidos y la regla conjunta.
 - **FR-041**: El sistema MUST informar que el soporte se limita al formato suministrado y no debe
   afirmar compatibilidad con cualquier CSV de Qualys, otros reportes, Tenable o conectores API.
 - **FR-042**: La importación y la consulta MUST conservar el aislamiento, la memoria, las citas, la
@@ -326,8 +352,9 @@ muestra el indicador sin la bandera conjunta.
 - **FR-044**: El sistema MUST impedir que una importación de un caso sea visible o confirmable desde
   otro caso y MUST devolver no encontrado para recursos ajenos.
 - **FR-045**: Cada importación MUST registrar caso, hash, bytes, filas, fecha, versión del adaptador,
-  versión de la política de severidad, versión de la regla de prioridad, estado, cantidades y errores;
-  cada fila MUST referenciar su importación y su posición lógica.
+  versión de la política de severidad, versión de la regla de prioridad, estado, cantidades, estado
+  del manifiesto cuando se aporte y errores; cada fila MUST referenciar su importación y su posición
+  lógica.
 
 ### Key Entities
 
@@ -367,9 +394,11 @@ muestra el indicador sin la bandera conjunta.
   explícita, sin etiqueta inventada ni equivalencia con CVSS/QDS/TruRisk/P1–P4.
 - **SC-008**: Las consultas separan `pending_known`, `fixed` y `manual_review`; `Fixed` y «Revisión
   manual» no se presentan como activos y los conteos identifican el filtro aplicado.
-- **SC-009**: En el archivo de referencia, la regla propuesta evalúa 129 registros con explotabilidad
-  positiva, 8 con malware positivo y 8 con ambos; 121 tienen solo explotabilidad y 0 solo malware;
-  533 y 654 quedan indeterminados por campo vacío. La bandera conjunta aparece exactamente en 8.
+- **SC-009**: En el archivo de referencia, la regla propuesta reporta distribuciones independientes:
+  129 registros con explotabilidad positiva y 533 con explotabilidad indeterminada por campo vacío;
+  8 con malware positivo y 654 con malware indeterminado por campo vacío; 8 con ambos positivos. No
+  se suman las dos distribuciones como si fueran grupos excluyentes. La bandera conjunta aparece
+  exactamente en 8. Estos conteos son referencias observadas, no valores forzados.
 - **SC-010**: Un registro con ambos indicadores positivos muestra la bandera y su motivo; uno con un
   solo indicador muestra ese indicador sin la bandera conjunta; un campo vacío o indeterminado no se
   presenta como positivo.
@@ -379,8 +408,8 @@ muestra el indicador sin la bandera conjunta.
   versión del adaptador, política de severidad y regla de prioridad consultables.
 - **SC-013**: Una consulta de un caso no devuelve registros, importaciones ni mensajes de otro caso;
   un recurso ajeno responde no encontrado.
-- **SC-014**: Un resultado vacío informa «sin registros para esta consulta» y no afirma ausencia de
-  vulnerabilidades.
+- **SC-014**: Un resultado vacío distingue «sin registros para esta consulta» de «sin importaciones
+  confirmadas» y no afirma ausencia de vulnerabilidades ni riesgo bajo.
 - **SC-015**: La interfaz completa seleccionar caso → cargar CSV → previsualizar → confirmar →
   consultar, muestra el motivo de prioridad, conserva indicadores de carga y evita el doble envío.
 - **SC-016**: Los logs, respuestas y trazas externas no contienen filas, IP, activos, resultados ni
@@ -408,6 +437,8 @@ muestra el indicador sin la bandera conjunta.
   registro.
 - La revisión humana por cita y las validaciones recomendadas del primer incremento no bloquean este
   trabajo.
+- El formulario de revisión con prioridad P1–P4 no forma parte de 002; se difiere al incremento 3,
+  condicionado a la política P1–P4.
 
 ## Ambigüedades restantes
 

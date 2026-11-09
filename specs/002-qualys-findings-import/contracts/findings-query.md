@@ -49,18 +49,18 @@ Todos los filtros son opcionales. `limit` solo afecta al detalle; nunca a los co
   `origin=all` cuando el caso no contiene importados.
 - `severity_level` solo es válido con `origin=imported` o `origin=all` cuando el caso no contiene
   sintéticos.
-- `status_group`, `snapshot_id`, `priority`, `exploitability` y `malware` solo aplican a
-  `origin=imported`.
+- `snapshot_id`, `priority`, `exploitability` y `malware` requieren `origin=imported`. Con
+  `origin=all` o `origin=synthetic` devuelven `filter_not_applicable`.
+- `status_group` es opcional. Con `origin=imported` y sin valor, el default es `pending_known`.
+  Con `origin=all`, el default es `all` y solo se admite `all`; cualquier otro valor devuelve
+  `origin_required_for_status_filter`. Con `origin=synthetic` no aplica y devuelve
+  `filter_not_applicable`.
 - Si `origin=all` y el caso contiene ambos orígenes, un filtro de severidad (`severity` o
   `severity_level`) sin origen produce `ambiguous_severity_filter`. No se convierte una escala en otra.
-- `status_group` es opcional. Con `origin=imported` y sin valor, el default es `pending_known`.
-  Con `origin=all`, el default es `all`; si se envía un valor distinto de `all` en un caso mixto,
-  devuelve `origin_required_for_status_filter`.
-- `snapshot_id` debe ser un snapshot confirmado del caso; si no, `snapshot_not_found`.
+- `snapshot_id` debe ser un snapshot confirmado del caso; si no, `snapshot_not_found`. Una vez
+  fijada la instantánea del turno, un `snapshot_id` distinto devuelve `snapshot_locked`.
 - `origin=imported` sin snapshots confirmados devuelve `snapshot: null`, `total: 0` y
   `empty_reason: "no_confirmed_import"`; no es una afirmación de ausencia de vulnerabilidades.
-- El default `status_group=pending_known` solo se aplica a `origin=imported`. Con `origin=all` el
-  default es `all`; para sintéticos no cambia el comportamiento existente.
 
 ## Resultado con un solo origen
 
@@ -94,13 +94,9 @@ Si el caso solo tiene importados:
   "total": 662,
   "groups": [{ "key": "4", "count": 162, "label": "Alta" }],
   "severity_scale": "project_1_5",
-  "priority_counts": {
-    "both_positive": 8,
-    "exploitability_only": 121,
-    "malware_only": 0,
-    "neither_positive": 0,
-    "indeterminate": 533
-  },
+  "exploitability_counts": { "positive": 129, "negative_no_info": 0, "indeterminate": 533 },
+  "malware_counts": { "positive": 8, "negative_no_info": 0, "indeterminate": 654 },
+  "priority_counts": { "both_positive": 8 },
   "items": [],
   "truncated": false
 }
@@ -129,7 +125,9 @@ origen:
       "total": 662,
       "groups": [{ "key": "4", "count": 162, "label": "Alta" }],
       "severity_scale": "project_1_5",
-      "priority_counts": { "both_positive": 8, "exploitability_only": 121 }
+      "exploitability_counts": { "positive": 129, "negative_no_info": 0, "indeterminate": 533 },
+      "malware_counts": { "positive": 8, "negative_no_info": 0, "indeterminate": 654 },
+      "priority_counts": { "both_positive": 8 }
     }
   ],
   "total": 666,
@@ -143,7 +141,9 @@ agente debe mencionar el origen y el snapshot cuando corresponda.
 
 El ejemplo anterior usa `status_group=all` en el bloque importado porque `origin=all` no aplica un
 `status_group` parcial por defecto. Un valor explícito distinto de `all` en un caso mixto debe
-rechazarse con `origin_required_for_status_filter`; el ejemplo es normativo para esa regla.
+rechazarse con `origin_required_for_status_filter`; el ejemplo es normativo para esa regla. El campo
+`snapshot` del bloque importado es informativo: no implica que se haya enviado el filtro
+`snapshot_id` con `origin=all`, que devolvería `filter_not_applicable`.
 
 ## Detalle de un registro importado
 
@@ -181,6 +181,8 @@ etiqueta de activo es de presentación, no una identidad.
 - CVE se filtra con subconsulta `EXISTS`/`IN`; nunca se hace join que multiplique registros.
 - Un registro con varios CVE cuenta una sola vez.
 - `limit` solo limita `items`; `truncated` indica si hay más detalle que el límite.
+- `exploitability_counts` y `malware_counts` son distribuciones independientes; no se suman como
+  grupos excluyentes. `priority_counts.both_positive` cuenta solo la conjunción positiva.
 - `priority_counts` se calcula por separado y no reemplaza la severidad.
 - `Fixed` y `manual_review` no se suman a `pending_known`.
 
@@ -188,8 +190,10 @@ etiqueta de activo es de presentación, no una identidad.
 
 - Si `snapshot_id` no se envía, el servidor usa el último snapshot confirmado del caso por
   `confirmed_sequence`.
-- La primera llamada de herramienta del turno fija `selected_import_id` en el estado del grafo; las
-  siguientes llamadas del mismo turno lo reutilizan.
+- La primera llamada de herramienta del turno fija `selected_import_id` en el estado del grafo; todas
+  las siguientes llamadas del mismo turno lo reutilizan.
+- Un `snapshot_id` distinto tras la fijación devuelve `snapshot_locked`; un turno nuevo puede
+  seleccionar otra importación.
 - Todas las respuestas incluyen el snapshot usado; si no hay snapshots, `snapshot: null`.
 - Confirmar otro snapshot durante la respuesta no cambia el resultado ya fijado.
 - El resumen histórico de `run_tool_calls` conserva el snapshot, filtros, totales, grupos, origen,
@@ -207,9 +211,10 @@ etiqueta de activo es de presentación, no una identidad.
 | `invalid_arguments` | `invalid_malware` | Evaluación desconocida | Corregir |
 | `invalid_arguments` | `invalid_qid` / `invalid_cve` / `limit_out_of_range` | Formato/límite | Corregir |
 | `invalid_arguments` | `ambiguous_severity_filter` | Severidad sin origen en caso mixto | Pedir origen |
-| `invalid_arguments` | `origin_required_for_status_filter` | Estado sin `origin=imported` | Pedir origen |
-| `invalid_arguments` | `filter_not_applicable` | Filtro importado con origen sintético | Corregir |
+| `invalid_arguments` | `origin_required_for_status_filter` | `status_group` distinto de `all` con `origin=all` | Pedir `origin=imported` |
+| `invalid_arguments` | `filter_not_applicable` | `status_group` con `origin=synthetic`; `snapshot_id`, prioridad o indicadores con `origin=all` o `synthetic` | Corregir |
 | `invalid_arguments` | `snapshot_not_found` | Snapshot ajeno o no confirmado | Corregir |
+| `invalid_arguments` | `snapshot_locked` | `snapshot_id` distinto tras fijar la instantánea del turno | Reutilizar la instantánea fijada |
 | `error` | `tool_failed` | Fallo de base | Turno `failed` |
 | `timeout` | `tool_timeout` | Excede el tiempo | Turno `timeout` |
 

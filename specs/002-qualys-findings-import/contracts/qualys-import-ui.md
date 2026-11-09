@@ -50,12 +50,17 @@ La vista previa muestra:
   `staged` o `rejected`.
 - Distribución por estado: `Active`, `New`, `Re-Opened`, `Fixed`, desconocidos.
 - Distribución por severidad 1–5 y etiqueta del proyecto.
-- Prioridad conjunta: ambos, solo explotabilidad, solo malware, ninguno, indeterminados.
+- Explotabilidad: positivo, negativo/no informado e indeterminado. Malware: positivo, negativo/no
+  informado e indeterminado. Ambos positivos: cantidad conjunta. Las dos distribuciones no se suman
+  como grupos excluyentes.
 - Posibles repeticiones por combinaciones parciales (sin afirmar identidad).
 - Errores y advertencias con número de fila y motivo; sin valores sensibles en el mensaje. Un archivo
   `rejected` muestra cantidades y motivos, no una vista de filas válidas.
-- Comparación con el manifiesto cuando se aportó.
 - Efecto de confirmar: snapshot que pasará a ser el último confirmado y conteos esperados.
+
+La vista previa web normal no recibe manifiesto y no promete una comparación. La comparación es una
+capacidad del servicio de validación/aceptación local; no se añade un campo de formulario ni una ruta
+HTTP para el manifiesto.
 
 La vista previa no incorpora filas a la consulta. No muestra el contenido completo de `Results`; la
 tabla de preview se limita a campos clave y un máximo de filas por página.
@@ -69,7 +74,8 @@ tabla de preview se limita a campos clave y un máximo de filas por página.
 - Si el mismo hash ya está confirmado en el caso, responde con la importación existente (idempotente).
 - Si hay cualquier error bloqueante, el botón de confirmación no existe o está deshabilitado y se
   explica el motivo. No hay un control para «aceptar solo filas válidas» ni una confirmación parcial.
-- Un fallo de integridad contra el manifiesto de referencia también deja el archivo en `rejected`.
+- Un fallo de integridad contra el manifiesto, cuando el servicio de aceptación lo recibió, también
+  deja el archivo en `rejected`.
 - Al confirmar, el snapshot recibe `confirmed_sequence` local y pasa a ser el último por defecto.
 
 ## Cancelar y expiración
@@ -79,6 +85,17 @@ tabla de preview se limita a campos clave y un máximo de filas por página.
 - Un `staged` o `rejected` abandonado expira a las 24 h (configurable); al volver a la URL se informa
   «validación expirada» y se ofrece cargar de nuevo.
 - Un `confirmed` no se cancela desde la interfaz; es evidencia histórica.
+
+## Manifiesto
+
+- No es un archivo del formulario ni requiere una ruta HTTP nueva.
+- La aceptación local puede pasar una ruta de manifiesto al servicio de validación.
+- `absent`: no se aportó manifiesto; el CSV válido sigue a `staged` y no hay comparación.
+- `matched`: el manifiesto es válido y coincide en hash, bytes, filas, columnas y conteos.
+- `mismatch`: el manifiesto es válido pero no coincide; la importación queda `rejected` y no se
+  confirma.
+- `invalid`: el manifiesto está malformado; la importación queda `rejected` y no se confirma.
+- La vista previa web no muestra una comparación que no recibió.
 
 ## Historial y selector
 
@@ -101,7 +118,8 @@ la tabla.
 
 - `Fixed` y «Revisión manual» se muestran en grupos separados; no se suman a pendientes activos.
 - La tabla no usa `Results` completo.
-- El estado vacío distingue «sin registros para estos filtros» de «sin importaciones confirmadas».
+- El estado vacío distingue «sin registros para estos filtros» de «sin importaciones confirmadas»;
+  ninguno afirma ausencia de vulnerabilidades ni riesgo bajo.
 - El detalle recalculado se etiqueta como **«Consulta actual»**; no reemplaza el resumen histórico.
 
 ## Errores y estados
@@ -112,7 +130,7 @@ la tabla.
 | Archivo demasiado grande | 413 con límite |
 | Encabezado/columnas ausentes o adicionales | 200 con preview `rejected`, columnas esperadas/detectadas y sin filas confirmables |
 | CSV ilegible, BOM/encoding inválido o fila inválida | 200 con preview `rejected` y motivo; no se confirma |
-| Hash/manifiesto no coincide | 422/409 con hash calculado y esperado |
+| Archivo vacío o sin filas | 200 con preview `rejected`, `empty_file`, `csv_bytes=0` y sin filas |
 | Validación expirada | 410 con opción de cargar de nuevo |
 | Confirmación de un snapshot ya confirmado | 200 idempotente con enlace |
 | Confirmación de un `rejected` | 409; no se modifica nada |
@@ -120,6 +138,8 @@ la tabla.
 | Conflicto de secuencia/concurrencia | reintento seguro o 409 con mensaje |
 | Fallo interno | 500 con mensaje comprensible; sin traza ni filas |
 
+El manifiesto no genera códigos HTTP en la interfaz porque no se recibe por una ruta web. Sus estados
+(`absent`, `matched`, `mismatch`, `invalid`) se registran en el servicio de validación/aceptación.
 No se exponen rutas absolutas, valores de filas, IP, activos, resultados ni stack traces.
 
 ## Accesibilidad y presentación

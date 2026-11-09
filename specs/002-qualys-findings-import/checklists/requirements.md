@@ -41,5 +41,5 @@
   archivo válido.
 - La acreditación de `Fixed` y de estados desconocidos con fixtures sintéticos es una cobertura de
   prueba pendiente de ejecución, no una ambigüedad de especificación.
-- La especificación está lista para revisión y puede avanzar a `/speckit.plan` cuando el equipo lo
-  indique.
+- La especificación está en fase de análisis de consistencia y corrección documental. Este checklist
+  acredita completitud de la especificación, no implementación, pruebas ni aceptación funcional.

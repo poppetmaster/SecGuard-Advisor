@@ -68,9 +68,11 @@ estructurados; sin P1–P4 ni remediación.
 | IX. Revisión humana | PASS | La bandera operativa no adjudica P1–P4; la revisión humana por cita sigue separada. |
 | X. Evaluación independiente | PASS | No se usan datos de evaluación ni se entrena un clasificador. |
 | XI. Observabilidad y costos | PASS | La traza externa solo recibe metadatos acotados; no se envían filas, activos, resultados ni indicadores reales. |
-| XII. Desarrollo incremental | PASS | Este es el incremento 2 de importación; no incluye clasificación, P1–P4, exportación ni operación. |
+| XII. Desarrollo incremental | PASS | Este es el incremento 2 de importación y consulta; P1–P4 y su formulario se difieren al incremento 3. La excepción está registrada en la constitución y el acuerdo del equipo fue confirmado por Edwin Perez L. el 2026-11-09. |
 
-Sin violaciones que requieran justificación adicional.
+Sin violaciones no registradas. La única excepción de alcance —P1–P4 diferido— está documentada en la
+constitución y cuenta con la confirmación del acuerdo del equipo comunicada por Edwin Perez L. el
+2026-11-09.
 
 ## Project Structure
 
@@ -85,7 +87,7 @@ specs/002-qualys-findings-import/
 ├── contracts/
 │   ├── qualys-import-ui.md
 │   └── findings-query.md
-└── tasks.md              # NO se genera en este comando
+└── tasks.md              # T001–T048
 ```
 
 ### Source Code (repository root)
@@ -102,6 +104,7 @@ src/secguard_advisor/
 │   └── views.py                  # vistas de lectura para plantillas
 ├── db/models.py                  # nuevas tablas, sin tocar las sintéticas
 ├── tools/findings.py             # fachada de findings_query con origen/snapshot
+├── evidence/runs.py              # detalle histórico sobre la instantánea registrada
 ├── conversation/
 │   ├── graph.py                  # estado selected_import_id
 │   ├── nodes.py                  # fijación de snapshot y ejecución de herramienta
@@ -127,8 +130,18 @@ tests/
 ├── unit/test_qualys_policies.py
 ├── unit/test_qualys_service.py
 ├── unit/test_qualys_query.py
+├── unit/test_qualys_manifest.py
+├── unit/test_qualys_repeats.py
 ├── contract/test_vulnerabilities_routes.py
 ├── contract/test_findings_query_contract.py
+├── contract/test_vulnerability_privacy_ui.py
+├── contract/test_run_evidence_imported.py
+├── contract/test_vulnerability_empty_states.py
+├── integration/test_qualys_import_sqlite.py
+├── integration/test_qualys_snapshots.py
+├── integration/test_qualys_status_priority.py
+├── integration/test_qualys_origins.py
+├── integration/test_qualys_not_rag.py
 ├── integration/test_qualys_import_real.py
 ├── acceptance/test_vulnerabilities_ui.py
 └── fixtures/files/qualys_*.csv    # solo sintéticos
@@ -163,7 +176,7 @@ Ver [research.md](./research.md). Decisiones principales:
 
 ## Construction Slices
 
-Sin tareas numeradas; cortes revisables:
+Las tareas numeradas están en `tasks.md`; cortes revisables:
 
 1. **Esquema y políticas**: migración aditiva, modelos, parser, severidad, estados y prioridad.
    Comprobación: unitarias de parser/políticas sobre fixtures sintéticos.
@@ -174,10 +187,12 @@ Sin tareas numeradas; cortes revisables:
    Comprobación: contrato de rutas y Playwright.
 4. **findings_query**: esquema extendido, origen/snapshot, conteos, resultado por origen y prompt.
    Comprobación: unitarias de consulta y contrato; regresión sintética.
-5. **Privacidad y trazabilidad**: guardas de metadatos, redacción, pruebas de no exposición.
-   Comprobación: unitarias de traza/logs y revisión de payloads.
-6. **Aceptación local**: fixtures sintéticos, archivo real fuera de Git, concurrencia, aislamiento,
-   reinicio y Playwright móvil. Comprobación: integración y aceptación local.
+5. **Privacidad, trazabilidad y detalle histórico**: guardas de metadatos, redacción, pruebas de no
+   exposición y recálculo del detalle sobre la instantánea registrada. Comprobación: unitarias de
+   traza/logs, revisión de payloads y regresión con dos instantáneas.
+6. **Aceptación local**: fixtures sintéticos, archivo real fuera de Git, manifiesto por el servicio
+   de aceptación, concurrencia, aislamiento, reinicio y Playwright móvil. Comprobación: integración y
+   aceptación local.
 
 ## Risks and Pending Items
 
@@ -192,13 +207,15 @@ Sin tareas numeradas; cortes revisables:
 - **Datos reales**: no se versionan; la aceptación local debe usar almacenamiento temporal y no dejar
   copias. Si faltan los archivos, se registra «no ejecutada» con motivo; no se declara cerrada.
 - **Evidencia**: el histórico de `run_tool_calls` y el detalle recalculado se prueban por separado
-  (T043); los registros Qualys no se indexan ni se citan (T044).
-- **Manifiesto y repeticiones**: T045/T046 cubren hash/cantidades y grupos repetidos con fixtures
-  sintéticos; no se depende de la aceptación real para esa cobertura.
+  (T048/T043); el detalle usa el snapshot registrado, no el último. Los registros Qualys no se
+  indexan ni se citan (T044).
+- **Manifiesto y repeticiones**: T045/T046 cubren hash/cantidades, estados `absent/matched/mismatch/
+  invalid` y grupos repetidos con fixtures sintéticos. El manifiesto es un parámetro del servicio de
+  aceptación, no un campo del formulario. No se depende de la aceptación real para esa cobertura.
 - **Concurrencia**: confirmación repetida y snapshot seleccionado durante una respuesta requieren
   pruebas explícitas.
-- **Rechazo único**: una fila inválida invalida el archivo; no se ofrece «aceptar solo filas válidas»
-  ni se crea un snapshot parcial.
+- **Rechazo único**: una fila inválida o un archivo vacío invalida el archivo; no se ofrece «aceptar
+  solo filas válidas» ni se crea un snapshot parcial.
 - **Fixed/desconocidos**: el archivo de referencia no contiene `Fixed`; la cobertura se hará con
   fixtures sintéticos.
 - **UI**: la sección «Vulnerabilidades» es nueva; no se rediseña el shell ni se añade dashboard.

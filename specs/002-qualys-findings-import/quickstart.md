@@ -38,9 +38,12 @@ La implementación creará estos archivos, todos sintéticos:
 | `tests/fixtures/files/qualys_synthetic_second.csv` | Snapshot posterior con un registro nuevo y uno ya presente |
 | `tests/fixtures/files/qualys_synthetic_mixed.csv` | `Fixed`, estado desconocido, ambos/solo uno positivos, vacíos e indeterminados |
 | `tests/fixtures/files/qualys_synthetic_invalid_header.csv` | Encabezado/columnas inválidas |
-| `tests/fixtures/files/qualys_synthetic_invalid_rows.csv` | Severidad, fecha, QID o CVE inválidos |
+| `tests/fixtures/files/qualys_synthetic_invalid_rows.csv` | Severidad, fecha, QID o CVE inválidos; incluye CVE de 4–7 dígitos válidos y formatos inválidos |
+| `tests/fixtures/files/qualys_synthetic_empty.csv` | Archivo vacío o sin filas para rechazo `empty_file` |
+| `tests/fixtures/files/qualys_synthetic_manifest.json` | Manifiesto sintético para `matched`, `mismatch` e `invalid` |
 
-No se usan filas del archivo real para crear estos fixtures.
+No se usan filas del archivo real para crear estos fixtures. Los CVE sintéticos cubren longitudes de
+4 a 7 dígitos.
 
 ## 4. Recorrido principal con fixture sintético
 
@@ -54,7 +57,9 @@ No se usan filas del archivo real para crear estos fixtures.
    - 5 filas detectadas, 5 válidas, 0 inválidas;
    - estados: `Active` 1, `New` 1, `Re-Opened` 1, `Fixed` 1, desconocido 1;
    - severidades 1–5 con etiquetas Informativa/Baja/Media/Alta/Crítica;
-   - prioridad conjunta: 2 filas; solo explotabilidad: 1; indeterminadas: 2;
+   - explotabilidad: 3 positivas, 0 negativas/no informadas, 2 indeterminadas;
+   - malware: 2 positivos, 1 negativo/no informado, 2 indeterminados;
+   - ambos positivos: 2;
    - un posible grupo de repetición por combinación parcial;
    - advertencias de estado desconocido y de indicadores indeterminados.
 6. Pulsar **Confirmar importación**. Solo un archivo `staged` puede confirmarse.
@@ -75,6 +80,8 @@ No se usan filas del archivo real para crear estos fixtures.
 4. Seleccionar el snapshot anterior y comprobar que los conteos vuelven a los de ese snapshot.
 5. Verificar que la ausencia de un registro en el segundo snapshot no se etiqueta como corregido ni
    remediado.
+6. En un turno nuevo, seleccionar el snapshot anterior. En el mismo turno, solicitar otro snapshot
+   después de la primera consulta debe devolver `snapshot_locked`; no puede cambiar en silencio.
 
 ## 6. Estados, severidad y prioridad
 
@@ -103,21 +110,31 @@ En la tabla y mediante el agente:
 - Un caso con datos sintéticos e importados debe mostrar desglose por origen. Un filtro de severidad
   sin origen debe rechazarse como ambiguo.
 - `origin=imported` sin `status_group` usa `pending_known`; `origin=all` usa `all` y devuelve bloques
-  separados. `origin=all` con `status_group=pending_known` explícito debe rechazarse con
+  separados. `origin=all` con `status_group` distinto de `all` debe rechazarse con
   `origin_required_for_status_filter`.
+- `snapshot_id`, `priority`, `exploitability` y `malware` solo se aceptan con `origin=imported`; con
+  `origin=all` o `origin=synthetic` devuelven `filter_not_applicable`.
+- `status_group` con `origin=synthetic` devuelve `filter_not_applicable`; con `origin=all` solo se
+  admite `all`.
+- Un `snapshot_id` distinto después de fijar la instantánea del turno devuelve `snapshot_locked`.
 
 ## 8. Aislamiento y errores
 
 1. Crear un segundo caso sin importaciones.
-2. Abrir `Vulnerabilidades`: debe distinguir «sin importaciones confirmadas» (estado vacío con CTA)
-   de «sin registros para estos filtros»; ninguno afirma ausencia de vulnerabilidades ni riesgo bajo.
-3. Abrir una URL de snapshot del primer caso bajo el segundo: debe responder 404.
-4. Validar `qualys_synthetic_invalid_header.csv`: debe rechazar con columnas esperadas/detectadas y
+2. Abrir `Vulnerabilidades`: debe mostrar «sin importaciones confirmadas» con CTA; no debe mostrar
+   «sin registros para estos filtros».
+3. En el primer caso, con una importación confirmada, aplicar un filtro sin coincidencias: debe
+   mostrar «sin registros para estos filtros». Ninguno de los dos estados afirma ausencia de
+   vulnerabilidades ni riesgo bajo.
+4. Abrir una URL de snapshot del primer caso bajo el segundo: debe responder 404.
+5. Validar `qualys_synthetic_invalid_header.csv`: debe rechazar con columnas esperadas/detectadas y
    sin incorporar filas.
-5. Validar `qualys_synthetic_invalid_rows.csv`: debe quedar `rejected`, mostrar filas inválidas con
+6. Validar `qualys_synthetic_invalid_rows.csv`: debe quedar `rejected`, mostrar filas inválidas con
    número y motivo y no ofrecer confirmación. No existe un control para «aceptar solo filas válidas»
    ni se crea un snapshot parcial.
-6. Cancelar una vista previa `staged` o `rejected`: la instantánea vigente no cambia. Volver a la URL
+7. Validar `qualys_synthetic_empty.csv`: debe quedar `rejected` con `empty_file`, `csv_bytes=0` y sin
+   filas consultables.
+8. Cancelar una vista previa `staged` o `rejected`: la instantánea vigente no cambia. Volver a la URL
    debe informar cancelación/expiración y ofrecer cargar de nuevo.
 
 ## 9. Aceptación local con el archivo real
@@ -134,18 +151,24 @@ uv run alembic upgrade head
 
 1. Verificar que el CSV autorizado tiene SHA-256
    `f55ab562f2fe5a41654f5c256a0ba9a281b446ebbe608514e06d0100af934e34` y 1.355.926 bytes.
-2. Verificar contra el manifiesto: 662 filas, 41 columnas, `Active` 631, `New` 10, `Re-Opened` 21,
+2. Pasar la ruta del manifiesto al servicio de validación de la aceptación local, no al formulario ni
+   a una ruta HTTP. Si no se aporta, la validación continúa con `manifest_status=absent`.
+3. Si el manifiesto es válido y coincide, `manifest_status=matched`; si no coincide,
+   `manifest_mismatch` y `rejected`; si está malformado, `manifest_invalid` y `rejected`.
+4. Verificar contra el manifiesto: 662 filas, 41 columnas, `Active` 631, `New` 10, `Re-Opened` 21,
    `Fixed` 0. Si el hash o las cantidades no coinciden, el archivo queda `rejected` y no se confirma.
-3. Importar en el almacenamiento temporal y confirmar.
-4. Contrastar en SQLite los totales por estado y por severidad.
-5. Consultar la regla de indicadores: 129 con explotabilidad positiva, 8 con malware positivo, 8 con
-   ambos (7 `Active`, 1 `New`), 121 con solo explotabilidad, 0 con solo malware. Son referencias de
-   inspección; si la regla produce otro valor, reportar la diferencia y no forzar el número.
-6. Comprobar que no se copió el CSV al repositorio, logs, fixtures ni LangSmith.
-7. Comprobar que un error de integridad no se puede eludir con una aceptación parcial: no existe tal
-   control.
-8. Registrar el resultado como **ejecutada y aprobada**, **ejecutada y fallida** o **no ejecutada con
-   motivo**. Un `skip` no acredita la aceptación ni permite declarar terminado el incremento.
+5. Comprobar que la vista previa web no promete una comparación con el manifiesto que no recibió.
+6. Importar en el almacenamiento temporal y confirmar.
+7. Contrastar en SQLite los totales por estado y por severidad.
+8. Consultar las distribuciones de indicadores: 129 con explotabilidad positiva y 533 con
+   explotabilidad indeterminada; 8 con malware positivo y 654 con malware indeterminado; 8 con ambos
+   positivos. Son distribuciones independientes y referencias de inspección; si la regla produce otro
+   valor, reportar la diferencia y no forzar el número.
+9. Comprobar que no se copió el CSV al repositorio, logs, fixtures ni LangSmith.
+10. Comprobar que un error de integridad o un manifiesto inválido/discrepante no se puede eludir con
+    una aceptación parcial: no existe tal control.
+11. Registrar el resultado como **ejecutada y aprobada**, **ejecutada y fallida** o **no ejecutada con
+    motivo**. Un `skip` no acredita la aceptación ni permite declarar terminado el incremento.
 
 ## 10. Privacidad y trazas
 
@@ -178,8 +201,13 @@ Además:
 - los registros importados no crean `Document`/`DocumentChunk`, no se indexan en Chroma y no se
   convierten en citas;
 - las posibles repeticiones conservan grupos, filas adicionales y todas las filas válidas;
-- el manifiesto sintético se compara por hash, bytes, filas, columnas y conteos;
-- los estados vacíos distinguen «sin registros» de «sin importaciones confirmadas».
+- el manifiesto sintético se compara por hash, bytes, filas, columnas y conteos, con estados
+  `absent`, `matched`, `mismatch` e `invalid`;
+- los estados vacíos distinguen «sin registros» de «sin importaciones confirmadas»;
+- el archivo vacío queda `rejected` con `empty_file` y no produce snapshot;
+- los CVE aceptados cubren longitudes de 4–7 dígitos;
+- explotabilidad y malware se reportan como distribuciones independientes, no como grupos
+  excluyentes.
 
 Playwright:
 

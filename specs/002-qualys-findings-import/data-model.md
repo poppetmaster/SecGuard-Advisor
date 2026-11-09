@@ -24,8 +24,9 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 | `status` | TEXT(20) | NOT NULL, `CHECK IN ('validating','staged','rejected','confirmed','cancelled','expired','failed')` |
 | `original_filename` | TEXT | NOT NULL; solo metadato local |
 | `csv_sha256` | TEXT(64) | NOT NULL |
-| `csv_bytes` | INTEGER | NOT NULL, `> 0` |
+| `csv_bytes` | INTEGER | NOT NULL, `>= 0` |
 | `manifest_sha256` | TEXT(64) | NULL; solo si se aporta el manifiesto de referencia |
+| `manifest_status` | TEXT(20) | NOT NULL, `CHECK IN ('absent','matched','mismatch','invalid')`; default `absent` |
 | `row_count` | INTEGER | NOT NULL, `>= 0` |
 | `valid_rows` | INTEGER | NOT NULL, `>= 0` |
 | `invalid_rows` | INTEGER | NOT NULL, `>= 0` |
@@ -35,7 +36,9 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 | `possible_repeat_rows` | INTEGER | NOT NULL, `>= 0` |
 | `status_counts_json` | TEXT | NOT NULL; conteos por estado original |
 | `severity_counts_json` | TEXT | NOT NULL; conteos por nivel 1–5 |
-| `priority_counts_json` | TEXT | NOT NULL; ambos/solo explotabilidad/solo malware/ninguno/indeterminados |
+| `exploitability_counts_json` | TEXT | NOT NULL; `positive`, `negative_no_info`, `indeterminate` |
+| `malware_counts_json` | TEXT | NOT NULL; `positive`, `negative_no_info`, `indeterminate` |
+| `priority_counts_json` | TEXT | NOT NULL; solo `both_positive`; no mezcla las distribuciones de indicadores |
 | `summary_json` | TEXT | NOT NULL; resumen agregado de preview, sin filas |
 | `adapter_version` | TEXT(60) | NOT NULL |
 | `severity_policy_version` | TEXT(60) | NOT NULL |
@@ -61,6 +64,8 @@ Representa una carga/validación y, si se confirma, una instantánea histórica.
 - `CHECK confirmed_sequence IS NULL OR confirmed_sequence >= 1`.
 - `CHECK status != 'staged' OR invalid_rows = 0`.
 - `CHECK status != 'confirmed' OR invalid_rows = 0`.
+- `CHECK status NOT IN ('staged','confirmed') OR row_count >= 1`.
+- `CHECK manifest_status != 'matched' OR manifest_sha256 IS NOT NULL`.
 - `CHECK status != 'confirmed' OR confirmed_sequence IS NOT NULL`.
 
 - `CHECK confirmed_at IS NULL OR status = 'confirmed'` (la transición se valida en servicio además
@@ -83,8 +88,9 @@ validating ──todo válido──> staged ──confirmar──> confirmed
 - `confirmed`: instantánea histórica consultable; inmutable.
 - `cancelled`: descartada por la persona; sus filas/issues se eliminan en la limpieza.
 - `expired`: staging/rechazo abandonado; se limpia; la persona debe volver a cargar.
-- `rejected`: archivo con error estructural, de encabezado, contenido obligatorio, hash, cantidad o
-  límite; no confirmable y sin filas en `qualys_vulnerabilities`. La preview muestra cantidades y
+- `rejected`: archivo con error estructural, de encabezado, contenido obligatorio, hash, cantidad,
+  límite, archivo vacío o manifiesto inválido/discrepante; no confirmable y sin filas en
+  `qualys_vulnerabilities`. La preview muestra cantidades y
   motivos; la persona cancela o carga un archivo corregido.
 - `failed`: error interno/transacción; no hay snapshot consultable.
 
@@ -175,7 +181,14 @@ Una fila lógica de una instantánea. No representa una vulnerabilidad única en
 previa de un archivo rechazado muestra cantidades y motivos, no una vista de filas válidas.
 
 No existe aceptación parcial ni control para «aceptar solo filas válidas». Una fila inválida bloquea
-la confirmación del archivo completo. Un manifiesto que no coincide también produce `rejected`.
+la confirmación del archivo completo. Un archivo vacío o sin filas se registra como `rejected` con
+`csv_bytes=0`, `row_count=0`, `valid_rows=0`, `invalid_rows=0` y `error_code='empty_file'`; no se
+permite `staged` ni `confirmed` con 0 filas.
+
+El manifiesto no es un archivo del formulario. El servicio de validación/aceptación recibe una ruta
+opcional y registra `manifest_status`: `absent`, `matched`, `mismatch` o `invalid`. `mismatch` e
+`invalid` dejan la importación en `rejected`; `absent` no impide validar el CSV. La vista previa web
+normal no recibe manifiesto y no promete comparación.
 
 Las filas de `staged` son datos temporales de validación; solo al pasar a `confirmed` se convierten
 en instantánea consultable. `findings_query` y la tabla de «Vulnerabilidades» filtran siempre por
@@ -189,6 +202,7 @@ en instantánea consultable. `findings_query` y la tabla de «Vulnerabilidades»
 | `cve` | TEXT(20) | PK; formato `CVE-AAAA-NNNN` |
 
 - `INDEX ix_qualys_vuln_cves_cve (cve)`.
+- `cve` usa `CVE-AAAA-NNNN` con 4–7 dígitos en la secuencia final; se valida en aplicación.
 - La PK compuesta evita duplicar el mismo CVE en una fila.
 - Los conteos usan `EXISTS`/`IN` sobre esta tabla; no se hace join que multiplique filas.
 
@@ -233,8 +247,10 @@ instantánea confirmada, que nunca se borra.
   `SELECT id FROM qualys_imports WHERE case_id = :case_id AND status = 'confirmed'
    ORDER BY confirmed_sequence DESC LIMIT 1`.
 - La primera llamada de herramienta del turno guarda `selected_import_id` en el estado del grafo.
-  Las llamadas posteriores del mismo turno lo reutilizan.
-- `snapshot_id` explícito solo se acepta si pertenece al caso y está `confirmed`.
+  Todas las llamadas posteriores del mismo turno lo reutilizan.
+- `snapshot_id` explícito solo se acepta si pertenece al caso y está `confirmed`. Un `snapshot_id`
+  distinto tras la fijación devuelve `snapshot_locked`; un turno nuevo puede seleccionar otra
+  importación.
 - El resumen histórico de la herramienta conserva: `snapshot_id`, `confirmed_sequence`,
   `status_group`, `origin`, filtros, totales, grupos, prioridad e indicadores. No conserva filas.
 - La página de ejecución lee el resumen; si recalcula detalle, lo etiqueta como consulta actual.
