@@ -36,11 +36,12 @@ una persona.
 
 ## Estado del proyecto
 
-**Funcionalidad 001 en construcción.** El repositorio contiene los cortes T001–T087: base técnica,
-US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y revisión humana), US4
-(memoria por caso y navegación), US5 (herramienta de hallazgos sintéticos) y US6 (evidencia de
-ejecución, límites y trazas). La aceptación real, la confirmación de la traza y el paquete final de
-evidencia (T088–T095) siguen pendientes.
+**Funcionalidad 001 implementada y validada localmente.** El repositorio contiene los cortes
+T001–T095: base técnica, US1 (casos), US2 (documentos, corpus e índice), US3 (consulta con citas y
+revisión humana), US4 (memoria por caso y navegación), US5 (herramienta de hallazgos sintéticos) y
+US6 (evidencia de ejecución, límites y trazas). La aceptación local está documentada en
+[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md). Quedan pendientes las verificaciones
+humanas de SC-001 (cronometraje) y SC-003 (diez revisiones), y la revisión en otros navegadores.
 
 ### Implementado
 
@@ -69,15 +70,17 @@ evidencia (T088–T095) siguen pendientes.
   procedencia sintética y presentación en la consulta documental.**
 - **US6: evidencia de ejecución con intentos, pasos, fuentes, herramientas, presupuesto, citas y
   controles separados; límites de operaciones y tiempos; traza externa con estados `disabled`,
-  `submitted` y `failed`, y degradación local cuando LangSmith no está disponible.**
+  `submitted`, `confirmed` y `failed`, y degradación local cuando LangSmith no está disponible.**
+- **Aceptación local: recorrido con dobles y recorrido real con Ollama, corpus, hallazgos,
+  reinicio y aislamiento; confirmación de traza por API de lectura con identidad declarada.**
 - Pruebas rápidas y fixtures.
 - Gobernanza de GitHub: plantillas, labels, Dependabot y workflow de CI.
 - Documentación normativa y de planificación.
 
 ### Previsto
 
-- Confirmación de la traza observada durante la aceptación (T091).
-- Interfaz integrada y recorrido de aceptación completo (T088–T095).
+- Incrementos posteriores (CSV de Qualys, clasificación, entrenamiento o exportaciones) fuera del
+  alcance autorizado del primer incremento.
 
 El detalle está en [la especificación](specs/001-consulta-documental/spec.md) y en
 [las tareas](specs/001-consulta-documental/tasks.md).
@@ -182,7 +185,7 @@ make dev            # servidor con casos, documentos y consulta
 make corpus         # descarga y verifica el corpus oficial
 make corpus-ingest  # ingesta el corpus verificado en SQLite y Chroma
 make seed-demo      # carga el dataset sintético; requiere el esquema migrado
-make demo           # no implementado: requiere el recorrido de aceptación
+make demo           # prepara storage/demo, siembra el caso sintético y arranca el servidor
 ```
 
 ### Navegación
@@ -287,8 +290,9 @@ registrado.
 Con `LANGSMITH_TRACING=true` y `LANGSMITH_API_KEY`, cada turno envía una traza con la ejecución y sus
 operaciones relevantes (decisión de herramienta, generación, reparación y llamadas de herramienta).
 El estado puede ser `disabled` (sin configuración), `submitted` (envío sin error observado; no
-verificado) o `failed` (envío no disponible). La aplicación nunca escribe `confirmed`: eso corresponde
-al script de confirmación de la aceptación. Si LangSmith no responde, la consulta local se completa
+verificado), `confirmed` (verificado por lectura externa) o `failed` (envío no disponible). La
+aplicación nunca escribe `confirmed`: eso corresponde a `scripts/confirm_trace.py`, que exige que la
+traza exista, pertenezca al proyecto y sus metadatos coincidan con la ejecución local. Si LangSmith no responde, la consulta local se completa
 igual y conserva su evidencia. El contenido enviado se limita a metadatos y datos sintéticos; no
 incluye la pregunta, prompts, documentos del caso, argumentos de herramienta ni rutas locales.
 
@@ -329,10 +333,31 @@ Estado actual: la base cubre configuración, motor y esquema, alcance, arranque,
 seed, fixtures, ciclo de vida de ejecuciones, casos, documentos (validación, extracción, fragmentación,
 embeddings, índice, versiones, corpus y rutas), conversación con memoria, citas y revisión, la
 herramienta de hallazgos (argumentos, filtros, conteos, aislamiento, presupuesto, UI y persistencia) y
-la evidencia de ejecución con límites, trazas y redacción de secretos. Las pruebas de integración se
-ejecutan con `make test-integration` y requieren Ollama con el modelo de embeddings y el generador; la
-prueba real de la herramienta verifica que el modelo la solicite y la de traza realiza un envío real
-solo si hay credenciales configuradas.
+la evidencia de ejecución con límites, trazas y redacción de secretos. `make test` incluye la
+aceptación con dobles; `make test-integration` ejecuta la aceptación real con Ollama, corpus y
+herramienta, además de las integraciones existentes. La confirmación de traza se prueba con dobles y
+con una traza real si hay credenciales.
+
+## Aceptación y demo
+
+```bash
+make check            # lint, formato y 343 pruebas rápidas
+make test-integration # 25 pruebas reales, incluida la aceptación y la traza
+make demo             # storage/demo + seed + servidor en 127.0.0.1:8000
+```
+
+`make demo` no toca `storage/`. Para la aceptación real se usó un directorio temporal separado con
+Ollama, EmbeddingGemma, corpus oficial, caso sintético y `findings_query`. La confirmación de traza se
+hace con:
+
+```bash
+uv run python scripts/confirm_trace.py --run-id <local> --trace-id <externo> --reviewer "<identidad>"
+```
+
+El comando solo escribe `confirmed` después de verificar por API de lectura que la traza existe,
+pertenece a `secguard-advisor-dev` y coincide con `run_id`, `case_id` e intento. La evidencia del
+recorrido, las cifras, las capturas y la salida de confirmación está en
+[`docs/evidencia/demo-001.md`](docs/evidencia/demo-001.md).
 
 ## Estructura
 
@@ -383,11 +408,12 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
   dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
   la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
   pendiente explícito y no se usa `npm audit fix --force`.
-- La aplicación implementa US1–US6 hasta T087; la interfaz integrada, la aceptación real, la
-  confirmación de la traza con `scripts/confirm_trace.py` y el paquete de evidencia (T088–T095) siguen
-  pendientes. `demo` sigue sin implementar.
+- La aplicación implementa US1–US6 y T088–T095. Quedan pendientes las verificaciones humanas de
+  SC-001 (recorrido cronometrado por una persona) y SC-003 (diez afirmaciones normativas revisadas),
+  además de la revisión en navegadores distintos de Chrome/Chromium. La aceptación automatizada y la
+  confirmación de traza están documentadas en `docs/evidencia/demo-001.md`.
 - `submitted` significa «envío sin error observado», no «traza verificada». La confirmación por API de
-  lectura corresponde a T091 y no se ejecutó en este bloque.
+  lectura se ejecutó y quedó registrada con la identidad declarada de prueba; no es autenticación.
 - El detalle de herramienta no se persiste; cuando la página lo recalcula, se identifica como
   consulta actual. Los conteos sí son históricos.
 - La selección de herramienta usa una llamada estructurada adicional (`ToolDecision`) porque Ollama

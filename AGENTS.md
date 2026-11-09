@@ -8,11 +8,12 @@ SecGuard Advisor es un agente consultor defensivo para ciberseguridad empresaria
 aplicaciones de IA. Analiza documentación, contexto organizacional y hallazgos técnicos, identifica
 brechas y prepara recomendaciones respaldadas por evidencia, con supervisión humana.
 
-**Estado actual**: base técnica, US1–US6 (cortes T001–T087) y la navegación aprobada. La aplicación
-arranca con `/healthz`, casos, documentos, consulta documental con citas y revisión humana del
-respaldo, memoria por caso en checkpoints separados, la herramienta `findings_query` acotada al caso
-y la evidencia de ejecución con intentos, límites y trazas. La aceptación real, la confirmación de la
-traza (T091) y el paquete de evidencia (T088–T095) siguen pendientes.
+**Estado actual**: base técnica, US1–US6 y T088–T095 (cortes T001–T095). La aplicación arranca con
+`/healthz`, casos, documentos, consulta documental con citas y revisión humana del respaldo, memoria
+por caso en checkpoints separados, la herramienta `findings_query` acotada al caso y la evidencia de
+ejecución con intentos, límites y trazas. La aceptación local está documentada en
+`docs/evidencia/demo-001.md`; quedan pendientes las verificaciones humanas de SC-001 y SC-003 y la
+revisión en otros navegadores.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -111,9 +112,14 @@ esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicació
   lo rotula como consulta actual; los totales y grupos son históricos. El control automático de citas
   y la revisión humana se muestran por separado.
 - `trace_status` solo puede ser `disabled`, `submitted` o `failed` por la aplicación; `submitted` no
-  significa verificado. `confirmed` lo escribe únicamente `scripts/confirm_trace.py` en la aceptación.
-  Las trazas envían metadatos acotados: nunca pregunta, prompts, documentos del caso, argumentos de
-  herramienta, claves ni rutas locales.
+  significa verificado. `confirmed` lo escribe únicamente `scripts/confirm_trace.py` tras verificar
+  por API de lectura que la traza existe, pertenece al proyecto y coincide con `run_id`, `case_id` e
+  intento, registrando identidad declarada, fecha y evidencia. Las trazas envían metadatos acotados:
+  nunca pregunta, prompts, documentos del caso, argumentos de herramienta, claves ni rutas locales.
+- Las pruebas de aceptación con dobles viven en `tests/acceptance/test_journey.py`; la aceptación real
+  con Ollama, corpus y herramienta en `tests/acceptance/test_journey_real.py`, siempre con
+  almacenamiento separado (`SECGUARD_ACCEPTANCE_DIR` o `tmp_path`). `make demo` usa `storage/demo` y
+  no modifica `storage/`.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit

@@ -1,7 +1,7 @@
 # Quickstart — validación de la funcionalidad 001
 
-Guía de ejecución y validación. **Los comandos están previstos, no implementados.** Ninguno debe
-presentarse como ejecutado hasta que exista y se haya corrido.
+Guía de ejecución y validación. Los comandos descritos existen y se ejecutaron en almacenamiento
+separado; los resultados observados están en `docs/evidencia/demo-001.md`.
 
 ## 1. Prerrequisitos
 
@@ -24,11 +24,15 @@ presentarse como ejecutado hasta que exista y se haya corrido.
 | `make seed-demo` | Carga el caso de demostración y los hallazgos sintéticos deterministas |
 | `make assets` | Compila Tailwind y verifica los recursos vendorizados |
 | `make dev` | Servidor local en `127.0.0.1` con recarga |
-| `make demo` | Servidor con datos de demostración ya sembrados |
+| `make demo` | Prepara `storage/demo`, siembra el caso sintético y arranca el servidor con un worker |
 | `make test` | Pruebas unitarias y de contrato (sin Ollama, para CI) |
 | `make test-integration` | Pruebas reales con Ollama, embeddings, recuperación y herramienta |
 | `make check` | Lint, formato y pruebas rápidas |
 | `make clean` | Limpia cachés y artefactos locales |
+
+`make demo` no toca `storage/`: usa `storage/demo`. `make dev` usa el almacenamiento configurado
+por `SECGUARD_STORAGE_DIR` (por defecto `storage/`). Para la aceptación se usó un directorio
+temporal separado, nunca los casos del usuario.
 
 ## 3. Matriz de verificación
 
@@ -120,9 +124,9 @@ Abrir «Ver ejecución» en la última respuesta.
 
 **Esperado**: modelo con digest, duración, estado, fuentes recuperadas, herramienta usada y estado
 de la traza. Si LangSmith está configurado, el identificador aparece, el estado local es
-`submitted` y la traza existe en el proyecto `secguard-advisor-dev`; `confirmed` se registra con
-`scripts/confirm_trace.py` solo después de verificar la traza. Si no está configurado, se declara y
-la consulta funcionó igual.
+`submitted`; `confirmed` se registra con `scripts/confirm_trace.py` solo después de verificar la
+traza por API de lectura. La página distingue «Enviada (no verificada)» de «Verificada». Si no está
+configurado, se declara y la consulta funciona igual.
 
 ### Paso 11 — Reintentar un turno fallido
 
@@ -176,12 +180,15 @@ revisión no adjudica P1–P4 ni aprueba el informe, y no cambia el control auto
 1. Ejecutar una consulta con `LANGSMITH_TRACING=true` y clave válida.
 2. Abrir el proyecto `secguard-advisor-dev` en LangSmith.
 3. Confirmar que la ejecución existe y que su metadato `run_id` coincide con el de la aplicación.
-4. Ejecutar `scripts/confirm_trace.py --run-id <local> --trace-id <observado>`: solo si la traza
-   existe en LangSmith se registra `confirmed`. Guardar la salida como evidencia.
+4. Ejecutar `uv run python scripts/confirm_trace.py --run-id <local> --trace-id <observado> --reviewer "<identidad declarada>"`:
+   solo si la traza existe, pertenece al proyecto y sus metadatos coinciden con la ejecución local se
+   registra `confirmed`. Guardar la salida como evidencia.
 5. La confirmación es responsabilidad de la persona que ejecuta la aceptación. Debe registrar su
    identidad, la fecha y la evidencia de la traza observada en el reporte de aceptación.
 6. Sin credenciales: confirmar que la aplicación responde, que `trace_status=disabled` y que no se
    presenta ninguna traza como real.
+7. La identidad de confirmación es declarada, no autenticación. En la aceptación automatizada se usó
+   `Aceptación de prueba`; si la cátedra exige una persona, repetir el comando con ese nombre.
 
 ## 8. Lo que no debe declararse
 
@@ -190,3 +197,19 @@ revisión no adjudica P1–P4 ni aprueba el informe, y no cambia el control auto
 - Corpus completo si alguna fuente falló.
 - Traza verificada sin verla en LangSmith.
 - Acreditación de la rúbrica por el hecho de tener esta guía.
+
+## 9. Validación ejecutada
+
+La validación del 2026-11-09 se hizo con almacenamiento temporal separado y datos sintéticos:
+
+- `make install`, `make assets` y migraciones: sin error.
+- `make corpus` verificó las cuatro fuentes oficiales y `make corpus-ingest` las ingirió con
+  EmbeddingGemma en la base temporal.
+- `make seed-demo` cargó el caso sintético con 12 hallazgos.
+- El recorrido real está automatizado en `tests/acceptance/test_journey_real.py` y el recorrido con
+  dobles en `tests/acceptance/test_journey.py`.
+- La traza de la pregunta sobre la evidencia sintética del caso se confirmó por lectura externa con
+  `scripts/confirm_trace.py`; la salida y la identidad declarada están en el reporte de evidencia.
+
+Los modelos deben estar instalados previamente. Las credenciales de LangSmith son opcionales: sin
+ellas la consulta funciona y la traza queda `disabled`.

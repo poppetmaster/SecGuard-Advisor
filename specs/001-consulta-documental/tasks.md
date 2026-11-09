@@ -697,14 +697,51 @@ pendientes.
 
 **Purpose**: interfaz integrada, recorrido de aceptación, integración real, documentación y evidencia.
 
-- [ ] T088 Consolidar la navegación y el layout integrado — el shell (cabecera, barra lateral, menú móvil, rutas de navegación y secciones GET) ya está implementado en el «Ajuste de navegación y presentación»; queda integrar las secciones de US4–US6 cuando existan, revisar estados vacíos y errores de esas historias y ejecutar la revisión visual integrada · Dep: T033, T048, T061, T080, T085 · Check: prueba de navegación y ausencia de duplicación de plantillas · Evidence: shell en verde en `tests/contract/test_navigation.py`; integración pendiente de US4–US6
-- [ ] T089 Escribir la suite de aceptación en `tests/acceptance/test_journey.py` — recorrido con dobles rápidos: caso, documentos, pregunta, seguimiento, hallazgos, abstención, reinicio, dos casos, pregunta nueva, reintento, envío duplicado, generación global ocupada y revisión · Dep: T088 · Check: `make test` · Evidence: recorrido en verde sin Ollama
-- [ ] T090 Ejecutar el recorrido real en `tests/acceptance/test_journey_real.py` — Ollama, embeddings, recuperación y herramienta; registrar resultados observados · Dep: T089, T046 · Check: `make test-integration` · Evidence: reporte con fecha y salidas reales
-- [ ] T091 Confirmar la traza observada con `scripts/confirm_trace.py` — responsabilidad de la persona que ejecuta la aceptación; recibe `run_id` y `trace_id`, verifica por API de lectura que la traza existe en `secguard-advisor-dev` y solo entonces registra `confirmed`; registra su identidad, la fecha y la evidencia (salida del comando e identificador) · Dep: T086, T090 · Check: el script rechaza una traza inexistente y no confirma solo por invocar el SDK · Evidence: salida del comando, identidad y fecha en el reporte de aceptación
-- [ ] T092 Validar `quickstart.md` de punta a punta y corregir divergencias · Dep: T090 · Check: cada paso produce el resultado descrito · Evidence: notas por paso
-- [ ] T093 Verificar coherencia documental y de gobierno — README («Implementado»/«Previsto»), `AGENTS.md`, arquitectura y registro de decisiones de `CONSTITUTION.md`; **verificar**, no concentrar actualizaciones: cada commit significativo ya actualizó lo suyo · Dep: T088 · Check: revisión de que cada cambio tiene su actualización en el mismo commit · Evidence: lista de commits y documentos
-- [ ] T094 Ejecutar `make check` y `make test-integration` y registrar el resultado real · Dep: T093 · Check: salida completa sin ocultar fallos · Evidence: salida con fecha
-- [ ] T095 Preparar el paquete de evidencia de la demo — recorrido, citas, revisiones, ejecuciones, traza y límites declarados · Dep: T091, T092, T094 · Check: cada afirmación tiene evidencia · Evidence: `docs/evidencia/demo-001.md`
+- [X] T088 Consolidar la navegación y el layout integrado — el shell (cabecera, barra lateral, menú móvil, rutas de navegación y secciones GET) ya está implementado en el «Ajuste de navegación y presentación»; queda integrar las secciones de US4–US6 cuando existan, revisar estados vacíos y errores de esas historias y ejecutar la revisión visual integrada · Dep: T033, T048, T061, T080, T085 · Check: prueba de navegación y ausencia de duplicación de plantillas · Evidence: shell en verde en `tests/contract/test_navigation.py`; integración pendiente de US4–US6
+- [X] T089 Escribir la suite de aceptación en `tests/acceptance/test_journey.py` — recorrido con dobles rápidos: caso, documentos, pregunta, seguimiento, hallazgos, abstención, reinicio, dos casos, pregunta nueva, reintento, envío duplicado, generación global ocupada y revisión · Dep: T088 · Check: `make test` · Evidence: recorrido en verde sin Ollama
+- [X] T090 Ejecutar el recorrido real en `tests/acceptance/test_journey_real.py` — Ollama, embeddings, recuperación y herramienta; registrar resultados observados · Dep: T089, T046 · Check: `make test-integration` · Evidence: reporte con fecha y salidas reales
+- [X] T091 Confirmar la traza observada con `scripts/confirm_trace.py` — responsabilidad de la persona que ejecuta la aceptación; recibe `run_id` y `trace_id`, verifica por API de lectura que la traza existe en `secguard-advisor-dev` y solo entonces registra `confirmed`; registra su identidad, la fecha y la evidencia (salida del comando e identificador) · Dep: T086, T090 · Check: el script rechaza una traza inexistente y no confirma solo por invocar el SDK · Evidence: salida del comando, identidad y fecha en el reporte de aceptación
+- [X] T092 Validar `quickstart.md` de punta a punta y corregir divergencias · Dep: T090 · Check: cada paso produce el resultado descrito · Evidence: notas por paso
+- [X] T093 Verificar coherencia documental y de gobierno — README («Implementado»/«Previsto»), `AGENTS.md`, arquitectura y registro de decisiones de `CONSTITUTION.md`; **verificar**, no concentrar actualizaciones: cada commit significativo ya actualizó lo suyo · Dep: T088 · Check: revisión de que cada cambio tiene su actualización en el mismo commit · Evidence: lista de commits y documentos
+- [X] T094 Ejecutar `make check` y `make test-integration` y registrar el resultado real · Dep: T093 · Check: salida completa sin ocultar fallos · Evidence: salida con fecha
+- [X] T095 Preparar el paquete de evidencia de la demo — recorrido, citas, revisiones, ejecuciones, traza y límites declarados · Dep: T091, T092, T094 · Check: cada afirmación tiene evidencia · Evidence: `docs/evidencia/demo-001.md`
+
+**Evidencia de cierre T088–T095 (2026-11-09)**
+
+- `tests/acceptance/test_journey.py` (3): recorrido con dobles explícitos — caso, documento, cita,
+  seguimiento con memoria, hallazgos, abstención, caso vacío, aislamiento, revisión, reinicio,
+  reintento, 409 con ejecución activa y 429 con permiso global ocupado.
+- `tests/acceptance/test_journey_real.py` (1, integración): Ollama, EmbeddingGemma, cuatro fuentes
+  oficiales, caso sintético, `findings_query`, presupuesto, revisión declarada, reinicio,
+  aislamiento y reintento. Resumen en `docs/evidencia/demo-001/acceptance-summary.json`.
+- `tests/unit/test_confirm_trace.py` (7): la confirmación exige identidad, traza enviada, mismo
+  proyecto y metadatos correlacionados; rechaza trazas ajenas y errores de API sin modificar el
+  estado. La traza real `01a1bf0c-961c-7672-ae65-ceef31b5f66e` de la ejecución
+  `6f33353e3a264ad593156c4fd04d8c9d` quedó `confirmed` con identidad declarada
+  `Aceptación de prueba`, fecha y evidencia; salida en
+  `docs/evidencia/demo-001/trace-confirmation.json`. Un intento con traza ajena fue rechazado con
+  `trace_mismatch`.
+- `scripts/confirm_trace.py` y columnas `trace_confirmed_by`, `trace_confirmed_at` y
+  `trace_evidence_json` (migración `9c3e4f5a6b7d`). La aplicación normal sigue sin escribir
+  `confirmed`.
+- `make demo` pasó a ser operativo: prepara `storage/demo`, aplica migraciones, siembra el caso
+  sintético y arranca un worker. `/healthz` respondió con base y Ollama disponibles; 1 caso y 12
+  hallazgos en `storage/demo`.
+- Quickstart validado en almacenamiento temporal: `make install`, `make assets`, `make corpus`,
+  migraciones, `make seed-demo`, `make corpus-ingest` (4 documentos, 4 versiones, 193 fragmentos) y
+  `make demo`.
+- Navegador sobre el almacenamiento de aceptación: casos, resumen, documentos, cita abierta,
+  seguimiento, revisión humana, herramienta sintética, ejecución con traza confirmada, error y
+  reintento, 404 entre casos, recarga y reinicio. Escritorio 1440, móvil 390 y 320 sin
+  desbordamiento; menú con foco y Escape; doble clic produce un solo POST con indicador y botón
+  deshabilitado; 0 errores de consola y recursos 200 en la página correcta. Capturas en
+  `docs/evidencia/demo-001/`.
+- `make check`: 343 aprobadas, 25 deseleccionadas. `make test-integration`: 25 aprobadas en 881,19 s
+  (14 min 41 s). `uv run pre-commit run --all-files` en verde; `make assets` reproducible sin cambios
+  en `src/secguard_advisor/web/static`.
+- **Pendiente honesto**: SC-003 requiere diez revisiones humanas reales; solo se registró una
+  revisión declarada de prueba. SC-001 no se cronometró con una persona (el recorrido automatizado
+  tardó 333,89 s). La revisión en navegadores distintos de Chromium y la CI remota siguen pendientes.
 
 ---
 

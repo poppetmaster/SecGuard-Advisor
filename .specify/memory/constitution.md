@@ -413,6 +413,9 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-09 | Evidencia de ejecución con intentos, pasos, fuentes, herramientas, presupuesto y citas separadas; la página lee registros persistidos | Permanente | VIII, IX | El detalle de herramienta no se persiste y se rotula como consulta actual; el control automático y la revisión humana no se confunden |
 | 2026-11-09 | Traza externa manual y acotada con estados `disabled`, `submitted` y `failed`; la aplicación nunca escribe `confirmed` | Permanente | VIII, XI | El SDK puede ocultar errores de envío; se usa envío síncrono y `flush` acotado. La confirmación por API de lectura corresponde a T091 |
 | 2026-11-09 | Límites del turno: 8 operaciones de modelo o herramienta, 2 herramientas, 1 reparación, 120 s de turno y 90 s por llamada | Parámetro | IV, XI | La decisión de herramienta consume paso y tiempo; cada llamada usa el tiempo restante y no recibe un presupuesto nuevo |
+| 2026-11-09 | Confirmación de traza únicamente por `scripts/confirm_trace.py` con lectura externa, identidad declarada, fecha y evidencia | Permanente | VIII, XI | La aplicación nunca escribe `confirmed`; se rechaza una traza inexistente, de otro proyecto o no correlacionada con `run_id`, `case_id` e intento |
+| 2026-11-09 | Aceptación en almacenamiento separado y `make demo` sobre `storage/demo` | Permanente | II, VIII | No se tocan los casos del usuario; el recorrido queda reproducible desde el Makefile |
+| Pendiente | Cronometraje humano de SC-001 y diez revisiones semánticas de SC-003 | Pendiente | IX, X | La aceptación automatizada y una revisión declarada de prueba no sustituyen la revisión humana exigida por el criterio |
 | Pendiente | Política P1–P4: significado, condiciones, excepciones, datos mínimos y ejemplos | Pendiente | IX, X | Bloquea el entrenamiento del incremento 3 |
 | Pendiente | Formato CSV de Qualys a soportar | Pendiente | XII | Bloquea el adaptador del incremento 2 |
 | Pendiente | Generador definitivo tras la comparación | Pendiente | IV | Requiere evidencia de calidad, herramientas, fundamentación, memoria y latencia |
@@ -427,4 +430,4 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | Pendiente | Destino GitHub y autorización de publicación | Pendiente | Flujo de trabajo | Sin repo no hay badges de CI verificables |
 | Pendiente | Presupuesto aprobado para DeepSeek (proveedor externo opcional) | Pendiente | XI | No se activan llamadas pagadas sin aprobación |
 
-**Version**: 1.0.7 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09
+**Version**: 1.0.8 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09
