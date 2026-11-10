@@ -149,6 +149,11 @@ FastAPI + Jinja2 + HTMX
         SQLite + Chroma + Ollama + LangSmith
 ```
 
+Diagrama interactivo: [`docs/arquitectura/diagrama-arquitectura.html`](docs/arquitectura/diagrama-arquitectura.html).
+Incluye la vista general, el grafo del turno documental y el flujo de vulnerabilidades; funciona sin
+servidor y no carga recursos externos. Vista rápida:
+[`docs/arquitectura/diagrama-general.png`](docs/arquitectura/diagrama-general.png).
+
 La constitución completa las decisiones de arquitectura, seguridad y calidad:
 [`CONSTITUTION.md`](CONSTITUTION.md).
 

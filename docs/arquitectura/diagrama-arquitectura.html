@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Arquitectura — SecGuard Advisor</title>
+  <style>
+    :root {
+      --bg: #060b16;
+      --bg-soft: #0a1222;
+      --panel: #0d172b;
+      --panel-2: #101d35;
+      --line: #22375c;
+      --text: #e8f0ff;
+      --muted: #8fa6c8;
+      --cyan: #22d3ee;
+      --blue: #60a5fa;
+      --violet: #a78bfa;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --radius: 18px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .45);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(1100px 620px at 12% -10%, rgba(34, 211, 238, .12), transparent 60%),
+        radial-gradient(900px 520px at 92% 0%, rgba(167, 139, 250, .12), transparent 58%),
+        radial-gradient(800px 500px at 50% 110%, rgba(52, 211, 153, .08), transparent 60%),
+        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: min(1680px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 46px;
+    }
+
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 6px 4px 26px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 26px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan));
+    }
+
+    h1 {
+      margin: 10px 0 8px;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.04;
+      letter-spacing: -.035em;
+      background: linear-gradient(100deg, #ffffff 10%, #b9d7ff 48%, #7dd3fc 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15.5px;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border: 1px solid rgba(96, 165, 250, .25);
+      border-radius: 999px;
+      background: rgba(13, 23, 43, .72);
+      color: #c8dbf6;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    .badge b { color: #ffffff; font-weight: 650; }
+
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border: 1px solid rgba(52, 211, 153, .3);
+      border-radius: 999px;
+      background: rgba(52, 211, 153, .08);
+      color: #a7f3d0;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, .6);
+      animation: pulse 1.8s ease-out infinite;
+    }
+
+    @keyframes pulse {
+      70% { box-shadow: 0 0 0 9px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 0 18px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(10, 18, 34, .78);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 15px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .tab:hover { color: #e8f0ff; transform: translateY(-1px); }
+
+    .tab[aria-selected="true"] {
+      color: #07111f;
+      background: linear-gradient(135deg, #7dd3fc, #a5b4fc);
+      box-shadow: 0 8px 24px rgba(96, 165, 250, .28);
+    }
+
+    .actions { display: flex; gap: 8px; }
+
+    .action {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 13px;
+      background: rgba(13, 23, 43, .82);
+      color: #c8dbf6;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: border-color .2s ease, color .2s ease, background .2s ease;
+    }
+
+    .action:hover {
+      border-color: rgba(34, 211, 238, .55);
+      color: #ffffff;
+      background: rgba(17, 29, 53, .95);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stage {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(16, 29, 53, .78), rgba(8, 15, 29, .9)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(96, 165, 250, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 165, 250, .035) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, black, transparent 78%);
+    }
+
+    .stage-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px 20px;
+      padding: 18px 20px 8px;
+    }
+
+    .stage-head h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -.01em;
+    }
+
+    .stage-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      z-index: 1;
+      overflow: auto;
+      padding: 4px 14px 16px;
+      scrollbar-color: #2a4168 transparent;
+      scrollbar-width: thin;
+    }
+
+    .canvas-hint {
+      display: none;
+      margin: 0 15px 6px;
+      color: #6f89ae;
+      font-size: 11px;
+    }
+
+    svg.diagram {
+      display: block;
+      width: 100%;
+      min-width: 1120px;
+      height: auto;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn .28s ease both; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .node { cursor: pointer; }
+    .node:focus { outline: none; }
+
+    .node-bg {
+      fill: url(#cardGrad);
+      stroke: rgba(96, 165, 250, .2);
+      stroke-width: 1.2;
+      transition: stroke .2s ease, filter .2s ease;
+    }
+
+    .node-bar {
+      fill: var(--accent);
+      opacity: .9;
+      filter: url(#barGlow);
+    }
+
+    .node-kicker {
+      fill: var(--accent);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+    }
+
+    .node-title {
+      fill: #f1f6ff;
+      font-size: 16px;
+      font-weight: 650;
+      letter-spacing: -.01em;
+    }
+
+    .node-sub {
+      fill: #91a8c9;
+      font-size: 11px;
+    }
+
+    .node-mono {
+      fill: #bfd2ec;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10.2px;
+    }
+
+    .node:hover .node-bg,
+    .node:focus-visible .node-bg {
+      stroke: var(--accent);
+      filter: url(#softGlow);
+    }
+
+    .node:hover .node-title { fill: #ffffff; }
+
+    .container-label {
+      fill: #6f89ae;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .container-box {
+      fill: rgba(10, 19, 35, .52);
+      stroke: rgba(96, 165, 250, .14);
+      stroke-width: 1;
+      stroke-dasharray: 4 7;
+    }
+
+    .flow {
+      fill: none;
+      stroke: #31527f;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 7 10;
+      animation: dash 2.4s linear infinite;
+    }
+
+    .flow.cyan { stroke: rgba(34, 211, 238, .62); }
+    .flow.violet { stroke: rgba(167, 139, 250, .62); }
+    .flow.green { stroke: rgba(52, 211, 153, .62); }
+    .flow.amber { stroke: rgba(251, 191, 36, .58); }
+    .flow.dashed { stroke-dasharray: 3 9; opacity: .72; }
+
+    @keyframes dash { to { stroke-dashoffset: -68; } }
+
+    .edge-label {
+      fill: #7893b8;
+      font-size: 9.7px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      paint-order: stroke;
+      stroke: #0a1222;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .note-box {
+      fill: rgba(13, 23, 43, .72);
+      stroke: rgba(96, 165, 250, .16);
+      stroke-width: 1;
+    }
+
+    .note-title {
+      fill: #dbe8fb;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .note-text {
+      fill: #8fa6c8;
+      font-size: 11px;
+    }
+
+    .detail {
+      position: sticky;
+      top: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(17, 29, 53, .96), rgba(10, 18, 34, .96));
+      box-shadow: var(--shadow);
+      padding: 20px 20px 22px;
+      min-height: 280px;
+    }
+
+    .detail-kicker {
+      color: var(--cyan);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .detail h3 {
+      margin: 8px 0 8px;
+      font-size: 22px;
+      letter-spacing: -.02em;
+    }
+
+    .detail p { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+
+    .detail-tech {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tech {
+      padding: 5px 8px;
+      border: 1px solid rgba(96, 165, 250, .22);
+      border-radius: 7px;
+      background: rgba(96, 165, 250, .08);
+      color: #c9dcf7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10.5px;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(96, 165, 250, .14);
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #9db3d2;
+      font-size: 11.5px;
+    }
+
+    .swatch { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+
+    .hint {
+      margin-top: 16px;
+      padding: 10px 11px;
+      border-left: 2px solid rgba(34, 211, 238, .55);
+      background: rgba(34, 211, 238, .055);
+      color: #8fa6c8;
+      font-size: 11.5px;
+    }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 18px;
+      padding: 0 4px;
+      color: #6f89ae;
+      font-size: 11.5px;
+    }
+
+    footer code {
+      color: #a9c1e2;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10.5px;
+    }
+
+    @media (max-width: 1080px) {
+      .layout { grid-template-columns: 1fr; }
+      .detail { position: static; }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(100% - 22px, 1680px); padding-top: 20px; }
+      .hero { padding-bottom: 18px; }
+      .lead { font-size: 14px; }
+      .toolbar { align-items: stretch; }
+      .tabs { width: 100%; gap: 3px; padding: 4px; }
+      .tab { flex: 1 1 auto; padding: 8px 9px; font-size: 11.5px; }
+      .actions { justify-content: flex-end; }
+      .stage-head { padding: 15px 15px 4px; }
+      .canvas-hint { display: block; }
+      .canvas-wrap { padding: 0 8px 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flow, .live-dot { animation: none; }
+      .view.active { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">SecGuard Advisor · Arquitectura</div>
+        <h1>Del documento a la evidencia</h1>
+        <p class="lead">
+          Monolito modular en un solo proceso: interfaz renderizada en servidor, dominio separado por
+          paquetes, SQLite como fuente de verdad y Chroma como índice derivado. La inferencia ocurre
+          localmente y cada turno deja una ejecución auditable.
+        </p>
+        <div class="badges">
+          <span class="badge"><b>1</b> proceso</span>
+          <span class="badge"><b>1</b> worker</span>
+          <span class="badge"><b>SQLite</b> fuente de verdad</span>
+          <span class="badge"><b>Chroma</b> índice reconstruible</span>
+          <span class="badge"><b>Ollama</b> inferencia local</span>
+        </div>
+      </div>
+      <div class="live"><span class="live-dot"></span> Flujo animado</div>
+    </header>
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="Vistas de arquitectura">
+        <button class="tab" role="tab" aria-selected="true" aria-controls="view-general" id="tab-general" data-view="general">Vista general</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="view-turn" id="tab-turn" data-view="turn">Turno documental</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="view-vuln" id="tab-vuln" data-view="vuln">Vulnerabilidades</button>
+      </div>
+      <div class="actions">
+        <button class="action" id="download" type="button">Descargar vista SVG</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="stage" aria-live="polite">
+        <div class="stage-head">
+          <h2 id="view-title">Vista general</h2>
+          <p id="view-sub">Componentes, datos y dependencias externas.</p>
+        </div>
+        <p class="canvas-hint">Desplazá horizontalmente para explorar el diagrama completo.</p>
+        <div class="canvas-wrap">
+          <svg class="diagram" viewBox="0 0 1600 940" role="img" aria-labelledby="svg-title-general">
+            <title id="svg-title-general">Arquitectura general de SecGuard Advisor</title>
+            <defs>
+              <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#132444"/>
+                <stop offset="100%" stop-color="#0c1729"/>
+              </linearGradient>
+              <linearGradient id="stageGlow" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#22d3ee" stop-opacity=".9"/>
+                <stop offset="100%" stop-color="#a78bfa" stop-opacity=".9"/>
+              </linearGradient>
+              <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+              <filter id="barGlow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="2.2" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <g id="view-general" class="view active">
+              <text x="30" y="34" class="container-label">Cliente</text>
+              <g class="node" style="--accent:#22d3ee" tabindex="0"
+                 data-title="Usuario / analista"
+                 data-desc="Define el alcance del caso, carga documentos, revisa citas y decide. La herramienta propone y fundamenta; la decisión humana no se automatiza."
+                 data-tech="Supervisión humana · revisión declarada">
+                <title>Usuario o analista</title>
+                <rect class="node-bg" x="30" y="250" width="180" height="76" rx="14"/>
+                <rect class="node-bar" x="30" y="266" width="4" height="44" rx="2"/>
+                <text class="node-kicker" x="48" y="274">HUMANO</text>
+                <text class="node-title" x="48" y="296">Usuario / analista</text>
+                <text class="node-sub" x="48" y="313">Decisión y revisión</text>
+              </g>
+
+              <g class="node" style="--accent:#22d3ee" tabindex="0"
+                 data-title="Navegador"
+                 data-desc="Interfaz multipágina renderizada en el servidor. Jinja2 arma el HTML y HTMX actualiza solo la sección activa. Los recursos de Tailwind y Flowbite son locales."
+                 data-tech="Jinja2 · HTMX · Tailwind · Flowbite">
+                <title>Navegador</title>
+                <rect class="node-bg" x="30" y="370" width="180" height="132" rx="14"/>
+                <rect class="node-bar" x="30" y="386" width="4" height="100" rx="2"/>
+                <text class="node-kicker" x="48" y="394">UI</text>
+                <text class="node-title" x="48" y="417">Navegador</text>
+                <text class="node-sub" x="48" y="436">Multipágina + HTMX</text>
+                <text class="node-mono" x="48" y="458">/cases</text>
+                <text class="node-mono" x="48" y="474">/documents</text>
+                <text class="node-mono" x="48" y="490">/vulnerabilities</text>
+              </g>
+
+              <g class="node" style="--accent:#22d3ee" tabindex="0"
+                 data-title="FastAPI"
+                 data-desc="Punto de entrada HTTP. Resuelve el alcance del caso en el servidor, valida el origen de los POST, renderiza plantillas y orquesta los servicios de dominio. Un solo worker y un semáforo global de generación."
+                 data-tech="FastAPI · rutas · Origin guard · 1 worker">
+                <title>FastAPI</title>
+                <rect class="node-bg" x="250" y="300" width="220" height="280" rx="16"/>
+                <rect class="node-bar" x="250" y="320" width="4" height="240" rx="2"/>
+                <text class="node-kicker" x="270" y="330">WEB</text>
+                <text class="node-title" x="270" y="355">FastAPI</text>
+                <text class="node-sub" x="270" y="376">Rutas + plantillas</text>
+                <text class="node-mono" x="270" y="402">/cases</text>
+                <text class="node-mono" x="270" y="422">/documents</text>
+                <text class="node-mono" x="270" y="442">/vulnerabilities</text>
+                <text class="node-mono" x="270" y="462">/chat</text>
+                <text class="node-mono" x="270" y="482">/runs</text>
+                <text class="node-mono" x="270" y="502">/review</text>
+                <text class="node-sub" x="270" y="532">Alcance resuelto</text>
+                <text class="node-sub" x="270" y="548">en el servidor</text>
+                <text class="node-sub" x="270" y="564">Origin guard en POST</text>
+              </g>
+
+              <rect class="container-box" x="520" y="80" width="300" height="780" rx="20"/>
+              <text x="540" y="110" class="container-label">Dominio</text>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0"
+                 data-title="Casos y alcance"
+                 data-desc="Persiste el caso, sus activos y sus campos desconocidos. El alcance se impone antes de consultar SQLite, Chroma, memoria o herramientas. Los casos no se mezclan."
+                 data-tech="cases · scope · SQLite">
+                <title>Casos y alcance</title>
+                <rect class="node-bg" x="540" y="130" width="260" height="90" rx="13"/>
+                <rect class="node-bar" x="540" y="148" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="558" y="156">DOM</text>
+                <text class="node-title" x="558" y="179">Casos y alcance</text>
+                <text class="node-sub" x="558" y="199">Contexto, activos y aislamiento</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0"
+                 data-title="Documentos e ingesta"
+                 data-desc="Valida PDF textual y Markdown, extrae texto, conserva versiones y fragmentos localizables. Los fragmentos se convierten en embeddings locales y se indexan en Chroma."
+                 data-tech="PDF · Markdown · chunking · embeddings">
+                <title>Documentos e ingesta</title>
+                <rect class="node-bg" x="540" y="240" width="260" height="100" rx="13"/>
+                <rect class="node-bar" x="540" y="258" width="4" height="64" rx="2"/>
+                <text class="node-kicker" x="558" y="266">DOM</text>
+                <text class="node-title" x="558" y="289">Documentos e ingesta</text>
+                <text class="node-sub" x="558" y="309">Extracción · versiones · fragmentos</text>
+                <text class="node-sub" x="558" y="326">Sin OCR: PDF escaneado se reporta</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0"
+                 data-title="Recuperación y citas"
+                 data-desc="Busca fragmentos por similitud en el índice del caso y del corpus público. Cada afirmación documental necesita una cita literal; el control automático verifica existencia y coincidencia."
+                 data-tech="Chroma · retrieval · citation check">
+                <title>Recuperación y citas</title>
+                <rect class="node-bg" x="540" y="360" width="260" height="90" rx="13"/>
+                <rect class="node-bar" x="540" y="378" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="558" y="386">DOM</text>
+                <text class="node-title" x="558" y="409">Recuperación y citas</text>
+                <text class="node-sub" x="558" y="429">Búsqueda · cita literal · control</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0"
+                 data-title="Conversación y memoria"
+                 data-desc="Coordina el turno, construye el contexto, fija el snapshot de hallazgos y conserva la continuidad por caso. El historial visible es la fuente autoritativa; el checkpoint es memoria operativa."
+                 data-tech="conversation · turn · checkpoints">
+                <title>Conversación y memoria</title>
+                <rect class="node-bg" x="540" y="470" width="260" height="90" rx="13"/>
+                <rect class="node-bar" x="540" y="488" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="558" y="496">DOM</text>
+                <text class="node-title" x="558" y="519">Conversación y memoria</text>
+                <text class="node-sub" x="558" y="539">Turno · historial · checkpoints</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0"
+                 data-title="Vulnerabilidades Qualys"
+                 data-desc="Lee el CSV filtrado de Qualys de forma local, valida fila por fila, separa válidas y rechazadas, arma una vista previa y confirma instantáneas inmutables. Los registros se consultan en SQLite y no entran al RAG."
+                 data-tech="Qualys CSV · staging · snapshots">
+                <title>Vulnerabilidades Qualys</title>
+                <rect class="node-bg" x="540" y="580" width="260" height="110" rx="13"/>
+                <rect class="node-bar" x="540" y="598" width="4" height="74" rx="2"/>
+                <text class="node-kicker" x="558" y="606">DOM</text>
+                <text class="node-title" x="558" y="629">Vulnerabilidades Qualys</text>
+                <text class="node-sub" x="558" y="649">CSV local · validación · staging</text>
+                <text class="node-sub" x="558" y="666">Snapshots confirmables</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="Evidencia de ejecución"
+                 data-desc="Registra modelo, configuración, pasos, fuentes, herramientas, duración, presupuesto y estado de traza. La página «Ver ejecución» lee solo registros persistidos."
+                 data-tech="runs · steps · trace audit">
+                <title>Evidencia de ejecución</title>
+                <rect class="node-bg" x="540" y="710" width="260" height="90" rx="13"/>
+                <rect class="node-bar" x="540" y="728" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="558" y="736">DOM</text>
+                <text class="node-title" x="558" y="759">Evidencia de ejecución</text>
+                <text class="node-sub" x="558" y="779">Pasos · presupuesto · traza</text>
+              </g>
+
+              <rect class="container-box" x="870" y="80" width="280" height="780" rx="20"/>
+              <text x="890" y="110" class="container-label">Agente y control</text>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0"
+                 data-title="LangGraph"
+                 data-desc="Grafo del turno: alcance, memoria, recuperación, decisión de herramienta, generación, validación y persistencia. Una sola reparación de citas y un presupuesto acotado."
+                 data-tech="LangGraph · StateGraph · TurnState">
+                <title>LangGraph</title>
+                <rect class="node-bg" x="890" y="130" width="240" height="100" rx="13"/>
+                <rect class="node-bar" x="890" y="148" width="4" height="64" rx="2"/>
+                <text class="node-kicker" x="908" y="156">GRAFO</text>
+                <text class="node-title" x="908" y="179">LangGraph</text>
+                <text class="node-sub" x="908" y="199">Flujo determinista del turno</text>
+                <text class="node-mono" x="908" y="216">retrieve → decide → agent</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0"
+                 data-title="Presupuesto de contexto"
+                 data-desc="Antes de generar, mide el prompt con el tokenizador del GGUF instalado y su plantilla. Si no cabe, reduce historial y luego fuentes. Si el mínimo no cabe, falla con un código explícito."
+                 data-tech="tokenizer · num_ctx · reducción">
+                <title>Presupuesto de contexto</title>
+                <rect class="node-bg" x="890" y="250" width="240" height="80" rx="13"/>
+                <rect class="node-bar" x="890" y="266" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="908" y="274">LÍMITE</text>
+                <text class="node-title" x="908" y="297">Presupuesto de contexto</text>
+                <text class="node-sub" x="908" y="316">Historial → fuentes → error</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0"
+                 data-title="findings_query"
+                 data-desc="Herramienta acotada al caso. Recibe el alcance por clausura, cuenta y agrupa en SQLite, y no acepta case_id como argumento. El límite afecta solo al detalle; un CVE con varias relaciones no multiplica filas."
+                 data-tech="tool · SQLite · snapshot fijado">
+                <title>findings_query</title>
+                <rect class="node-bg" x="890" y="350" width="240" height="90" rx="13"/>
+                <rect class="node-bar" x="890" y="368" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="908" y="376">TOOL</text>
+                <text class="node-title" x="908" y="399">findings_query</text>
+                <text class="node-sub" x="908" y="419">Conteos y grupos en SQLite</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0"
+                 data-title="Control de citas"
+                 data-desc="Valida que cada afirmación documental tenga una cita literal de una fuente recuperada en el turno. Una cita inválida abre una única reparación; si vuelve a fallar, la respuesta se abstiene."
+                 data-tech="validate · repair · abstain">
+                <title>Control de citas</title>
+                <rect class="node-bg" x="890" y="460" width="240" height="80" rx="13"/>
+                <rect class="node-bar" x="890" y="476" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="908" y="484">CONTROL</text>
+                <text class="node-title" x="908" y="507">Control de citas</text>
+                <text class="node-sub" x="908" y="526">Válida · repara · se abstiene</text>
+              </g>
+
+              <g class="node" style="--accent:#fb7185" tabindex="0"
+                 data-title="Límites del turno"
+                 data-desc="Ocho operaciones de modelo o herramienta, dos llamadas a herramientas, una reparación, 120 segundos de turno y 90 segundos por llamada. La decisión de herramienta también consume paso y tiempo."
+                 data-tech="8 pasos · 2 tools · 1 reparación · 120 s">
+                <title>Límites del turno</title>
+                <rect class="node-bg" x="890" y="560" width="240" height="100" rx="13"/>
+                <rect class="node-bar" x="890" y="578" width="4" height="64" rx="2"/>
+                <text class="node-kicker" x="908" y="586">COTA</text>
+                <text class="node-title" x="908" y="609">Límites del turno</text>
+                <text class="node-sub" x="908" y="629">8 pasos · 2 herramientas</text>
+                <text class="node-sub" x="908" y="646">1 reparación · 120 s</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="Trazas y evidencia"
+                 data-desc="La ejecución local es la fuente de evidencia. LangSmith es opcional y recibe solo metadatos acotados: nunca pregunta, prompts, documentos, argumentos de herramienta, claves ni rutas locales."
+                 data-tech="local runs · LangSmith opcional">
+                <title>Trazas y evidencia</title>
+                <rect class="node-bg" x="890" y="680" width="240" height="80" rx="13"/>
+                <rect class="node-bar" x="890" y="696" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="908" y="704">OBS</text>
+                <text class="node-title" x="908" y="727">Trazas y evidencia</text>
+                <text class="node-sub" x="908" y="746">Local primero · externo opcional</text>
+              </g>
+
+              <rect class="container-box" x="1200" y="80" width="370" height="780" rx="20"/>
+              <text x="1220" y="110" class="container-label">Datos y modelos</text>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="SQLite"
+                 data-desc="Fuente de verdad para casos, documentos, fragmentos, mensajes, ejecuciones, citas, hallazgos, importaciones y revisiones. Conserva procedencia y permite reconstruir el estado de negocio."
+                 data-tech="SQLite · WAL · Alembic">
+                <title>SQLite</title>
+                <rect class="node-bg" x="1220" y="130" width="330" height="110" rx="13"/>
+                <rect class="node-bar" x="1220" y="148" width="4" height="74" rx="2"/>
+                <text class="node-kicker" x="1238" y="156">DB</text>
+                <text class="node-title" x="1238" y="179">SQLite</text>
+                <text class="node-sub" x="1238" y="199">Fuente de verdad y procedencia</text>
+                <text class="node-mono" x="1238" y="219">casos · docs · runs · citas · imports</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="Chroma"
+                 data-desc="Índice vectorial derivado y reconstruible para búsqueda documental. No es la fuente de verdad. Se separa por caso y por modelo de embeddings."
+                 data-tech="Chroma · colecciones por caso">
+                <title>Chroma</title>
+                <rect class="node-bg" x="1220" y="260" width="330" height="90" rx="13"/>
+                <rect class="node-bar" x="1220" y="278" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1238" y="286">VEC</text>
+                <text class="node-title" x="1238" y="309">Chroma</text>
+                <text class="node-sub" x="1238" y="329">Índice derivado · reconstruible</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="Checkpoints de memoria"
+                 data-desc="Memoria operativa por caso, separada del estado de negocio. Se reconcilia antes de cada turno; no hay atomicidad entre esta base y SQLite."
+                 data-tech="checkpoints.sqlite · memoria por caso">
+                <title>Checkpoints de memoria</title>
+                <rect class="node-bg" x="1220" y="370" width="330" height="80" rx="13"/>
+                <rect class="node-bar" x="1220" y="386" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1238" y="394">MEM</text>
+                <text class="node-title" x="1238" y="417">Checkpoints</text>
+                <text class="node-sub" x="1238" y="436">Memoria operativa por caso</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0"
+                 data-title="Originales"
+                 data-desc="Archivos cargados y originales del corpus, fuera del índice y fuera de Git. La aplicación conserva la referencia y los fragmentos; el original permite auditar la extracción."
+                 data-tech="storage/originals · corpus">
+                <title>Originales</title>
+                <rect class="node-bg" x="1220" y="470" width="330" height="80" rx="13"/>
+                <rect class="node-bar" x="1220" y="486" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1238" y="494">FILE</text>
+                <text class="node-title" x="1238" y="517">Originales</text>
+                <text class="node-sub" x="1238" y="536">PDF, Markdown y corpus</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0"
+                 data-title="Ollama · qwen3.5:9b"
+                 data-desc="Modelo generativo local. Produce la respuesta, la decisión estructurada de herramienta y la reparación. Se ejecuta con razonamiento desactivado y una configuración fija por ejecución."
+                 data-tech="Ollama · qwen3.5:9b · JSON estructurado">
+                <title>Ollama qwen3.5:9b</title>
+                <rect class="node-bg" x="1220" y="570" width="330" height="90" rx="13"/>
+                <rect class="node-bar" x="1220" y="588" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1238" y="596">LLM</text>
+                <text class="node-title" x="1238" y="619">qwen3.5:9b</text>
+                <text class="node-sub" x="1238" y="639">Generación y ToolDecision local</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0"
+                 data-title="Ollama · embeddinggemma"
+                 data-desc="Modelo de embeddings local. Convierte documentos y consultas en vectores para recuperación. No genera texto y su conteo de tokens no se usa para admitir el prompt del generador."
+                 data-tech="Ollama · embeddinggemma · 768 dim">
+                <title>Ollama embeddinggemma</title>
+                <rect class="node-bg" x="1220" y="680" width="330" height="78" rx="13"/>
+                <rect class="node-bar" x="1220" y="696" width="4" height="46" rx="2"/>
+                <text class="node-kicker" x="1238" y="704">EMB</text>
+                <text class="node-title" x="1238" y="727">embeddinggemma</text>
+                <text class="node-sub" x="1238" y="744">Vectores locales · 768 dimensiones</text>
+              </g>
+
+              <g class="node" style="--accent:#fb7185" tabindex="0"
+                 data-title="LangSmith"
+                 data-desc="Trazabilidad externa opcional. Recibe metadatos acotados y nunca pregunta, prompts, documentos del caso, argumentos de herramienta, claves ni rutas locales. Sin configuración queda deshabilitado."
+                 data-tech="LangSmith · traza opcional">
+                <title>LangSmith</title>
+                <rect class="node-bg" x="1220" y="770" width="330" height="78" rx="13"/>
+                <rect class="node-bar" x="1220" y="786" width="4" height="46" rx="2"/>
+                <text class="node-kicker" x="1238" y="794">EXT</text>
+                <text class="node-title" x="1238" y="817">LangSmith</text>
+                <text class="node-sub" x="1238" y="834">Trazas acotadas · opcional</text>
+              </g>
+
+              <path class="flow cyan" d="M210 436 L250 436"/>
+              <path class="flow cyan" d="M470 330 C500 330 500 175 540 175"/>
+              <path class="flow cyan" d="M470 380 C500 380 500 290 540 290"/>
+              <path class="flow cyan" d="M470 430 C500 430 500 515 540 515"/>
+              <path class="flow cyan" d="M470 480 C500 480 500 635 540 635"/>
+
+              <path class="flow green" d="M800 175 C980 175 1000 185 1220 185"/>
+              <path class="flow green" d="M800 290 C980 290 1000 305 1220 305"/>
+              <path class="flow green" d="M800 405 C980 405 1000 330 1220 330"/>
+              <path class="flow green" d="M800 635 C980 635 1000 240 1220 240"/>
+              <path class="flow green" d="M800 755 C980 755 1000 240 1220 240"/>
+
+              <path class="flow violet" d="M800 515 C840 515 850 180 890 180"/>
+              <path class="flow amber" d="M1130 180 C1170 180 1180 615 1220 615"/>
+              <path class="flow violet" d="M1010 230 L1010 350"/>
+              <path class="flow green" d="M1130 395 C1170 395 1180 240 1220 240"/>
+              <path class="flow violet" d="M1130 205 C1170 205 1180 410 1220 410"/>
+              <path class="flow amber dashed" d="M1130 755 C1170 755 1180 805 1220 805"/>
+
+              <text class="edge-label" x="218" y="426">HTTP/HTMX</text>
+              <text class="edge-label" x="486" y="250">alcance</text>
+              <text class="edge-label" x="838" y="168">casos</text>
+              <text class="edge-label" x="960" y="292">metadatos</text>
+              <text class="edge-label" x="958" y="382">consulta</text>
+              <text class="edge-label" x="844" y="505">turno</text>
+              <text class="edge-label" x="1140" y="590">prompt</text>
+              <text class="edge-label" x="1020" y="300">use_findings</text>
+              <text class="edge-label" x="1140" y="382">conteos</text>
+              <text class="edge-label" x="972" y="650">snapshots</text>
+              <text class="edge-label" x="1000" y="740">runs</text>
+              <text class="edge-label" x="1140" y="330">memoria</text>
+              <text class="edge-label" x="1148" y="812">opcional</text>
+            </g>
+
+            <g id="view-turn" class="view">
+              <text x="30" y="40" class="container-label">Grafo del turno · LangGraph</text>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0" data-title="load_scope" data-desc="Resuelve el caso autorizado y lo fija como alcance del turno. Ninguna consulta posterior puede cambiar de caso." data-tech="deterministic · CaseScope">
+                <title>load_scope</title>
+                <rect class="node-bg" x="30" y="300" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="30" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="48" y="324">01</text>
+                <text class="node-title" x="48" y="347">load_scope</text>
+                <text class="node-sub" x="48" y="366">Alcance fijado</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0" data-title="load_memory" data-desc="Carga la memoria operativa del caso y la reconcilia con el historial visible antes de generar." data-tech="checkpoints · reconciliación">
+                <title>load_memory</title>
+                <rect class="node-bg" x="220" y="300" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="220" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="238" y="324">02</text>
+                <text class="node-title" x="238" y="347">load_memory</text>
+                <text class="node-sub" x="238" y="366">Historial + checkpoint</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="retrieve" data-desc="Recupera fragmentos del caso y del corpus público desde Chroma. Una recuperación vacía no demuestra ausencia de evidencia." data-tech="Chroma · search_documents">
+                <title>retrieve</title>
+                <rect class="node-bg" x="410" y="300" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="410" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="428" y="324">03</text>
+                <text class="node-title" x="428" y="347">retrieve</text>
+                <text class="node-sub" x="428" y="366">Fragmentos locales</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0" data-title="decide" data-desc="Decisión estructurada ToolDecision: determina si la pregunta necesita datos de hallazgos. También consume paso y tiempo del turno." data-tech="ToolDecision · JSON estructurado">
+                <title>decide</title>
+                <rect class="node-bg" x="600" y="300" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="600" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="618" y="324">04</text>
+                <text class="node-title" x="618" y="347">decide</text>
+                <text class="node-sub" x="618" y="366">¿Usar herramienta?</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0" data-title="tools" data-desc="Ejecuta findings_query con el alcance por clausura. Devuelve conteos, grupos y procedencia; nunca devuelve Results completo." data-tech="findings_query · SQLite">
+                <title>tools</title>
+                <rect class="node-bg" x="800" y="160" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="800" y="176" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="818" y="184">05A</text>
+                <text class="node-title" x="818" y="207">tools</text>
+                <text class="node-sub" x="818" y="226">findings_query</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0" data-title="agent" data-desc="Construye el prompt con alcance, historial, fuentes y resultados de herramientas; lo mide con el tokenizador y genera el JSON de respuesta." data-tech="plan_prompt · qwen3.5:9b">
+                <title>agent</title>
+                <rect class="node-bg" x="800" y="440" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="800" y="456" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="818" y="464">05B</text>
+                <text class="node-title" x="818" y="487">agent</text>
+                <text class="node-sub" x="818" y="506">Prompt + generación</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0" data-title="validate" data-desc="Control automático de citas y de evidencia estructurada. Si las citas son válidas o hay evidencia de herramienta, persiste; si no, repara o se abstiene." data-tech="citation check · routing">
+                <title>validate</title>
+                <rect class="node-bg" x="1000" y="300" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="1000" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1018" y="324">06</text>
+                <text class="node-title" x="1018" y="347">validate</text>
+                <text class="node-sub" x="1018" y="366">Citas + evidencia</text>
+              </g>
+
+              <g class="node" style="--accent:#fb7185" tabindex="0" data-title="repair" data-desc="Una única reparación. Vuelve a pedir el JSON con los motivos de rechazo. No hay reintentos ilimitados." data-tech="1 reparación máxima">
+                <title>repair</title>
+                <rect class="node-bg" x="1200" y="160" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="1200" y="176" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1218" y="184">07A</text>
+                <text class="node-title" x="1218" y="207">repair</text>
+                <text class="node-sub" x="1218" y="226">Una sola vez</text>
+              </g>
+
+              <g class="node" style="--accent:#fb7185" tabindex="0" data-title="abstain" data-desc="Si no hay evidencia suficiente, la respuesta se abstiene y no inventa una cita. La ausencia se registra como ausencia." data-tech="sin evidencia · abstención">
+                <title>abstain</title>
+                <rect class="node-bg" x="1200" y="440" width="150" height="80" rx="13"/>
+                <rect class="node-bar" x="1200" y="456" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1218" y="464">07B</text>
+                <text class="node-title" x="1218" y="487">abstain</text>
+                <text class="node-sub" x="1218" y="506">Sin evidencia</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="persist" data-desc="Persiste el turno, las citas, los pasos y la evidencia. El historial visible queda como fuente autoritativa." data-tech="SQLite · messages · runs">
+                <title>persist</title>
+                <rect class="node-bg" x="1400" y="300" width="140" height="80" rx="13"/>
+                <rect class="node-bar" x="1400" y="316" width="4" height="48" rx="2"/>
+                <text class="node-kicker" x="1418" y="324">08</text>
+                <text class="node-title" x="1418" y="347">persist</text>
+                <text class="node-sub" x="1418" y="366">Citas + ejecución</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="Fin del turno" data-desc="El grafo termina. La ejecución queda disponible en «Ver ejecución» y la siguiente pregunta reutiliza el historial y el snapshot fijado." data-tech="END · evidencia persistida">
+                <title>Fin</title>
+                <rect class="node-bg" x="1555" y="310" width="40" height="60" rx="15"/>
+                <text class="node-kicker" x="1564" y="336">FIN</text>
+              </g>
+
+              <path class="flow cyan" d="M180 340 L220 340"/>
+              <path class="flow cyan" d="M370 340 L410 340"/>
+              <path class="flow cyan" d="M560 340 L600 340"/>
+              <path class="flow amber" d="M675 300 C710 300 720 200 800 200"/>
+              <path class="flow amber dashed" d="M800 226 C730 226 700 320 675 320"/>
+              <path class="flow violet" d="M675 340 C720 340 730 480 800 480"/>
+              <path class="flow violet" d="M875 480 C950 480 950 380 1000 380"/>
+              <path class="flow green" d="M1075 340 L1400 340"/>
+              <path class="flow rose" d="M1075 320 C1120 320 1140 200 1200 200"/>
+              <path class="flow rose dashed" d="M1200 240 C1150 240 1120 300 1075 300"/>
+              <path class="flow rose" d="M1075 360 C1120 360 1140 480 1200 480"/>
+              <path class="flow green" d="M1275 480 C1350 480 1350 380 1400 380"/>
+              <path class="flow green" d="M1470 340 L1555 340"/>
+
+              <text class="edge-label" x="188" y="332">inicio</text>
+              <text class="edge-label" x="688" y="292">use_findings = true</text>
+              <text class="edge-label" x="704" y="322">resultado</text>
+              <text class="edge-label" x="692" y="410">use_findings = false</text>
+              <text class="edge-label" x="1084" y="332">válida</text>
+              <text class="edge-label" x="1100" y="242">cita inválida</text>
+              <text class="edge-label" x="1118" y="286">1 reparación</text>
+              <text class="edge-label" x="1108" y="422">sin evidencia</text>
+              <text class="edge-label" x="1358" y="470">abstiene</text>
+
+              <rect class="note-box" x="30" y="590" width="700" height="120" rx="14"/>
+              <text class="note-title" x="50" y="618">Presupuesto del turno</text>
+              <text class="note-text" x="50" y="642">8 operaciones de modelo o herramienta · 2 llamadas a herramientas</text>
+              <text class="note-text" x="50" y="662">1 reparación · 120 s de turno · 90 s por llamada al modelo</text>
+              <text class="note-text" x="50" y="682">La decisión de herramienta también consume paso y tiempo.</text>
+
+              <rect class="note-box" x="760" y="590" width="810" height="120" rx="14"/>
+              <text class="note-title" x="780" y="618">Contexto y evidencia</text>
+              <text class="note-text" x="780" y="642">Historial acotado a 8 mensajes y 6000 caracteres; no es evidencia y no se cita.</text>
+              <text class="note-text" x="780" y="662">El prompt se mide con el tokenizador del generador; se reduce historial y luego fuentes.</text>
+              <text class="note-text" x="780" y="682">El alcance del caso describe el caso, pero no se presenta como cita documental.</text>
+            </g>
+
+            <g id="view-vuln" class="view">
+              <text x="30" y="40" class="container-label">Importación y consulta de vulnerabilidades</text>
+
+              <g class="node" style="--accent:#22d3ee" tabindex="0" data-title="CSV de Qualys" data-desc="Archivo filtrado de Qualys que se carga por formulario. No se envía a un servicio externo y no se pide una ruta local." data-tech="CSV · carga local">
+                <title>CSV de Qualys</title>
+                <rect class="node-bg" x="30" y="330" width="160" height="90" rx="13"/>
+                <rect class="node-bar" x="30" y="348" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="48" y="356">INPUT</text>
+                <text class="node-title" x="48" y="379">CSV Qualys</text>
+                <text class="node-sub" x="48" y="399">Archivo filtrado</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0" data-title="Validación local" data-desc="Lee el CSV de forma local, valida tamaño, filas y campos, y clasifica cada registro como válido o rechazado. Los rechazos se muestran con su motivo." data-tech="adapter · policies · límites">
+                <title>Validación local</title>
+                <rect class="node-bg" x="230" y="330" width="170" height="90" rx="13"/>
+                <rect class="node-bar" x="230" y="348" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="248" y="356">VALID</text>
+                <text class="node-title" x="248" y="379">Validación local</text>
+                <text class="node-sub" x="248" y="399">Bytes · filas · campos</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="Staging" data-desc="Los registros válidos quedan en staging. La importación todavía no es una instantánea consultable; confirmar es un acto separado." data-tech="staging · preview">
+                <title>Staging</title>
+                <rect class="node-bg" x="440" y="230" width="180" height="90" rx="13"/>
+                <rect class="node-bar" x="440" y="248" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="458" y="256">OK</text>
+                <text class="node-title" x="458" y="279">Staging</text>
+                <text class="node-sub" x="458" y="299">Filas válidas</text>
+              </g>
+
+              <g class="node" style="--accent:#fb7185" tabindex="0" data-title="Rechazo explícito" data-desc="Las filas inválidas no se descartan en silencio: se registran con su motivo y se muestran en la vista previa. Un archivo inválido no se confirma." data-tech="rechazo por fila · motivo">
+                <title>Rechazo explícito</title>
+                <rect class="node-bg" x="440" y="440" width="180" height="90" rx="13"/>
+                <rect class="node-bar" x="440" y="458" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="458" y="466">REJECT</text>
+                <text class="node-title" x="458" y="489">Rechazo explícito</text>
+                <text class="node-sub" x="458" y="509">Motivo por fila</text>
+              </g>
+
+              <g class="node" style="--accent:#60a5fa" tabindex="0" data-title="Vista previa" data-desc="Muestra registros detectados, válidos, inválidos, distribución por estado, severidad e indicadores. Todavía no hay una instantánea consultable." data-tech="preview · conteos · advertencias">
+                <title>Vista previa</title>
+                <rect class="node-bg" x="660" y="330" width="170" height="90" rx="13"/>
+                <rect class="node-bar" x="660" y="348" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="678" y="356">PREVIEW</text>
+                <text class="node-title" x="678" y="379">Vista previa</text>
+                <text class="node-sub" x="678" y="399">Conteos y advertencias</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0" data-title="Confirmar instantánea" data-desc="Convierte el staging en una instantánea inmutable y confirmada. Las instantáneas no se suman y la ausencia de un registro no implica remediación." data-tech="confirm · snapshot inmutable">
+                <title>Confirmar instantánea</title>
+                <rect class="node-bg" x="870" y="330" width="180" height="90" rx="13"/>
+                <rect class="node-bar" x="870" y="348" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="888" y="356">COMMIT</text>
+                <text class="node-title" x="888" y="379">Confirmar</text>
+                <text class="node-sub" x="888" y="399">Instantánea inmutable</text>
+              </g>
+
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="SQLite" data-desc="Fuente de verdad de los registros importados, sus estados, severidades e indicadores. La tabla y findings_query aplican filtros sobre esta base." data-tech="SQLite · snapshot_id">
+                <title>SQLite</title>
+                <rect class="node-bg" x="1090" y="330" width="160" height="90" rx="13"/>
+                <rect class="node-bar" x="1090" y="348" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1108" y="356">DB</text>
+                <text class="node-title" x="1108" y="379">SQLite</text>
+                <text class="node-sub" x="1108" y="399">Registros confirmados</text>
+              </g>
+
+              <g class="node" style="--accent:#22d3ee" tabindex="0" data-title="Tabla y filtros" data-desc="La tabla conserva la instantánea seleccionada y los filtros en la URL. Distingue «Sin importaciones confirmadas» de «Sin registros para estos filtros»." data-tech="tabla · filtros · procedencia">
+                <title>Tabla y filtros</title>
+                <rect class="node-bg" x="1300" y="210" width="190" height="90" rx="13"/>
+                <rect class="node-bar" x="1300" y="228" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1318" y="236">UI</text>
+                <text class="node-title" x="1318" y="259">Tabla y filtros</text>
+                <text class="node-sub" x="1318" y="279">Estado · severidad · prioridad</text>
+              </g>
+
+              <g class="node" style="--accent:#fbbf24" tabindex="0" data-title="findings_query" data-desc="Consulta estructurada acotada al caso. Cuenta y agrupa en SQLite; el límite afecta solo al detalle. Un total cero no prueba ausencia de vulnerabilidades." data-tech="tool · SQLite · conteos">
+                <title>findings_query</title>
+                <rect class="node-bg" x="1300" y="450" width="190" height="90" rx="13"/>
+                <rect class="node-bar" x="1300" y="468" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1318" y="476">TOOL</text>
+                <text class="node-title" x="1318" y="499">findings_query</text>
+                <text class="node-sub" x="1318" y="519">Conteos y grupos</text>
+              </g>
+
+              <g class="node" style="--accent:#a78bfa" tabindex="0" data-title="Respuesta con procedencia" data-desc="La respuesta muestra el total, la distribución y la instantánea consultada. Los registros Qualys no son citas documentales y no se mezclan con el RAG." data-tech="respuesta · snapshot · sin citas RAG">
+                <title>Respuesta con procedencia</title>
+                <rect class="node-bg" x="1050" y="620" width="440" height="90" rx="13"/>
+                <rect class="node-bar" x="1050" y="638" width="4" height="54" rx="2"/>
+                <text class="node-kicker" x="1068" y="646">OUT</text>
+                <text class="node-title" x="1068" y="669">Respuesta con procedencia</text>
+                <text class="node-sub" x="1068" y="689">Total · grupos · instantánea · origen</text>
+              </g>
+
+              <path class="flow cyan" d="M190 375 L230 375"/>
+              <path class="flow green" d="M400 360 C420 360 420 275 440 275"/>
+              <path class="flow rose" d="M400 390 C420 390 420 485 440 485"/>
+              <path class="flow green" d="M620 275 C640 275 640 375 660 375"/>
+              <path class="flow violet" d="M830 375 L870 375"/>
+              <path class="flow green" d="M1050 375 L1090 375"/>
+              <path class="flow cyan" d="M1250 360 C1280 360 1280 255 1300 255"/>
+              <path class="flow amber" d="M1250 400 C1280 400 1280 495 1300 495"/>
+              <path class="flow cyan" d="M1300 300 C1270 300 1240 620 1050 665"/>
+              <path class="flow amber" d="M1300 540 C1270 540 1240 665 1050 665"/>
+
+              <text class="edge-label" x="196" y="366">carga</text>
+              <text class="edge-label" x="410" y="320">válidas</text>
+              <text class="edge-label" x="404" y="442">inválidas</text>
+              <text class="edge-label" x="628" y="318">preview</text>
+              <text class="edge-label" x="836" y="320">confirmar</text>
+              <text class="edge-label" x="1056" y="320">persistir</text>
+              <text class="edge-label" x="1264" y="246">tabla</text>
+              <text class="edge-label" x="1262" y="486">consulta</text>
+              <text class="edge-label" x="1158" y="608">procedencia</text>
+
+              <rect class="note-box" x="30" y="620" width="960" height="90" rx="14"/>
+              <text class="note-title" x="50" y="648">Frontera explícita</text>
+              <text class="note-text" x="50" y="672">No RAG · no Chroma · no citas documentales · Results completo fuera del modelo y de la interfaz.</text>
+              <text class="note-text" x="50" y="692">Los registros importados se consultan como evidencia estructurada y conservan su instantánea.</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <aside class="detail" id="detail" aria-live="polite">
+        <div class="detail-kicker">Detalle del componente</div>
+        <h3 id="detail-title">Seleccioná un componente</h3>
+        <p id="detail-desc">
+          Hacé clic en cualquier tarjeta para ver qué hace, con qué tecnologías trabaja y qué límites
+          conserva. Las pestañas cambian entre la vista general, el grafo del turno y el flujo de
+          vulnerabilidades.
+        </p>
+        <div class="detail-tech" id="detail-tech"></div>
+        <div class="legend">
+          <div class="legend-row"><span class="swatch" style="background:var(--cyan)"></span> Interfaz y entrada HTTP</div>
+          <div class="legend-row"><span class="swatch" style="background:var(--blue)"></span> Dominio y persistencia</div>
+          <div class="legend-row"><span class="swatch" style="background:var(--violet)"></span> Grafo conversacional</div>
+          <div class="legend-row"><span class="swatch" style="background:var(--green)"></span> Datos y evidencia</div>
+          <div class="legend-row"><span class="swatch" style="background:var(--amber)"></span> Modelos locales y herramientas</div>
+          <div class="legend-row"><span class="swatch" style="background:var(--rose)"></span> Límites y trazas externas</div>
+        </div>
+        <div class="hint">La animación de las líneas representa el flujo de datos, no una llamada real en curso.</div>
+      </aside>
+    </div>
+
+    <footer>
+      <span>SecGuard Advisor · monolito modular · inferencia local · supervisión humana</span>
+      <span><code>docs/arquitectura/diagrama-arquitectura.html</code></span>
+    </footer>
+  </div>
+
+  <script>
+    const views = {
+      general: {
+        title: "Vista general",
+        sub: "Componentes, datos y dependencias externas."
+      },
+      turn: {
+        title: "Turno documental",
+        sub: "Grafo LangGraph, rutas de decisión, reparación y abstención."
+      },
+      vuln: {
+        title: "Vulnerabilidades",
+        sub: "Importación Qualys, instantáneas y consulta estructurada."
+      }
+    };
+
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const panels = Array.from(document.querySelectorAll(".view"));
+    const viewTitle = document.getElementById("view-title");
+    const viewSub = document.getElementById("view-sub");
+    const diagram = document.querySelector("svg.diagram");
+    const viewBoxes = {
+      general: "0 0 1600 940",
+      turn: "0 0 1625 760",
+      vuln: "0 0 1600 760"
+    };
+
+    const defaultDetail = {
+      title: "Seleccioná un componente",
+      desc: "Hacé clic en cualquier tarjeta para ver qué hace, con qué tecnologías trabaja y qué límites conserva. Las pestañas cambian entre la vista general, el grafo del turno y el flujo de vulnerabilidades.",
+      tech: ""
+    };
+
+    function resetDetail() {
+      detailTitle.textContent = defaultDetail.title;
+      detailDesc.textContent = defaultDetail.desc;
+      detailTech.replaceChildren();
+    }
+
+    function activate(name) {
+      tabs.forEach((tab) => {
+        const selected = tab.dataset.view === name;
+        tab.setAttribute("aria-selected", String(selected));
+      });
+      panels.forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `view-${name}`);
+      });
+      diagram.setAttribute("viewBox", viewBoxes[name]);
+      viewTitle.textContent = views[name].title;
+      viewSub.textContent = views[name].sub;
+      resetDetail();
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => activate(tab.dataset.view));
+    });
+
+    const detailTitle = document.getElementById("detail-title");
+    const detailDesc = document.getElementById("detail-desc");
+    const detailTech = document.getElementById("detail-tech");
+
+    function describe(node) {
+      detailTitle.textContent = node.dataset.title || "Componente";
+      detailDesc.textContent = node.dataset.desc || "";
+      detailTech.replaceChildren();
+      (node.dataset.tech || "").split("·").map((item) => item.trim()).filter(Boolean).forEach((item) => {
+        const chip = document.createElement("span");
+        chip.className = "tech";
+        chip.textContent = item;
+        detailTech.appendChild(chip);
+      });
+    }
+
+    document.querySelectorAll(".node").forEach((node) => {
+      node.addEventListener("click", () => describe(node));
+      node.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          describe(node);
+        }
+      });
+    });
+
+    document.getElementById("download").addEventListener("click", () => {
+      const active = document.querySelector(".view.active");
+      if (!active) return;
+      const svg = document.querySelector("svg.diagram");
+      const clone = svg.cloneNode(true);
+      clone.querySelectorAll(".view").forEach((view) => {
+        if (view !== active) view.remove();
+      });
+      active.setAttribute("class", "view active");
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const source = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `secguard-arquitectura-${active.id.replace("view-", "")}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
