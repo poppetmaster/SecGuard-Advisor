@@ -6,6 +6,9 @@
 
 **Status**: Draft — propuesta de política revisada; aprobación pendiente
 
+**Updated**: 2026-11-11 — aclaración de contexto, indicadores indeterminados, captura de contexto y
+verificación de aplicabilidad. No registra aprobación de la política.
+
 **Input**: User description: "Inicia la funcionalidad 003 de SecGuard Advisor: «Priorización y revisión
 de vulnerabilidades». Primera parte del incremento 3: definir la política P1–P4 y especificar la
 revisión explícita que permitirá obtener etiquetas elegibles para el futuro clasificador."
@@ -288,14 +291,15 @@ genera una etiqueta elegible por defecto.
   adjudicada por la persona y el estado de elegibilidad; ninguna puede borrar ni sobrescribir a las
   otras.
 - **FR-047**: El formulario MUST permitir registrar exposición, criticidad y vínculo con una
-  aplicación de IA, cada uno con estado, procedencia o evidencia, justificación, autor declarado y
-  fecha; el historial de contexto MUST conservarse.
+  aplicación de IA, cada uno con estado, procedencia o evidencia, justificación, autor declarado,
+  fecha y alcance; el historial de contexto MUST conservarse sin sobrescritura.
 - **FR-048**: Una discrepancia entre sugerencia y adjudicación MUST quedar visible y justificada, sin
   eliminar ninguna de las dos; la elegibilidad MUST indicar cuál se usa y por qué.
 - **FR-049**: Ante un indicador indeterminado, el sistema MUST evaluar las alternativas compatibles;
   si todas producen la misma clase, MUST mostrar una sugerencia con incertidumbre; si producen clases
   distintas, MUST devolver «Información insuficiente» e identificar las alternativas y el dato
-  decisivo.
+  decisivo. La tabla propuesta actual no contiene alternativas con la misma clase; por eso toda
+  combinación con indeterminado produce Información insuficiente.
 - **FR-050**: El vínculo con una aplicación de IA MUST registrarse como contexto de alcance y no puede
   elevar por sí solo la criticidad ni la clase.
 - **FR-051**: El contexto agregado MUST distinguir `high`, `not_high`, `incomplete` y
@@ -320,10 +324,11 @@ genera una etiqueta elegible por defecto.
   entrenamiento y por qué.
 - **Origen de etiqueta**: adjudicación humana, generación por política o predicción futura de
   clasificador; solo la primera puede ser elegible en esta funcionalidad.
-- **Contexto adicional documentado**: exposición, criticidad o vínculo con la aplicación de IA
-  asociados a un registro o a un alcance explícito, con fuente, fecha, autor declarado y estado
-  `high`, `not_high`, `incomplete` o `not_applicable`. No se infiere ni se transfiere entre
-  instantáneas.
+- **Contexto adicional documentado**: exposición y criticidad con estado `known_high`,
+  `known_not_high`, `unknown` o `not_applicable`; vínculo con IA con estado `linked`, `not_linked`,
+  `unknown` o `not_applicable`; y agregado `high`, `not_high`, `incomplete` o `not_applicable`.
+  Asociado a un registro o a un alcance explícito, con fuente, fecha, autor declarado,
+  justificación e historial. No se infiere ni se transfiere entre instantáneas.
 - **Historial de revisiones**: secuencia ordenada de revisiones de un registro, con revisión vigente
   y reemplazos.
 
@@ -358,9 +363,10 @@ genera una etiqueta elegible por defecto.
   conjunta de 002.
 - **SC-015**: El 0% de las revisiones propuestas se convierte automáticamente en elegible al aprobar
   una política; cada una requiere confirmación explícita bajo la versión aprobada.
-- **SC-016**: El 100% de los indicadores indeterminados produce una sugerencia con incertidumbre solo
-  cuando todas las alternativas coinciden, o «Información insuficiente» con alternativas y dato
-  decisivo cuando difieren; ninguno se convierte en negativo.
+- **SC-016**: El 100% de los indicadores indeterminados se evalúa con la regla única; en la tabla
+  actual, el 100% produce «Información insuficiente» con alternativas y dato decisivo, y ninguno se
+  convierte en negativo. La sugerencia con incertidumbre solo se emitirá si una versión aprobada
+  tuviera alternativas compatibles con la misma clase.
 - **SC-017**: El 100% del contexto registra exposición y criticidad por separado, con procedencia,
   autor, fecha y alcance; `not_applicable` no se presenta como `not_high`.
 - **SC-018**: El 100% de las discrepancias entre sugerencia y adjudicación conserva ambas, muestra la
@@ -401,6 +407,40 @@ genera una etiqueta elegible por defecto.
 9. Si la política no está aprobada y se adopta D-02=A, la revisión se conserva como propuesta no
    elegible y la interfaz lo indica; con D-02=B se bloquea la entrada de P1–P4. En ningún caso se
    presenta como etiqueta experta.
+
+### Captura de contexto y estados separados
+
+El formulario propuesto registra el contexto adicional en una sección propia, separada de los datos
+originales de Qualys:
+
+| Campo | Contenido propuesto | Obligatoriedad |
+|---|---|---|
+| Exposición | `known_high`, `known_not_high`, `unknown` o `not_applicable`. | Obligatorio si la política usa exposición para la clase. |
+| Criticidad | Los mismos cuatro estados. | Obligatorio si la política usa criticidad para la clase. |
+| Vínculo con IA | `linked`, `not_linked`, `unknown` o `not_applicable`. | Se registra cuando corresponda; no eleva por sí solo la clase. |
+| Alcance | Registro, activo, caso o grupo documentado. | Obligatorio. |
+| Procedencia o evidencia | Referencia al inventario, política, arquitectura, observación o documento que respalda el valor. | Obligatorio para todo valor distinto de `unknown`. |
+| Justificación | Por qué el valor aplica al alcance declarado. | Obligatorio para todo valor, especialmente `not_applicable`. |
+| Autor declarado | Identidad declarada de quien registra el contexto. | Obligatorio; no es autenticación. |
+| Fecha | Fecha de registro; si la evidencia tiene fecha propia, se conserva también. | Obligatorio. |
+| Historial | Entradas anteriores, entrada vigente y reemplazos. | Se conserva; una corrección no borra la anterior. |
+
+El contexto se guarda como una entrada nueva y acumulativa. No modifica el CSV, la instantánea
+Qualys, las evidencias de ejecución ni las revisiones anteriores. La ausencia de un dato se conserva
+como `unknown` o `incomplete`; no se completa con supuestos.
+
+La revisión distingue tres estados que no se sustituyen entre sí:
+
+| Estado | Quién lo produce | Qué significa | Elegibilidad |
+|---|---|---|---|
+| Prioridad sugerida por la regla | Política o regla versionada. | Salida calculada, con versión, incertidumbre y alternativas cuando corresponda. | No es elegible por sí sola. |
+| Prioridad adjudicada por la persona | Revisión humana explícita. | Decisión con clase P1–P4, justificación, autor, fecha y confirmación de evidencia revisada. | Elegible solo si es completa y la política está aprobada. |
+| Elegibilidad para entrenamiento | Sistema, a partir de la adjudicación y la política. | Indica si la revisión puede alimentar entrenamiento y por qué. | No crea ni modifica la clase. |
+
+**Discrepancia propuesta:** si la persona acepta la sugerencia, se registra una adjudicación explícita;
+no se copia la sugerencia como etiqueta experta. Si adjudica otra clase, se conservan ambas, se
+muestra la discrepancia y se exige justificarla. La elegibilidad usa la adjudicación humana si cumple
+las condiciones; la sugerencia no se borra. Una discrepancia sin justificación no es elegible.
 
 ## Decisiones de política ya respaldadas
 
@@ -454,13 +494,19 @@ habilita etiquetas elegibles ni se presenta como criterio experto.
 
 ### Orden de evaluación
 
-1. Si el estado es `Fixed`, la salida es **antecedente histórico**; no se asigna P1–P4 para
+1. Verificar que el registro pertenece a la instantánea confirmada y al caso abierto.
+2. Si el estado es `Fixed`, la salida es **antecedente histórico**; no se asigna P1–P4 para
    remediación.
-2. Si el estado es desconocido, la salida es **Información insuficiente**.
-3. Si cualquier indicador es indeterminado, la salida es **Información insuficiente**.
-4. Si el contexto adicional está disponible, se agrega según la regla de contexto.
-5. Se aplica la tabla de decisión; la primera condición que coincide define la única salida.
-6. Si falta un dato que podría cambiar la clase, la salida es **Información insuficiente**.
+3. Si el estado es desconocido, la salida es **Información insuficiente**.
+4. Si hay al menos un indicador indeterminado, aplicar la **regla única de indicadores
+   indeterminados** definida más abajo. En la tabla actual, esa regla produce **Información
+   insuficiente** en todos los casos; nunca convierte el indeterminado en negativo.
+5. Calcular el contexto agregado a partir de exposición y criticidad. Si es `incomplete` o
+   `not_applicable`, la salida es **Información insuficiente**, salvo que el registro ya haya sido
+   tratado como `Fixed`.
+6. Aplicar la tabla de decisión. La primera condición que coincide define la única salida.
+7. Si falta un dato exigido que podría cambiar la clase, la salida es **Información insuficiente**.
+8. No forzar P4 por ausencia de información ni convertir `not_applicable` en `not_high`.
 
 ### Regla de contexto
 
@@ -468,66 +514,86 @@ El contexto no se infiere desde QID, IP, puerto, protocolo ni First Detected, no
 instantáneas y debe declarar su alcance —registro, activo, caso o grupo documentado—. Cada dato de
 contexto conserva fuente o evidencia, justificación, autor declarado, fecha y alcance.
 
-#### Exposición
+Las definiciones de esta sección son **propuestas para discusión**, no una política aprobada. Se
+registran por separado exposición y criticidad; el vínculo con IA se registra aparte.
 
-- `known_high`: existe evidencia documentada de exposición alta para el alcance declarado.
-- `known_not_high`: existe evidencia documentada de exposición baja o media para el alcance.
-- `unknown`: no hay evidencia suficiente; se registra qué falta y por qué.
-- `not_applicable`: la exposición no es un factor pertinente para ese registro o alcance; se exige
-  justificación explícita.
+#### Exposición y criticidad
 
-La evidencia puede ser un inventario, una arquitectura, una política o una observación fechada. No se
-acepta «no aplica» sin motivo ni se deduce por ausencia de dato.
+Cada factor usa uno de estos estados:
 
-#### Criticidad
+| Estado | Significado | Evidencia o justificación mínima | Efecto en el agregado |
+|---|---|---|---|
+| `known_high` | Existe evidencia documentada de exposición o criticidad alta para el alcance declarado. | Inventario, arquitectura, clasificación de información, política, responsable del activo u observación fechada. | `high` siempre; el otro factor puede ser cualquier estado. |
+| `known_not_high` | Existe evidencia documentada de exposición o criticidad baja o media para el alcance. | La misma clase de evidencia, con el valor documentado. | `not_high` si el otro también es `known_not_high`; `high` si el otro es `known_high`; en otro caso, `incomplete`. |
+| `unknown` | No hay evidencia suficiente; se registra qué falta y por qué. | La carencia documentada; no se completa con supuestos. | `high` si el otro factor es `known_high`; en otro caso, `incomplete`. |
+| `not_applicable` | El factor no es pertinente para ese registro o alcance; se exige justificación explícita. | Justificación y evidencia de por qué el factor no aplica. | `high` si el otro es `known_high`; `not_applicable` si ambos lo son; en otro caso, `incomplete`. No se convierte en `known_not_high`. |
 
-- `known_high`: el activo o proceso tiene criticidad alta documentada para el caso.
-- `known_not_high`: criticidad baja o media documentada.
-- `unknown`: falta evidencia; se registra la carencia.
-- `not_applicable`: la criticidad no es un factor pertinente; se exige justificación.
-
-Criticidad no es severidad, exposición ni prioridad. Se documenta por separado.
+La exposición describe la posibilidad de alcanzar o afectar el activo; la criticidad describe el
+impacto para el negocio o el proceso. Ninguna es severidad, CVSS, prioridad ni la bandera conjunta de
+indicadores. No se usa `Threat`, `Impact`, `TruRisk Score`, `PCI Vuln`, `Category`, `Associated Tags`,
+QID, IP, puerto, protocolo ni First Detected como exposición o criticidad. Una política, un inventario
+o una observación fechada pueden respaldar el valor; la ausencia de dato no se interpreta como valor
+bajo.
 
 #### Vínculo con una aplicación de IA
 
-- `linked`: el registro afecta una aplicación de IA, sus datos, modelos o herramientas, con evidencia.
-- `not_linked`: no existe ese vínculo, con evidencia.
-- `unknown`: no se pudo determinar.
-- `not_applicable`: el caso no contiene una aplicación de IA o el vínculo no corresponde; se justifica.
+| Estado | Significado | Evidencia | Efecto |
+|---|---|---|---|
+| `linked` | El registro afecta una aplicación de IA, sus datos, modelos o herramientas. | Evidencia documentada del vínculo. | Se registra como alcance; no eleva por sí solo la criticidad ni la clase. |
+| `not_linked` | No existe ese vínculo. | Evidencia documentada de ausencia o alcance excluido. | No eleva ni reduce automáticamente. |
+| `unknown` | No se pudo determinar. | Carencia documentada. | No se convierte en `not_linked`. |
+| `not_applicable` | El caso no contiene una aplicación de IA o el vínculo no corresponde. | Justificación explícita. | No se convierte en `not_linked`. |
 
-El vínculo con IA es contexto de alcance: **no eleva por sí solo la criticidad ni la clase**. Se usa
-para justificar o interpretar el contexto, no como sustituto de exposición o criticidad.
+El vínculo con IA se usa para interpretar y justificar el contexto, no como sustituto de exposición o
+criticidad. Un caso general de ciberseguridad empresarial puede tener `not_applicable` sin que eso
+implique una clase menor.
 
 #### Contexto agregado
 
-El agregado usa exposición y criticidad; el vínculo con IA se registra aparte y no lo modifica
-automáticamente.
+El agregado usa **solo** exposición y criticidad. El vínculo con IA se registra aparte y no modifica
+el agregado.
 
-- `high`: exposición o criticidad es `known_high`.
-- `not_high`: ambas son `known_not_high`.
-- `not_applicable`: ambas son `not_applicable`.
+| Exposición \ Criticidad | `known_high` | `known_not_high` | `unknown` | `not_applicable` |
+|---|---|---|---|---|
+| `known_high` | `high` | `high` | `high` | `high` |
+| `known_not_high` | `high` | `not_high` | `incomplete` | `incomplete` |
+| `unknown` | `high` | `incomplete` | `incomplete` | `incomplete` |
+| `not_applicable` | `high` | `incomplete` | `incomplete` | `not_applicable` |
+
+- `high`: al menos un factor es `known_high`; el otro puede ser conocido, desconocido o no aplicable.
+- `not_high`: ambos factores son `known_not_high`.
+- `not_applicable`: ambos factores son `not_applicable`.
 - `incomplete`: cualquier otra combinación, incluida una desconocida o una no aplicable junto a otra
-  no alta. `not_applicable` no se convierte en `not_high`.
+  no alta. `not_applicable` **no** se convierte en `not_high`.
+- `incomplete` y `not_applicable` no permiten asignar una clase: la salida propuesta es Información
+  insuficiente, salvo `Fixed`, que se trata antes como antecedente histórico.
 
-`incomplete` y `not_applicable` no permiten asignar una clase: la salida propuesta es Información
-insuficiente, salvo `Fixed`, que se trata antes como antecedente histórico.
+Combinaciones incompletas: si falta exposición o criticidad y el otro factor no es `known_high`, el
+agregado es `incomplete`; si el otro factor es `known_high`, el agregado es `high` porque el dato
+conocido ya alcanza el máximo. No se inventa el factor faltante ni se completa con un valor negativo.
 
-### Indicadores indeterminados
+### Regla única de indicadores indeterminados
 
-Regla propuesta:
+Esta es la única regla; el orden de evaluación la referencia y la tabla no la duplica:
 
-1. Evaluar las alternativas compatibles con el dato desconocido.
-2. Si todas producen la misma clase, permitir una **sugerencia** con incertidumbre; no es una
-   adjudicación humana ni una etiqueta elegible.
-3. Si producen clases distintas, devolver **Información insuficiente**, identificar las alternativas y
-   solicitar el dato decisivo.
-4. Nunca convertir un indeterminado en negativo.
+1. Evaluar las alternativas compatibles con el dato desconocido, sin inventar un valor.
+2. Si todas las alternativas producen la misma clase, permitir una **sugerencia** con incertidumbre.
+   No es una adjudicación humana ni una etiqueta elegible.
+3. Si producen clases distintas, devolver **Información insuficiente**, identificar las alternativas
+   compatibles y solicitar el dato decisivo.
+4. Nunca convertir un indeterminado en negativo ni usarlo para forzar P4.
 
-Aplicación a la tabla actual: cualquier indicador indeterminado en un estado conocido distinto de
-`Fixed` puede cambiar el patrón de indicadores y, con ello, la clase; por tanto, **en esta propuesta
-todas las combinaciones con indeterminado producen Información insuficiente**. No se promete una
-excepción que la tabla no contiene. Si el equipo cambia la tabla para que las alternativas coincidan,
-la regla general permitiría una sugerencia con incertidumbre.
+Aplicación a la tabla actual: en todos los patrones con al menos un indicador indeterminado, las
+alternativas compatibles producen clases distintas. Por tanto, **en esta propuesta toda combinación
+con un indicador indeterminado produce Información insuficiente; no hay excepciones**. La regla de
+sugerencia con incertidumbre queda declarada para una tabla futura que realmente tenga alternativas
+con la misma clase, pero no se promete como comportamiento actual.
+
+Ejemplo ficticio: `Active`, explotabilidad positiva, malware indeterminado y contexto `high`. Las
+alternativas son malware positivo → P1 (ambos positivos) y malware negativo/no informado → P2 (un
+positivo). Como P1 y P2 difieren, la salida es Información insuficiente y el dato decisivo es el
+malware. Con contexto `not_high`, las alternativas serían P2 y P3; el resultado sigue siendo
+Información insuficiente.
 
 ### Tabla de decisión propuesta
 
@@ -550,11 +616,20 @@ la regla general permitiría una sugerencia con incertidumbre.
 | `Active`/`New`/`Re-Opened` | Ninguno positivo | `incomplete` | Información insuficiente | No elegible |
 | `Active`/`New`/`Re-Opened` | Ninguno positivo | `not_applicable` | Información insuficiente | No elegible |
 
-Cada fila define una única salida para la combinación. Las filas se evalúan en el orden indicado:
-`Fixed`, estado desconocido, indeterminado y luego el patrón de indicadores con el contexto agregado.
-La severidad no promueve por sí sola una clase: solo desempata P3/P4 cuando no hay indicadores
-positivos y el contexto es `not_high`. La bandera conjunta de 002 se conserva como indicador de ambos
-positivos; no es P1 ni sustituye la adjudicación humana.
+Cada fila define una única salida para la combinación. Orden, excepciones y desempates:
+
+- `Fixed` se evalúa primero: queda como antecedente histórico y no recibe P1–P4 de remediación.
+- Estado desconocido se evalúa después: Información insuficiente.
+- Cualquier indicador indeterminado se evalúa con la regla única: en la tabla actual, Información
+  insuficiente con alternativas y dato decisivo.
+- El contexto agregado se calcula después; `incomplete` o `not_applicable` producen Información
+  insuficiente.
+- La severidad no promueve por sí sola una clase: solo desempata P3/P4 cuando no hay indicadores
+  positivos y el contexto es `not_high`.
+- La bandera conjunta de 002 se conserva como indicador de ambos positivos; no es P1 ni sustituye la
+  adjudicación humana.
+- No hay otras excepciones ni reglas implícitas: una combinación no listada se trata como
+  Información insuficiente hasta que una versión aprobada de la política la defina.
 
 ### Datos mínimos propuestos
 
@@ -564,10 +639,12 @@ Para cualquier clase distinta de «Información insuficiente» o «Antecedente h
 - estado, severidad y etiqueta de presentación;
 - explotabilidad y malware con su estado conocido/indeterminado;
 - exposición y criticidad por separado, con estado `known_high`, `known_not_high`, `unknown` o
-  `not_applicable`, procedencia, justificación, autor, fecha y alcance;
-- vínculo con una aplicación de IA con estado `linked`, `not_linked`, `unknown` o `not_applicable` y
-  evidencia, sin efecto automático sobre la clase;
+  `not_applicable`, procedencia o evidencia, justificación, autor declarado, fecha de registro, fecha
+  de la evidencia cuando exista y alcance;
+- vínculo con una aplicación de IA con estado `linked`, `not_linked`, `unknown` o `not_applicable`,
+  evidencia, justificación, autor, fecha y alcance, sin efecto automático sobre la clase;
 - contexto agregado `high`, `not_high`, `incomplete` o `not_applicable`;
+- historial de contexto: entradas anteriores, entrada vigente y reemplazos, sin sobrescritura;
 - clase P1–P4 propuesta;
 - justificación;
 - autor declarado;
@@ -601,6 +678,8 @@ Todos los ejemplos son ficticios y no provienen de filas privadas del CSV autori
 | Indicador indeterminado | `QID 000007`, Active, explotabilidad indeterminada, malware positivo, contexto `high` | Información insuficiente; alternativas P1/P2 y dato decisivo |
 | Contexto incompleto | `QID 000008`, Active, ambos positivos, exposición `unknown`, criticidad `known_not_high` | Información insuficiente; falta exposición |
 | Contexto no aplicable | `QID 000009`, Active, ambos positivos, exposición y criticidad `not_applicable` | Información insuficiente; no se convierte en `not_high` |
+| No aplicable con criticidad alta | `QID 000011`, Active, ambos positivos, exposición `not_applicable`, criticidad `known_high` | Contexto `high` por criticidad; no se interpreta como ausencia de exposición |
+| No aplicable con criticidad no alta | `QID 000012`, Active, un positivo, exposición `not_applicable`, criticidad `known_not_high` | Contexto `incomplete`; Información insuficiente |
 | Discrepancia | `QID 000010`, sugerencia P1, adjudicación humana P2 con justificación | Se conservan ambas; la discrepancia queda visible y la elegibilidad usa la adjudicación si cumple las condiciones |
 
 
@@ -621,59 +700,71 @@ Todos los ejemplos son ficticios y no provienen de filas privadas del CSV autori
 
 ## Resultado de aplicabilidad con el CSV filtrado (simulación exploratoria)
 
-Fecha: 2026-11-09. Insumo: `../14-Qualys_Hallazgos_Active_New_ReOpened.csv` y su manifiesto. Se usó
-almacenamiento temporal, `LANGSMITH_TRACING=false`, sin modelos, sin servicios externos y sin guardar
-etiquetas operativas. No se abrió el reporte original de 62 MB. Solo se reportan agregados; no se
+Fecha de verificación: 2026-11-11. Insumo: `../14-Qualys_Hallazgos_Active_New_ReOpened.csv` y su
+manifiesto; se reprodujo el resultado del 2026-11-09. Se usó un script temporal local, sin modificar
+la aplicación, sin guardar etiquetas operativas, con `LANGSMITH_TRACING=false`, sin modelos y sin
+servicios externos. No se abrió el reporte original de 62 MB. Solo se reportan agregados; no se
 incluyen filas, activos, IP ni títulos.
 
-La simulación aplica la regla propuesta de esta especificación a los datos realmente disponibles:
+### Cobertura con los datos actuales
 
 | Resultado | Cantidad |
 |---|---|
 | Registros totales | 662 |
+| Columnas del CSV | 41 |
 | Registros con estado conocido (`pending_known`) | 662 |
-| `Fixed` | 0 |
-| Estado desconocido | 0 |
+| `Active` / `New` / `Re-Opened` | 631 / 10 / 21 |
+| `Fixed` / estado desconocido | 0 / 0 |
 | Registros que obtienen una clase con los datos actuales | 0 |
 | Registros con Información insuficiente | 662 |
 
-Motivos de insuficiencia, contando cada registro una vez en el total:
+### Motivos de insuficiencia
 
 | Motivo | Registros |
 |---|---|
 | Contexto faltante (exposición/criticidad) | 662 |
 | Algún indicador indeterminado | 654 |
-| Contexto faltante e indicador indeterminado (solapamiento) | 654 |
+| Ambos motivos (solapamiento) | 654 |
 | Solo contexto faltante, indicadores determinados | 8 |
+| **Total único de registros insuficientes** | **662** |
 
-Los motivos se solapan: la unión es 662 registros insuficientes, no la suma de la columna.
+Los motivos se solapan: la unión es 662 registros insuficientes, no la suma de la columna. El contexto
+faltante cubre a todos porque el CSV no contiene exposición ni criticidad documentadas. Los 8 registros
+con indicadores determinados son ambos positivos y aun así quedan en Información insuficiente por
+contexto `incomplete`.
 
-Patrones de indicadores observados:
+### Patrones de indicadores observados
 
-| Patrón | Registros |
-|---|---|
-| Ambos positivos | 8 |
-| Solo explotabilidad positiva | 121 |
-| Solo malware positivo | 0 |
-| Ninguno positivo | 533 |
-| Ambos indeterminados | 533 |
-| Malware indeterminado y explotabilidad positiva | 121 |
+| Explotabilidad | Malware | Registros |
+|---|---|---:|
+| `positive` | `positive` | 8 |
+| `positive` | `indeterminate` | 121 |
+| `indeterminate` | `indeterminate` | 533 |
+| `indeterminate` | `positive` | 0 |
+| Cualquier estado con `negative_no_info` | Cualquier estado | 0 |
+
+No se observaron indicadores negativos/no informados. 654 registros tienen al menos un indicador
+indeterminado: 533 con ambos indeterminados y 121 con explotabilidad positiva y malware indeterminado.
+La etiqueta anterior «Ninguno positivo: 533» se corrige: esos 533 no son un patrón determinado sin
+positivos, sino `indeterminate/indeterminate`.
 
 No se detectaron columnas de exposición, criticidad ni vínculo con una aplicación de IA. `TruRisk
 Score` existe en el CSV, pero es un puntaje del proveedor y no se usa como exposición ni criticidad.
 Tampoco se usan `Threat`, `Impact`, `PCI Vuln`, `Category` ni `Associated Tags` como exposición o
 criticidad: son campos descriptivos del proveedor, no contexto documentado del caso.
 
-Datos adicionales que habría que completar para obtener cobertura:
+### Datos adicionales que habría que completar
 
-- exposición y criticidad documentadas para 662 registros, con procedencia y alcance;
+- exposición y criticidad documentadas para 662 registros, con procedencia, justificación y alcance;
 - resolución de indicadores para 654 registros: 533 con ambos indeterminados y 121 con malware
   indeterminado y explotabilidad positiva;
 - vínculo con IA documentado cuando corresponda, sin asumirlo como elevación automática.
 
 Con esta propuesta y los datos actuales, **ningún registro obtiene una clase**. El resultado mide
 aplicabilidad de la política, no precisión, calidad del clasificador ni desempeño predictivo. No se
-inventó contexto para aumentar la cobertura.
+inventó contexto para aumentar la cobertura. Si el equipo aprueba una política que no exija exposición
+o criticidad para alguna clase, la cobertura podría cambiar; esa variante no se simula porque no está
+aprobada.
 
 ## Recomendaciones propuestas para decisión del responsable (NO aprobadas)
 
@@ -704,6 +795,22 @@ inventó contexto para aumentar la cobertura.
 Ninguna decisión de esta sección se considera resuelta. La política operacional P1–P4 sigue
 **pendiente de aprobación** por el equipo.
 
+### Paquete recomendado para ratificación (NO aprobado)
+
+La recomendación completa que se somete a decisión es:
+**D-01=A, D-02=A, D-03=A, D-04=B, D-05=C, D-06=A, D-07=A, D-08=A, D-09=A, D-10=C, D-11=B, D-12=C,
+D-13=A, D-14=A y D-15=A.**
+
+Consecuencia práctica si se ratifica: se adopta el paquete de gobernanza; hasta que exista una versión
+aprobada, se permiten revisiones propuestas no elegibles (D-02=A); la tabla determinista es la base;
+`Fixed` es antecedente histórico; estado desconocido, indicador indeterminado y contexto `incomplete`
+o `not_applicable` producen Información insuficiente; la elegibilidad exige confirmación explícita de
+evidencia revisada; la adjudicación humana prevalece sobre la sugerencia si cumple las condiciones; y
+el vínculo con IA no eleva por sí solo la clase.
+
+Si no se ratifica, la especificación sigue en **Draft** y no se avanza a `/speckit.plan`. La
+recomendación no registra aprobación del responsable ni del equipo.
+
 ### Grupo A — Gobernanza de la política
 
 | ID | Decisión pendiente | Alternativas concretas | Recomendación propuesta | Impacto |
@@ -719,7 +826,7 @@ Ninguna decisión de esta sección se considera resuelta. La política operacion
 | D-04 | Significado y datos mínimos de P1, P2, P3 y P4 | A) regla basada solo en campos existentes de Qualys; B) regla que incorpora exposición/criticidad/contexto de IA cuando existan; C) definición cualitativa con ejemplos y revisión caso a caso | B, con abstención cuando falte contexto que pueda cambiar la clase | Determina la política y los ejemplos de frontera |
 | D-05 | Condiciones, excepciones y desempates | A) prioridad lexicográfica por indicadores, luego severidad; B) puntaje ponderado explícito; C) árbol de decisión con excepciones documentadas | C, con la tabla determinista propuesta | Define reproducibilidad y discusión entre revisores |
 | D-06 | Tratamiento de `Fixed` | A) no recibe clase operativa pendiente; se registra como antecedente histórico; B) puede recibir clase solo para análisis histórico y no elegible; C) puede recibir clase elegible si el equipo lo justifica | A, sin etiqueta para remediación | Evita confundir antecedente con remediación pendiente |
-| D-07 | Tratamiento de estado desconocido e indicadores indeterminados | A) revisión manual obligatoria y no elegible hasta resolver; B) permite clase con justificación y marca de incertidumbre; C) excluye del conjunto de entrenamiento | A, con motivos separados | Afecta elegibilidad y falsos positivos |
+| D-07 | Tratamiento de estado desconocido e indicadores indeterminados | A) aplicar la regla única: sugerencia no elegible si todas las alternativas coinciden; Información insuficiente si difieren; B) permitir una clase con justificación y marca de incertidumbre; C) excluir del conjunto de entrenamiento | A, con motivos separados; en la tabla actual todas las combinaciones con indeterminado resultan en Información insuficiente | Afecta elegibilidad y falsos positivos |
 | D-08 | Influencia de exposición, criticidad y contexto de IA | A) solo si existen y están documentados; B) se exige completarlos antes de elegir P1/P2; C) no se usan hasta una funcionalidad posterior | A, con exposición y criticidad separadas y abstención si el agregado es `incomplete` o `not_applicable` | Determina si faltan datos para clases altas |
 | D-09 | Tratamiento de información insuficiente | A) decisión explícita sin clase y no elegible; B) clase provisional P4 no elegible; C) bloqueo hasta completar datos | A, nunca P4 | Evita forzar P4 |
 | D-10 | Ejemplos de frontera entre clases | A) dos ejemplos por frontera (P1/P2, P2/P3, P3/P4); B) un ejemplo por clase y reglas de desempate; C) matriz de casos con datos ficticios | C, con los ejemplos ficticios de esta especificación | Reduce ambigüedad entre revisores |
@@ -740,8 +847,9 @@ Ninguna decisión de esta sección se considera resuelta. La política operacion
   revisiones propuestas no elegibles mientras tanto?
 - **Q2 (D-04/D-05)**: ¿La tabla determinista propuesta es la base aceptada, o el equipo prefiere un
   puntaje ponderado o una definición cualitativa?
-- **Q3 (D-06/D-07/D-08)**: ¿`Fixed` queda fuera de la prioridad de remediación y el estado
-  desconocido/indicador indeterminado/contexto faltante obligan a abstención?
+- **Q3 (D-06/D-07/D-08)**: ¿`Fixed` queda fuera de la prioridad de remediación y se adopta la regla
+  única de indicadores indeterminados, con abstención cuando las alternativas difieren o el contexto
+  agregado es `incomplete`/`not_applicable`?
 - **Q4 (D-11/D-12)**: ¿La elegibilidad exige confirmación explícita de evidencia revisada y cómo se
   resuelve un desacuerdo?
 - **Q5 (D-13)**: ¿Las revisiones antiguas conservan su versión y cada entrenamiento selecciona
@@ -765,8 +873,9 @@ Ninguna decisión de esta sección se considera resuelta. La política operacion
 - Los ejemplos de interfaz y pruebas usan datos ficticios; no se incorporan filas reales.
 - La simulación de aplicabilidad con el CSV actual da 0/662 registros clasificables; no se usó para
   inventar contexto ni para ajustar la política.
-- `not_applicable` no se trata como `not_high`; en esta propuesta conduce a Información insuficiente
-  hasta que D-08 defina otra cosa.
+- `not_applicable` no se trata como `not_high`. El agregado `not_applicable` —ambos factores no
+  aplicables— conduce a Información insuficiente; un factor `not_applicable` combinado con
+  `known_high` produce `high`, y con `known_not_high` o `unknown` produce `incomplete`.
 - El vínculo con una aplicación de IA se registra como alcance, no como elevación automática de
   criticidad o clase.
 - La propuesta consolidada v1.2 se consultó fuera del repositorio. Sus compromisos se usan como
