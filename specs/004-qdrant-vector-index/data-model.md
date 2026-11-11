@@ -82,6 +82,40 @@ El paso `retrieve` puede guardar en `detail_json`:
 
 No se guardan rutas locales, secretos ni texto de documentos.
 
+## Identidad de instancia
+
+### Configuración persistente
+
+`SECGUARD_INSTANCE_ID` es un slug estable y opaco, obligatorio para Qdrant. Se configura en
+entorno/`.env` y no se genera en cada arranque. No contiene rutas privadas.
+
+`storage/qdrant/instances/<instance_id>.json` conserva:
+
+```json
+{
+  "instance_id": "presentacion-2026",
+  "storage_fingerprint": "<sha256 del storage root canónico>",
+  "schema_version": 1,
+  "created_at": "2026-11-11T...Z"
+}
+```
+
+El fingerprint es un hash, no una ruta legible. Si el marcador no existe y Qdrant está vacío, se
+crea en el primer uso. Si no coincide con el ID o el storage actual, se falla con
+`instance_namespace_mismatch`; no se escribe ni se cambia un alias. Esto distingue una copia de
+SQLite/storage en otra ruta aunque conserve el mismo contenido.
+
+### Namespace aplicado
+
+```text
+secguard__<instance_id>__public__...
+secguard__<instance_id>__case__<case_id>__...
+storage/qdrant/locks/<instance_id>.lock
+storage/qdrant/reports/<instance_id>/
+```
+
+No se crea tabla SQLite para la instancia.
+
 ## Entidades nuevas en Qdrant
 
 ### Colección física
@@ -89,24 +123,25 @@ No se guardan rutas locales, secretos ni texto de documentos.
 Una colección por alcance y generación:
 
 ```text
-secguard__public__<model-slug>__<dim>__g<UTC>
-secguard__case__<case_id>__<model-slug>__<dim>__g<UTC>
+secguard__<instance_id>__public__<model-slug>__<dim>__g<UTC>
+secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__g<UTC>
 ```
 
-Contiene puntos con vector y payload. No es fuente de verdad. Se crea durante la reconstrucción y
-se conserva la generación anterior para recuperación.
+Contiene puntos con vector y payload. No es fuente de verdad. Se crea durante la reconstrucción o
+en el primer documento validado de un caso. Se conserva la generación anterior para recuperación.
 
 ### Alias activo
 
 Alias estable por alcance:
 
 ```text
-secguard__public__<model-slug>__<dim>__active
-secguard__case__<case_id>__<model-slug>__<dim>__active
+secguard__<instance_id>__public__<model-slug>__<dim>__active
+secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__active
 ```
 
 La consulta usa el alias. El alias cambia solo después de validar la generación. Un alias ausente
-produce un error explícito de índice no disponible; no se consulta una generación parcial.
+con datos esperados produce un error explícito de índice no disponible; no se consulta una
+generación parcial. Un alcance realmente vacío no requiere alias.
 
 ### Punto Qdrant
 
@@ -114,6 +149,7 @@ produce un error explícito de índice no disponible; no se consulta una generac
 |---|---|---|
 | point ID | UUID | UUIDv5 determinista de `chunk_id` |
 | vector | float[768] | `embeddinggemma` local |
+| `instance_id` | keyword | Namespace de la instancia |
 | `chunk_id` | keyword | `DocumentChunk.id` |
 | `document_id` | keyword | `Document.id` |
 | `version_id` | keyword | `DocumentVersion.id` |
@@ -144,6 +180,47 @@ DocumentChunk.id (32 hex)
 - Repetir la reconstrucción en una generación nueva no duplica puntos.
 - Un `chunk_id` ausente en SQLite no se inventa; un punto huérfano se reporta y no se resuelve.
 - Un punto con payload incompatible se reporta; no se mezcla con la generación válida.
+
+## Ciclo de vida del primer documento
+
+Un caso sin colección/alias no se considera un error. La ingesta crea el índice mínimo:
+
+1. Documento/versión/fragmentos se persisten en SQLite; versión no disponible.
+2. Se generan embeddings y puntos.
+3. Se adquiere el lock de escritura de la instancia.
+4. Si no existe alias del caso, se crea una generación inicial y se suben los puntos validados.
+5. Se verifica que los `chunk_id` de la versión estén en Qdrant.
+6. Se publica el alias del caso y se marca la versión `available`.
+7. Si extracción, embedding o escritura fallan, la versión queda `failed`/no disponible y no se
+   publica alias nuevo. El reintento limpia por `version_id` y repite el flujo.
+8. Documentos posteriores usan el alias existente; no crean una generación por documento.
+
+La reconstrucción inicial es distinta: crea una generación nueva para todos los documentos
+existentes y cambia el alias.
+
+## Bloqueo de mantenimiento
+
+`storage/qdrant/locks/<instance_id>.lock` es un lock de archivo exclusivo, compartido por la
+aplicación y el comando de reconstrucción. Se adquiere antes de escribir el índice y se libera en
+`finally`. El sistema operativo lo libera si el proceso muere.
+
+- Ingesta con lock de reconstrucción: `reconstruction_in_progress`, sin escritura.
+- Reconstrucción con lock de ingesta: `ingestion_in_progress`, sin espera indefinida.
+- Consultas: no toman el lock; usan el alias anterior.
+- Instancias distintas usan locks distintos.
+
+## Alcance vacío frente a índice ausente
+
+| Estado | Resultado |
+|---|---|
+| Caso sin documentos privados disponibles | Se omite el alcance privado; se consulta el público. |
+| Caso con documentos esperados pero sin alias | `case_index_unavailable`; no se responde solo con público. |
+| Público con documentos esperados pero sin alias | `public_index_unavailable`; no se declara falta de evidencia. |
+| Público no configurado o vacío | Se omite; el caso puede continuar. |
+| Qdrant inaccesible | `qdrant_unavailable`; sin Chroma. |
+| Alias presente sin resultados | `empty` normal; no se inventa cita. |
+
+“Esperado” se calcula desde SQLite, no desde la ausencia de alias.
 
 ## Selección de versiones
 

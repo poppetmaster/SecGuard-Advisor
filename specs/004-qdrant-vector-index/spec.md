@@ -184,6 +184,69 @@ restaura los fragmentos esperados.
 
 ---
 
+### User Story 6 - Cargar el primer documento y consultar un alcance vacío (Priority: P2)
+
+Una persona crea un caso y carga su primer documento. No ejecuta una reconstrucción completa. Si el
+caso todavía no tiene documentos privados, puede consultar el corpus público; si el caso debería
+tener documentos indexados pero no tiene alias, ve un error de disponibilidad, no una respuesta de
+“sin evidencia”.
+
+**Why this priority**: el flujo normal de alta no puede depender de mantenimiento manual, y un
+índice ausente no debe confundirse con un alcance vacío.
+
+**Independent Test**: crear un caso sin documentos, consultar el corpus público y comprobar que
+responde; cargar el primer documento y comprobar que el alias se publica solo después de validar;
+provocar un fallo de embedding y comprobar que no se publica alias nuevo; reintentar y comprobar que
+no hay duplicados.
+
+**Acceptance Scenarios**:
+
+1. **Given** un caso nuevo sin documentos privados y un corpus público indexado, **When** se
+   consulta, **Then** se recuperan resultados públicos y no se bloquea por falta de alias privado.
+2. **Given** un caso nuevo y su primer documento válido, **When** la ingesta termina, **Then** se
+   crea la generación/alias del caso sin reconstrucción completa.
+3. **Given** un fallo de extracción, embedding o escritura Qdrant en el primer documento, **When**
+   la ingesta termina, **Then** la versión queda no disponible, no se publica alias nuevo y el
+   corpus público sigue consultable.
+4. **Given** un reintento del primer documento, **When** se ejecuta, **Then** no se duplican
+   fragmentos y el alias se publica solo si la validación es completa.
+5. **Given** un caso con documentos disponibles en SQLite pero sin alias, **When** se consulta,
+   **Then** se devuelve un error de índice de caso no disponible, no “sin evidencia”.
+6. **Given** un corpus público con documentos en SQLite pero sin alias público, **When** se
+   consulta, **Then** se devuelve un error de índice público no disponible.
+7. **Given** un corpus público no configurado o vacío, **When** se consulta un caso con documentos,
+   **Then** el alcance público se omite y la consulta del caso puede continuar.
+
+---
+
+### User Story 7 - Aislar instancias y coordinar mantenimiento (Priority: P3)
+
+Una persona opera almacenamiento habitual, presentación y pruebas sobre el mismo servidor Qdrant sin
+que compartan documentos. La aplicación y el comando de reconstrucción coordinados por un lock de
+archivo entre procesos; uno rechaza al otro cuando corresponde.
+
+**Why this priority**: sin namespace, dos instancias con el mismo `case_id` colisionan; sin lock
+entre procesos, una reconstrucción y una ingesta pueden escribir a la vez.
+
+**Independent Test**: crear dos instancias con el mismo `case_id` y documentos distintos, y
+comprobar que no comparten alias ni resultados. Iniciar una reconstrucción en un proceso y una
+ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock se libera.
+
+**Acceptance Scenarios**:
+
+1. **Given** dos instancias con el mismo `case_id` y contenidos distintos, **When** se consulta cada
+   una, **Then** no comparten documentos privados, aliases públicos ni resultados.
+2. **Given** un `SECGUARD_INSTANCE_ID` distinto del marcador de storage, **When** arranca o
+   reconstruye, **Then** falla cerrado sin escribir ni cambiar aliases.
+3. **Given** una reconstrucción con el lock de instancia, **When** se intenta una ingesta, **Then**
+   se rechaza con un error explícito y no se escribe a medias.
+4. **Given** una ingesta con el lock, **When** se intenta reconstruir, **Then** se rechaza con un
+   error explícito, sin cola ni espera indefinida.
+5. **Given** un proceso interrumpido con el lock, **When** se reintenta, **Then** el sistema
+   operativo liberó el lock y el índice anterior sigue activo.
+
+---
+
 ### Edge Cases
 
 - Dos casos con documentos distintos: ninguna consulta de un caso recupera documentos privados del
@@ -213,6 +276,17 @@ restaura los fragmentos esperados.
 - Pregunta de seguimiento: conserva la memoria y el aislamiento del caso.
 - Espacio de almacenamiento separado: las pruebas no tocan la instancia del usuario.
 - Datos privados en fixtures: prohibidos; solo públicos o ficticios.
+- Dos instancias con el mismo `case_id`: no comparten documentos, aliases ni resultados.
+- Instancia copiada a otra ruta: el hash del storage no coincide; falla cerrado.
+- `SECGUARD_INSTANCE_ID` ausente o inválido: error de configuración; no se usa un ID generado.
+- Primer documento con extracción/embedding/Qdrant fallido: versión no disponible, sin alias nuevo.
+- Caso sin documentos privados: consulta pública normal; no error por alias privado ausente.
+- Caso con documentos esperados pero sin alias: error de índice de caso, no “sin evidencia”.
+- Público con documentos esperados pero sin alias: error de índice público.
+- Público no configurado o vacío: se omite; el caso puede continuar.
+- Reconstrucción e ingesta concurrentes: lock de archivo por instancia; rechazo explícito.
+- Proceso interrumpido con lock: el sistema operativo lo libera; el alias anterior permanece.
+- Namespace incompatible: no se escribe, no se cambia alias, no se usa Chroma.
 
 ## Requirements *(mandatory)*
 
@@ -336,6 +410,29 @@ restaura los fragmentos esperados.
   vulnerabilidades existentes.
 - **FR-050**: El sistema MUST NOT añadir autenticación, despliegue público ni control multiusuario
   en 004.
+- **FR-051**: Toda instancia MUST tener un `SECGUARD_INSTANCE_ID` estable, opaco y validado. El
+  namespace MUST aplicarse a colecciones públicas y privadas, aliases, generaciones, reportes y
+  locks.
+- **FR-052**: El ID de instancia NO DEBE generarse en cada arranque ni contener rutas privadas. Un
+  marcador persistente con hash del storage MUST detectar una copia o un namespace incompatible y
+  fallar cerrado.
+- **FR-053**: El primer documento válido de un caso sin índice MUST crear la generación/alias del
+  caso sin exigir una reconstrucción completa. El alias MUST publicarse solo después de validar la
+  versión.
+- **FR-054**: Un fallo de extracción, embedding o escritura Qdrant en el primer documento MUST dejar
+  la versión no disponible y NO DEBE publicar alias nuevo. El reintento MUST evitar duplicados y
+  mantener coherencia con SQLite.
+- **FR-055**: Un caso sin documentos privados MUST poder consultar el corpus público. Un caso con
+  documentos esperados pero sin alias MUST devolver un error de índice, no “sin evidencia”. Un
+  corpus público esperado pero sin alias MUST devolver un error de índice público. Qdrant
+  inaccesible MUST devolver un error explícito.
+- **FR-056**: La ingesta y la reconstrucción MUST compartir un lock de archivo exclusivo por
+  instancia, válido entre procesos. Si una está activa, la otra MUST rechazarse de forma explícita;
+  el lock MUST liberarse al terminar o morir el proceso.
+- **FR-057**: Dos instancias con el mismo `case_id` y documentos distintos MUST NOT compartir
+  documentos privados, aliases públicos ni resultados.
+- **FR-058**: El namespace y el lock MUST resolverse con configuración persistente y archivos
+  locales; NO se crea una tabla SQLite nueva.
 
 ### Key Entities
 
@@ -346,8 +443,14 @@ restaura los fragmentos esperados.
   `chunk_id` y los metadatos necesarios para resolver la cita. No es fuente de verdad.
 - **Reconstrucción de índice**: operación que crea o actualiza el índice desde los fragmentos
   persistidos; tiene estado, conteos, errores y evidencia.
+- **Instancia lógica**: namespace estable (`SECGUARD_INSTANCE_ID`) que separa almacenamiento
+  habitual, presentación y pruebas en un mismo servidor Qdrant. No se genera por arranque.
+- **Marcador de instancia**: archivo persistente con el ID y un hash del storage; detecta copias o
+  namespaces incompatibles sin exponer rutas legibles.
+- **Lock de instancia**: archivo exclusivo compartido por la aplicación y el comando de
+  reconstrucción; coordina procesos distintos.
 - **Índice Qdrant activo**: índice derivado utilizado para la recuperación documental; registra
-  versión y colección en la evidencia.
+  instancia, versión, alias y generación en la evidencia.
 - **Resultado de recuperación**: fragmento recuperado con procedencia, puntuación y referencia a la
   versión; puede resolverse a una cita.
 - **Cita**: vínculo entre una afirmación y un fragmento de una versión concreta; conserva
@@ -395,6 +498,15 @@ restaura los fragmentos esperados.
   resolviendo desde SQLite.
 - **SC-019**: No se presentan métricas de mejora no medidas ni se declara Qdrant implementado antes
   de la aceptación.
+- **SC-020**: Dos instancias con el mismo `case_id` y documentos distintos no comparten documentos
+  privados, aliases públicos ni resultados.
+- **SC-021**: El primer documento válido publica el alias del caso solo tras validar; un fallo no
+  publica alias y el reintento no duplica fragmentos.
+- **SC-022**: Un caso sin documentos privados consulta el corpus público; un caso con documentos
+  esperados sin alias devuelve un error de índice, no “sin evidencia”.
+- **SC-023**: Ingesta y reconstrucción se rechazan mutuamente mediante un lock de archivo entre
+  procesos; tras matar el proceso, el lock se libera y el alias anterior sigue activo.
+- **SC-024**: Un namespace incompatible falla cerrado, no escribe y no cambia aliases.
 
 ## Assumptions
 
@@ -411,6 +523,13 @@ restaura los fragmentos esperados.
 - No hay migración de vectores, escritura dual, selección permanente de backend, comparación
   obligatoria Chroma/Qdrant ni retorno a Chroma.
 - Las pruebas iniciales usan corpus público o fixtures ficticios y almacenamiento separado.
+- Cada instancia usa un `SECGUARD_INSTANCE_ID` estable y distinto; el marcador de storage y su hash
+  detectan copias o namespaces incompatibles.
+- El primer documento de un caso se indexa de forma incremental; la reconstrucción completa es una
+  operación de mantenimiento para documentos existentes.
+- Un caso sin documentos privados no requiere alias privado; el corpus público puede responder.
+- La coordinación ingesta/reconstrucción usa un lock de archivo por instancia, no una cola ni una
+  tabla nueva.
 - 003 sigue suspendida y no forma parte de 004.
 - Las versiones, topología de colecciones, payload, Docker Compose y backups se deciden en
   `/speckit.plan`; no son requisitos previos para esta especificación.

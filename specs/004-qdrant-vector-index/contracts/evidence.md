@@ -10,6 +10,7 @@ El paso `retrieve` de `RunStep.detail_json` puede incluir:
 | Campo | Tipo | Significado |
 |---|---|---|
 | `vector_backend` | string | `qdrant` |
+| `instance_id` | string | Namespace de instancia |
 | `qdrant_version` | string | Versión reportada por el servidor, esperada `1.20.0` |
 | `collection_alias` | string | Alias activo usado por el alcance |
 | `generation` | string | Generación validada detrás del alias |

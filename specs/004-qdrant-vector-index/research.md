@@ -127,6 +127,53 @@ limpieza física de Chroma queda fuera de 004.
 **Alternativas descartadas:** mantener una capa dual permanente; conservar Chroma como fallback;
 borrar archivos Chroma en la aceptación.
 
+### D-11 — Namespace de instancia
+
+**Decisión:** `SECGUARD_INSTANCE_ID` explícito, estable y opaco; se aplica a colecciones, aliases,
+generaciones, reportes y locks. Un marcador
+`storage/qdrant/instances/<instance_id>.json` guarda el ID y un SHA-256 del storage root; si no
+coincide, falla cerrado.
+
+**Razón:** permite compartir un servidor Qdrant entre almacenamiento habitual, presentación y
+pruebas sin colisión, incluso con el mismo `case_id`. El hash detecta una copia de SQLite/storage en
+otra ruta; no se expone la ruta legible. No se crea tabla.
+
+**Alternativas descartadas:** namespace derivado del path legible; ID generado por arranque; tabla
+SQLite de instancias; reutilizar el ID de presentación en pruebas.
+
+### D-12 — Ciclo de vida del primer documento
+
+**Decisión:** la ingesta crea la generación/alias inicial del caso solo cuando el primer documento
+queda validado. Si extracción, embedding o escritura Qdrant fallan, la versión queda no disponible y
+no se publica alias nuevo. El reintento limpia por `version_id` y no duplica.
+
+**Razón:** evita exigir una reconstrucción completa por cada caso nuevo y evita publicar un índice
+parcial. La reconstrucción inicial sigue siendo una operación de mantenimiento para documentos
+existentes.
+
+**Alternativas descartadas:** reconstrucción manual por caso; alias antes de validar; escritura
+directa sin generación inicial.
+
+### D-13 — Alcance vacío frente a índice ausente
+
+**Decisión:** el “esperado” se calcula desde SQLite. Caso sin documentos privados: público normal.
+Caso con documentos esperados sin alias: `case_index_unavailable`. Público esperado sin alias:
+`public_index_unavailable`. Público no configurado/vacío: se omite. Qdrant inaccesible:
+`qdrant_unavailable`. Alias presente sin resultados: `empty` normal.
+
+**Razón:** evita convertir un fallo de índice en “no existe evidencia” y evita bloquear un caso
+nuevo por no tener alias privado.
+
+### D-14 — Lock entre procesos
+
+**Decisión:** lock de archivo exclusivo por instancia en
+`storage/qdrant/locks/<instance_id>.lock`, compartido por la aplicación y el comando de
+reconstrucción. No es un lock en memoria ni una cola.
+
+**Razón:** ambos pueden ejecutarse en procesos distintos; el sistema operativo libera el lock si el
+proceso muere. Ingesta y reconstrucción se rechazan mutuamente con errores explícitos. Consultas no
+toman el lock y usan el alias anterior.
+
 ## Versiones y compatibilidad verificadas
 
 | Componente | Versión fijada | Verificación |

@@ -41,7 +41,9 @@ y cantidad de puntos; los umbrales de aceptación se fijan con la evaluación fu
 
 **Constraints**: Qdrant solo en loopback; sin autenticación multiusuario; sin Chroma como backend;
 sin exportación de vectores; sin dual-write; sin comparación obligatoria; sin retorno a Chroma; sin
-indexar Qualys; sin cambiar embeddings ni generador; sin datos privados en fixtures.
+indexar Qualys; sin cambiar embeddings ni generador; sin datos privados en fixtures. Toda instancia
+DEBE tener un `SECGUARD_INSTANCE_ID` estable y un namespace Qdrant aislado; no se generan IDs en
+cada arranque.
 
 **Scale/Scope**: Corpus público actual, dos casos ficticios de prueba y documentos existentes del
 usuario. La reconstrucción se valida primero en almacenamiento separado.
@@ -97,6 +99,7 @@ src/secguard_advisor/
 ├── retrieval/
 │   ├── index.py                 # reemplazar ChromaIndex por QdrantIndex
 │   ├── collections.py           # nombres físicos, alias y generaciones
+│   ├── instance.py              # SECGUARD_INSTANCE_ID, marcador, hash y file lock
 │   └── search.py                # puntuación/threshold de Qdrant; resolver SQLite
 ├── documents/service.py         # mismo IndexProtocol; sin cambios de dominio
 ├── web/app.py                   # fábrica Qdrant; readiness y errores
@@ -163,14 +166,50 @@ services:
     restart: unless-stopped
 ```
 
+### Instance namespace
+
+Cada instancia lógica tiene un **`SECGUARD_INSTANCE_ID`** explícito, estable y opaco. Es un slug
+validado (`[a-z0-9][a-z0-9-]{2,39}`), se configura en entorno/`.env` y no se regenera al arrancar.
+Ejemplos: `local-dev`, `presentacion-2026`, `test-<hash>`. No contiene rutas privadas.
+
+El namespace se aplica a:
+
+- colecciones públicas y privadas;
+- aliases y generaciones;
+- reportes de reconstrucción;
+- locks de mantenimiento;
+- nombres de evidencia y reportes.
+
+Formato:
+
+```text
+secguard__<instance_id>__public__<model-slug>__<dim>__g<UTC>
+secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__g<UTC>
+secguard__<instance_id>__public__<model-slug>__<dim>__active
+secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__active
+storage/qdrant/locks/<instance_id>.lock
+storage/qdrant/reports/<instance_id>/
+```
+
+**Vinculación persistente:** `storage/qdrant/instances/<instance_id>.json` guarda el
+`instance_id`, un **SHA-256 del storage root canónico** (no la ruta legible), la versión de esquema y
+la fecha de creación. Si el marcador no existe y Qdrant está vacío, se crea en el primer uso. Si el
+marcador existe y no coincide con el `SECGUARD_INSTANCE_ID` o con el hash del storage actual, la
+aplicación falla cerrada con `instance_namespace_mismatch`: no escribe, no cambia aliases y no usa
+Chroma. Esto distingue una instancia copiada a otra ruta aunque conserve la misma SQLite.
+
+`SECGUARD_INSTANCE_ID` ausente o inválido es un error de configuración. Las pruebas deben fijar un ID
+propio y un storage separado; no se reutiliza el ID de presentación. El namespace incompatible no se
+“adopta” automáticamente: requiere corrección de configuración o un procedimiento explícito futuro.
+
 ### Collections, aliases and generations
 
 - Una colección física por alcance y generación:
-  - `secguard__public__<model-slug>__<dim>__g<UTC>`
-  - `secguard__case__<case_id>__<model-slug>__<dim>__g<UTC>`
+  - `secguard__<instance_id>__public__<model-slug>__<dim>__g<UTC>`
+  - `secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__g<UTC>`
 - Un alias activo por alcance:
-  - `secguard__public__<model-slug>__<dim>__active`
-  - `secguard__case__<case_id>__<model-slug>__<dim>__active`
+  - `secguard__<instance_id>__public__<model-slug>__<dim>__active`
+  - `secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__active`
 - La consulta usa el alias, nunca una generación parcial.
 - La reconstrucción crea una generación nueva, valida el conjunto esperado y cambia el alias en una
   operación controlada solo si la validación pasa. Si el cambio falla, el alias anterior se conserva.
@@ -204,6 +243,32 @@ services:
   y cita literal.
 - Una reconstrucción no modifica documentos, versiones, fragmentos, citas ni revisiones.
 
+### First-document lifecycle (incremental)
+
+Un caso nuevo sin colección ni alias no requiere una reconstrucción manual. El flujo de ingesta
+crea el índice del caso cuando el primer documento queda realmente disponible:
+
+1. La ingesta valida y persiste el documento, la versión y los fragmentos en SQLite; la versión
+   permanece `processing`/no disponible.
+2. Genera los embeddings locales y prepara los puntos con UUIDv5 y payload.
+3. La ingesta adquiere el lock de escritura de la instancia y verifica si existe el alias del caso.
+4. Si no existe, crea la colección/generación inicial del caso y sube los puntos de la versión.
+5. Valida que los `chunk_id` de la versión estén en Qdrant y que la versión siga disponible en
+   SQLite.
+6. Publica el alias del caso; recién entonces la versión se marca `available` y es consultable.
+7. Si la extracción, el embedding o la escritura en Qdrant fallan, la versión queda `failed`/no
+   disponible; no se publica alias nuevo. Si el caso ya tenía alias, se conserva el alias anterior y
+   la versión fallida no se resuelve.
+8. El reintento usa el mismo flujo. Los puntos de la versión se borran por `version_id` como
+   limpieza best-effort; el UUIDv5 y la verificación evitan duplicar fragmentos válidos. Los
+   fragmentos huérfanos no se resuelven porque su versión no está disponible en SQLite.
+9. Un documento posterior usa el alias existente; no crea una generación nueva por documento salvo
+   que una reconstrucción explícita lo haga.
+
+Esto es **incremental** y distinto de la reconstrucción inicial de documentos existentes: la
+reconstrucción crea una generación nueva para todo el alcance y cambia el alias; la ingesta del
+primer documento solo crea el índice mínimo necesario para ese caso.
+
 ### Rebuild workflow
 
 Comando objetivo: `uv run python scripts/rebuild_qdrant.py` (o target `make qdrant-rebuild`).
@@ -220,12 +285,26 @@ Comando objetivo: `uv run python scripts/rebuild_qdrant.py` (o target `make qdra
 7. Si falla o se interrumpe, no cambiar el alias; reportar estado parcial, puntos faltantes y causa.
 8. Repetir es seguro: una nueva ejecución crea otra generación y no duplica puntos en la activa.
 
-**Concurrencia:** la reconstrucción toma un lock local de mantenimiento. La ingesta que coincida
-recibe un error explícito de “reconstrucción en curso” y no escribe a medias. Las consultas siguen
-usando el alias anterior hasta el cambio. No se usa una tabla de estado.
+**Concurrencia entre procesos:** la reconstrucción y la ingesta adquieren el mismo **lock de archivo
+exclusivo** de la instancia, `storage/qdrant/locks/<instance_id>.lock`, mediante `flock`/equivalente
+del sistema operativo. No es un lock en memoria: cualquier proceso que use el mismo storage e
+instancia lo respeta, y el sistema operativo lo libera si el proceso muere.
 
-**Documentos añadidos durante la reconstrucción:** quedan en SQLite; si no entraron en la generación,
-se incluyen en la siguiente reconstrucción. No hay promesa de actualización de Chroma.
+- La reconstrucción intenta adquirirlo al inicio y lo libera en `finally`.
+- La ingesta lo adquiere para la escritura del índice y lo libera al terminar.
+- Si la reconstrucción ya lo tiene, una ingesta nueva recibe `409 reconstruction_in_progress` y no
+  escribe a medias.
+- Si una ingesta lo tiene, la reconstrucción falla con `ingestion_in_progress`; no espera
+  indefinidamente ni crea una cola.
+- Las consultas no toman el lock: siguen usando el alias anterior hasta el cambio.
+- Tras una interrupción, el lock se libera por el sistema operativo; el reporte queda `failed` o
+  `partial` y el alias no cambia.
+- El lock se particiona por `instance_id`: dos instancias en el mismo servidor Qdrant no se bloquean
+  entre sí.
+
+**Documentos añadidos durante la reconstrucción:** la ingesta se rechaza mientras dura; los
+documentos que ya estaban en SQLite y no entraron en la generación se incluyen en la siguiente
+reconstrucción. No hay promesa de actualización de Chroma.
 
 ### Failure behavior
 
@@ -236,6 +315,23 @@ se incluyen en la siguiente reconstrucción. No hay promesa de actualización de
 - Reinicio de Qdrant: el volumen persiste; el alias sigue disponible.
 - Fallo de una generación: se conserva la anterior; se reintenta la reconstrucción.
 - Nunca se reconstruye SQLite desde Qdrant.
+
+### Empty scope vs missing index
+
+La consulta decide con SQLite, no con la ausencia de alias:
+
+| Estado | Comportamiento |
+|---|---|
+| Caso sin documentos privados disponibles | No es un error. Se consulta el corpus público; el alcance privado se omite. |
+| Caso con documentos disponibles en SQLite pero sin alias de caso | `case_index_unavailable`/integridad; no se responde solo con público ni se declara “sin evidencia”. |
+| Corpus público con documentos en SQLite pero sin alias público | `public_index_unavailable`; no se declara ausencia de evidencia. |
+| Corpus público no configurado o vacío (sin documentos en SQLite) | Se omite el alcance público; la consulta del caso puede continuar. Si tampoco hay caso, el resultado es `empty` normal. |
+| Qdrant inaccesible | `qdrant_unavailable`; error explícito, sin Chroma. |
+| Alias presente pero sin resultados | `empty` normal; no se infiere ausencia de evidencia ni se inventa cita. |
+
+El “esperado” se calcula desde SQLite: documentos/versiones vigentes disponibles y fragmentos
+indexables. Un alias ausente con `expected > 0` es un fallo de disponibilidad/integridad, no un
+alcance vacío. Un alcance realmente vacío no bloquea la consulta pública.
 
 ### Chroma retirement
 
@@ -251,8 +347,8 @@ se incluyen en la siguiente reconstrucción. No hay promesa de actualización de
 ### Evidence
 
 - Sin tablas nuevas. El paso `retrieve` de `RunStep.detail_json` registra:
-  `vector_backend="qdrant"`, `qdrant_version="1.20.0"`, `collection_alias`, `generation`,
-  `hits`, `status`.
+  `vector_backend="qdrant"`, `instance_id`, `qdrant_version="1.20.0"`, `collection_alias`,
+  `generation`, `hits`, `status`.
 - La página de ejecución conserva sus campos actuales y añade la identidad del índice sin exponer
   rutas locales ni secretos.
 - La reconstrucción escribe un reporte JSON local con fecha, alcance, generación, conteos,
@@ -289,11 +385,15 @@ Qdrant aporta colecciones, aliases, puntos y payload; el reporte de reconstrucci
 
 ## Testing and Acceptance
 
-- Unitarias: mapeo de payload, UUIDv5, alias/generación, score, errores, selección de versiones.
-- Contrato: adaptador de índice, reconstrucción, recuperación, evidencia.
+- Unitarias: mapeo de payload, UUIDv5, alias/generación, namespace, score, errores, selección de
+  versiones, lock y estados de primer documento.
+- Contrato: adaptador de índice, reconstrucción, recuperación, evidencia, namespace y lifecycle.
 - Integración: Qdrant 1.20.0 server + Ollama embeddinggemma; ingesta, consulta, citas, aislamiento,
   reinicio, caída y configuración incompatible.
-- Aceptación: corpus público, dos casos ficticios, versiones superadas/citas históricas,
+- Concurrencia real: dos procesos (aplicación y comando) compiten por el lock de instancia; se
+  comprueba rechazo, liberación tras kill y ausencia de escritura parcial.
+- Aceptación: corpus público, dos casos ficticios, **dos instancias con el mismo `case_id` y
+  contenidos distintos**, primer documento, alcance vacío, versiones superadas/citas históricas,
   reconstrucción repetida/interrumpida, ausencia de Qualys y regresión 001/002.
 - Datos: públicos/ficticios; almacenamiento separado; sin tocar instancias del usuario.
 - No se inventan métricas; se distinguen umbrales propuestos y observados.
@@ -305,11 +405,14 @@ Qdrant aporta colecciones, aliases, puntos y payload; el reporte de reconstrucci
 | Acuerdos de Cristian/Ruben no constan | Registrado; no se inventa; ratificación del responsable registrada |
 | Qdrant 1.20.0 nuevo | Versión exacta servidor/cliente; verificación `/readyz` y compatibilidad; pruebas de contrato |
 | Re-embedding costoso | Lotes, progreso, reintento; no se inventan tiempos; medir antes de aceptar |
-| Índice parcial visible | Generación + alias; el alias solo cambia tras validar |
+| Índice parcial visible | Generación + alias; el alias solo cambia tras validar; primer documento publica alias solo tras éxito |
+| Namespace incompatible o storage copiado | `SECGUARD_INSTANCE_ID` + marcador con hash de storage; fallo cerrado; tests usan ID propio |
 | Diferencias de score Chroma/Qdrant | Calibración con Qdrant; no copiar 0.35 |
 | Pérdida de citas históricas | Citas resueltas desde SQLite; no dependen de Qdrant |
 | Borrado accidental de datos | No se borra Chroma; limpieza fuera de 004; backup previo para operaciones destructivas |
-| Concurrencia de ingesta/reconstrucción | Lock de mantenimiento y error explícito; sin escritura dual |
+| Concurrencia de ingesta/reconstrucción | Lock de archivo por instancia, no en memoria; pruebas con dos procesos; sin cola |
+| Primer documento sin alias | Ingesta crea generación y alias solo tras validar; fallo deja versión no disponible |
+| Alcance vacío confundido con índice ausente | SQLite decide `expected`; alias ausente con datos esperados es error, no `empty` |
 | Docker no disponible en el equipo | Modo embebido solo para unitarias; la aceptación requiere servidor; documentar requisito |
 
 ## Dependencies and Ordering

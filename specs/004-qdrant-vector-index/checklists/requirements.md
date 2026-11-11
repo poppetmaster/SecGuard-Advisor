@@ -43,6 +43,19 @@
 - [x] La funcionalidad 003 permanece suspendida y fuera de alcance.
 - [x] No se presenta Qdrant como implementado ni se declara una mejora no medida.
 
+## Instance and Lifecycle
+
+- [x] Namespace de instancia estable aplicado a colecciones, aliases, generaciones, reportes y locks.
+- [x] `SECGUARD_INSTANCE_ID` explícito, sin generación por arranque; marcador con hash de storage
+  para detectar copias o namespaces incompatibles.
+- [x] Primer documento: creación incremental de generación/alias solo tras validar; fallo sin alias
+  nuevo; reintento sin duplicados.
+- [x] Alcance vacío vs índice ausente: caso sin documentos, caso esperado sin alias, público
+  esperado sin alias, público vacío y Qdrant inaccesible diferenciados.
+- [x] Lock de archivo entre procesos, por instancia; rechazo mutuo ingesta/reconstrucción y
+  liberación tras interrupción.
+- [x] Escenario de dos instancias con el mismo `case_id` y contenidos distintos.
+
 ## Deferred Technical Decisions
 
 Estas decisiones se resolverán en `/speckit.plan`; no son defectos de la especificación:
