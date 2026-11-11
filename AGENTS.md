@@ -42,6 +42,12 @@ integrada), con una estrategia explícita de contexto y etiquetas. La especifica
 conservan. Ver
 [`docs/planificacion/hoja-ruta-mejoras-profesor.md`](docs/planificacion/hoja-ruta-mejoras-profesor.md).
 
+**Constitución 1.2.0 (propuesta, ratificación pendiente):** fija como arquitectura objetivo Qdrant
+en servidor local persistente para 004, un proveedor API explícito para 005 y una acción externa
+controlada para 006. La implementación actual sigue siendo Chroma + Ollama; no se presentan Qdrant,
+API ni Telegram como disponibles. La enmienda requiere la ratificación de Cristian Quebrada y Ruben
+Dario Sabogal conforme a la gobernanza vigente.
+
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
 `/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities` y
@@ -57,7 +63,8 @@ el mismo commit.
 
 - Python 3.14.6, `uv`, src-layout, `uv_build`.
 - FastAPI, Jinja2, HTMX, Tailwind CSS y Flowbite (gratuito), recursos locales.
-- LangChain, LangGraph, Ollama, SQLite, Chroma, LangSmith.
+- LangChain, LangGraph, SQLite y LangSmith. Ollama y Chroma son la implementación actual; Qdrant es
+  el objetivo 004 y el proveedor API el objetivo 005. Ninguno de los objetivos está implementado.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
 
 ## Estructura

@@ -1,8 +1,9 @@
 # Hoja de ruta de mejoras — retroalimentación del profesor
 
-**Fecha:** 2026-11-11  
-**Estado:** propuesta para revisión; no aprobada  
-**Alcance:** planificación de arquitectura y funcionalidades. No implementa código, no ejecuta migraciones y no modifica datos.  
+**Fecha:** 2026-11-11
+**Estado:** propuesta para revisión; no aprobada
+**Constitución:** 1.2.0 propuesta, ratificación pendiente
+**Alcance:** planificación de arquitectura y funcionalidades. No implementa código, no ejecuta migraciones y no modifica datos.
 **Decisión de alcance:** la funcionalidad 003 queda temporalmente suspendida. Las mejoras 004–007 se ejecutan antes de retomarla.
 
 > Este documento distingue lo implementado, lo documentado y lo pendiente. Una capacidad descrita en
@@ -83,7 +84,8 @@ Verificación local de esta hoja de ruta:
 - Presupuesto para llamadas pagadas: no aprobado.
 - Cuenta, claves y límites de proveedor: no creados.
 - Bot de Telegram, destino y política de destinatarios: no definidos.
-- Qdrant local: modo embebido o servidor, volumen, snapshots y concurrencia: no decidido.
+- Qdrant local: el diseño objetivo recomendado es servidor persistente con Docker Compose; versión,
+  volumen, snapshots y concurrencia quedan pendientes de la planificación técnica de 004.
 - Suite de integración y aceptación real: no reejecutadas en esta tarea.
 
 ## 3. Funcionalidad 003: suspensión y condiciones de retorno
@@ -167,9 +169,10 @@ Chroma se conserva temporalmente para comparación y reversión.
 **Alcance mínimo propuesto**
 
 - Adaptador `QdrantIndex` con `upsert`, `delete_ids`, `delete_version`, `count`, `rebuild` y `query`.
-- Configuración `SECGUARD_VECTOR_BACKEND=chroma|qdrant` y ruta/URL de Qdrant.
-- Primer despliegue recomendado: **Qdrant local embebido con persistencia** (`QdrantClient(path=...)`)
-  para el proceso único actual. Alternativa posterior: servidor Qdrant local con volumen persistente.
+- Configuración `SECGUARD_VECTOR_BACKEND=chroma|qdrant` y URL de Qdrant.
+- Diseño objetivo de 004: **Qdrant en servidor local persistente, preferiblemente mediante Docker
+  Compose**, con acceso limitado al equipo local. El modo embebido se reserva para pruebas o como
+  alternativa expresamente documentada.
 - Reconstrucción completa desde los fragmentos persistidos en SQLite; no se copia el índice como
   fuente de verdad.
 - Conservar el alcance actual: una colección pública compartida y una colección por caso, con el
@@ -182,7 +185,7 @@ Chroma se conserva temporalmente para comparación y reversión.
 
 **Opcionales**
 
-- Servidor Qdrant local con Docker y volumen persistente.
+- Modo Qdrant embebido (`QdrantClient(path=...)`) para pruebas o como alternativa documentada.
 - Snapshots y restauración de colecciones.
 - Índices de payload para `document_id`, `version_id`, `origin` y `case_id`.
 - Cuantización o tiers de memoria, solo si hay necesidad medida.
@@ -191,7 +194,7 @@ Chroma se conserva temporalmente para comparación y reversión.
 **Dependencias**
 
 - Enmienda constitucional: hoy Chroma figura como índice permanente.
-- Cliente `qdrant-client` y, si se usa servidor, Docker/volumen.
+- Cliente `qdrant-client`, servidor Qdrant local y Docker Compose con volumen persistente.
 - Adaptador de embeddings sin cambios: **no se cambia el modelo de embeddings en 004**.
 - `documents/service.py`, `retrieval/search.py`, scripts de ingesta y fixtures de pruebas.
 
@@ -231,7 +234,7 @@ Chroma se conserva temporalmente para comparación y reversión.
 
 | ID | Decisión | Recomendación | Consecuencia |
 |---|---|---|---|
-| Q-01 | ¿Qdrant embebido o servidor local? | Embebido con `path` para el primer despliegue; servidor si se necesita concurrencia o snapshots operativos | Cambia instalación, concurrencia y operación |
+| Q-01 | ¿Qdrant embebido o servidor local? | Servidor local persistente con Docker Compose y volumen; embebido solo para pruebas o alternativa documentada | Cambia instalación, concurrencia y operación |
 | Q-02 | ¿Una colección por caso o una colección con filtros? | Una por caso + pública, conservando el aislamiento actual | Más colecciones, mayor aislamiento |
 | Q-03 | ¿Se registra el backend en la evidencia? | Sí, en metadata de ejecución | Permite reproducir qué índice se usó |
 | Q-04 | ¿Se conserva Chroma cuánto tiempo? | Hasta aceptación y una ventana de reversión definida | Rollback disponible; ocupa disco |
@@ -353,9 +356,11 @@ ganador por intuición. Ollama se conserva como proveedor local manual, sin fall
 | Anthropic | `claude-haiku-5-5` | 1M contexto; 128K salida | Desde $0.10 / MTok entrada y $0.50 / MTok salida | Tool use y structured outputs (JSON schema) | [Models overview](https://platform.claude.com/docs/en/models/overview), [Structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs), [Tool use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) |
 | DeepSeek | `deepseek-flash` (V4.1-Flash-1017) | 1M contexto; hasta 384K salida | Cache miss: $0.15/$0.60 off-peak y $0.30/$1.20 peak por MTok entrada/salida; cache hit: $0.003/$0.006 | JSON output y tool calls; API compatible con formato Anthropic | [Models & Pricing](https://api-docs.deepseek.com/quick_start/pricing) |
 
-Los precios son condiciones publicadas y pueden cambiar. El costo real debe calcularse con los tokens
-observados de cada turno, el horario peak/off-peak de DeepSeek, cache hit/miss, reintentos y el
-sobrecosto de esquemas de herramientas. No se presentan totales inventados.
+Los identificadores, versiones y precios son referencias de evaluación, no reglas constitucionales
+permanentes. Deben reverificarse en la documentación oficial al planificar y evaluar 005. El costo
+real debe calcularse con los tokens observados de cada turno, el horario peak/off-peak de DeepSeek,
+cache hit/miss, reintentos y el sobrecosto de esquemas de herramientas. No se presentan totales
+inventados.
 
 **Privacidad:** el uso de una API cambia el tratamiento de datos. Los prompts, fragmentos, historial y
 resultados de herramientas dejan el equipo. No se afirma que el proveedor no retenga datos ni que no
@@ -623,7 +628,7 @@ Ninguna decisión de esta sección está aprobada.
 | Grupo | Decisión | Recomendación | Consecuencia práctica |
 |---|---|---|---|
 | Constitución | ¿Se enmiendan los principios III, IV, XI y el stack para Qdrant, API y acción externa? | Sí, antes de especificar 004/005 | Sin enmienda, el cambio contradice la constitución |
-| Qdrant | Embebido o servidor local | Embebido con persistencia en el primer corte; servidor después si hace falta | Cambia instalación y concurrencia |
+| Qdrant | Embebido o servidor local | Servidor local persistente con Docker Compose; embebido para pruebas o alternativa documentada | Cambia instalación y concurrencia |
 | Qdrant | Una colección por caso o filtros | Una por caso + pública | Aislamiento fuerte; más colecciones |
 | Qdrant | Snapshots y retención del índice anterior | Snapshots y conservar Chroma hasta aceptación | Rollback y auditoría |
 | Proveedor | ¿Claude Haiku o DeepSeek? | Evaluar ambos; no elegir sin evidencia | Cambia costo, latencia y calidad |

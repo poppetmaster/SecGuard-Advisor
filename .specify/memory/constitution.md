@@ -4,23 +4,27 @@
 
 ### I. Propósito y alcance
 
-SecGuard Advisor es un agente consultor **defensivo** para responsables de TI y seguridad.
-Analiza documentación, contexto organizacional y hallazgos técnicos; identifica brechas; y
-prepara recomendaciones y planes de mejora respaldados por evidencia. Es configurable por
-contexto organizacional.
+SecGuard Advisor es un agente consultor **defensivo** para ciberseguridad empresarial. Ayuda a
+consultar documentación, analizar reportes de vulnerabilidades mediante herramientas y apoyar
+decisiones con evidencia verificable. Es configurable por contexto organizacional.
 
-- El producto DEBE producir recomendaciones sujetas a revisión humana, con evidencia
-  rastreable y límites declarados.
-- El producto NO DEBE ejecutar remediaciones, modificar sistemas, aprobar informes ni
-  adjudicar prioridades por cuenta propia.
+- El alcance DEBE cubrir consulta documental con evidencia, análisis de vulnerabilidades mediante
+  herramientas, apoyo a decisiones y acciones operativas controladas. La seguridad de sistemas de
+  IA es un caso posible cuando corresponda, no un requisito para usar el producto.
+- El producto DEBE producir recomendaciones sujetas a revisión humana, con evidencia rastreable y
+  límites declarados.
+- El producto NO DEBE ejecutar remediaciones, modificar sistemas, aprobar informes ni adjudicar
+  prioridades por cuenta propia.
+- Las acciones operativas externas, si existen, DEBEN seguir el principio XIV: preparar,
+  previsualizar, confirmar, ejecutar y registrar evidencia. No son remediaciones automáticas.
 - El producto NO DEBE certificar cumplimiento ni presentarse como auditor o certificador.
 - El producto NO DEBE incluir capacidades ofensivas ni explotación.
 - Los escenarios organizacionales y hallazgos educativos sintéticos DEBEN identificarse como
   sintéticos en interfaz, base de datos y documentación. Nunca se presentan como datos de una
   empresa real.
 
-*Razón*: el valor del producto está en fundamentar decisiones, no en sustituir al responsable
-que las toma.
+*Razón*: el valor del producto está en fundamentar decisiones y ejecutar acciones acotadas con
+control humano, no en sustituir al responsable que las toma ni en certificar su organización.
 
 ### II. Construcción reproducible
 
@@ -52,34 +56,51 @@ verificables por terceros.
 - LangChain DEBE cubrir procesamiento documental, embeddings y recuperación. LangGraph DEBE
   cubrir conversación, memoria, herramientas y flujo controlado.
 - SQLite DEBE conservar el estado y la procedencia: casos, activos, hallazgos, mensajes,
-  revisiones, trabajos y ejecuciones.
-- Chroma DEBE ser un índice derivado y reconstruible. Eliminar el índice NO DEBE perder datos
-  de negocio ni procedencia.
-- NO se añaden microservicios ni infraestructura distribuida al alcance inicial.
+  revisiones, trabajos y ejecuciones. SQLite es la fuente de verdad.
+- El índice vectorial DEBE ser derivado y reconstruible. Eliminar el índice NO DEBE perder datos de
+  negocio ni procedencia. Qdrant es la tecnología objetivo para 004; Chroma permanece como
+  implementación actual durante la transición.
+- El diseño objetivo de 004 es **Qdrant en servidor local persistente, preferiblemente mediante
+  Docker Compose**, con acceso limitado al equipo local. El modo embebido se reserva para pruebas o
+  como alternativa expresamente documentada; no se presentan ambas modalidades como implementadas.
+  La versión de servidor, cliente y configuración se concretará en la planificación técnica.
+- Qdrant es una dependencia de infraestructura local, no un microservicio de dominio. NO se añaden
+  microservicios ni infraestructura distribuida al alcance inicial.
+- El índice DEBE conservar procedencia, versiones, resolución de citas, aislamiento entre casos y
+  corpus público compartido. La recuperación ante fallos y la verificación deben completarse antes
+  de retirar el índice anterior.
+- El cambio de índice de 004 NO DEBE cambiar simultáneamente el modelo de embeddings. La dependencia
+  actual de Ollama para embeddings es independiente del futuro cambio de generador.
 - Los módulos DEBEN comunicarse por interfaces definidas, no leyendo directamente las tablas de
   otro módulo.
 
 *Razón*: la separación permite cambiar interfaz, modelo o índice sin reescribir el dominio, y
 mantiene el sistema operable en una sola máquina.
 
-### IV. Ejecución local por defecto
+### IV. Persistencia local e inferencia autorizada
 
-- La inferencia DEBE ejecutarse con Ollama nativo de forma predeterminada.
-- Los modelos DEBEN ser configurables y versionados. Se registra identificador, digest,
-  cuantización, contexto y, para embeddings, dimensión.
-- Qwen3.5 9B es el candidato generativo inicial. Gemma 4 de 7,5B Q4_K_M es el candidato de
-  comparación; no se confunde con Gemma 4 12B.
-- La selección definitiva DEBE basarse en calidad, uso de herramientas, fundamentación, memoria
-  y latencia medidas. El tamaño de descarga NO es criterio de selección ni memoria de ejecución.
-- DEBE fijarse un contexto explícito (`num_ctx`) y medirse la memoria real; no se usa el contexto
-  máximo del modelo por defecto.
-- Inicialmente DEBE cargarse un solo modelo generativo grande a la vez. La comparación entre
-  candidatos es secuencial.
-- Un proveedor externo es opcional, se selecciona explícitamente y no tiene fallback automático
-  desde local.
+- La persistencia y los embeddings DEBEN ejecutarse localmente por defecto.
+- El generador PUEDE ser local (Ollama) o un proveedor API explícitamente configurado. NO existe
+  fallback automático entre proveedores ni desde/hacia local.
+- Para 005 se evaluarán Claude Haiku y DeepSeek. Sus identificadores, versiones y precios DEBEN
+  verificarse en documentación oficial al planificar y evaluar; no son reglas constitucionales
+  permanentes.
+- No se declara un proveedor seleccionado ni un presupuesto aprobado. NO se activan llamadas
+  pagadas sin aprobación.
+- Cualquier generador DEBE conservar citas verificables, herramientas con argumentos controlados,
+  memoria acotada, abstención, límites de contexto y salida, tiempo y número de llamadas acotados,
+  reintentos acotados y registro de proveedor, modelo, uso y costo.
+- Ollama PUEDE conservarse durante la transición y para embeddings locales. No se presenta como
+  generador objetivo definitivo.
+- El tokenizador y las reglas específicas de Qwen/Ollama son decisiones de la implementación
+  actual. NO deben imponerse a todos los proveedores futuros.
+- Los modelos DEBEN ser configurables y versionados. Se registra proveedor, identificador, versión
+  y, para embeddings, dimensión.
+- Cuando la inferencia sea local, DEBE cargarse un solo modelo generativo grande a la vez y la
+  comparación entre candidatos DEBE ser secuencial.
 
-*Razón*: la ejecución local protege los datos del caso y hace la demo reproducible sin depender
-de servicios pagados.
+*Razón*: la persistencia y los embeddings locales protegen los datos del caso; la inferencia
+externa solo se permite con configuración explícita, presupuesto y una frontera de datos declarada.
 
 ### V. Recuperación verificable
 
@@ -95,6 +116,10 @@ de servicios pagados.
   incompatibles es un error. Un cambio de modelo de embeddings exige colección nueva y
   reindexación completa.
 - La fragmentación DEBE medirse en tokens del modelo de embeddings, no en caracteres.
+- Toda migración de índice DEBE comparar recuperación, citas, aislamiento y fallos antes de retirar
+  el índice anterior. El índice anterior DEBE conservarse hasta completar la verificación.
+- La migración a Qdrant de 004 NO DEBE cambiar el modelo de embeddings. Un cambio de embeddings es
+  una decisión separada, con reindexación y comparación propias.
 
 *Razón*: sin procedencia y sin límites respetados, la recuperación produce citas que no se
 pueden verificar y respuestas que parecen fundamentadas sin serlo.
@@ -109,19 +134,27 @@ pueden verificar y respuestas que parecen fundamentadas sin serlo.
   seleccionar o promover modelos.
 - Todo resultado de recuperación DEBE declarar de qué espacio proviene.
 - Los datos de un caso NO se mezclan con los de otro caso en la misma colección.
+- Los datos que salen del equipo hacia un proveedor de inferencia, una acción externa o una traza
+  DEBEN regirse por el principio XIII. Habilitar un proveedor API NO autoriza enviarle a LangSmith
+  los mismos datos.
+- LangSmith mantiene una política independiente y limitada de contenido.
 
 *Razón*: mezclar espacios convierte una cita normativa en un dato del caso, o un resultado de
-evaluación en una recomendación, sin que nadie lo note.
+evaluación en una recomendación, sin que nadie lo note; y la salida de datos exige una frontera
+explícita.
 
 ### VII. Seguridad
 
-- El alcance del caso DEBE imponerse en el código antes de consultar SQLite, Chroma o memoria.
-  Los argumentos del modelo NO conceden permisos.
+- El alcance del caso DEBE imponerse en el código antes de consultar SQLite, Qdrant, Chroma en
+  transición o memoria. Los argumentos del modelo NO conceden permisos.
 - Los documentos DEBEN tratarse como entradas no confiables. NO se ejecutan instrucciones
   incrustadas, comandos arbitrarios ni remediaciones.
 - Las herramientas DEBEN tener permisos explícitos y argumentos validados. El modelo no concede
   acceso ni puede aprobarse a sí mismo.
-- La aprobación humana NO puede ser ejecutada por el agente.
+- La aprobación humana NO puede ser ejecutada por el agente. Las acciones externas siguen el
+  principio XIV y nunca se envían por iniciativa del modelo.
+- Las credenciales de canales externos DEBEN mantenerse separadas de los datos de destinatarios y
+  NO se registran en logs, trazas, respuestas ni SQLite.
 - Los secretos NO se registran en logs, trazas ni respuestas.
 
 *Razón*: un agente que puede ampliar su propio alcance deja de ser un consultor y pasa a ser un
@@ -172,14 +205,18 @@ validó.
 ### XI. Observabilidad y costos
 
 - LangSmith DEBE recibir únicamente datos sintéticos o públicos autorizados. NO se registran
-  claves ni secretos.
+  claves ni secretos. Habilitar un proveedor API NO amplía la autorización de LangSmith.
 - La indisponibilidad de LangSmith NO bloquea la ejecución local. En ese caso queda evidencia
   operativa mínima en el log estándar y en SQLite.
 - NO se construye otra plataforma de observabilidad.
-- Un proveedor externo de inferencia es opcional, se selecciona explícitamente y no tiene
-  fallback automático desde local.
+- Un proveedor externo de inferencia o de acción es opcional, se selecciona explícitamente y no
+  tiene fallback automático desde local ni hacia local.
 - NO se activan llamadas pagadas sin presupuesto aprobado. El control de gasto DEBE reservar
   saldo antes de cada llamada e incluir reintentos.
+- Se DEBE registrar proveedor, modelo, versión, uso y costo de todas las llamadas del turno,
+  incluidas decisión, herramientas y reparación.
+- NO se afirma retención cero, ausencia de entrenamiento ni garantía de privacidad sin evidencia
+  de las condiciones aplicables.
 - Una traza no configurada se declara pendiente; nunca se presenta como ejecutada.
 
 *Razón*: la observabilidad debe servir para depurar y evaluar, no para acumular datos ni costos.
@@ -197,12 +234,23 @@ El producto se construye por funcionalidades verificables, en este orden:
    documentado, con validación de tipos, campos, rangos, fechas, duplicados y procedencia;
    separación de severidad de Qualys, CVSS, QID y CVE; pantalla de hallazgos con filtros y
    detalle. La importación no incluye el formulario de revisión P1–P4.
-3. **Clasificación, aprendizaje y operación**: política P1–P4 acordada; formulario de revisión
-   con decisión, prioridad P1–P4 y justificación; clasificador ligero con
-   scikit-learn; comparación con líneas base; pantalla administrativa de etiquetas,
-   entrenamiento, versiones, métricas, activación y rollback; MLflow con backend SQLite y
-   artefactos locales; flujos Prefect; exportación, cola acotada, cancelación, expiración,
-   recuperación tras reinicio, Docker Compose y pruebas de carga.
+3. **004 — Qdrant**: migración del índice derivado a Qdrant local persistente, preferiblemente en
+   servidor con Docker Compose; reconstrucción desde SQLite; comparación con Chroma; mismas
+   citas, aislamiento y corpus público. No cambia el modelo de embeddings.
+4. **005 — Generador API**: interfaz de proveedor y evaluación de Claude Haiku y DeepSeek con
+   datos públicos o ficticios; presupuesto, conteo de tokens, herramientas, memoria, abstención,
+   latencia y costo. No selecciona proveedor ni habilita llamadas pagadas por sí sola.
+5. **006 — Acción operativa**: destinatarios verificados, preparación, vista previa, confirmación,
+   ejecución y evidencia; Telegram para evaluación; correo y mesa de ayuda posteriores.
+6. **007 — Aceptación integrada**: recorrido completo con Qdrant, proveedor elegido y acción
+   externa; comparación, reversión, guía y PDF; datos públicos o ficticios.
+7. **003 — Retomar priorización y clasificación**: política P1–P4 aprobada o revisada; contexto y
+   etiquetas; formulario de revisión; clasificador ligero con scikit-learn; comparación con
+   líneas base; pantalla administrativa de etiquetas, entrenamiento, versiones, métricas,
+   activación y rollback; MLflow con backend SQLite y artefactos locales; flujos Prefect;
+   exportación, cola acotada, cancelación, expiración, recuperación tras reinicio, Docker Compose
+   y pruebas de carga. 003 sigue suspendida hasta completar 004–007; su número no altera el orden
+   de ejecución.
 
 - El especialista adicional, el clustering, Isolation Forest, el reranker con Transformers y el
   streaming son opcionales. NO son dependencias del núcleo.
@@ -212,16 +260,63 @@ El producto se construye por funcionalidades verificables, en este orden:
 *Razón*: un incremento que no se puede demostrar no está terminado, sin importar cuánto código
 contenga.
 
+### XIII. Frontera de datos y proveedores externos
+
+- La operación DEBE distinguir: persistencia local, embeddings locales, inferencia externa
+  autorizada, trazabilidad y acciones externas.
+- La protección DEBE aplicarse al archivo CSV original, filas y resultados derivados, activos e
+  IP, preguntas e historial, fragmentos documentales, argumentos y resultados de herramientas y
+  mensajes preparados para envío.
+- Que el archivo original no se envíe NO demuestra que sus datos derivados estén protegidos. La
+  minimización y la redacción DEBEN aplicarse antes de cualquier salida.
+- Las pruebas iniciales de proveedor externo y de acciones DEBEN usar datos públicos o ficticios.
+- El envío de información privada DEBE depender de una política explícita de contenido permitido y
+  de autorización aplicable al caso. Esta constitución NO autoriza la salida del CSV privado ni de
+  sus datos derivados.
+- LangSmith mantiene una política independiente y limitada. Habilitar un proveedor API NO autoriza
+  enviarle a LangSmith los mismos datos.
+- NO se afirma retención cero, ausencia de entrenamiento ni garantía de privacidad sin evidencia de
+  las condiciones aplicables.
+- Las credenciales NO son datos de destinatario ni contenido; se mantienen separadas y fuera de
+  logs, trazas y almacenamiento de negocio.
+
+*Razón*: la inferencia externa y las acciones externas amplían la superficie de exposición; una
+frontera explícita evita confundir “no enviar el archivo” con “proteger sus datos”.
+
+### XIV. Acciones operativas controladas
+
+- La capacidad objetivo es: preparar → previsualizar → confirmar → ejecutar → registrar evidencia.
+- El modelo PUEDE proponer una acción. La aplicación DEBE validar contenido, caso, destinatario y
+  permisos aplicables.
+- El destinatario DEBE estar configurado y verificado. El agente NO inventa destinatarios ni envía
+  mensajes por iniciativa propia.
+- La confirmación DEBE corresponder al contenido y destino concretos. Una edición del contenido o
+  del destino invalida la confirmación anterior.
+- Las credenciales DEBEN mantenerse separadas de los datos de destinatarios.
+- Se DEBE registrar el resultado real del proveedor. Un envío aceptado NO equivale a recibido o
+  leído; esas afirmaciones solo se hacen con evidencia.
+- Un timeout PUEDE producir un resultado incierto. NO habilita reintento ciego.
+- Se DEBEN prevenir dobles envíos sin prometer entrega exactamente una vez cuando el proveedor no
+  la garantiza.
+- Telegram es el primer canal propuesto para evaluación. Correo y mesa de ayuda son alternativas
+  posteriores, no integraciones disponibles.
+- La acción PUEDE usar resultados de 002; NO requiere P1–P4 ni una política de prioridad aprobada.
+- La identidad declarada actual NO es autenticación. El entorno educativo mantiene restricciones
+  explícitas y el control de acceso multiusuario queda como necesidad futura.
+
+*Razón*: una acción externa sin confirmación, destinatario verificado y evidencia de resultado
+convierte una recomendación en una escritura irreversible fuera del sistema.
+
 ## Stack técnico y parámetros revisables
 
-Los principios I–XII son **permanentes**. Los elementos de esta sección son **parámetros
+Los principios I–XIV son **permanentes**. Los elementos de esta sección son **parámetros
 técnicos revisables**: pueden cambiar sin enmienda constitucional, pero todo cambio DEBE
 registrarse en el registro de decisiones con fecha, motivo y evidencia.
 
 Un cambio que altere un principio permanente —por ejemplo, permitir remediaciones automáticas o
-convertir Chroma en fuente de verdad— NO es un cambio de parámetro: exige enmienda.
+convertir el índice vectorial en fuente de verdad— NO es un cambio de parámetro: exige enmienda.
 
-### Stack fijado
+### Stack técnico: actual y objetivo
 
 | Capa | Tecnología | Carácter |
 |---|---|---|
@@ -231,16 +326,19 @@ convertir Chroma en fuente de verdad— NO es un cambio de parámetro: exige enm
 | Estilo e interfaz | Tailwind CSS + Flowbite gratuito, local | Fijado |
 | Documentos, embeddings, recuperación | LangChain | Fijado |
 | Conversación, memoria, herramientas | LangGraph | Fijado |
-| Inferencia | Ollama nativo | Fijado |
+| Inferencia | Generador local Ollama o proveedor API explícito | Objetivo 005; Ollama en transición; sin selección |
+| Proveedor API | Claude Haiku / DeepSeek como candidatos | En evaluación 005; no seleccionado |
 | Estado y procedencia | SQLite | Permanente |
-| Índice vectorial | Chroma persistente, derivado | Permanente (derivado) |
+| Índice vectorial | Qdrant local persistente, derivado | Objetivo 004; Chroma en transición |
+| Infraestructura vectorial | Qdrant en servidor local con Docker Compose; embebido para pruebas o alternativa documentada | Objetivo 004; no implementado |
 | Trazas y evaluación | LangSmith | Fijado |
-| Clasificación (incremento 3) | scikit-learn | Fijado |
-| Registro de modelos (incremento 3) | MLflow con backend SQLite y artefactos locales | Fijado |
-| Orquestación por lotes (incremento 3) | Prefect | Fijado |
-| Empaquetado operativo (incremento 3) | Docker Compose | Fijado |
+| Acción externa | Telegram para evaluación; correo y mesa de ayuda posteriores | Objetivo 006; no implementado |
+| Clasificación (003) | scikit-learn | Fijado |
+| Registro de modelos (003) | MLflow con backend SQLite y artefactos locales | Fijado |
+| Orquestación por lotes (003) | Prefect | Fijado |
+| Empaquetado operativo (003) | Docker Compose | Fijado |
 
-### Parámetros vigentes
+### Parámetros actuales y objetivos
 
 | Parámetro | Valor vigente | Evidencia o nota |
 |---|---|---|
@@ -248,21 +346,33 @@ convertir Chroma en fuente de verdad— NO es un cambio de parámetro: exige enm
 | Empaquetado | uv + `uv_build`, src-layout | Estándar del proyecto |
 | Modelo generativo inicial | `qwen3.5:9b` (digest `56671c2ab938`, ctx 262144, Q4_K_M) | Instalado; *thinking* activo por defecto |
 | Modelo de comparación | `gemma4:latest`, 7.5B Q4_K_M | Instalado; no es 12B |
-| Modelo de embeddings | `embeddinggemma:latest`, EmbeddingGemma 1, 768 dims, 2048 tokens | Instalado; v2 no está instalada |
+| Modelo de embeddings | `embeddinggemma:latest`, EmbeddingGemma 1, 768 dims, 2048 tokens | Instalado; v2 no está instalada; sin cambio en 004 |
+| Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama en transición |
+| Índice objetivo | Qdrant local persistente (004) | Chroma actual en transición; servidor local con Docker Compose |
+| Acción externa | Telegram para evaluación (006) | No implementada; correo y mesa de ayuda posteriores |
+| Presupuesto API | No aprobado | Sin llamadas pagadas ni cuentas creadas |
 | Presupuesto de chunk | ≤1600 tokens de contenido | Reserva para prefijo y solape |
 | Prefijos de embeddings | `task: search result \| query:` y `title: … \| text:` | Tarjeta oficial del modelo |
 | Corpus del primer flujo | NIST CSWP 29, NIST AI 100-1, NIST AI 600-1, OWASP Top 10 LLM 2025 | `docs/planificacion/01-corpus-rag.md` |
 | Corpus diferido | NIST SP 1301 (incremento 2) | Se solapa con CSF 2.0 |
 | Directorio de almacenamiento | `./storage` | Configurable por entorno |
-| Proveedor externo opcional | DeepSeek, deshabilitado | Sin presupuesto aprobado no se activa; sin fallback automático |
+| Proveedores externos opcionales | Claude Haiku / DeepSeek en evaluación; ninguno seleccionado | Sin presupuesto aprobado no se activan; sin fallback automático |
 
 ### Prohibiciones de arquitectura
 
-- No microservicios ni infraestructura distribuida en el alcance inicial.
+- No microservicios ni infraestructura distribuida en el alcance inicial. Qdrant local es una
+  dependencia de infraestructura, no un microservicio de dominio.
 - No CDN para recursos de interfaz.
 - No `pip` ni `requirements.txt`.
 - No fallback automático de un proveedor externo hacia local ni en sentido inverso.
 - No segunda plataforma de observabilidad.
+- No presentar Qdrant, el proveedor API ni Telegram como implementados antes de su aceptación.
+- No enviar el CSV privado ni sus datos derivados a proveedores o acciones sin política explícita
+  de contenido y autorización aplicable al caso.
+- No afirmar retención cero, ausencia de entrenamiento ni garantía de privacidad sin evidencia.
+- No ejecutar acciones externas sin preparación, vista previa y confirmación humana del contenido y
+  destino concretos.
+- No presentar la identidad declarada como autenticación ni la aplicación como multiusuario segura.
 
 ## Flujo de trabajo y puertas de calidad
 
@@ -280,8 +390,11 @@ funcionalidades verificables, no por capas completas.
 - Cada regla solicitada DEBE tener al menos una prueba que la cubra.
 - Toda funcionalidad existente que comparta código con el cambio DEBE conservar una prueba que
   demuestre que su comportamiento anterior sigue vigente.
-- Las pruebas de integración DEBEN ejecutar Ollama, embeddings, recuperación y herramientas
-  reales. Los mocks se permiten solo en pruebas automatizadas identificadas como unitarias.
+- Las pruebas de integración locales DEBEN ejecutar Ollama, embeddings, recuperación y
+  herramientas reales. Las pruebas de proveedor API usan datos públicos o ficticios y presupuesto
+  autorizado; los dobles se identifican como unitarios. Las pruebas de acción usan bot y chat de
+  prueba, no destinatarios reales.
+- Los mocks se permiten solo en pruebas automatizadas identificadas como unitarias.
 - Cuando no exista una prueba RED significativa —documentación pasiva o runner no disponible—
   se declara la excepción y se ejecutan comprobaciones funcionales o estructurales
   proporcionales.
@@ -362,6 +475,19 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
    revisión; no se admiten excepciones silenciosas.
 7. **Informe.** El Sync Impact Report se elimina antes del commit de la enmienda.
 
+### Estado de ratificación de la enmienda 1.2.0
+
+- **Solicitud y autorización registrada:** Edwin Perez L., responsable del producto, solicitó y
+  autorizó esta evolución documental en la conversación del 2026-11-11. La autorización cubre la
+  propuesta y su propagación documental; no crea cuentas, no autoriza gasto ni envía mensajes.
+- **Ratificación pendiente:** conforme a la regla 3, falta el acuerdo de Cristian Quebrada y Ruben
+  Dario Sabogal. No consta acta, firma, reunión ni aprobación académica adicional.
+- **Efecto mientras falte la ratificación:** la versión 1.2.0 es una **propuesta revisable**. No se
+  presenta como acuerdo del equipo ni habilita por sí sola la implementación de 004–006. La
+  propuesta documental puede revisarse y completarse; las decisiones técnicas rutinarias no se
+  amplían a decisiones de política que requieran ratificación.
+- **Alcance de la suspensión:** 003 sigue suspendida y su política P1–P4 no está aprobada.
+
 ### Cumplimiento
 
 - Toda revisión de cambios DEBE verificar el cumplimiento de esta constitución.
@@ -413,5 +539,17 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-08 | Node unificado en 26.11.1 mediante `.nvmrc` y `engines`; CI usa el mismo archivo | Parámetro | III | Elimina la divergencia local/CI; el build de recursos se verificó desde el lockfile |
 | Pendiente | Destino GitHub y autorización de publicación | Pendiente | Flujo de trabajo | Sin repo no hay badges de CI verificables |
 | Pendiente | Presupuesto aprobado para DeepSeek (proveedor externo opcional) | Pendiente | XI | No se activan llamadas pagadas sin aprobación |
+| 2026-11-11 | Enmienda 1.2.0: alcance general, Qdrant, proveedor API, frontera de datos y acciones controladas | Permanente (propuesta) | I, III, IV, V, VI, VII, XI, XII, XIII, XIV | Solicitud y autorización de Edwin Perez L. registrada en la conversación del 2026-11-11; ratificación de Cristian Quebrada y Ruben Dario Sabogal pendiente; no se inventan acta, firma ni aprobación académica |
+| 2026-11-11 | Qdrant local en servidor persistente, preferiblemente Docker Compose, como objetivo de 004; embebido solo para pruebas o alternativa documentada; Chroma en transición | Permanente | III, V | Sustituye la decisión de 2026-11-08 que fijaba Chroma como objetivo permanente; SQLite sigue siendo fuente de verdad; no cambia embeddings en 004 |
+| 2026-11-11 | Evaluación de Claude Haiku y DeepSeek como proveedores API; Ollama puede permanecer en transición y para embeddings locales | Parámetro / Pendiente | IV, XI | Identificadores, versiones y precios se verifican al planificar/evaluar 005; no hay proveedor seleccionado ni presupuesto aprobado; sin fallback automático |
+| 2026-11-11 | Acción operativa controlada: preparar, previsualizar, confirmar, ejecutar y registrar evidencia; Telegram para evaluación | Permanente | XIV | El modelo propone; la aplicación valida; el destinatario se verifica; una edición invalida la confirmación; aceptado no equivale a recibido/leído; correo y mesa de ayuda posteriores |
+| 2026-11-11 | Frontera de datos para proveedores externos y acciones; pruebas iniciales con datos públicos o ficticios | Permanente | XIII | La protección cubre CSV, derivados, activos/IP, preguntas, historial, fragmentos, argumentos/resultados y mensajes; no se autoriza aquí la salida del CSV privado; LangSmith mantiene política independiente |
+| 2026-11-11 | 003 suspendida temporalmente; 004–007 se ejecutan antes de retomarla | Decisión de alcance | XII | 0/662 clasificables; política P1–P4 no aprobada; se conservan especificación y checklist; no se cambia la definición de indeterminado |
+| Pendiente | Ratificación de la enmienda 1.2.0 por Cristian Quebrada y Ruben Dario Sabogal | Pendiente | Gobernanza | Sin ratificación, 1.2.0 es propuesta revisable y no habilita implementación |
+| Pendiente | Presupuesto API para Claude Haiku / DeepSeek | Pendiente | IV, XI | No se activan llamadas pagadas ni se crean cuentas |
+| Pendiente | Selección del proveedor API y del canal definitivo de acción | Pendiente | IV, XIV | Requiere evidencia de 005/006; no se declara ganador |
 
-**Version**: 1.1.1 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-09
+**Version**: 1.2.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-11
+
+**Estado de ratificación**: propuesta 1.2.0; falta el acuerdo de Cristian Quebrada y Ruben Dario
+Sabogal. No se presenta como acuerdo del equipo.
