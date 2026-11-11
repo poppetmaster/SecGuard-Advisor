@@ -4,10 +4,15 @@
 
 **Created**: 2026-11-09
 
-**Status**: Draft — propuesta de política revisada; aprobación pendiente
+**Status**: Draft — suspendida temporalmente desde 2026-11-11; política P1–P4 no aprobada
 
 **Updated**: 2026-11-11 — aclaración de contexto, indicadores indeterminados, captura de contexto y
 verificación de aplicabilidad. No registra aprobación de la política.
+
+**Suspensión temporal**: esta funcionalidad no se retoma hasta completar las mejoras 004–007
+(Qdrant, proveedor API, acción operativa y aceptación integrada). Se conservan esta especificación y
+su checklist; no se ejecuta `/speckit.plan` mientras la política y las decisiones de comportamiento
+sigan pendientes. Ver `docs/planificacion/hoja-ruta-mejoras-profesor.md`.
 
 **Input**: User description: "Inicia la funcionalidad 003 de SecGuard Advisor: «Priorización y revisión
 de vulnerabilidades». Primera parte del incremento 3: definir la política P1–P4 y especificar la

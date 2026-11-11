@@ -35,6 +35,13 @@ primera consulta de un turno fija el snapshot y las posteriores lo reutilizan. E
 privacidad de payloads, evidencia histórica sobre el snapshot persistido, separación del RAG y
 aceptación real local con el CSV filtrado y Ollama. SC-001, SC-003 y la CI remota no se ejecutaron.
 
+**003 suspendida temporalmente (2026-11-11):** la política P1–P4 sigue propuesta y no aprobada; la
+simulación con el CSV filtrado dio 0/662 registros clasificables y 662 con contexto faltante. No se
+retoma 003 hasta completar las mejoras 004–007 (Qdrant, proveedor API, acción operativa y aceptación
+integrada), con una estrategia explícita de contexto y etiquetas. La especificación y el checklist se
+conservan. Ver
+[`docs/planificacion/hoja-ruta-mejoras-profesor.md`](docs/planificacion/hoja-ruta-mejoras-profesor.md).
+
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
 `/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities` y

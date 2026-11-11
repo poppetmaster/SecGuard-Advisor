@@ -61,6 +61,9 @@
 
 ## Notes
 
+- La funcionalidad 003 está **suspendida temporalmente desde 2026-11-11**. Se retomará después de las
+  mejoras 004–007 (Qdrant, proveedor API, acción operativa y aceptación integrada), con una estrategia
+  explícita de contexto y etiquetas. Se conservan esta especificación y este checklist.
 - Completitud documental: los elementos de contenido, requisitos y aclaraciones están cubiertos. La
   especificación sigue en estado **Draft** y **no está lista para `/speckit.plan`** mientras las
   decisiones de política marcadas arriba sigan pendientes.

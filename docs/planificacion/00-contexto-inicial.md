@@ -1,5 +1,10 @@
 # Contexto inicial — SecGuard Advisor
 
+> **Actualización 2026-11-11.** La secuencia vigente para las mejoras solicitadas por el profesor está
+> en [`hoja-ruta-mejoras-profesor.md`](hoja-ruta-mejoras-profesor.md). La funcionalidad 003 queda
+> suspendida temporalmente; las mejoras 004–007 se ejecutan antes de retomarla. Este documento
+> conserva el contexto histórico y no se reescribe.
+
 Documento de preparación previa a la constitución de Spec Kit. **No es normativo**: la
 constitución es el único documento normativo. Aquí solo se registran hechos verificados,
 insumos propuestos y decisiones pendientes.

@@ -94,8 +94,10 @@ Evidencia localizable:
 
 ### Pendiente y límites
 
-- La funcionalidad 003 —política P1–P4 y formulario de revisión— está **suspendida** y no se presenta
-  como disponible.
+- La funcionalidad 003 —política P1–P4 y formulario de revisión— está **suspendida temporalmente** y
+  no se presenta como disponible. Se retomará después de las mejoras 004–007, con una estrategia
+  explícita de contexto y etiquetas. Ver
+  [`docs/planificacion/hoja-ruta-mejoras-profesor.md`](docs/planificacion/hoja-ruta-mejoras-profesor.md).
 - Clasificador, entrenamiento, reentrenamiento, MLflow, Prefect, promoción, rollback, exportación y
   empaquetado operativo siguen fuera de este alcance.
 - SC-001 (recorrido humano cronometrado) y SC-003 (diez revisiones semánticas) son validaciones
@@ -134,6 +136,9 @@ de traza por API se ejecutó; SC-001 y SC-003 quedan como validaciones recomenda
 
 Monolito modular en un solo proceso. La interfaz y el dominio se separan por paquetes; SQLite
 conserva el estado y la procedencia, y Chroma es un índice derivado y reconstruible.
+
+**Estado vigente:** Chroma y Ollama son la implementación actual. La hoja de ruta propone Qdrant y un
+proveedor de inferencia por API para las funcionalidades 004–005; **no están implementados**.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -516,6 +521,8 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
 - [Contratos](specs/001-consulta-documental/contracts/) — rutas, herramienta, citas y corpus.
 - [Quickstart](specs/001-consulta-documental/quickstart.md) — recorrido de validación.
 - [Tareas](specs/001-consulta-documental/tasks.md) — plan de implementación.
+- [Hoja de ruta de mejoras](docs/planificacion/hoja-ruta-mejoras-profesor.md) — Qdrant, proveedor API,
+  acción operativa y suspensión temporal de 003.
 
 ## Limitaciones conocidas
 
