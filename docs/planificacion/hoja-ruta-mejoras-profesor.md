@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-11
 **Estado:** propuesta para revisión; no aprobada
-**Constitución:** 1.2.0 propuesta, ratificación pendiente
+**Constitución:** 1.3.0 con ratificación del responsable registrada; acuerdos del equipo no constan
 **Alcance:** planificación de arquitectura y funcionalidades. No implementa código, no ejecuta migraciones y no modifica datos.
 **Decisión de alcance:** la funcionalidad 003 queda temporalmente suspendida. Las mejoras 004–007 se ejecutan antes de retomarla.
 
@@ -31,7 +31,7 @@ La secuencia recomendada es:
 
 | Orden | ID | Funcionalidad | Resultado esperado |
 |---:|---|---|---|
-| 1 | 004 | Migración del índice vectorial a Qdrant | Índice Qdrant local persistente, reconstruible y comparable con Chroma |
+| 1 | 004 | Migración del índice vectorial a Qdrant | Índice Qdrant nuevo desde fragmentos persistidos; sin comparación ni retorno a Chroma |
 | 2 | 005 | Generador por API y evaluación del proveedor | Adaptador de proveedor y comparación Claude Haiku / DeepSeek con evidencia |
 | 3 | 006 | Destinatarios y notificación operativa | Acción Telegram preparada, confirmada, enviada y evidenciada |
 | 4 | 007 | Aceptación integrada y actualización de la demo | Recorrido completo con Qdrant, proveedor elegido y acción externa |
@@ -160,28 +160,29 @@ privado completo ni secretos.
 ### 5.1. 004 — Migración del índice vectorial a Qdrant
 
 **Problema.** Chroma es un índice embebido derivado; el profesor solicita Qdrant y se necesita un
-almacenamiento vectorial con persistencia, procedencia y una ruta de migración verificable.
+almacenamiento vectorial persistente, con procedencia y una reconstrucción verificable.
 
-**Resultado esperado.** Qdrant local persistente como índice derivado, con el mismo contrato de
-recuperación, aislamiento por caso y citas verificables. SQLite sigue siendo la fuente de verdad.
-Chroma se conserva temporalmente para comparación y reversión.
+**Resultado esperado.** Qdrant local persistente como único backend documental, con el mismo
+contrato de recuperación, aislamiento por caso y citas verificables. SQLite sigue siendo la fuente
+de verdad. Chroma deja de ser backend del producto; sus archivos no se borran en 004.
 
 **Alcance mínimo propuesto**
 
 - Adaptador `QdrantIndex` con `upsert`, `delete_ids`, `delete_version`, `count`, `rebuild` y `query`.
-- Configuración `SECGUARD_VECTOR_BACKEND=chroma|qdrant` y URL de Qdrant.
 - Diseño objetivo de 004: **Qdrant en servidor local persistente, preferiblemente mediante Docker
   Compose**, con acceso limitado al equipo local. El modo embebido se reserva para pruebas o como
   alternativa expresamente documentada.
-- Reconstrucción completa desde los fragmentos persistidos en SQLite; no se copia el índice como
-  fuente de verdad.
+- Reconstrucción limpia desde los fragmentos persistidos en SQLite; no se migran ni exportan
+  vectores de Chroma y no se implementa escritura dual.
 - Conservar el alcance actual: una colección pública compartida y una colección por caso, con el
   modelo y la dimensión en el nombre o en un alias sanitizado.
 - Payload de procedencia: `chunk_id`, `document_id`, `version_id`, `origin`, `source_id`, `page`,
   `section`, `locator`, `model`, `dimension`, `embedding_version`.
-- Búsqueda con el mismo `top_k`, presupuesto de tokens y umbral de recuperación.
-- Comparación antes/después con las mismas consultas y los mismos embeddings.
-- Conservar Chroma hasta que Qdrant pase aceptación y exista una ventana de reversión.
+- Búsqueda con el mismo `top_k`, presupuesto de tokens y un umbral calibrado para Qdrant.
+- Evaluación funcional reproducible con preguntas y evidencia esperada; no comparación obligatoria
+  con Chroma.
+- Conservar los datos de SQLite, los archivos Chroma y las citas históricas. No hay selección
+  permanente de backend ni retorno a Chroma.
 
 **Opcionales**
 
@@ -193,42 +194,43 @@ Chroma se conserva temporalmente para comparación y reversión.
 
 **Dependencias**
 
-- Enmienda constitucional: hoy Chroma figura como índice permanente.
-- Cliente `qdrant-client`, servidor Qdrant local y Docker Compose con volumen persistente.
+- Constitución 1.3.0 con ratificación del responsable registrada; acuerdos del equipo no constan.
+- Cliente `qdrant-client==1.20.0`, servidor Qdrant `1.20.0` local y Docker Compose con volumen
+  persistente.
 - Adaptador de embeddings sin cambios: **no se cambia el modelo de embeddings en 004**.
 - `documents/service.py`, `retrieval/search.py`, scripts de ingesta y fixtures de pruebas.
 
 **Datos afectados**
 
 - Nuevo directorio/volumen de Qdrant y sus colecciones.
-- SQLite no cambia como fuente de verdad. Si se registra el backend en ejecuciones, preferir metadata
+- SQLite no cambia como fuente de verdad. Si se registra Qdrant en ejecuciones, preferir metadata
   JSON; si se requiere una columna, será una migración aditiva posterior.
-- Chroma se conserva intacto durante la migración.
+- Los archivos y datos Chroma existentes se conservan intactos; no se usan como backend ni se borran
+  en 004.
 
 **Criterios de aceptación**
 
-- Reconstruir Qdrant desde SQLite produce el mismo conjunto de fragmentos y metadatos.
+- Reconstruir Qdrant desde SQLite produce el conjunto esperado de fragmentos y metadatos.
 - Las consultas del corpus público y del caso devuelven citas verificables y respetan el aislamiento.
-- La comparación documenta solapamiento top-k, recall@k cuando exista referencia, distribución de
-  puntajes, latencia y tasa de citas válidas; no se declara superioridad sin evidencia.
+- La evaluación funcional documenta preguntas, evidencia esperada, citas, aislamiento y fallos; no
+  exige comparación Chroma/Qdrant.
 - Las pruebas de 001/002 siguen pasando.
-- La reversión a Chroma funciona sin pérdida de datos de negocio.
-- No se elimina Chroma hasta completar la aceptación y la ventana de reversión.
+- Si Qdrant falla, se reconstruye desde SQLite; no hay retorno automático ni manual a Chroma.
+- Chroma no se elimina y sus archivos no se modifican en 004.
 
 **Estrategia de pruebas**
 
 - Unitarias del adaptador Qdrant contra un directorio temporal.
-- Contrato del protocolo de índice compartido con Chroma.
+- Contrato del adaptador Qdrant y de reconstrucción idempotente.
 - Integración de ingesta y recuperación real con embeddings locales.
-- Aceptación de reconstrucción, aislamiento entre casos y citas.
-- Comparación controlada con un conjunto fijo de preguntas y fragmentos relevantes conocidos.
+- Aceptación de reconstrucción, aislamiento entre casos, citas y reinicio.
+- Evaluación funcional con un conjunto fijo de preguntas y evidencia esperada.
 
 **Reversión o recuperación**
 
-- `SECGUARD_VECTOR_BACKEND=chroma` restaura el índice anterior.
-- Chroma permanece en disco, sin escritura, hasta cerrar la migración.
 - Si Qdrant falla, se reconstruye desde SQLite; nunca se reconstruye SQLite desde Qdrant.
-- No se borran directorios de índice sin autorización y copia previa.
+- No se borran directorios de índice ni archivos Chroma sin autorización y copia previa.
+- No hay retorno a Chroma como capacidad del producto; su limpieza física queda fuera de 004.
 
 **Decisiones pendientes**
 
@@ -236,8 +238,8 @@ Chroma se conserva temporalmente para comparación y reversión.
 |---|---|---|---|
 | Q-01 | ¿Qdrant embebido o servidor local? | Servidor local persistente con Docker Compose y volumen; embebido solo para pruebas o alternativa documentada | Cambia instalación, concurrencia y operación |
 | Q-02 | ¿Una colección por caso o una colección con filtros? | Una por caso + pública, conservando el aislamiento actual | Más colecciones, mayor aislamiento |
-| Q-03 | ¿Se registra el backend en la evidencia? | Sí, en metadata de ejecución | Permite reproducir qué índice se usó |
-| Q-04 | ¿Se conserva Chroma cuánto tiempo? | Hasta aceptación y una ventana de reversión definida | Rollback disponible; ocupa disco |
+| Q-03 | ¿Se registra Qdrant en la evidencia? | Sí, en metadata de ejecución | Permite reproducir qué índice se usó |
+| Q-04 | ¿Cómo se recupera Qdrant ante fallos? | Reconstrucción desde SQLite, backups/snapshots y verificación de integridad | No hay rollback a Chroma |
 | Q-05 | ¿Se cambia el modelo de embeddings? | No en 004; decisión separada | Evita mezclar dos causas de cambio |
 
 ### 5.2. 005 — Generador por API y evaluación del proveedor
@@ -479,7 +481,7 @@ Telegram, con evidencia, comparación y reversión documentadas.
 - Pregunta documental con cita; pregunta de memoria; consulta `findings_query`.
 - Acción Telegram preparada, confirmada y enviada a un chat de prueba.
 - Evidencia de ejecución con proveedor, modelo, tokens, costo y resultado de la acción.
-- Comparación Chroma/Qdrant y local/API.
+- Evaluación funcional de Qdrant y del proveedor elegido; sin comparación Chroma.
 - Actualización de guía, capturas y PDF; sin datos privados.
 
 **Opcionales**
@@ -499,7 +501,8 @@ de presentación existentes.
 - El recorrido completo funciona con datos ficticios y no envía datos privados.
 - Las pruebas de 001/002 y las nuevas de 004–006 pasan.
 - La comparación y el costo se reportan con evidencia, no con impresiones.
-- La reversión a Chroma/Ollama está documentada y probada.
+- La recuperación de Qdrant y la reversión de configuración del proveedor están documentadas; no
+  hay retorno a Chroma.
 - La guía y el PDF reflejan el estado real; no se declaran aprobaciones inexistentes.
 
 **Estrategia de pruebas:** unitarias, contrato, integración, aceptación y Playwright; proveedor real
@@ -615,7 +618,7 @@ fuente. No se presentan totales mensuales sin volumen medido.
 
 | ID | Criterios mínimos |
 |---|---|
-| 004 | Reconstrucción desde SQLite; mismo aislamiento; citas válidas; comparación con Chroma; reversión; Chroma conservado |
+| 004 | Reconstrucción limpia desde SQLite; mismo aislamiento; citas válidas; evaluación funcional sin comparación Chroma; sin dual-write; sin retorno a Chroma; archivos Chroma conservados |
 | 005 | Contrato de proveedor; salida estructurada; herramientas; memoria; abstención; presupuesto; tokens/costo; errores; sin datos privados; sin ganador sin evidencia |
 | 006 | Destinatario verificado; preparar/vista previa/confirmar/enviar; idempotencia; estados; evidencia; fallos inciertos; sin secretos; sin P1–P4 |
 | 007 | Recorrido completo con datos ficticios; pruebas 001/002; comparación; costo; guía/PDF; reversión |
@@ -627,10 +630,10 @@ Ninguna decisión de esta sección está aprobada.
 
 | Grupo | Decisión | Recomendación | Consecuencia práctica |
 |---|---|---|---|
-| Constitución | ¿Se enmiendan los principios III, IV, XI y el stack para Qdrant, API y acción externa? | Sí, antes de especificar 004/005 | Sin enmienda, el cambio contradice la constitución |
+| Constitución | Enmienda 1.3.0 y ratificación del responsable | Registrada; acuerdos de Cristian/Ruben no constan | Habilita planificación; no declara ratificación plena del equipo |
 | Qdrant | Embebido o servidor local | Servidor local persistente con Docker Compose; embebido para pruebas o alternativa documentada | Cambia instalación y concurrencia |
 | Qdrant | Una colección por caso o filtros | Una por caso + pública | Aislamiento fuerte; más colecciones |
-| Qdrant | Snapshots y retención del índice anterior | Snapshots y conservar Chroma hasta aceptación | Rollback y auditoría |
+| Qdrant | Snapshots y recuperación | Snapshots/backups de Qdrant; no rollback a Chroma | Recuperación sin backend dual |
 | Proveedor | ¿Claude Haiku o DeepSeek? | Evaluar ambos; no elegir sin evidencia | Cambia costo, latencia y calidad |
 | Proveedor | Presupuesto y límite de gasto | Aprobar tope por evaluación y por demo | Sin presupuesto no hay llamadas |
 | Proveedor | Conteo de tokens | Adaptador por proveedor; preflight conservador si no hay tokenizador | Evita exceder contexto |
@@ -643,18 +646,16 @@ Ninguna decisión de esta sección está aprobada.
 | 003 | Fuentes de contexto y muestra de etiquetas | Definir antes de retomar | Sin contexto, 0/662 se repite |
 | Demo | Proveedor y canal finales | Decidir después de 005/006 | La demo no debe prometer un ganador antes |
 
-## 9. Próximo comando de Spec Kit recomendado
+## 9. Estado de Spec Kit
 
-**`/speckit.constitution`** para enmendar la constitución y el stack fijado:
+La constitución 1.3.0 registra la ratificación comunicada por el responsable y la simplificación de
+004. El plan técnico de **`004-qdrant-vector-index`** está preparado en
+[`specs/004-qdrant-vector-index/plan.md`](../../specs/004-qdrant-vector-index/plan.md), con Qdrant en
+servidor local persistente y reconstrucción limpia desde SQLite.
 
-- reemplazar Chroma por Qdrant como índice derivado persistente;
-- permitir un proveedor de inferencia externo explícito, sin fallback automático;
-- incorporar la acción externa con confirmación humana y evidencia;
-- conservar SQLite como fuente de verdad, la separación de datos y la prohibición de secretos en trazas.
-
-Después de la enmienda, el siguiente comando sería **`/speckit.specify` para `004-qdrant-vector-index`**.
-No se debe ejecutar `/speckit.plan` para 003 mientras la política y las decisiones de comportamiento
-sigan pendientes.
+El siguiente paso sería `/speckit.tasks` solo con autorización expresa; no se ejecutó. No se debe
+ejecutar `/speckit.plan` para 003 mientras la política y las decisiones de comportamiento sigan
+pendientes. 005 y 006 permanecen posteriores.
 
 ## 10. Fuentes consultadas
 

@@ -4,8 +4,8 @@
 
 **Created**: 2026-11-11
 
-**Status**: Draft — condicionado a la ratificación de la enmienda constitucional 1.2.0 y a las
-decisiones técnicas de `/speckit.plan`. No habilita implementación por sí solo.
+**Status**: Draft — ratificación comunicada por el responsable registrada; plan preparado.
+No habilita implementación por sí solo.
 
 **Input**: User description: «Migración del índice documental a Qdrant»: sustituir Chroma como
 backend de recuperación documental, conservando SQLite como fuente de verdad, documentos,
@@ -20,25 +20,29 @@ política P1–P4.
 
 Estado de gobierno:
 
-- La constitución 1.2.0 está **preparada** y la autorización del responsable Edwin Perez L. está
-  registrada.
-- El acuerdo de Cristian Quebrada y Ruben Dario Sabogal **no consta**. La enmienda no se presenta
-  como ratificada.
-- Esta especificación es un **borrador condicionado**: puede revisarse y completarse, pero no
-  implementarse hasta que la enmienda 1.2.0 sea ratificada conforme a la gobernanza vigente.
+- La constitución 1.3.0 registra la **ratificación comunicada por Edwin Perez L.** el 2026-11-11
+  para Qdrant, el generador por API posterior y las acciones externas posteriores.
+- No constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación
+  académica. No se inventan.
+- La especificación puede revisarse y planificarse; la implementación sigue sujeta a las compuertas
+  de planificación y aceptación.
 - La funcionalidad 003 permanece suspendida. 004 no implementa P1–P4 ni las retoma.
+
+**Decisión de simplificación de 004:** el índice Qdrant se crea **desde cero** a partir de los
+fragmentos persistidos. No se migran ni exportan vectores de Chroma, no hay escritura dual, no hay
+selección permanente entre backends, no se exige comparación ejecutable Chroma/Qdrant y no hay
+retorno a Chroma. Los archivos y datos Chroma existentes no se borran en 004.
 
 **Hallazgo de capacidad relevante:** los vectores actuales **no están persistidos en SQLite**. La
 tabla de fragmentos conserva texto, metadatos, modelo y dimensión de embeddings, estado de índice y
-localizador; el vector vive en el índice derivado. Por tanto, la reconstrucción inicial no puede
-asumir que los vectores se pueden copiar desde SQLite. Debe regenerarlos con el mismo modelo y
-dimensión, o reutilizar una exportación verificada del índice anterior si el plan la habilita. Esta
-decisión no cambia el modelo de embeddings de 004.
+localizador; el vector vive en el índice derivado. Por tanto, la reconstrucción limpia **regenera**
+los vectores con el mismo modelo y dimensión local vigentes. No se asume que se puedan copiar desde
+SQLite ni se exportan desde Chroma. Esta decisión no cambia el modelo de embeddings de 004.
 
 **Decisiones técnicas diferidas al plan:** versiones de servidor y cliente, topología de
-colecciones y filtros, esquema de payload e índices, configuración de Docker Compose, backups,
-snapshots, ventana de reversión y estrategia de reconstrucción. La especificación define el
-comportamiento y los criterios de aceptación, no esas decisiones.
+colecciones y filtros, esquema de payload e índices, configuración de Docker Compose, backups de
+Qdrant y estrategia de reconstrucción. La especificación define el comportamiento y los criterios de
+aceptación, no esas decisiones.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -150,35 +154,33 @@ comprobar el error explícito y la ausencia de fallback.
 3. **Given** una configuración incompatible de Qdrant, **When** arranca o consulta, **Then** falla
    de forma explícita, sin marcar el índice como válido ni borrar datos.
 4. **Given** una ejecución que usa Qdrant, **When** se consulta su evidencia, **Then** se identifica
-   el backend utilizado.
+   Qdrant, su versión y el índice utilizado.
 
 ---
 
-### User Story 5 - Detectar fallos y volver explícitamente al backend anterior (Priority: P3)
+### User Story 5 - Detectar fallos y recuperar el índice Qdrant (Priority: P3)
 
-Una persona responsable detecta que la migración no cumple los criterios, selecciona explícitamente
-Chroma y restaura el comportamiento anterior. El sistema conserva la evidencia de qué backend
-atendió cada ejecución y advierte si el índice anterior quedó desfasado por documentos añadidos
-durante la transición.
+Una persona responsable detecta que el índice Qdrant está incompleto, interrumpido o inaccesible,
+reconstruye desde SQLite y verifica integridad y completitud antes de declararlo listo. No hay
+retorno a Chroma ni selección de backend.
 
-**Why this priority**: la migración debe ser reversible y observable; una vuelta silenciosa o una
-promesa de índice actualizado sin estarlo destruiría la confianza.
+**Why this priority**: la recuperación ante fallos de Qdrant es necesaria, pero el producto ya no
+mantiene un segundo backend documental.
 
-**Independent Test**: construir Qdrant, validar una consulta, seleccionar Chroma y comprobar que la
-consulta vuelve a usar el índice anterior; añadir un documento durante la transición y verificar que
-el sistema advierte que Chroma no lo contiene.
+**Independent Test**: corromper o interrumpir un índice Qdrant de prueba, ejecutar la recuperación,
+comprobar que el índice parcial no se presenta como listo y que la reconstrucción desde SQLite
+restaura los fragmentos esperados.
 
 **Acceptance Scenarios**:
 
-1. **Given** dos backends disponibles y una selección explícita, **When** se ejecuta una consulta,
-   **Then** la evidencia indica el backend seleccionado.
-2. **Given** una validación fallida de Qdrant, **When** la persona vuelve a Chroma, **Then** las
-   consultas usan Chroma y no se presenta Qdrant como aceptado.
-3. **Given** documentos añadidos durante la transición, **When** se vuelve a Chroma, **Then** el
-   sistema advierte que el índice anterior puede estar desfasado y no promete actualización
-   automática.
-4. **Given** una aceptación inicial de Qdrant, **When** termina la validación, **Then** Chroma no se
-   elimina como parte de esa aceptación.
+1. **Given** un índice Qdrant parcial o interrumpido, **When** la persona lo inspecciona, **Then** el
+   sistema no lo presenta como completo y explica qué falta.
+2. **Given** un índice Qdrant incompleto, **When** se reconstruye desde SQLite, **Then** se restauran
+   los fragmentos esperados sin duplicados y con procedencia.
+3. **Given** un fallo de Qdrant, **When** se intenta consultar, **Then** el error es explícito y no
+   se usa Chroma como fallback.
+4. **Given** una recuperación completada, **When** se valida, **Then** la evidencia identifica Qdrant
+   y el índice reconstruido; los archivos Chroma permanecen intactos y sin uso.
 
 ---
 
@@ -196,14 +198,16 @@ el sistema advierte que Chroma no lo contiene.
   como consistente.
 - Fragmento faltante en SQLite pero presente en el índice: se reporta y se excluye de la consulta.
 - Fragmento presente en SQLite pero ausente en el índice: se reporta como faltante y se reconstruye.
-- Fragmento con dimensión o modelo incompatible: no se mezcla; se reporta y se regenera o se
-  excluye según la decisión del plan.
+- Fragmento con dimensión o modelo incompatible: no se mezcla; se reporta y se regenera con el
+  mismo modelo o se excluye del índice, sin declarar éxito.
 - Diferencia entre conteo del índice y conteo de la fuente de verdad: no se declara éxito.
 - Qdrant caído: error explícito, sin fallback silencioso a Chroma.
 - Reinicio de Qdrant con persistencia: el índice sigue disponible.
 - Configuración incompatible: fallo explícito, sin borrar datos.
-- Documentos añadidos durante la transición: el retorno a Chroma advierte posible desfase.
-- Índice anterior con documentos que ya no están disponibles: no se presentan como evidencia.
+- Documentos añadidos antes de una reconstrucción: se incluyen desde SQLite en la siguiente
+  reconstrucción; no se promete actualización de Chroma.
+- Archivos o datos Chroma existentes: no se usan, no se comparan y no se borran en 004.
+- No hay selección permanente de backend ni retorno a Chroma.
 - Registros Qualys: nunca se indexan como documentos ni se recuperan como citas.
 - Consulta sin resultados: se declara ausencia de evidencia; no se inventa una cita.
 - Pregunta de seguimiento: conserva la memoria y el aislamiento del caso.
@@ -249,9 +253,9 @@ el sistema advierte que Chroma no lo contiene.
   sistema MUST reportarlo y MUST NOT mezclarlo con el índice válido.
 - **FR-015**: Si el índice contiene entradas que no existen en SQLite, el sistema MUST reportar la
   diferencia y MUST NOT presentar el índice como consistente.
-- **FR-016**: El sistema MUST NOT asumir que los vectores están persistidos en SQLite. Si no se
-  reutiliza una exportación verificada del índice anterior, MUST regenerar los vectores con el mismo
-  modelo y dimensión actuales.
+- **FR-016**: El sistema MUST NOT asumir que los vectores están persistidos en SQLite y MUST NOT
+  exportarlos desde Chroma. La reconstrucción MUST regenerar los vectores con el mismo modelo y
+  dimensión locales vigentes.
 - **FR-017**: La reconstrucción NO DEBE borrar ni modificar los documentos, fragmentos o versiones
   de SQLite.
 
@@ -270,12 +274,12 @@ el sistema advierte que Chroma no lo contiene.
   literal.
 - **FR-024**: Una recuperación vacía MUST declararse como ausencia de evidencia; no debe inventar
   citas.
-- **FR-025**: El sistema MUST comparar pertinencia, cobertura, citas y aislamiento mediante un
-  conjunto reproducible de preguntas. El conjunto DEBE incluir preguntas del corpus público, de dos
-  casos ficticios con documentos distintos y de ausencia de evidencia, con fragmentos relevantes
-  conocidos. NO se exige igualdad exacta del orden de resultados con Chroma.
-- **FR-026**: El umbral de recuperación MUST validarse con la métrica y configuración de Qdrant; el
-  valor de Chroma NO debe copiarse sin comprobar su equivalencia.
+- **FR-025**: El sistema MUST evaluar funcionalmente pertinencia, cobertura, citas y aislamiento
+  mediante un conjunto reproducible de preguntas y evidencia esperada. El conjunto DEBE incluir
+  preguntas del corpus público, de dos casos ficticios con documentos distintos y de ausencia de
+  evidencia. NO se exige comparación ejecutable con Chroma ni igualdad de orden.
+- **FR-026**: El umbral de recuperación MUST calibrarse con la métrica y configuración de Qdrant; no
+  se copia un valor de Chroma sin comprobar su significado.
 - **FR-027**: Los umbrales propuestos y los resultados observados MUST distinguirse en la evidencia;
   no se inventan métricas.
 
@@ -292,20 +296,22 @@ el sistema advierte que Chroma no lo contiene.
   consultas posteriores.
 - **FR-033**: Una configuración incompatible MUST fallar de forma explícita y NO DEBE borrar datos ni
   marcar el índice como válido.
-- **FR-034**: El sistema MUST registrar qué backend atendió cada ejecución y con qué identificador
-  de índice o colección, sin exponer secretos.
+- **FR-034**: El sistema MUST registrar Qdrant, su versión y el índice o colección utilizado en cada
+  ejecución, sin exponer secretos.
 
-**Transición y reversión**
+**Sustitución y retirada de Chroma**
 
-- **FR-035**: El sistema MUST permitir seleccionar explícitamente el backend activo entre Chroma y
-  Qdrant durante la transición.
-- **FR-036**: La evidencia de ejecución MUST identificar el backend utilizado.
-- **FR-037**: La validación de Qdrant MUST completarse antes de declarar la migración aceptada.
-- **FR-038**: El sistema MUST permitir volver explícitamente a Chroma si la validación falla.
-- **FR-039**: El retorno a Chroma MUST advertir si el índice anterior quedó desfasado por documentos
-  añadidos durante la transición; NO DEBE prometer un índice actualizado que no lo esté.
-- **FR-040**: Chroma MUST conservarse durante la transición y NO DEBE eliminarse como parte de la
-  aceptación inicial de 004.
+- **FR-035**: Tras la sustitución, Qdrant MUST ser el único backend de recuperación documental. NO
+  se mantiene selección permanente entre Chroma y Qdrant.
+- **FR-036**: La evidencia de ejecución MUST identificar Qdrant y el índice utilizado.
+- **FR-037**: La validación de integridad y completitud de Qdrant MUST completarse antes de declarar
+  el índice listo.
+- **FR-038**: El sistema MUST NOT migrar ni exportar vectores de Chroma, ni implementar escritura
+  dual o comparación obligatoria Chroma/Qdrant.
+- **FR-039**: Un fallo de Qdrant MUST recuperarse reconstruyendo desde SQLite; NO DEBE existir
+  retorno a Chroma como capacidad del producto.
+- **FR-040**: Los archivos, colecciones y datos Chroma existentes NO DEBEN borrarse en 004. La
+  retirada de su código no autoriza su limpieza física.
 
 **Privacidad, datos y pruebas**
 
@@ -340,15 +346,15 @@ el sistema advierte que Chroma no lo contiene.
   `chunk_id` y los metadatos necesarios para resolver la cita. No es fuente de verdad.
 - **Reconstrucción de índice**: operación que crea o actualiza el índice desde los fragmentos
   persistidos; tiene estado, conteos, errores y evidencia.
-- **Backend vectorial seleccionado**: elección explícita entre Chroma y Qdrant durante la
-  transición, registrada en la ejecución.
+- **Índice Qdrant activo**: índice derivado utilizado para la recuperación documental; registra
+  versión y colección en la evidencia.
 - **Resultado de recuperación**: fragmento recuperado con procedencia, puntuación y referencia a la
   versión; puede resolverse a una cita.
 - **Cita**: vínculo entre una afirmación y un fragmento de una versión concreta; conserva
   localizador y estado de control automático.
-- **Conjunto de comparación**: preguntas y fragmentos relevantes conocidos, usado para comparar
-  pertinencia, cobertura, citas y aislamiento entre Chroma y Qdrant.
-- **Evidencia de transición**: registro de backend, índice, validación, fallos y reversión.
+- **Conjunto de evaluación funcional**: preguntas y evidencia esperada, usado para evaluar
+  pertinencia, cobertura, citas y aislamiento sin comparación obligatoria con Chroma.
+- **Evidencia de índice**: registro de Qdrant, versión, colección, validación, conteos y fallos.
 
 ## Success Criteria *(mandatory)*
 
@@ -375,30 +381,35 @@ el sistema advierte que Chroma no lo contiene.
 - **SC-010**: Tras reiniciar Qdrant con persistencia, el 100% de los fragmentos indexados sigue
   disponible.
 - **SC-011**: Una configuración incompatible falla de forma explícita y no borra datos.
-- **SC-012**: La comparación reproducible reporta pertinencia, cobertura, citas y aislamiento sin
-  exigir igualdad exacta de orden con Chroma.
-- **SC-013**: El umbral de recuperación se valida con la configuración de Qdrant; no se declara
+- **SC-012**: La evaluación funcional reproducible reporta pertinencia, cobertura, citas y
+  aislamiento con evidencia esperada; no exige comparación con Chroma.
+- **SC-013**: El umbral de recuperación se calibra con la configuración de Qdrant; no se declara
   equivalente por copiar el valor de Chroma.
 - **SC-014**: Las suites de 001 y 002 siguen pasando.
-- **SC-015**: El 100% de las ejecuciones de la transición identifica el backend utilizado.
-- **SC-016**: La aceptación inicial conserva Chroma y permite un retorno explícito sin borrar el
-  índice anterior.
+- **SC-015**: El 100% de las ejecuciones identifica Qdrant, su versión y el índice utilizado.
+- **SC-016**: Qdrant es el único backend documental después de la sustitución; no hay selección
+  dual, escritura dual ni retorno a Chroma.
 - **SC-017**: Las pruebas iniciales usan datos públicos o ficticios y no tocan la instancia del
   usuario.
-- **SC-018**: No se presentan métricas de mejora no medidas ni se declara Qdrant implementado antes
+- **SC-018**: Los archivos y datos Chroma existentes no se borran en 004; las citas históricas siguen
+  resolviendo desde SQLite.
+- **SC-019**: No se presentan métricas de mejora no medidas ni se declara Qdrant implementado antes
   de la aceptación.
 
 ## Assumptions
 
-- La enmienda constitucional 1.2.0 está preparada y autorizada por el responsable, pero **no
-  ratificada** por Cristian Quebrada y Ruben Dario Sabogal. Esta especificación es un borrador
-  condicionado.
+- La constitución 1.3.0 registra la **ratificación comunicada por el responsable** el 2026-11-11.
+  No constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación
+  académica. La especificación puede planificarse; la implementación sigue sujeta a las compuertas.
 - El despliegue objetivo es Qdrant en servidor local persistente, preferiblemente con Docker Compose;
   el modo embebido es para pruebas o alternativa documentada.
-- SQLite sigue siendo la fuente de verdad; Chroma se conserva durante la transición.
+- SQLite sigue siendo la fuente de verdad. Qdrant es el único backend documental objetivo; Chroma
+  deja de usarse y sus archivos no se borran en 004.
 - El modelo de embeddings actual y su dimensión no cambian en 004.
-- Los vectores no están en SQLite; la reconstrucción regenera embeddings salvo que el plan habilite
-  una exportación verificada del índice anterior.
+- Los vectores no están en SQLite; la reconstrucción los regenera con el mismo modelo local. No se
+  exportan vectores de Chroma.
+- No hay migración de vectores, escritura dual, selección permanente de backend, comparación
+  obligatoria Chroma/Qdrant ni retorno a Chroma.
 - Las pruebas iniciales usan corpus público o fixtures ficticios y almacenamiento separado.
 - 003 sigue suspendida y no forma parte de 004.
 - Las versiones, topología de colecciones, payload, Docker Compose y backups se deciden en
@@ -407,8 +418,7 @@ el sistema advierte que Chroma no lo contiene.
 
 ## Dependencies
 
-- Ratificación de la constitución 1.2.0 conforme a la gobernanza vigente para habilitar la
-  implementación.
+- Constitución 1.3.0 con ratificación del responsable registrada; acuerdos del equipo no constan.
 - Capacidades y contratos verificados de 001 y 002.
 - Servidor Qdrant local persistente y Docker Compose, a definir en el plan.
 - Modelo de embeddings local actual y fragmentos persistidos en SQLite.
@@ -418,13 +428,16 @@ el sistema advierte que Chroma no lo contiene.
 ## Out of Scope
 
 - Cambiar el modelo de embeddings o su dimensión.
+- Migrar o exportar vectores de Chroma.
+- Mantener escritura dual, selección permanente de backend o retorno a Chroma.
+- Exigir comparación ejecutable Chroma/Qdrant.
 - Integrar Claude, DeepSeek u otro generador API.
 - Introducir Telegram, correo o mesa de ayuda.
 - Implementar P1–P4 o retomar 003.
 - Indexar el CSV Qualys o sus resultados.
 - Cambiar la memoria, la conversación o la semántica de `findings_query`.
 - Añadir autenticación, multiusuario o despliegue público.
-- Eliminar Chroma como parte de la aceptación inicial.
+- Eliminar archivos o datos Chroma durante 004.
 
 ## Decisiones técnicas diferidas al plan
 
@@ -434,24 +447,23 @@ el sistema advierte que Chroma no lo contiene.
 | Topología | Servidor local, Docker Compose, volumen, acceso y límites | El objetivo servidor persistente está fijado |
 | Colecciones y filtros | Una colección por caso/pública o filtros por payload | Debe conservar aislamiento y corpus compartido |
 | Payload e índices | Campos, tipos, índices de payload y correspondencia con SQLite | Debe conservar `chunk_id`, versión, procedencia y localizador |
-| Reconstrucción | Exportar vectores verificados o regenerarlos con el mismo modelo | Los vectores no están en SQLite; no se asume reutilización |
+| Reconstrucción | Regenerar embeddings desde SQLite con el mismo modelo; sin exportar vectores de Chroma | Los vectores no están en SQLite; no se asume reutilización |
 | Umbral | Métrica, configuración y calibración de Qdrant | No se copia el valor de Chroma |
-| Comparación | Preguntas, fragmentos relevantes, métricas y criterios | No se exige orden exacto con Chroma |
-| Backups y reversión | Snapshots, retención, ventana y retorno a Chroma | Chroma se conserva; no se borra en la aceptación inicial |
-| Evidencia | Campos de backend, índice y validación | Debe permitir saber qué backend atendió cada ejecución |
-| Concurrencia | Reconstrucción, consulta y bloqueo durante transición | No debe dejar índice parcial como válido |
+| Evaluación | Preguntas, evidencia esperada, métricas y criterios | No se exige comparación ni orden exacto con Chroma |
+| Backups y recuperación | Snapshots/backups de Qdrant y reconstrucción desde SQLite | No hay retorno a Chroma |
+| Evidencia | Campos de Qdrant, versión, índice y validación | Debe permitir saber qué índice atendió cada ejecución |
+| Concurrencia | Reconstrucción, consulta y bloqueo durante la sustitución | No debe dejar índice parcial como válido |
 | Configuración | Variables, secretos y acceso local | No se exponen secretos ni se habilita despliegue público |
 
 ## Gobierno y ratificación
 
-- **Constitución aplicable:** 1.2.0, preparada y autorizada por Edwin Perez L., pero pendiente de
-  ratificación por Cristian Quebrada y Ruben Dario Sabogal.
-- **Estado de esta especificación:** borrador revisable; no es una autorización de implementación.
-- **Efecto de la ratificación pendiente:** no se inicia `/speckit.plan` ni `/speckit.implement` como
-  trabajo normativo hasta que la enmienda sea ratificada. La especificación puede revisarse y
-  completarse mientras tanto.
+- **Constitución aplicable:** 1.3.0, con ratificación comunicada por Edwin Perez L. el 2026-11-11.
+- **Acuerdos del equipo:** no constan los de Cristian Quebrada y Ruben Dario Sabogal; no se
+  inventan acta, firma, fecha de reunión ni aprobación académica.
+- **Estado de esta especificación:** borrador planificable; no es una autorización de implementación.
+- **Efecto:** la planificación de 004 se ejecuta por la ratificación del responsable. La
+  implementación sigue sujeta a las compuertas de planificación y aceptación.
 - **003:** permanece suspendida; su política P1–P4 no está aprobada.
-- **Decisiones de negocio pendientes:** la ratificación de 1.2.0 y la confirmación de que 004 sigue
-  siendo una migración de backend sin cambio de embeddings. Las versiones, topología, payload,
-  Docker Compose y backups son decisiones técnicas del plan, no requisitos de negocio de esta
-  especificación.
+- **Decisiones de negocio pendientes:** no se solicita de nuevo la confirmación de Edwin. Queda
+  registrada, sin inventar, la evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal. Las
+  versiones, topología, payload, Docker Compose y backups son decisiones técnicas del plan.

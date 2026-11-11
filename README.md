@@ -137,9 +137,12 @@ de traza por API se ejecutó; SC-001 y SC-003 quedan como validaciones recomenda
 Monolito modular en un solo proceso. La interfaz y el dominio se separan por paquetes; SQLite
 conserva el estado y la procedencia, y Chroma es un índice derivado y reconstruible.
 
-**Estado vigente:** Chroma y Ollama son la implementación actual. La constitución 1.2.0 (propuesta,
-ratificación pendiente) fija como objetivo Qdrant en servidor local persistente para 004, un proveedor
-API explícito para 005 y una acción externa controlada para 006. **Nada de eso está implementado.**
+**Estado vigente:** Chroma y Ollama son la implementación actual. La constitución 1.3.0 (ratificación
+del responsable registrada; acuerdos del equipo no constan) fija como objetivo Qdrant en servidor
+local persistente para 004, un proveedor API explícito para 005 y una acción externa controlada para
+006. 004 reconstruye el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura
+dual, sin comparación obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran.
+**Nada de eso está implementado.**
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -515,8 +518,8 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
 
 ## Documentación
 
-- [Constitución](CONSTITUTION.md) — fuente normativa única; versión 1.2.0 propuesta, ratificación
-  pendiente.
+- [Constitución](CONSTITUTION.md) — fuente normativa única; versión 1.3.0, ratificación del
+  responsable registrada y acuerdos del equipo no constatados.
 - [Especificación](specs/001-consulta-documental/spec.md) — comportamiento y criterios.
 - [Plan técnico](specs/001-consulta-documental/plan.md) — arquitectura y decisiones.
 - [Modelo de datos](specs/001-consulta-documental/data-model.md) — entidades e invariantes.

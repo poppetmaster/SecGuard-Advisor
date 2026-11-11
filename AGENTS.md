@@ -42,11 +42,12 @@ integrada), con una estrategia explícita de contexto y etiquetas. La especifica
 conservan. Ver
 [`docs/planificacion/hoja-ruta-mejoras-profesor.md`](docs/planificacion/hoja-ruta-mejoras-profesor.md).
 
-**Constitución 1.2.0 (propuesta, ratificación pendiente):** fija como arquitectura objetivo Qdrant
-en servidor local persistente para 004, un proveedor API explícito para 005 y una acción externa
-controlada para 006. La implementación actual sigue siendo Chroma + Ollama; no se presentan Qdrant,
-API ni Telegram como disponibles. La enmienda requiere la ratificación de Cristian Quebrada y Ruben
-Dario Sabogal conforme a la gobernanza vigente.
+**Constitución 1.3.0 (ratificación del responsable registrada; acuerdos del equipo no constan):**
+fija como arquitectura objetivo Qdrant en servidor local persistente para 004, un proveedor API
+explícito para 005 y una acción externa controlada para 006. 004 reconstruye el índice desde cero
+desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación obligatoria y sin
+retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual sigue siendo
+Chroma + Ollama; no se presentan Qdrant, API ni Telegram como disponibles.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,

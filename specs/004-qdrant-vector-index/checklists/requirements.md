@@ -34,13 +34,14 @@
 
 ## Governance Readiness
 
-- [x] La especificación se registra como borrador condicionado a la ratificación de la enmienda
-  1.2.0
-- [x] La autorización de Edwin Perez L. se reconoce como registrada; no se vuelve a solicitar
-- [ ] La enmienda 1.2.0 está ratificada por Cristian Quebrada y Ruben Dario Sabogal — **pendiente;
-  bloquea la implementación, no la redacción de esta especificación**
-- [x] La funcionalidad 003 permanece suspendida y fuera de alcance
-- [x] No se presenta Qdrant como implementado ni se declara una mejora no medida
+- [x] La especificación registra la ratificación comunicada por Edwin Perez L. el 2026-11-11.
+- [x] La autorización de Edwin Perez L. se reconoce como registrada; no se vuelve a solicitar.
+- [ ] No constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación
+  académica — **evidencia de gobierno pendiente; no es un defecto de la especificación**
+- [x] La simplificación de 004 está registrada: reconstrucción limpia, sin exportación de vectores,
+  escritura dual, selección permanente, comparación obligatoria ni retorno a Chroma.
+- [x] La funcionalidad 003 permanece suspendida y fuera de alcance.
+- [x] No se presenta Qdrant como implementado ni se declara una mejora no medida.
 
 ## Deferred Technical Decisions
 
@@ -50,24 +51,28 @@ Estas decisiones se resolverán en `/speckit.plan`; no son defectos de la especi
 - [ ] Topología de colecciones, filtros y aislamiento físico/lógico.
 - [ ] Esquema de payload e índices.
 - [ ] Configuración de Docker Compose, volumen y acceso local.
-- [ ] Backups, snapshots, ventana de reversión y retención de Chroma.
-- [ ] Estrategia de reconstrucción: exportación verificada de vectores o regeneración con el mismo
-  modelo.
+- [ ] Backups, snapshots y recuperación de Qdrant; sin retorno a Chroma.
+- [ ] Estrategia de reconstrucción: regeneración de embeddings con el mismo modelo local; sin
+  exportación de vectores de Chroma.
 - [ ] Calibración del umbral de recuperación con la métrica y configuración de Qdrant.
-- [ ] Conjunto reproducible de preguntas y criterios de comparación.
-- [ ] Campos de evidencia para backend, índice y validación.
+- [ ] Conjunto reproducible de preguntas y evaluación funcional sin comparación obligatoria con
+  Chroma.
+- [ ] Campos de evidencia para Qdrant, versión, índice y validación.
 
 ## Notes
 
-- La especificación está **documentalmente completa** para revisión, pero **no está lista para
-  `/speckit.plan` como trabajo normativo** hasta que la enmienda 1.2.0 sea ratificada. La
-  ratificación pendiente no se marca como incumplimiento de la especificación.
+- La especificación está **documentalmente completa y planificable** con la ratificación del
+  responsable registrada. La evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal no
+  consta y se registra sin inventarla.
 - No se eligieron versiones, topología de colecciones, payload, Docker Compose ni backups. Esas
   decisiones son entradas del plan y no requisitos previos para esta redacción.
-- Los vectores actuales no están persistidos en SQLite. La reconstrucción debe regenerarlos con el
-  mismo modelo o reutilizar una exportación verificada; no se asume que se puedan copiar.
+- Los vectores actuales no están persistidos en SQLite. La reconstrucción los regenera con el mismo
+  modelo local; no se exportan desde Chroma.
+- No hay migración de vectores, escritura dual, selección permanente de backend, comparación
+  obligatoria Chroma/Qdrant ni retorno a Chroma.
+- Los archivos y datos Chroma existentes no se borran en 004.
 - No se inventaron métricas, umbrales observados ni resultados de comparación. Los umbrales
   propuestos se distinguen de los observados.
 - No se incluyeron datos privados, filas Qualys, IP, activos ni títulos privados.
-- No se generó plan, tareas, código, migraciones ni cambios de índice.
+- El plan 004 fue generado; no se generaron tareas ni código.
 - La funcionalidad 003 sigue suspendida y su política P1–P4 no está aprobada.

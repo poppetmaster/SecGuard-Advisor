@@ -58,8 +58,10 @@ verificables por terceros.
 - SQLite DEBE conservar el estado y la procedencia: casos, activos, hallazgos, mensajes,
   revisiones, trabajos y ejecuciones. SQLite es la fuente de verdad.
 - El índice vectorial DEBE ser derivado y reconstruible. Eliminar el índice NO DEBE perder datos de
-  negocio ni procedencia. Qdrant es la tecnología objetivo para 004; Chroma permanece como
-  implementación actual durante la transición.
+  negocio ni procedencia. Qdrant es el backend objetivo y único de recuperación documental a partir
+  de 004; Chroma queda como referencia histórica fuera del producto.
+- 004 reconstruye Qdrant desde cero desde los fragmentos persistidos. NO migra ni exporta vectores
+  de Chroma, NO implementa escritura dual y NO mantiene una selección permanente entre backends.
 - El diseño objetivo de 004 es **Qdrant en servidor local persistente, preferiblemente mediante
   Docker Compose**, con acceso limitado al equipo local. El modo embebido se reserva para pruebas o
   como alternativa expresamente documentada; no se presentan ambas modalidades como implementadas.
@@ -67,8 +69,11 @@ verificables por terceros.
 - Qdrant es una dependencia de infraestructura local, no un microservicio de dominio. NO se añaden
   microservicios ni infraestructura distribuida al alcance inicial.
 - El índice DEBE conservar procedencia, versiones, resolución de citas, aislamiento entre casos y
-  corpus público compartido. La recuperación ante fallos y la verificación deben completarse antes
-  de retirar el índice anterior.
+  corpus público compartido. La reconstrucción limpia DEBE verificar integridad y completitud antes
+  de declarar el índice listo; NO se exige comparación con Chroma ni retorno a Chroma.
+- La reconstrucción NO DEBE exigir volver a subir documentos si los fragmentos están disponibles.
+  Los vectores NO se suponen persistidos en SQLite: se regeneran con el mismo modelo y dimensión
+  local vigentes. Los archivos y datos Chroma existentes NO se borran en 004.
 - El cambio de índice de 004 NO DEBE cambiar simultáneamente el modelo de embeddings. La dependencia
   actual de Ollama para embeddings es independiente del futuro cambio de generador.
 - Los módulos DEBEN comunicarse por interfaces definidas, no leyendo directamente las tablas de
@@ -116,10 +121,13 @@ externa solo se permite con configuración explícita, presupuesto y una fronter
   incompatibles es un error. Un cambio de modelo de embeddings exige colección nueva y
   reindexación completa.
 - La fragmentación DEBE medirse en tokens del modelo de embeddings, no en caracteres.
-- Toda migración de índice DEBE comparar recuperación, citas, aislamiento y fallos antes de retirar
-  el índice anterior. El índice anterior DEBE conservarse hasta completar la verificación.
-- La migración a Qdrant de 004 NO DEBE cambiar el modelo de embeddings. Un cambio de embeddings es
-  una decisión separada, con reindexación y comparación propias.
+- La reconstrucción limpia de Qdrant DEBE verificar correspondencia, integridad y completitud antes
+  de declarar el índice listo. NO se exige comparación ejecutable con Chroma ni mecanismo de retorno
+  a Chroma.
+- Las citas históricas DEBEN seguir resolviéndose desde SQLite y sus fragmentos persistidos aunque
+  el índice Chroma deje de utilizarse.
+- La reconstrucción de 004 NO DEBE cambiar el modelo de embeddings. Un cambio de embeddings es una
+  decisión separada, con reindexación y verificación propias.
 
 *Razón*: sin procedencia y sin límites respetados, la recuperación produce citas que no se
 pueden verificar y respuestas que parecen fundamentadas sin serlo.
@@ -145,8 +153,8 @@ explícita.
 
 ### VII. Seguridad
 
-- El alcance del caso DEBE imponerse en el código antes de consultar SQLite, Qdrant, Chroma en
-  transición o memoria. Los argumentos del modelo NO conceden permisos.
+- El alcance del caso DEBE imponerse en el código antes de consultar SQLite, Qdrant o memoria. Los
+  argumentos del modelo NO conceden permisos.
 - Los documentos DEBEN tratarse como entradas no confiables. NO se ejecutan instrucciones
   incrustadas, comandos arbitrarios ni remediaciones.
 - Las herramientas DEBEN tener permisos explícitos y argumentos validados. El modelo no concede
@@ -234,16 +242,21 @@ El producto se construye por funcionalidades verificables, en este orden:
    documentado, con validación de tipos, campos, rangos, fechas, duplicados y procedencia;
    separación de severidad de Qualys, CVSS, QID y CVE; pantalla de hallazgos con filtros y
    detalle. La importación no incluye el formulario de revisión P1–P4.
-3. **004 — Qdrant**: migración del índice derivado a Qdrant local persistente, preferiblemente en
-   servidor con Docker Compose; reconstrucción desde SQLite; comparación con Chroma; mismas
-   citas, aislamiento y corpus público. No cambia el modelo de embeddings.
+3. **004 — Qdrant**: reconstrucción limpia del índice en Qdrant local persistente, preferiblemente
+   en servidor con Docker Compose. Se crea un índice nuevo desde los fragmentos persistidos, sin
+   migrar ni exportar vectores de Chroma, sin escritura dual, sin selección permanente de backend,
+   sin comparación obligatoria Chroma/Qdrant y sin retorno a Chroma. Se conservan SQLite, documentos,
+   versiones, fragmentos, citas históricas, conversaciones, revisiones, checkpoints, Qualys y
+   evidencia; los embeddings se regeneran con el mismo modelo local. Los archivos Chroma existentes
+   no se borran en 004. No cambia el modelo de embeddings.
 4. **005 — Generador API**: interfaz de proveedor y evaluación de Claude Haiku y DeepSeek con
    datos públicos o ficticios; presupuesto, conteo de tokens, herramientas, memoria, abstención,
    latencia y costo. No selecciona proveedor ni habilita llamadas pagadas por sí sola.
 5. **006 — Acción operativa**: destinatarios verificados, preparación, vista previa, confirmación,
    ejecución y evidencia; Telegram para evaluación; correo y mesa de ayuda posteriores.
 6. **007 — Aceptación integrada**: recorrido completo con Qdrant, proveedor elegido y acción
-   externa; comparación, reversión, guía y PDF; datos públicos o ficticios.
+   externa; evaluación funcional, reversión de configuración, guía y PDF; datos públicos o
+   ficticios.
 7. **003 — Retomar priorización y clasificación**: política P1–P4 aprobada o revisada; contexto y
    etiquetas; formulario de revisión; clasificador ligero con scikit-learn; comparación con
    líneas base; pantalla administrativa de etiquetas, entrenamiento, versiones, métricas,
@@ -329,8 +342,9 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Inferencia | Generador local Ollama o proveedor API explícito | Objetivo 005; Ollama en transición; sin selección |
 | Proveedor API | Claude Haiku / DeepSeek como candidatos | En evaluación 005; no seleccionado |
 | Estado y procedencia | SQLite | Permanente |
-| Índice vectorial | Qdrant local persistente, derivado | Objetivo 004; Chroma en transición |
+| Índice vectorial | Qdrant local persistente, derivado | Objetivo 004; único backend documental; Chroma histórico fuera del producto |
 | Infraestructura vectorial | Qdrant en servidor local con Docker Compose; embebido para pruebas o alternativa documentada | Objetivo 004; no implementado |
+| Transición de índice | Reconstrucción limpia; sin exportación de vectores, escritura dual, selección permanente ni retorno a Chroma | Confirmado por el responsable; Chroma no se borra en 004 |
 | Trazas y evaluación | LangSmith | Fijado |
 | Acción externa | Telegram para evaluación; correo y mesa de ayuda posteriores | Objetivo 006; no implementado |
 | Clasificación (003) | scikit-learn | Fijado |
@@ -348,7 +362,8 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Modelo de comparación | `gemma4:latest`, 7.5B Q4_K_M | Instalado; no es 12B |
 | Modelo de embeddings | `embeddinggemma:latest`, EmbeddingGemma 1, 768 dims, 2048 tokens | Instalado; v2 no está instalada; sin cambio en 004 |
 | Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama en transición |
-| Índice objetivo | Qdrant local persistente (004) | Chroma actual en transición; servidor local con Docker Compose |
+| Índice objetivo | Qdrant local persistente (004) | Chroma actual hasta 004; después fuera del producto, sin borrar archivos; servidor local con Docker Compose |
+| Transición de índice | Reconstrucción limpia sin exportación, escritura dual, comparación obligatoria ni retorno | Confirmado; recuperación ante fallos de Qdrant sí se conserva |
 | Acción externa | Telegram para evaluación (006) | No implementada; correo y mesa de ayuda posteriores |
 | Presupuesto API | No aprobado | Sin llamadas pagadas ni cuentas creadas |
 | Presupuesto de chunk | ≤1600 tokens de contenido | Reserva para prefijo y solape |
@@ -367,6 +382,10 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 - No fallback automático de un proveedor externo hacia local ni en sentido inverso.
 - No segunda plataforma de observabilidad.
 - No presentar Qdrant, el proveedor API ni Telegram como implementados antes de su aceptación.
+- No migrar ni exportar vectores de Chroma, ni implementar escritura dual o selección permanente de
+  backend para 004.
+- No exigir comparación ejecutable Chroma/Qdrant ni mecanismo de retorno a Chroma para aceptar 004.
+- No borrar archivos, colecciones o datos Chroma existentes en 004; su limpieza física queda fuera.
 - No enviar el CSV privado ni sus datos derivados a proveedores o acciones sin política explícita
   de contenido y autorización aplicable al caso.
 - No afirmar retención cero, ausencia de entrenamiento ni garantía de privacidad sin evidencia.
@@ -475,17 +494,19 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
    revisión; no se admiten excepciones silenciosas.
 7. **Informe.** El Sync Impact Report se elimina antes del commit de la enmienda.
 
-### Estado de ratificación de la enmienda 1.2.0
+### Estado de ratificación de la enmienda 1.3.0
 
-- **Solicitud y autorización registrada:** Edwin Perez L., responsable del producto, solicitó y
-  autorizó esta evolución documental en la conversación del 2026-11-11. La autorización cubre la
-  propuesta y su propagación documental; no crea cuentas, no autoriza gasto ni envía mensajes.
-- **Ratificación pendiente:** conforme a la regla 3, falta el acuerdo de Cristian Quebrada y Ruben
-  Dario Sabogal. No consta acta, firma, reunión ni aprobación académica adicional.
-- **Efecto mientras falte la ratificación:** la versión 1.2.0 es una **propuesta revisable**. No se
-  presenta como acuerdo del equipo ni habilita por sí sola la implementación de 004–006. La
-  propuesta documental puede revisarse y completarse; las decisiones técnicas rutinarias no se
-  amplían a decisiones de política que requieran ratificación.
+- **Ratificación comunicada:** Edwin Perez L., responsable del producto, ratificó en la conversación
+  del 2026-11-11 el cambio de arquitectura: Qdrant como índice objetivo, generador por API en 005 y
+  acciones externas controladas en 006. También confirmó la simplificación de 004: índice nuevo
+  desde cero, sin migrar/exportar vectores de Chroma, sin escritura dual, sin selección permanente
+  de backend, sin comparación obligatoria Chroma/Qdrant y sin retorno a Chroma.
+- **Acuerdos del equipo:** no constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal. No se
+  inventan acta, firma, fecha de reunión ni aprobación académica. La evidencia de esos acuerdos
+  sigue pendiente y se registra como tal.
+- **Efecto:** la versión 1.3.0 se registra como **ratificada por el responsable** y habilita la
+  planificación de 004. No se declara ratificación plena del equipo ni aprobación académica. La
+  implementación sigue sujeta a las compuertas de planificación y aceptación.
 - **Alcance de la suspensión:** 003 sigue suspendida y su política P1–P4 no está aprobada.
 
 ### Cumplimiento
@@ -545,11 +566,14 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-11 | Acción operativa controlada: preparar, previsualizar, confirmar, ejecutar y registrar evidencia; Telegram para evaluación | Permanente | XIV | El modelo propone; la aplicación valida; el destinatario se verifica; una edición invalida la confirmación; aceptado no equivale a recibido/leído; correo y mesa de ayuda posteriores |
 | 2026-11-11 | Frontera de datos para proveedores externos y acciones; pruebas iniciales con datos públicos o ficticios | Permanente | XIII | La protección cubre CSV, derivados, activos/IP, preguntas, historial, fragmentos, argumentos/resultados y mensajes; no se autoriza aquí la salida del CSV privado; LangSmith mantiene política independiente |
 | 2026-11-11 | 003 suspendida temporalmente; 004–007 se ejecutan antes de retomarla | Decisión de alcance | XII | 0/662 clasificables; política P1–P4 no aprobada; se conservan especificación y checklist; no se cambia la definición de indeterminado |
-| Pendiente | Ratificación de la enmienda 1.2.0 por Cristian Quebrada y Ruben Dario Sabogal | Pendiente | Gobernanza | Sin ratificación, 1.2.0 es propuesta revisable y no habilita implementación |
+| 2026-11-11 | Enmienda 1.3.0 ratificada por el responsable: Qdrant único backend documental; reconstrucción limpia sin exportación, escritura dual, selección permanente, comparación obligatoria ni retorno a Chroma | Permanente | III, V, VII, XII | Ratificación comunicada por Edwin Perez L.; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica; no se inventan |
+| 2026-11-11 | 004 simplificado: índice Qdrant nuevo desde fragmentos persistidos; embeddings regenerados con el mismo modelo local; datos de negocio, citas históricas y evidencia conservados; archivos Chroma no se borran en 004 | Permanente | III, V, XII | Confirmado por el responsable; elimina exportación de vectores, dual-write, comparación obligatoria y rollback; conserva recuperación ante fallos de Qdrant |
+| Pendiente | Evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal para la enmienda 1.3.0 | Pendiente | Gobernanza | La ratificación del responsable está registrada; no se inventan acuerdos del equipo |
 | Pendiente | Presupuesto API para Claude Haiku / DeepSeek | Pendiente | IV, XI | No se activan llamadas pagadas ni se crean cuentas |
 | Pendiente | Selección del proveedor API y del canal definitivo de acción | Pendiente | IV, XIV | Requiere evidencia de 005/006; no se declara ganador |
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-11
+**Version**: 1.3.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-11
 
-**Estado de ratificación**: propuesta 1.2.0; falta el acuerdo de Cristian Quebrada y Ruben Dario
-Sabogal. No se presenta como acuerdo del equipo.
+**Estado de ratificación**: ratificación comunicada por Edwin Perez L. el 2026-11-11. No constan
+los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica. No se
+presenta como ratificación plena del equipo.
