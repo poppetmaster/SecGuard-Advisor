@@ -265,6 +265,89 @@ def _persist_chunks(
         return payload
 
 
+def _write_index(index, scope, model: str, dimension: int, payload: list[IndexedChunk]) -> None:
+    """Primer documento: valida la generación antes de publicar el alias.
+
+    Con el adaptador Qdrant se crea una generación, se suben los puntos y se
+    valida el conjunto; solo entonces se publica el alias. Los índices sin esa
+    interfaz (Chroma o dobles) conservan el upsert directo.
+    """
+    create = getattr(index, "create_generation", None)
+    upsert_to = getattr(index, "upsert_to", None)
+    chunk_ids = getattr(index, "chunk_ids", None)
+    activate = getattr(index, "activate_alias", None)
+    active = getattr(index, "active_collection", None)
+    if all(callable(item) for item in (create, upsert_to, chunk_ids, activate, active)) and (
+        active(scope, model, dimension) is None
+    ):
+        _generation, collection = create(scope, model, dimension)
+        upsert_to(collection, payload)
+        found = chunk_ids(collection)
+        expected = {chunk.chunk_id for chunk in payload}
+        if found != expected:
+            raise RuntimeError("La generación del primer documento no se validó.")
+        activate(scope, model, dimension, collection)
+        return
+    index.upsert(scope, model, dimension, payload)
+
+
+def _mark_available(
+    factory,
+    *,
+    version_id: str,
+    document_id: str,
+    job_id: str,
+    extraction,
+    embedder,
+    payload: list[IndexedChunk],
+) -> IngestionOutcome:
+    now = utc_now_iso()
+    with factory() as session:
+        version = session.get(DocumentVersion, version_id)
+        document = session.get(Document, document_id)
+        job = session.get(IngestionJob, job_id)
+        if version is None or document is None or job is None:
+            raise DocumentNotFound(version_id)
+
+        previous_id = document.current_version_id
+        if previous_id and previous_id != version_id:
+            previous = session.get(DocumentVersion, previous_id)
+            if previous is not None:
+                previous.status = "superseded"
+                previous.superseded_at = now
+
+        version.status = "available"
+        version.error_code = None
+        version.error_message = None
+        version.page_count = extraction.page_count
+        version.readable_pages = extraction.readable_pages
+        version.unreadable_pages = json.dumps(list(extraction.unreadable_pages))
+        version.extraction_version = extraction.extraction_version
+        version.chunking_version = CHUNKING_VERSION
+        version.embedding_model = embedder.model
+        version.embedding_dim = embedder.dimension
+        document.current_version_id = version_id
+        job.status = "succeeded"
+        job.finished_at = now
+        job.error_code = None
+        job.error_message = None
+        session.execute(
+            update(DocumentChunk)
+            .where(DocumentChunk.version_id == version_id)
+            .values(index_status="indexed", index_error=None)
+        )
+        session.commit()
+
+        return IngestionOutcome(
+            status="created",
+            document_id=document_id,
+            version_id=version_id,
+            version_number=version.version_number,
+            chunks=len(payload),
+            message="Documento disponible para consulta.",
+        )
+
+
 def _process_version(
     factory: sessionmaker[Session],
     settings: Settings,
@@ -325,7 +408,7 @@ def _process_version(
                 origin=origin,
                 source_id=source_id,
             )
-            index.upsert(scope, embedder.model, embedder.dimension, payload)
+            _write_index(index, scope, embedder.model, embedder.dimension, payload)
         except Exception:
             return _finish_failed(
                 factory,
@@ -335,50 +418,23 @@ def _process_version(
                 "No se pudo indexar el documento.",
             )
 
-    now = utc_now_iso()
-    with factory() as session:
-        version = session.get(DocumentVersion, version_id)
-        document = session.get(Document, document_id)
-        job = session.get(IngestionJob, job_id)
-        if version is None or document is None or job is None:
-            raise DocumentNotFound(version_id)
-
-        previous_id = document.current_version_id
-        if previous_id and previous_id != version_id:
-            previous = session.get(DocumentVersion, previous_id)
-            if previous is not None:
-                previous.status = "superseded"
-                previous.superseded_at = now
-
-        version.status = "available"
-        version.error_code = None
-        version.error_message = None
-        version.page_count = extraction.page_count
-        version.readable_pages = extraction.readable_pages
-        version.unreadable_pages = json.dumps(list(extraction.unreadable_pages))
-        version.extraction_version = extraction.extraction_version
-        version.chunking_version = CHUNKING_VERSION
-        version.embedding_model = embedder.model
-        version.embedding_dim = embedder.dimension
-        document.current_version_id = version_id
-        job.status = "succeeded"
-        job.finished_at = now
-        job.error_code = None
-        job.error_message = None
-        session.execute(
-            update(DocumentChunk)
-            .where(DocumentChunk.version_id == version_id)
-            .values(index_status="indexed", index_error=None)
-        )
-        session.commit()
-
-        return IngestionOutcome(
-            status="created",
-            document_id=document_id,
+    try:
+        return _mark_available(
+            factory,
             version_id=version_id,
-            version_number=version.version_number,
-            chunks=len(payload),
-            message="Documento disponible para consulta.",
+            document_id=document_id,
+            job_id=job_id,
+            extraction=extraction,
+            embedder=embedder,
+            payload=payload,
+        )
+    except Exception:
+        return _finish_failed(
+            factory,
+            version_id,
+            job_id,
+            "sqlite_commit_failed",
+            "No se pudo confirmar la versión en SQLite.",
         )
 
 
