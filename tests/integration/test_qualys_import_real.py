@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -32,7 +33,6 @@ from secguard_advisor.db.models import (
     Run,
     RunToolCall,
 )
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.vulnerabilities.validation import validate_csv
 from secguard_advisor.web.app import create_app
 
@@ -240,7 +240,7 @@ def test_real_csv_acceptance_http_sqlite_and_ollama(tmp_path: Path, monkeypatch)
             )
         )
         embedder = real_embedder(settings)
-        index = ChromaIndex(settings.chroma_dir)
+        index = server_index(settings)
         memory = open_memory(settings.checkpoints_path)
         try:
             for label, question, expected in QUESTIONS:

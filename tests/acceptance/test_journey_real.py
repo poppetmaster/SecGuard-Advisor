@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 from tests.fixtures.corpus import create_case
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -40,7 +41,6 @@ from secguard_advisor.db.models import (
 )
 from secguard_advisor.documents.service import ingest_document
 from secguard_advisor.documents.validation import validate_bytes
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.retrieval.review import review_citation
 from secguard_advisor.seed.demo import seed_demo
 
@@ -194,7 +194,7 @@ def test_real_acceptance_journey(tmp_path: Path) -> None:
     factory = create_session_factory(engine)
 
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     memory = open_memory(settings.checkpoints_path)
     generator = _generator(settings)
     summary: dict = {

@@ -55,7 +55,6 @@ def test_ensure_directories(tmp_path: Path) -> None:
     settings.ensure_directories()
 
     assert settings.storage_dir.is_dir()
-    assert settings.chroma_dir.is_dir()
     assert settings.originals_dir.is_dir()
 
 

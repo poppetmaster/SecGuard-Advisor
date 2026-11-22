@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 from tests.fixtures.corpus import create_case
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -17,7 +18,6 @@ from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import Message, MessageCitation, Run
-from secguard_advisor.retrieval.index import ChromaIndex
 
 pytestmark = pytest.mark.integration
 
@@ -46,7 +46,7 @@ def test_off_domain_question_abstains_without_citations(tmp_path: Path) -> None:
         )
     )
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         context = start_question_turn(
             factory,

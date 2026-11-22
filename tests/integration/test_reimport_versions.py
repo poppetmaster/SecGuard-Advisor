@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import select
+from tests.fixtures.qdrant import server_index
 
 from secguard_advisor.config import Settings
 from secguard_advisor.db.base import Base
@@ -13,7 +14,6 @@ from secguard_advisor.documents.embedding import OllamaEmbeddingClient
 from secguard_advisor.documents.service import ingest_document
 from secguard_advisor.documents.validation import validate_bytes
 from secguard_advisor.retrieval.collections import case_scope
-from secguard_advisor.retrieval.index import ChromaIndex
 
 pytestmark = pytest.mark.integration
 
@@ -37,7 +37,7 @@ def test_reimport_and_new_version_keep_history(tmp_path: Path) -> None:
         dimension=settings.embedding_dim,
         context_tokens=settings.embedding_context_tokens,
     )
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
 
     def ingest(content: bytes):
         return ingest_document(

@@ -66,8 +66,9 @@ def test_instance_namespace_contract() -> None:
         raise AssertionError(f"{invalid!r} debería rechazarse")
 
 
-def test_chroma_is_still_declared_in_this_cut() -> None:
+def test_qdrant_is_the_only_declared_document_backend() -> None:
     content = PYPROJECT.read_text(encoding="utf-8")
 
-    assert "langchain-chroma" in content
     assert "qdrant-client==1.20.0" in content
+    assert "langchain-chroma" not in content
+    assert "chromadb" not in content

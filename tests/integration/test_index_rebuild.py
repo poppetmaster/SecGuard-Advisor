@@ -1,9 +1,11 @@
-"""Pruebas de indexación y reconstrucción sobre Chroma."""
+"""Pruebas de indexación y generación sobre Qdrant."""
 
 from pathlib import Path
 
+from tests.fixtures.qdrant import embedded_index
+
 from secguard_advisor.retrieval.collections import case_scope
-from secguard_advisor.retrieval.index import ChromaIndex, IndexedChunk
+from secguard_advisor.retrieval.index import IndexedChunk
 
 
 def _chunk(
@@ -28,7 +30,7 @@ def _chunk(
 
 
 def test_upsert_query_and_rebuild(tmp_path: Path) -> None:
-    index = ChromaIndex(tmp_path / "chroma")
+    index = embedded_index(tmp_path)
     scope = case_scope("a" * 32)
     chunks = [
         _chunk("c1", "primero", [1.0, 0.0, 0.0]),
@@ -41,14 +43,16 @@ def test_upsert_query_and_rebuild(tmp_path: Path) -> None:
     hits = index.query(scope, "embeddinggemma", 3, [1.0, 0.0, 0.0], top_k=2)
     assert len(hits) == 2
     assert hits[0].chunk_id == "c1"
-    assert hits[0].text == "primero"
+    assert hits[0].score is not None
 
-    index.rebuild(scope, "embeddinggemma", 3, [chunks[1]])
+    _generation, collection = index.create_generation(scope, "embeddinggemma", 3)
+    index.upsert_to(collection, [chunks[1]])
+    index.activate_alias(scope, "embeddinggemma", 3, collection)
     assert index.count(scope, "embeddinggemma", 3) == 1
 
 
 def test_delete_version_removes_its_chunks(tmp_path: Path) -> None:
-    index = ChromaIndex(tmp_path / "chroma")
+    index = embedded_index(tmp_path)
     scope = case_scope("b" * 32)
     index.upsert(
         scope,

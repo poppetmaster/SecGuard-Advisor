@@ -34,33 +34,10 @@ def _model_slug(model: str, max_length: int) -> str:
     return (slug or "model")[:max_length].rstrip("-") or "model"
 
 
-def validate_collection_name(name: str) -> str:
-    if not 3 <= len(name) <= 63:
-        raise ValueError("El nombre de la colección debe tener entre 3 y 63 caracteres.")
-    if ".." in name or not _NAME.fullmatch(name):
-        raise ValueError("El nombre de la colección no es válido para Chroma.")
-    return name
-
-
-def collection_name(
-    scope: CollectionScope,
-    model: str,
-    dimension: int,
-) -> str:
-    if dimension <= 0:
-        raise ValueError("La dimensión debe ser positiva.")
-
-    if scope.kind == "public":
-        name = f"public__{_model_slug(model, 24)}__{dimension}"
-    else:
-        name = f"case__{scope.case_id}__{_model_slug(model, 19)}__{dimension}"
-    return validate_collection_name(name)
-
-
 # --- Namespace de Qdrant por instancia (004) ---------------------------------
 #
-# Los nombres de Chroma se conservan arriba hasta el corte de retiro. Las
-# funciones siguientes construyen los nombres físicos y alias de Qdrant.
+# Qdrant es el único backend documental; estas funciones construyen los nombres
+# físicos, alias y generaciones del namespace de instancia.
 
 _INSTANCE_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{2,39}$")
 _GENERATION = re.compile(r"^\d{8}T\d{12}Z$")
@@ -74,7 +51,7 @@ def validate_qdrant_name(name: str) -> str:
     """Los nombres de Qdrant admiten alfanuméricos, guion y guion bajo."""
     if not 3 <= len(name) <= 255:
         raise ValueError("El nombre de colección Qdrant debe tener entre 3 y 255 caracteres.")
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name):
+    if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9_-]*[A-Za-z0-9])?", name):
         raise ValueError("El nombre de colección Qdrant no es válido.")
     return name
 

@@ -8,13 +8,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from tests.fixtures.corpus import create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
+from tests.fixtures.qdrant import embedded_index
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import MessageCitation
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.web.app import create_app
 
 ORIGIN = {"Origin": "http://testserver"}
@@ -51,7 +51,7 @@ def _prepare(settings: Settings) -> None:
 def _seeded(tmp_path: Path, *, reviewer: str | None = None):
     settings = _settings(tmp_path, reviewer=reviewer)
     _prepare(settings)
-    index = ChromaIndex(tmp_path / "chroma")
+    index = embedded_index(tmp_path)
     engine = create_engine_for_url(settings.database_url)
     factory = create_session_factory(engine)
     with factory() as session:

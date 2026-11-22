@@ -342,8 +342,8 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Inferencia | Generador local Ollama o proveedor API explícito | Objetivo 005; Ollama en transición; sin selección |
 | Proveedor API | Claude Haiku / DeepSeek como candidatos | En evaluación 005; no seleccionado |
 | Estado y procedencia | SQLite | Permanente |
-| Índice vectorial | Qdrant local persistente, derivado | Objetivo 004; único backend documental; Chroma histórico fuera del producto |
-| Infraestructura vectorial | Qdrant en servidor local con Docker Compose; embebido para pruebas o alternativa documentada | Objetivo 004; no implementado |
+| Índice vectorial | Qdrant local persistente, derivado | Backend sustituido en 004 (aceptación pendiente); único backend documental; Chroma histórico fuera del producto |
+| Infraestructura vectorial | Qdrant en servidor local con Docker Compose; embebido para pruebas o alternativa documentada | Backend sustituido en 004 (aceptación pendiente); servidor local con Docker Compose; embebido para pruebas |
 | Transición de índice | Reconstrucción limpia; sin exportación de vectores, escritura dual, selección permanente ni retorno a Chroma | Confirmado por el responsable; Chroma no se borra en 004 |
 | Trazas y evaluación | LangSmith | Fijado |
 | Acción externa | Telegram para evaluación; correo y mesa de ayuda posteriores | Objetivo 006; no implementado |
@@ -362,7 +362,7 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Modelo de comparación | `gemma4:latest`, 7.5B Q4_K_M | Instalado; no es 12B |
 | Modelo de embeddings | `embeddinggemma:latest`, EmbeddingGemma 1, 768 dims, 2048 tokens | Instalado; v2 no está instalada; sin cambio en 004 |
 | Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama en transición |
-| Índice objetivo | Qdrant local persistente (004) | Chroma actual hasta 004; después fuera del producto, sin borrar archivos; servidor local con Docker Compose |
+| Índice | Qdrant local persistente (004) | Backend sustituido en 004 (aceptación pendiente); Chroma histórico, archivos conservados; servidor local con Docker Compose |
 | Transición de índice | Reconstrucción limpia sin exportación, escritura dual, comparación obligatoria ni retorno | Confirmado; recuperación ante fallos de Qdrant sí se conserva |
 | Acción externa | Telegram para evaluación (006) | No implementada; correo y mesa de ayuda posteriores |
 | Presupuesto API | No aprobado | Sin llamadas pagadas ni cuentas creadas |

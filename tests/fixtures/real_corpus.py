@@ -10,7 +10,7 @@ from secguard_advisor.config import Settings
 from secguard_advisor.corpus.ingest import ingest_public_corpus
 from secguard_advisor.db.models import Document, DocumentChunk, DocumentVersion
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
-from secguard_advisor.retrieval.index import ChromaIndex
+from tests.fixtures.qdrant import server_index
 
 
 def require_corpus(settings: Settings, source_id: str = "csf2") -> None:
@@ -37,7 +37,7 @@ def ingest_one_public_source(
     """Ingesta una fuente oficial verificada con embeddings reales."""
     require_corpus(settings, source_id)
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         outcomes = ingest_public_corpus(factory, settings, embedder=embedder, index=index)
     finally:

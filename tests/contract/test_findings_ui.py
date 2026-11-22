@@ -9,12 +9,12 @@ from fastapi.testclient import TestClient
 from tests.fixtures.corpus import create_case
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 from tests.fixtures.findings import seed_findings
+from tests.fixtures.qdrant import server_index
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import AnswerPayload, ToolDecision
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.web.app import create_app
 
 ORIGIN = {"Origin": "http://testserver"}
@@ -61,7 +61,7 @@ def context(tmp_path: Path):
     with factory() as session:
         case_id = create_case(session, "Caso de hallazgos")
         session.commit()
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     yield settings, factory, case_id, index
     engine.dispose()
 

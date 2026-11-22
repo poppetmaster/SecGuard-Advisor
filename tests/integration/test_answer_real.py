@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 from tests.fixtures.corpus import create_case
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import ingest_one_public_source, real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -24,7 +25,6 @@ from secguard_advisor.db.models import (
     MessageCitation,
 )
 from secguard_advisor.retrieval.citations import normalize_for_match
-from secguard_advisor.retrieval.index import ChromaIndex
 
 pytestmark = pytest.mark.integration
 
@@ -55,7 +55,7 @@ def test_real_answer_cites_a_locatable_fragment(tmp_path: Path) -> None:
         )
     )
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         context = start_question_turn(
             factory,

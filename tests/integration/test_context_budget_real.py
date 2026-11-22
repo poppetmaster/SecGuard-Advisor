@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from tests.fixtures.corpus import create_case
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -23,7 +24,6 @@ from secguard_advisor.conversation.tokenizer import load_prompt_counter
 from secguard_advisor.corpus.ingest import ingest_public_corpus
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.retrieval.search import search_documents
 
 pytestmark = pytest.mark.integration
@@ -51,7 +51,7 @@ def _ingest_csf2(settings: Settings, factory) -> None:
         json.dumps({"schema_version": 1, "sources": [entry]}), encoding="utf-8"
     )
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         outcomes = ingest_public_corpus(factory, settings, embedder=embedder, index=index)
     finally:
@@ -82,7 +82,7 @@ def test_estimate_is_conservative_with_the_real_generator(tmp_path: Path) -> Non
     _ingest_csf2(settings, factory)
 
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         with factory() as session:
             retrieval = search_documents(

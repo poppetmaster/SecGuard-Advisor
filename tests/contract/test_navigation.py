@@ -9,11 +9,11 @@ import pytest
 from fastapi.testclient import TestClient
 from tests.fixtures.corpus import create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder
+from tests.fixtures.qdrant import embedded_index
 
 from secguard_advisor.config import Settings
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.web.app import create_app
 
 ORIGIN = {"Origin": "http://testserver"}
@@ -36,7 +36,7 @@ def context(tmp_path: Path):
     with factory() as session:
         case_id = create_case(session, "Caso de navegación")
         session.commit()
-    index = ChromaIndex(tmp_path / "chroma")
+    index = embedded_index(tmp_path)
     document = seed_document(
         factory,
         texts=["Fragmento de prueba para la navegación."],

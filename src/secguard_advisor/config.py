@@ -137,10 +137,6 @@ class Settings(BaseSettings):
         return self.storage_dir / "checkpoints.sqlite"
 
     @property
-    def chroma_dir(self) -> Path:
-        return self.storage_dir / "chroma"
-
-    @property
     def originals_dir(self) -> Path:
         return self.storage_dir / "originals"
 
@@ -150,7 +146,7 @@ class Settings(BaseSettings):
 
     def ensure_directories(self) -> None:
         """Crea los directorios locales de almacenamiento."""
-        for path in (self.storage_dir, self.chroma_dir, self.originals_dir):
+        for path in (self.storage_dir, self.originals_dir):
             path.mkdir(parents=True, exist_ok=True)
 
 

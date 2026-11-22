@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from secguard_advisor.config import Settings
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
-from secguard_advisor.retrieval.index import ChromaIndex
+from secguard_advisor.retrieval.index import QdrantIndex
 from tests.fixtures.corpus import SeededDocument, create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder
+from tests.fixtures.qdrant import embedded_index
 
 CASE_TEXT = "El control EV.CU aplica cifrado en reposo a los datos del caso y registra cada acceso."
 PUBLIC_TEXT = (
@@ -28,7 +29,7 @@ class ConversationEnv:
     case_id: str
     case_document: SeededDocument
     public_document: SeededDocument
-    index: ChromaIndex
+    index: QdrantIndex
 
 
 def build_env(
@@ -52,7 +53,7 @@ def build_env(
     with factory() as session:
         case_id = create_case(session, "Caso de conversación")
         session.commit()
-    index = ChromaIndex(settings.chroma_dir)
+    index = embedded_index(tmp_path)
     embedder = FakeEmbedder()
     if with_documents:
         case_document = seed_document(

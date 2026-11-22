@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from tests.fixtures.conversation import CASE_TEXT, build_env
 from tests.fixtures.corpus import create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
+from tests.fixtures.qdrant import server_index
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -16,7 +17,6 @@ from secguard_advisor.conversation.memory import open_memory
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import Conversation, Message, Run
-from secguard_advisor.retrieval.index import ChromaIndex
 
 pytestmark = pytest.mark.integration
 
@@ -82,7 +82,7 @@ def test_restart_keeps_history_and_context(tmp_path: Path) -> None:
         new_engine = create_engine_for_url(env.settings.database_url)
         new_factory = create_session_factory(new_engine)
         new_store = open_memory(env.settings.checkpoints_path)
-        new_index = ChromaIndex(env.settings.chroma_dir)
+        new_index = server_index(env.settings)
         try:
             generator = ScriptedGenerator(
                 [_payload(public, "seis funciones centrales", "Acabamos de profundizar GOVERN.")]

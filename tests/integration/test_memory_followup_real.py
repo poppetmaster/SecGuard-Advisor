@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 from tests.fixtures.corpus import create_case
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -27,7 +28,6 @@ from secguard_advisor.db.models import (
     MessageCitation,
     Run,
 )
-from secguard_advisor.retrieval.index import ChromaIndex
 
 pytestmark = pytest.mark.integration
 
@@ -56,7 +56,7 @@ def _ingest_csf2(settings: Settings, factory) -> None:
         json.dumps({"schema_version": 1, "sources": [entry]}), encoding="utf-8"
     )
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         outcomes = ingest_public_corpus(factory, settings, embedder=embedder, index=index)
     finally:
@@ -118,7 +118,7 @@ def test_three_questions_keep_context_with_real_generation(tmp_path: Path) -> No
 
     store = open_memory(settings.checkpoints_path)
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         first_context, first = _ask(
             settings, factory, index, store, case_id, embedder, _generator(settings), QUESTION_1
@@ -157,7 +157,7 @@ def test_three_questions_keep_context_with_real_generation(tmp_path: Path) -> No
         engine = create_engine_for_url(settings.database_url)
         factory = create_session_factory(engine)
         store = open_memory(settings.checkpoints_path)
-        index = ChromaIndex(settings.chroma_dir)
+        index = server_index(settings)
 
         third_context, third = _ask(
             settings, factory, index, store, case_id, embedder, _generator(settings), QUESTION_3

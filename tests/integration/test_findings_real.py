@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -18,7 +19,6 @@ from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import Asset, Finding, Message, Run, RunStep, RunToolCall
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.seed.demo import seed_demo
 
 pytestmark = pytest.mark.integration
@@ -60,7 +60,7 @@ def test_model_requests_the_tool_and_counts_match_sqlite(tmp_path: Path) -> None
 
     store = open_memory(settings.checkpoints_path)
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         generator = OllamaGenerator(
             GenerationConfig(

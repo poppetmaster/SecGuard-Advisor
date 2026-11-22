@@ -4,7 +4,7 @@ Dobles usados:
 - `FakeEmbedder`: vectores deterministas; no llama a Ollama.
 - `FakeTokenCounter`: conteo aproximado por bytes; no carga el tokenizador real.
 - `ScriptedGenerator`: respuestas y decisiones guionizadas; no llama al modelo.
-- `ChromaIndex`: índice local temporal con los vectores del doble.
+- `QdrantIndex`: índice embebido temporal con los vectores del doble.
 """
 
 from __future__ import annotations

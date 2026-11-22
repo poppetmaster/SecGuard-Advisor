@@ -6,12 +6,13 @@ import pytest
 from sqlalchemy import select
 from tests.fixtures.corpus import create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder
+from tests.fixtures.qdrant import embedded_index
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import DocumentChunk, DocumentVersion
-from secguard_advisor.retrieval.index import ChromaIndex, QueryHit
+from secguard_advisor.retrieval.index import QueryHit
 
 
 def _hit(chunk_id: str, text: str, distance: float, **metadata) -> QueryHit:
@@ -172,7 +173,7 @@ def test_real_chroma_keeps_case_isolation_and_shared_public(tmp_path: Path, cont
 
     factory, case_a, case_b = context
     embedder = FakeEmbedder()
-    index = ChromaIndex(tmp_path / "chroma")
+    index = embedded_index(tmp_path)
     public = seed_document(
         factory,
         texts=["guia publica de riesgos"],

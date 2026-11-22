@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from tests.fixtures.corpus import create_case
 from tests.fixtures.fakes import ScriptedGenerator
+from tests.fixtures.qdrant import server_index
 from tests.fixtures.real_corpus import ingest_one_public_source, real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
@@ -17,7 +18,6 @@ from secguard_advisor.conversation.llm import AnswerPayload, Claim
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import Case, MessageCitation, new_id
-from secguard_advisor.retrieval.index import ChromaIndex
 from secguard_advisor.retrieval.search import search_documents
 from secguard_advisor.web.app import create_app
 
@@ -33,7 +33,7 @@ def _app(settings: Settings, payload: AnswerPayload):
         settings,
         ollama_probe=lambda: True,
         embedder_factory=lambda: real_embedder(settings),
-        index_factory=lambda: ChromaIndex(settings.chroma_dir),
+        index_factory=lambda: server_index(settings),
         llm_factory=lambda: ScriptedGenerator(payloads=[payload]),
     )
 
@@ -55,7 +55,7 @@ def test_review_flow_keeps_controls_separated(tmp_path: Path) -> None:
 
     ingest_one_public_source(settings, factory)
     embedder = real_embedder(settings)
-    index = ChromaIndex(settings.chroma_dir)
+    index = server_index(settings)
     try:
         with factory() as session:
             retrieval = search_documents(
