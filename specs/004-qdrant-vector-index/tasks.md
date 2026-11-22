@@ -51,7 +51,7 @@ español; los identificadores, rutas y nombres de código se conservan en inglé
 **Objetivo**: Qdrant local, configuración de instancia, namespace y lock listos para integrar, sin
 cambiar todavía el backend de la aplicación.
 
-- [ ] T001 Añadir `qdrant-client==1.20.0` a `pyproject.toml` y actualizar `uv.lock`; conservar las dependencias de Chroma hasta T072.
+- [x] T001 Añadir `qdrant-client==1.20.0` a `pyproject.toml` y actualizar `uv.lock`; conservar las dependencias de Chroma hasta T072.
   - Story: Setup
   - Dep: none
   - Check: `uv lock --check` y `uv sync --locked` resuelven; `grep qdrant-client pyproject.toml` devuelve la versión fijada.
@@ -63,38 +63,38 @@ cambiar todavía el backend de la aplicación.
   - Check: `docker compose -f compose.qdrant.yml config` valida; imagen, puertos y volumen coinciden con el plan.
   - Evidence: compose y salida de `config`.
 
-- [ ] T003 [P] Añadir `SECGUARD_INSTANCE_ID`, `SECGUARD_QDRANT_URL` y `SECGUARD_QDRANT_TIMEOUT_SECONDS` a `src/secguard_advisor/config.py`; validar el slug de instancia; conservar `chroma_dir` de forma temporal.
+- [x] T003 [P] Añadir `SECGUARD_INSTANCE_ID`, `SECGUARD_QDRANT_URL` y `SECGUARD_QDRANT_TIMEOUT_SECONDS` a `src/secguard_advisor/config.py`; validar el slug de instancia; conservar `chroma_dir` de forma temporal.
   - Story: Setup
   - Dep: none
   - Check: las pruebas de configuración cubren ID ausente/inválido y URL válida; el resto de la suite sigue pasando.
   - Evidence: diff de configuración y salida de pruebas unitarias.
 
-- [ ] T004 Actualizar `.env.example` con instancia, URL de Qdrant, timeout y la nota de que los IDs son estables y únicos por almacenamiento.
+- [x] T004 Actualizar `.env.example` con instancia, URL de Qdrant, timeout y la nota de que los IDs son estables y únicos por almacenamiento.
   - Story: Setup
   - Dep: T003
   - Check: las variables están presentes, sin credenciales ni rutas privadas.
   - Evidence: diff de `.env.example`.
 
-- [ ] T005 [P] Añadir `qdrant-up`, `qdrant-down` y `qdrant-health` al `Makefile`, cada uno con comentario `##` para que aparezca en `make help`; no añadir `qdrant-rebuild` todavía.
+- [x] T005 [P] Añadir `qdrant-up`, `qdrant-down` y `qdrant-health` al `Makefile`, cada uno con comentario `##` para que aparezca en `make help`; no añadir `qdrant-rebuild` todavía.
   - Story: Setup
   - Dep: T002, T003
   - Check: `make -n qdrant-up qdrant-down qdrant-health` muestra comandos reproducibles; `make help` lista los tres.
   - Evidence: diff del `Makefile` y salida de `make help`.
 
-- [ ] T006 [P] Añadir pruebas unitarias en rojo de instancia en `tests/unit/test_qdrant_instance.py`: validación de slug, marcador y fingerprint por ruta canónica, composición de namespace, reglas de registro, lock de archivo, registro de propietario (operación e intento) y sondeo de solo lectura (`inspect`) que no crea ni modifica archivos; un registro residual con el lock libre no demuestra actividad.
+- [x] T006 [P] Añadir pruebas unitarias en rojo de instancia en `tests/unit/test_qdrant_instance.py`: validación de slug, marcador y fingerprint por ruta canónica, composición de namespace, reglas de registro, lock de archivo, registro de propietario (operación e intento) y sondeo de solo lectura (`inspect`) que no crea ni modifica archivos; un registro residual con el lock libre no demuestra actividad.
   - Story: Setup
   - Dep: T003
   - Verifies: T007
   - Check: fallan porque `retrieval/instance.py` no existe todavía.
   - Evidence: salida RED.
 
-- [ ] T007 Implementar `src/secguard_advisor/retrieval/instance.py` como único responsable de la primitiva: validación de slug, composición de namespace, marcador con fingerprint (SHA-256 de la ruta canónica del almacenamiento combinada con `instance_id`, sin hashear contenido), reglas de registro sin adopción silenciosa, lock de archivo exclusivo con registro de propietario (operación e intento) escrito solo mientras se posee el lock, y sondeo de solo lectura (`inspect`) que no crea, trunca ni modifica archivos.
+- [x] T007 Implementar `src/secguard_advisor/retrieval/instance.py` como único responsable de la primitiva: validación de slug, composición de namespace, marcador con fingerprint (SHA-256 de la ruta canónica del almacenamiento combinada con `instance_id`, sin hashear contenido), reglas de registro sin adopción silenciosa, lock de archivo exclusivo con registro de propietario (operación e intento) escrito solo mientras se posee el lock, y sondeo de solo lectura (`inspect`) que no crea, trunca ni modifica archivos.
   - Story: Setup
   - Dep: T006
   - Check: T006 pasa; el fingerprint no cambia al escribir archivos ni el marcador; el registro de propietario solo se considera válido mientras el lock está tomado por un proceso vivo; no se crea tabla ni migración.
   - Evidence: módulo, salida GREEN, ausencia de diff en `alembic/`.
 
-- [ ] T008 Pruebas de contrato de despliegue en `tests/contract/test_qdrant_deployment.py`: compose fijado, puertos loopback, volumen persistente, `.env.example`, namespace de instancia y presencia de los targets en `make help`.
+- [x] T008 Pruebas de contrato de despliegue en `tests/contract/test_qdrant_deployment.py`: compose fijado, puertos loopback, volumen persistente, `.env.example`, namespace de instancia y presencia de los targets en `make help`.
   - Story: Setup
   - Dep: T002, T003, T004, T005
   - Verifies: T002, T003, T004, T005

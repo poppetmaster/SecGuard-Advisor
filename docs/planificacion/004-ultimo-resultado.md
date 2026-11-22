@@ -1,98 +1,88 @@
-# 004 — Último resultado
+# 004 — Último resultado (Corte 1)
 
-**Fecha de ejecución**: 2026-11-22 09:18–09:22 (America/Bogota, `-05`)
-**Funcionalidad**: `004-qdrant-vector-index`
-**Commit base**: `edebd6a` (rama `002-qualys-findings-import`); cambios documentales sin commit.
-**Informe completo del análisis**:
-[`specs/004-qdrant-vector-index/analyses/2026-11-22-0918-analyze.md`](../../specs/004-qdrant-vector-index/analyses/2026-11-22-0918-analyze.md)
+**Fecha**: 2026-11-22 09:30–10:05 (America/Bogota, `-05`)
+**Rama**: `004-qdrant-vector-index`
+**Alcance ejecutado**: Corte 1, T001–T009. No se inició T010 ni ninguna tarea posterior.
+**Backend documental**: Chroma sigue siendo el backend activo. Qdrant queda preparado como
+infraestructura local; no se sustituyó el índice ni se modificó SQLite, Chroma, casos, documentos,
+conversaciones o Qualys.
 
-> **Estado vigente.** Los informes `2026-11-22-0850-analyze.md`, `2026-11-22-0900-analyze.md` y
-> `2026-11-22-0912-analyze.md` son históricos y se conservan sin cambios; sus conteos y hallazgos no
-> deben usarse como estado actual.
+## Commits de esta pasada
 
-## Objetivo de esta pasada
-
-Cerrar B3 (errores de `--status` ante configuración de instancia inválida y lock ilegible),
-sincronizar los documentos afectados y ejecutar `/speckit.analyze` sobre el estado corregido. Sin
-implementación, dependencias nuevas, servicios, migraciones, reconstrucciones, pruebas funcionales ni
-commits.
-
-## Corrección aplicada
-
-| Caso | Contrato resultante |
+| Commit | Contenido |
 |---|---|
-| Configuración de instancia ausente o inválida | Salida 2, mensaje comprensible en `stderr`, JSON con `state: null`, `last_terminal: null` y `error.code = instance_configuration_invalid`; no devuelve `not_started` ni afirma que no hay operación activa; no crea archivos ni repara información. |
-| Archivo de lock existente pero ilegible | Salida 2, mensaje en `stderr`, JSON con `state: null`, `last_terminal: null` y `error.code = lock_unreadable`; cubre también lock tomado con registro de propietario ausente o corrupto; sin escrituras ni reparación. |
-| Reporte terminal ilegible (B1) | Se conserva `status_report_unreadable` con el mismo formato. |
+| `73f304d` | `docs: reconcile 004 planning and record analysis reports` (planificación revisada y análisis) |
+| `3cd264a` | `feat(deps): pin qdrant-client 1.20.0` |
+| `62cd7c0` | `feat(config): add instance and qdrant settings` |
+| `3febecf` | `feat(retrieval): add instance marker namespace and lock` |
+| `8356acc` | `feat(qdrant): add local compose and maintenance targets` |
 
-Archivos sincronizados: `spec.md` FR-046, `plan.md` §Rebuild workflow, `data-model.md` §Consulta de
-estado, `contracts/rebuild.md` §Status query, `quickstart.md` §4.2, `tasks.md` T023/T024/T026/T027/T033
-y `checklists/requirements.md`. El resolvedor único sigue en `retrieval/status.py`; T024 expone los
-errores tipados, T026 los prueba por la CLI y T027 los implementa y comprueba. No se añadieron tareas ni
-se modificó el alcance.
+Sin push ni publicación.
 
-Se conservan A1–A3, B1, B2, K1, H1–H4, M1–M10 y L1–L5, y las decisiones ya registradas: Qdrant único
-backend, SQLite fuente de verdad, EmbeddingGemma sin cambios, sin migración de vectores, sin escritura
-dual, sin fallback, Chroma intacto, sin proveedores API, P1–P4 ni acciones externas. La autorización del
-responsable sigue registrada.
+## Estado de T001–T009
 
-## Conteos vigentes
+| Tarea | Estado | Evidencia |
+|---|---|---|
+| T001 dependencia fijada | **Completada** | `qdrant-client==1.20.0`; `uv lock --check` resuelve 139 paquetes; `uv sync --locked` instala; Chroma conservado. |
+| T002 compose | **Abierta (implementada, verificación bloqueada)** | `compose.qdrant.yml` creado y YAML válido; falta `docker compose config` porque Docker no está instalado. |
+| T003 configuración | **Completada** | Campos y validación en `config.py`; 10 pruebas de configuración en verde. |
+| T004 `.env.example` | **Completada** | Variables documentadas, sin credenciales ni rutas privadas. |
+| T005 targets Makefile | **Completada** | `make -n` reproducible y `make help` lista los tres targets. |
+| T006 pruebas de instancia (RED) | **Completada** | RED observado: `ImportError: cannot import name 'instance'`. |
+| T007 instancia, namespace, marcador y lock | **Completada** | 25 pruebas de instancia en verde; fingerprint estable ante cambios de contenido; sondeo sin escrituras. |
+| T008 contrato de despliegue | **Completada** | 5 pruebas de contrato en verde. |
+| T009 arm64 y `/readyz` | **Bloqueada** | Docker ausente: `docker manifest inspect` no disponible, `make qdrant-up` falla y `/readyz` no responde. Evidencia parcial: la etiqueta `v1.20.0` existe y su índice incluye `linux/arm64`. |
 
-| Elemento | Valor |
-|---|---|
-| Requisitos funcionales | 59 (FR-001…FR-059) |
-| Criterios de éxito | 24 (SC-001…SC-024) |
-| Historias | 7 (US1…US7) |
-| Tareas | 82 (T001…T082) |
-| Cortes | 6: 9 / 33 / 11 / 11 / 5 / 13 tareas |
-| Tareas ejecutadas o completadas | 0 |
+Resumen: **7 completadas, 1 implementada sin verificación (T002), 1 bloqueada (T009)**.
 
-## Comprobaciones realizadas
+## Archivos modificados o creados
 
-| Comprobación | Resultado |
-|---|---|
-| Prerrequisitos de Spec Kit | `FEATURE_DIR` resuelto con todos los documentos |
-| IDs únicos y contiguos | 82, T001–T082 sin huecos |
-| Referencias `Dep`/`Verifies` | 0 inexistentes |
-| Dependencias hacia adelante / ciclos / hacia cortes posteriores | 0 / 0 / 0 |
-| Tareas con `Check` y `Evidence` | 82/82 |
-| Tareas completadas | 0 |
-| Cobertura FR | 59/59 |
-| Cobertura SC | 24/24 |
-| Resolvedor único antes de sus consumidores | T023/T024 antes de T025/T027/T033 |
-| Códigos de error sincronizados | `instance_configuration_invalid` y `lock_unreadable` en spec, plan, modelo, contrato, quickstart, tareas y checklist |
-| Cambios en código, pruebas o dependencias | 0 |
-| `/speckit.analyze` | Ejecutado en solo lectura; informe guardado |
+- `pyproject.toml`, `uv.lock`: dependencia fijada.
+- `src/secguard_advisor/config.py`: instancia, URL y timeout de Qdrant; `chroma_dir` conservado.
+- `.env.example`: variables de Qdrant documentadas.
+- `Makefile`: `qdrant-up`, `qdrant-down`, `qdrant-health` con `##`.
+- `compose.qdrant.yml`: imagen fijada, loopback, volumen y reinicio.
+- `src/secguard_advisor/retrieval/instance.py`: slug, namespace, marcador/fingerprint, registro,
+  lock con propietario y sondeo de solo lectura.
+- `tests/unit/test_qdrant_instance.py`, `tests/unit/test_config.py`,
+  `tests/contract/test_qdrant_deployment.py`.
+- `AGENTS.md`, `specs/004-qdrant-vector-index/tasks.md`, esta página, el handoff y
+  `docs/evidencia/004-corte-1/README.md`.
 
-## Hallazgos y observaciones pendientes
+## Comandos y resultados observados
 
-**0 defectos o contradicciones abiertas.**
+```text
+uv lock --check                      → Resolved 139 packages in 6ms
+uv sync --locked                     → qdrant-client==1.20.0 instalado
+uv run pytest tests/unit/test_qdrant_instance.py tests/unit/test_config.py → 35 passed
+uv run pytest tests/contract/test_qdrant_deployment.py → 5 passed
+make -n qdrant-up qdrant-down qdrant-health → comandos reproducibles
+make -s help | grep qdrant → tres targets listados
+compose YAML parse (PyYAML) → imagen, puertos, volumen y reinicio correctos
+make check                           → 452 passed, 35 deselected
+uv run pre-commit run --all-files    → todas las comprobaciones Passed
+docker manifest inspect qdrant/qdrant:v1.20.0 → command not found
+make qdrant-up                       → docker: No such file or directory
+curl http://127.0.0.1:6333/readyz    → connection refused (exit 7)
+Registro público de la imagen        → tag v1.20.0; plataformas linux/amd64 y linux/arm64
+```
 
-**9 observaciones documentales, ninguna requiere corrección:**
+Línea base previa a los cambios: `make check` = `417 passed, 35 deselected`.
 
-1. No constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal; la ratificación del responsable
-   está registrada.
-2. `tasks.md`, `handoff-004.md`, `004-ultimo-resultado.md` y `analyses/` siguen sin seguimiento en Git.
-3. El código 2 de `argparse` se distingue del error de estado por el mensaje y la ausencia de JSON.
-4. Las secciones históricas del handoff conservan numeraciones anteriores; la vigente indica el mapa
-   actual.
-5. Snapshots y backups de Qdrant fuera de alcance; recuperación desde SQLite.
-6. Modo embebido limitado a pruebas o alternativa documentada.
-7. Verificación real en navegador manual con Playwright MCP.
-8. Windows fuera del objetivo del lock (`flock`).
-9. `spec.md` en borrador planificable; no declara implementación ni aceptación.
+## Limitaciones y bloqueo real
 
-## Pruebas funcionales previstas, no ejecutadas
+- Docker no está instalado en el equipo. Por eso no se ejecutaron `docker compose config`,
+  `docker manifest inspect`, `make qdrant-up`, `/readyz` ni la detención controlada del servicio.
+- No se levantó ningún servicio; no hubo nada que detener y no se usó `down -v`.
+- No se ejecutaron migraciones ni reconstrucciones; no se tocó almacenamiento del usuario.
+- Las pruebas de instancia y lock usan directorios temporales.
+- No se sustituyó la versión fijada para evitar el bloqueo.
 
-No se ejecutaron pruebas unitarias, de contrato, integración ni aceptación; no se levantaron Qdrant ni
-Docker Compose; no se comprobó `/readyz`, persistencia, reinicio, `--status` ni sus tres errores; no se
-ejecutaron migraciones, reconstrucciones ni calibración; no se verificaron arm64, rendimiento,
-concurrencia real, SIGKILL ni liberación del lock. Son limitaciones de ejecución, no resultados.
+## Siguiente paso
 
-## Dictamen y siguiente paso
+1. En un equipo con Docker: ejecutar `docker compose -f compose.qdrant.yml config` (T002) y la
+   verificación de T009 (`docker manifest inspect`, `make qdrant-up`, `/readyz`, `make qdrant-down`
+   conservando el volumen). Marcar T002 y T009 solo con esa evidencia.
+2. Con el Corte 1 cerrado, iniciar el Corte 2 (T010–T042) en una tarea posterior. No se inició aquí.
 
-Planificación consistente y ejecutable: 82 tareas, cobertura 59/59 FR y 24/24 SC, seis cortes
-cerrables, B1–B3 cerrados y sin defectos documentales abiertos.
-
-**Siguiente paso recomendado**: iniciar el Corte 1 (T001–T009) con autorización explícita. No se
-ejecutó `/speckit.implement` ni se creó commit.
+No se ejecutó `/speckit.implement` ni se declaró Qdrant como backend implementado o aceptado.

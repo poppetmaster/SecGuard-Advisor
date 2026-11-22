@@ -93,11 +93,16 @@ make dev                # servidor con casos, documentos y consulta, un worker
 make corpus             # descarga y verifica el corpus oficial
 make corpus-ingest      # ingesta el corpus verificado
 make seed-demo          # dataset sintético; requiere el esquema migrado
+make qdrant-up          # infraestructura local de 004; no cambia el backend
+make qdrant-down        # detiene Qdrant conservando su volumen
+make qdrant-health      # /readyz y versión del servidor Qdrant
 uv run alembic upgrade head  # crea/actualiza el esquema
 SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declarada
 ```
 
 `make corpus` y `make corpus-ingest` están implementados y son las vías autorizadas para el corpus.
+`make qdrant-*` prepara la infraestructura local de 004 (corte 1); Chroma sigue siendo el backend
+ documental y Qdrant no se presenta como implementado.
 El target `demo` informa «no implementado» hasta el recorrido de aceptación. `seed-demo` requiere el
 esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicación no ejecuta
 `create_all` al arrancar.

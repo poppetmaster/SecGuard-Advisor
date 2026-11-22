@@ -446,3 +446,74 @@ ID/namespace explícitos, `/readyz` en arm64, sin modificar SQLite ni borrar Chr
 
 No constan acuerdos de Cristian Quebrada ni Ruben Dario Sabogal; no se inventan. La ratificación del
 responsable está registrada.
+
+---
+
+## 15. Corte 1 ejecutado — estado vigente (2026-11-22 10:05)
+
+**Esta sección es la vigente.** Las secciones §10–§14 son históricas y conservan numeraciones
+anteriores; el mapa actual es `specs/004-qdrant-vector-index/tasks.md`.
+
+### Rama y commits
+
+- Rama: `004-qdrant-vector-index` (creada desde `002-qualys-findings-import` conservando los cambios
+  documentales).
+- `73f304d` docs: reconcile 004 planning and record analysis reports
+- `3cd264a` feat(deps): pin qdrant-client 1.20.0
+- `62cd7c0` feat(config): add instance and qdrant settings
+- `3febecf` feat(retrieval): add instance marker namespace and lock
+- `8356acc` feat(qdrant): add local compose and maintenance targets
+- Sin push ni publicación.
+
+### Estado del Corte 1 (T001–T009)
+
+- **Completadas (7)**: T001, T003, T004, T005, T006, T007, T008.
+- **T002**: `compose.qdrant.yml` creado y YAML válido, pero falta `docker compose config`; Docker no
+  está instalado. Permanece abierta.
+- **T009**: bloqueada. Faltan `docker manifest inspect qdrant/qdrant:v1.20.0`, `make qdrant-up`,
+  `/readyz` y la detención controlada. Evidencia parcial: la etiqueta `v1.20.0` existe y su índice
+  incluye `linux/arm64`.
+
+### Qué quedó implementado
+
+- `qdrant-client==1.20.0` en `pyproject.toml` y `uv.lock`; Chroma conservado.
+- `compose.qdrant.yml` con imagen fijada, loopback 6333/6334, volumen `./storage/qdrant` y reinicio.
+- `config.py` con `SECGUARD_INSTANCE_ID`, `SECGUARD_QDRANT_URL` y timeout; `.env.example` actualizado.
+- `Makefile` con `qdrant-up`, `qdrant-down`, `qdrant-health`.
+- `retrieval/instance.py`: slug, namespace, marcador con fingerprint por ruta canónica, reglas de
+  registro, lock con propietario y sondeo de solo lectura.
+- Pruebas: 35 unitarias (instancia y configuración) y 5 de contrato de despliegue.
+- `make check`: 452 passed; pre-commit: todo en verde.
+
+### Bloqueo exacto para cerrar el corte
+
+En un equipo con Docker:
+
+```bash
+docker compose -f compose.qdrant.yml config
+docker manifest inspect qdrant/qdrant:v1.20.0
+make qdrant-up
+curl -fsS http://127.0.0.1:6333/readyz
+make qdrant-down   # conserva el volumen; nunca down -v
+```
+
+Si `/readyz` responde 200 y el manifiesto incluye arm64, marcar T002 y T009 con esa evidencia.
+
+### Datos y servicios
+
+No se levantaron servicios, no se ejecutaron migraciones ni reconstrucciones y no se modificó
+`storage/`, SQLite, Chroma ni datos del usuario.
+
+### Siguiente paso
+
+1. Cerrar T002 y T009 con Docker.
+2. Iniciar el Corte 2 (T010–T042) en una tarea posterior, sin reutilizar el estado de este corte como
+   aceptación de Qdrant.
+
+### Evidencia
+
+- `docs/evidencia/004-corte-1/README.md`
+- `docs/planificacion/004-ultimo-resultado.md`
+
+No constan acuerdos de Cristian Quebrada ni Ruben Dario Sabogal; no se inventan. La ratificación del
+responsable está registrada. No se creó commit remoto ni se publicó nada.
