@@ -1,0 +1,72 @@
+{
+  "mode": "evaluation",
+  "backend": "qdrant",
+  "embedding_model": "embeddinggemma",
+  "embedding_dim": 768,
+  "threshold_applied": 0.4956,
+  "criteria": {
+    "retrieval": "el fragmento esperado debe recuperarse con el umbral congelado",
+    "isolation": "un caso no debe recuperar documentos privados del otro",
+    "versions": "la versión superada no reaparece; su cita histórica resuelve desde SQLite",
+    "qualys": "ningún registro Qualys se indexa como documento, punto o cita"
+  },
+  "results": [
+    {
+      "scenario": "public-0",
+      "query": "¿Cómo se almacenan y rotan las contraseñas?",
+      "hit": true,
+      "score": 0.6767
+    },
+    {
+      "scenario": "public-1",
+      "query": "¿Cuánto tiempo se conservan los eventos de auditoría?",
+      "hit": true,
+      "score": 0.6724
+    },
+    {
+      "scenario": "case-a",
+      "query": "¿Cómo se respaldan los datos del caso?",
+      "hit": false,
+      "score": 0.4359
+    },
+    {
+      "scenario": "case-b",
+      "query": "¿Qué ocurre ante una caída prolongada?",
+      "hit": true,
+      "score": 0.503
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "mejores playas para vacacionar",
+      "hit": false,
+      "score": 0.0519
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "resultados del torneo de fútbol",
+      "hit": false,
+      "score": 0.0844
+    }
+  ],
+  "isolation": {
+    "case_a_documents": 0,
+    "case_b_documents": 1,
+    "violations": 0,
+    "crossed": false
+  },
+  "versions": {
+    "current_only": true,
+    "superseded_leaked": false,
+    "historical_citation": "valid"
+  },
+  "qualys": {
+    "documents": 0,
+    "points": 0,
+    "citations": 0
+  },
+  "metrics": {
+    "retrieval_ok": 3,
+    "retrieval_total": 4,
+    "non_relevant_accepted": 0
+  }
+}

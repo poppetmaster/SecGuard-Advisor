@@ -795,3 +795,21 @@ Siguiente paso: Corte 5 (T065–T069). No se inició T065.
 - Sin cambios de interfaz: no se repitió Playwright.
 
 Siguiente paso: Corte 6 (T070–T082). No se inició T070 ni se retiró Chroma.
+
+---
+
+## 27. Corte 6 parcial: Qdrant activo, aceptación pendiente (2026-11-22 13:05)
+
+**Vigente.** §10–§26 son históricas.
+
+- Chroma retirado del código y dependencias; `storage/chroma` y sus archivos se conservan.
+- Qdrant es el backend documental. Servidor real y EmbeddingGemma.
+- Calibración fijada: umbral **0.4956** (relevantes ≥0.4956; no pertinentes ≤0.0861).
+- Evaluación independiente: **3/4** escenarios; caso A 0.4359 < umbral. No se ajustó el umbral ni los
+  criterios. Informes en `docs/evidencia/004-corte-6/`.
+- Constitución: «backend sustituido; aceptación pendiente». `CONSTITUTION.md` sigue siendo enlace.
+- `make check`: 550 passed. `make test-integration` pendiente. T079–T082 pendientes.
+- 78/82 tareas. Sin aceptación integral.
+
+Siguiente paso: repetir calibración con un conjunto más representativo (sin usar la evaluación),
+reevaluar, ejecutar T079 (ASGI/Playwright), T080, T081 y, solo si cumple, T082.

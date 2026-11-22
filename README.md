@@ -135,13 +135,14 @@ de traza por API se ejecutó; SC-001 y SC-003 quedan como validaciones recomenda
 ## Arquitectura
 
 Monolito modular en un solo proceso. La interfaz y el dominio se separan por paquetes; SQLite
-conserva el estado y la procedencia, y Chroma es un índice derivado y reconstruible.
+conserva el estado y la procedencia, y Qdrant es un índice derivado y reconstruible.
 
-**Estado vigente:** Chroma y Ollama son la implementación actual. La constitución 1.3.0 (ratificación
+**Estado vigente:** Qdrant y Ollama son la implementación actual; la aceptación local de 004 está pendiente. La constitución 1.3.0 (ratificación
 del responsable registrada; acuerdos del equipo no constan) fija como objetivo Qdrant en servidor
 local persistente para 004, un proveedor API explícito para 005 y una acción externa controlada para
 006. 004 reconstruye el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura
 dual, sin comparación obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran.
+Chroma quedó retirado del código en el Corte 6.
 **Nada de eso está implementado.**
 
 ```text

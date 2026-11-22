@@ -1,0 +1,52 @@
+{
+  "mode": "calibration",
+  "backend": "qdrant",
+  "embedding_model": "embeddinggemma",
+  "embedding_dim": 768,
+  "metric": "cosine",
+  "criteria": {
+    "relevant": "el fragmento esperado debe quedar en top-k con score >= umbral",
+    "non_relevant": "ninguna consulta fuera de dominio debe superar el umbral",
+    "selection": "mayor umbral válido; si no existe, mejor equilibrio y fallo registrado"
+  },
+  "relevant": [
+    {
+      "query": "¿Cómo se controla el acceso a los sistemas?",
+      "expected_chunk": "df8a33f145014870a8d73b9d26e6471e",
+      "score": 0.4956
+    },
+    {
+      "query": "¿Qué protección tienen los datos almacenados?",
+      "expected_chunk": "3c62d5ac7f22449ba9a32f2faf8be39b",
+      "score": 0.4988
+    },
+    {
+      "query": "¿En qué plazo se aplican las actualizaciones críticas?",
+      "expected_chunk": "dac533a19bbe487fa321e4c875920a76",
+      "score": 0.6408
+    }
+  ],
+  "non_relevant": [
+    {
+      "query": "receta de cocina para una cena",
+      "top_score": 0.0204
+    },
+    {
+      "query": "historia del arte renacentista",
+      "top_score": 0.0861
+    },
+    {
+      "query": "pronóstico del clima para mañana",
+      "top_score": 0.0372
+    }
+  ],
+  "proposed_threshold": 0.4956,
+  "observed": {
+    "threshold": 0.4956,
+    "satisfied": true,
+    "relevant_min": 0.4956,
+    "non_relevant_max": 0.0861,
+    "missed_relevant": 0,
+    "accepted_non_relevant": 0
+  }
+}

@@ -594,59 +594,59 @@ documentación y constitución.
 el código; no se declara verde ni se integra hasta T073. No se conservan dos backends operativos para
 evitar ese trabajo.
 
-- [ ] T070 [P] Añadir pruebas en rojo que exigen ausencia de imports y dependencias ejecutables de Chroma en `tests/unit/test_qdrant_no_chroma.py`.
+- [x] T070 [P] Añadir pruebas en rojo que exigen ausencia de imports y dependencias ejecutables de Chroma en `tests/unit/test_qdrant_no_chroma.py`.
   - Story: Polish
   - Dep: T012, T013
   - Verifies: T072
   - Check: fallan mientras Chroma siga importado o declarado.
   - Evidence: salida RED.
 
-- [ ] T071 Adaptar fixtures y pruebas que instancian Chroma a Qdrant (unitarias, contrato, integración y aceptación), sin declarar verde todavía.
+- [x] T071 Adaptar fixtures y pruebas que instancian Chroma a Qdrant (unitarias, contrato, integración y aceptación), sin declarar verde todavía.
   - Story: Polish
   - Dep: T037, T059
   - Check: las pruebas adaptadas pasan con Qdrant; la suite completa puede seguir fallando por el código de Chroma pendiente de retiro.
   - Evidence: diff de fixtures y pruebas, salida por suite.
 
-- [ ] T072 Retirar `ChromaIndex`, `chroma_dir`, la fábrica y las dependencias `langchain-chroma`/`chromadb` del código de producto y de `pyproject.toml`, y actualizar `.specify/memory/constitution.md` en el mismo commit registrando «backend sustituido; aceptación pendiente».
+- [x] T072 Retirar `ChromaIndex`, `chroma_dir`, la fábrica y las dependencias `langchain-chroma`/`chromadb` del código de producto y de `pyproject.toml`, y actualizar `.specify/memory/constitution.md` en el mismo commit registrando «backend sustituido; aceptación pendiente».
   - Story: Polish
   - Dep: T070, T071
   - Check: T070 pasa; la constitución registra «backend sustituido; aceptación pendiente» y no declara «implementado» ni «aceptado»; `CONSTITUTION.md` sigue siendo el enlace simbólico a `.specify/memory/constitution.md` y no hay copia duplicada.
   - Evidence: diffs, salida GREEN de T070 y diff de la constitución.
 
-- [ ] T073 Verificar el retiro con `make check`, ausencia de imports ejecutables de Chroma y archivos de datos de Chroma intactos.
+- [x] T073 Verificar el retiro con `make check`, ausencia de imports ejecutables de Chroma y archivos de datos de Chroma intactos.
   - Story: Polish
   - Dep: T072
   - Verifies: T070, T072
   - Check: `make check` verde; `grep` no encuentra imports ejecutables de Chroma; `storage/chroma` existe sin cambios.
   - Evidence: salida de comandos y listado del sistema de archivos.
 
-- [ ] T074 [P] Añadir prueba o guion en rojo de la calibración del umbral en `tests/integration/test_qdrant_threshold.py`.
+- [x] T074 [P] Añadir prueba o guion en rojo de la calibración del umbral en `tests/integration/test_qdrant_threshold.py`.
   - Story: Polish
   - Dep: T035
   - Verifies: T075
   - Check: falla antes de la implementación de calibración.
   - Evidence: salida RED.
 
-- [ ] T075 Implementar `scripts/calibrate_qdrant_threshold.py` con valores propuesto y observado separados, criterios fijados antes de evaluar y sin copiar 0.35.
+- [x] T075 Implementar `scripts/calibrate_qdrant_threshold.py` con valores propuesto y observado separados, criterios fijados antes de evaluar y sin copiar 0.35.
   - Story: Polish
   - Dep: T074
   - Check: T074 pasa; calibración y evaluación final usan conjuntos distintos; el reporte distingue propuesto de observado.
   - Evidence: salida GREEN y reporte de calibración.
 
-- [ ] T076 Aplicar el umbral calibrado en `src/secguard_advisor/config.py` y su documentación, sin conservar 0.35 como predeterminado validado.
+- [x] T076 Aplicar el umbral calibrado en `src/secguard_advisor/config.py` y su documentación, sin conservar 0.35 como predeterminado validado.
   - Story: Polish
   - Dep: T075
   - Check: el valor aplicado proviene de la calibración y queda documentado; ninguna prueba depende del 0.35 de Chroma.
   - Evidence: diff de configuración y salida de pruebas.
 
-- [ ] T077 [P] Añadir el conjunto de evaluación funcional en `tests/fixtures/qdrant_eval.py` y `tests/integration/test_qdrant_functional_eval.py`, separado de la calibración, con corpus público, dos casos ficticios y fuentes esperadas.
+- [x] T077 [P] Añadir el conjunto de evaluación funcional en `tests/fixtures/qdrant_eval.py` y `tests/integration/test_qdrant_functional_eval.py`, separado de la calibración, con corpus público, dos casos ficticios y fuentes esperadas.
   - Story: Polish
   - Dep: T035, T075
   - Verifies: T078
   - Check: los datos de evaluación son distintos de los de calibración y no contienen datos privados ni Qualys.
   - Evidence: archivos de fixture y prueba.
 
-- [ ] T078 Ejecutar y reportar la evaluación funcional contra Qdrant con el umbral calibrado ya aplicado y congelado en `config.py`, y con un conjunto distinto del usado en la calibración.
+- [x] T078 Ejecutar y reportar la evaluación funcional contra Qdrant con el umbral calibrado ya aplicado y congelado en `config.py`, y con un conjunto distinto del usado en la calibración.
   - Story: Polish
   - Dep: T076, T077
   - Check: la evaluación usa el valor aplicado en T076 y no recalibra; el conjunto es distinto del de calibración; cubre corpus público, documentos del caso, aislamiento, versiones, citas históricas y ausencia de Qualys; no ajusta criterios para aprobar.

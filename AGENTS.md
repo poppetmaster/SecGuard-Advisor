@@ -46,8 +46,8 @@ conservan. Ver
 fija como arquitectura objetivo Qdrant en servidor local persistente para 004, un proveedor API
 explícito para 005 y una acción externa controlada para 006. 004 reconstruye el índice desde cero
 desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación obligatoria y sin
-retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual sigue siendo
-Chroma + Ollama; no se presentan Qdrant, API ni Telegram como disponibles.
+retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
+Ollama; la aceptación local de 004 sigue pendiente y no se presentan API ni Telegram como disponibles.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -64,8 +64,9 @@ el mismo commit.
 
 - Python 3.14.6, `uv`, src-layout, `uv_build`.
 - FastAPI, Jinja2, HTMX, Tailwind CSS y Flowbite (gratuito), recursos locales.
-- LangChain, LangGraph, SQLite y LangSmith. Ollama y Chroma son la implementación actual; Qdrant es
-  el objetivo 004 y el proveedor API el objetivo 005. Ninguno de los objetivos está implementado.
+- LangChain, LangGraph, SQLite y LangSmith. Ollama y Qdrant son la implementación actual; Qdrant es
+  el único backend documental (004, aceptación pendiente). Chroma quedó retirado del código. El
+  proveedor API es el objetivo 005 y no está implementado.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
 
 ## Estructura
@@ -87,7 +88,7 @@ make assets             # compila Tailwind y copia recursos vendorizados
 make lint               # Ruff
 make format             # Ruff format
 make test               # pruebas rápidas, sin integración
-make test-integration   # pruebas reales con Ollama y Chroma
+make test-integration   # pruebas reales con Ollama y Qdrant
 make check              # lint + formato + pruebas
 make dev                # servidor con casos, documentos y consulta, un worker
 make corpus             # descarga y verifica el corpus oficial
@@ -101,8 +102,8 @@ SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declara
 ```
 
 `make corpus` y `make corpus-ingest` están implementados y son las vías autorizadas para el corpus.
-`make qdrant-*` prepara la infraestructura local de 004 (corte 1); Chroma sigue siendo el backend
- documental y Qdrant no se presenta como implementado.
+`make qdrant-*` opera la infraestructura local de 004. Qdrant es el backend documental; Chroma quedó
+retirado del código y sus archivos se conservan. La aceptación local de 004 está pendiente.
 El target `demo` informa «no implementado» hasta el recorrido de aceptación. `seed-demo` requiere el
 esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicación no ejecuta
 `create_all` al arrancar.

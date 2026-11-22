@@ -65,9 +65,10 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 6
     # Presupuesto de evidencia por turno: tokens exactos medidos al ingerir.
     retrieval_token_budget: int = 3500
-    # Calibrado con datos de humo: preguntas pertinentes >= 0.58, fuera de dominio <= 0.05.
-    # Es un filtro de candidatos débiles, no una prueba de ausencia de evidencia.
-    retrieval_min_score: float = 0.35
+    # Calibrado con Qdrant + EmbeddingGemma (2026-11-22): preguntas pertinentes
+    # >= 0.4956; fuera de dominio <= 0.0861. Es un filtro de candidatos débiles,
+    # no una prueba de ausencia de evidencia.
+    retrieval_min_score: float = 0.4956
     # Historial acotado: turnos completos, del más nuevo al más viejo.
     history_max_messages: int = 8
     history_max_chars: int = 6000
