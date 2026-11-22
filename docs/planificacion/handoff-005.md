@@ -1,101 +1,68 @@
-# Handoff — 005 Generador configurable (Entregas 1–2)
+# Handoff — 005 Generador configurable (Entregas 1–3)
 
 **Fecha**: 2026-11-22
-**Estado**: Entregas 1–2 implementadas; 005 no aceptada; T035–T042 pendientes.
+**Estado**: R1–R3 corregidos; T001–T038 y T040–T042 completadas; T039 real pendiente; 005 con aceptación local parcial.
 **Rama**: `005-generador-configurable`.
 
-## 1. Estado actual
+## 1. Correcciones R1–R3
 
-- **T001–T034 completadas.**
-- Ollama real operativo; DeepSeek/Anthropic implementados y probados **solo con transporte simulado**.
-- `make check`: **637 passed, 37 deselected**.
-- Regresión real afectada: `test_ollama_provider_regression` + `test_answer_real` → **2 passed**
-  (98.81 s).
-- Migración probada sobre base temporal (`test_provider_run_record`: 2 passed).
-- Sin llamadas externas reales, sin credenciales, sin presupuesto aprobado.
+### R1 — Reintento externo
 
-## 2. Qué está implementado
+- Inicio y reintento comparten `resolve_turn_profile`, `create_turn_record` y `build_turn_context`.
+- `start_retry_turn` comprueba autorización vigente antes de crear la ejecución o contar tokens.
+- Autorización ausente/revocada bloquea; no se hereda ni se amplía.
+- `external_scope` y `external_authorization_id` se propagan al contexto y a `runs`.
+- `public_corpus` excluye contexto del caso, historial y fuentes privadas.
+- `findings_query` importado sigue bloqueado.
+- Evidencia: `tests/unit/test_retry_external_scope.py` — 6 passed.
 
-### Configuración efectiva
+### R2 — Timeout por llamada
 
-- `SECGUARD_GENERATION_PROVIDER/MODEL/MAX_OUTPUT/TOKENS/TIMEOUT/REASONING`.
-- Precedencia entorno > `.env` > predeterminados; compatibilidad Ollama con nombres anteriores.
-- Contador, presupuesto de salida, timeout y evidencia usan el perfil efectivo.
-- Secretos `SecretStr`; `.env.example` sin claves.
+- `post_json` recibe `timeout_seconds` y lo aplica a `client.post`.
+- DeepSeek y Anthropic lo propagan.
+- Pruebas con cliente 12,5 s y llamada 0,25 s: `read=0.25`.
+- Sin reintentos implícitos; timeout conserva la reserva.
 
-### Adaptadores
+### R3 — Evidencia efectiva
 
-- `DeepSeekGenerator`: JSON Output, `thinking=disabled`, uso/caché, errores normalizados.
-- `AnthropicGenerator`: Structured Outputs, `count_tokens`, uso/caché, errores normalizados.
-- `ProviderRegistry` selecciona una vez por turno; sin grafo duplicado ni fallback.
+- Inicio y reintento persisten salida máxima, timeout, autorización, proveedor, modelo e identidad.
+- Prueba con 64 tokens y 12,5 s; SQLite y vista muestran esos valores.
+- Ejecuciones históricas no se reescriben.
 
-### Contexto, costo y presupuesto
+## 2. Comparación (T035–T038)
 
-- `EstimatedPromptCounter` (DeepSeek) y `AnthropicPromptCounter` (count_tokens o estimación).
-- Tarifas `2026-11-22`; costo desconocido si falta uso/tarifa.
-- `provider_budget_ledger`: reserva antes, liquidación/reconciliación después.
-- Saldo global y por turno separados; cero bloquea antes de cualquier envío.
-- `provider_usage` por llamada; `runs` agrega uso/costo.
+- Conjunto congelado: `tests/fixtures/provider_comparison.py`; hash
+  `92778d5cdffca49c065354a4c5e816d8af678c30ae795d5fd506ffe8db5c5129`; 10 preguntas.
+- Ejecutor: `scripts/compare_providers.py`.
+- Ollama real: `docs/evidencia/005-comparacion/ollama.json` / `.md`.
+  - 10 turnos, 8 respondidas, 8/8 citas esperadas, 2/2 abstenciones, media 13948 ms, 1 recomendación,
+    2 `missing_info`, costo API no aplicable, evaluación semántica no realizada.
+- DeepSeek/Anthropic mock: `deepseek-mock.*`, `anthropic-mock.*`, costos simulados 0.000810/0.000600
+  USD. No son mediciones reales.
 
-### Autorización y privacidad
+## 3. T039 — Pendiente real
 
-- `external_processing_authorizations` + `scripts/external_authorization.py`.
-- Sin autorización no hay llamada ni conteo externo.
-- `public_corpus` filtra evidencia del caso e historial.
-- `findings_query` externo solo `fictional_case` + `origin=synthetic`; importados bloqueados.
-- Redacción de secretos/rutas; LangSmith independiente.
+- `deepseek-real-pending.json` y `anthropic-real-pending.json`:
+  «Sin presupuesto externo aprobado (external_budget_usd=0).»
+- No se usaron claves ni se hicieron llamadas pagas.
 
-## 3. Archivos clave
+## 4. Estado de tareas
 
-```text
-src/secguard_advisor/conversation/providers/{base,registry,context,cost,usage,
-  deepseek,anthropic,http_common,redaction}.py
-src/secguard_advisor/cases/external.py
-src/secguard_advisor/evidence/budget.py
-src/secguard_advisor/config.py
-src/secguard_advisor/conversation/{budget,nodes,turn,context,views}.py
-src/secguard_advisor/db/models.py
-src/secguard_advisor/web/{app,errors}.py
-src/secguard_advisor/web/routes/chat.py
-src/secguard_advisor/web/templates/runs/show.html
-alembic/versions/e6f7a8b9c0d1_add_provider_usage_budget_auth.py
-scripts/external_authorization.py
-```
+- T001–T038: completadas.
+- T039: pendiente la ejecución real; simulación ejecutada.
+- T040: completada — `make check` 649 passed; `make test-integration` 37 passed (1213.60 s).
+- T041: documentación.
+- T042: completada como aceptación local parcial; externos no aceptados.
 
-## 4. Pruebas
+## 5. Siguiente dato necesario
 
-| Área | Archivo |
-|---|---|
-| Configuración efectiva | `tests/unit/test_effective_generation_config.py` |
-| Contexto | `tests/unit/test_provider_context.py` |
-| Costo | `tests/unit/test_provider_cost.py` |
-| Presupuesto | `tests/unit/test_budget_ledger.py` |
-| Autorización | `tests/unit/test_external_authorization.py` |
-| Herramientas externas | `tests/unit/test_external_tool_block.py` |
-| Uso persistido | `tests/unit/test_provider_usage_persistence.py` |
-| Redacción | `tests/unit/test_secret_redaction.py` |
-| LangSmith | `tests/unit/test_langsmith_independence.py` |
-| Contrato DeepSeek | `tests/contract/test_deepseek_adapter.py` |
-| Contrato Anthropic | `tests/contract/test_anthropic_adapter.py` |
-| Evidencia | `tests/contract/test_run_provider_view.py` |
-| Compuerta | `tests/contract/test_external_authorization_gate.py` |
+Presupuesto externo autorizado (global y por turno) y credenciales locales para ejecutar T039 real.
+Después: revalidar modelos/precios y repetir la comparación con el mismo conjunto congelado.
 
-## 5. Límites y riesgos abiertos
+## 6. Límites
 
-- Ningún proveedor externo fue llamado realmente.
-- Esquema, thinking, conteo y tarifas deben revalidarse contra las APIs reales.
-- DeepSeek: caché omitida = 0; feriados chinos no modelados.
-- Anthropic: `input_tokens` tratado como cache miss.
-- La estimación DeepSeek no es exacta ni garantiza no truncamiento.
-- La regresión real completa de 001/002 no se repitió; se ejecutaron las afectadas y `make check`.
-
-## 6. Próximo paso
-
-Antes de T035–T039:
-
-1. Aprobar presupuesto global y por turno.
-2. Configurar credenciales en `.env` local.
-3. Autorizar un caso `fictional_case`/`public_corpus` con la CLI.
-4. Revalidar modelos, precios y capacidades en documentación oficial.
-5. Ejecutar la comparación fija de diez preguntas y guardar reportes.
-6. No declarar aceptación de un proveedor externo sin resultados reales.
+- Sin evaluación semántica; solo comprobaciones automáticas.
+- Corpus ficticio; no datos del usuario.
+- No se enviaron Qualys, derivados ni datos privados.
+- `storage/`, `storage/demo`, Chroma y Qdrant sin cambios.
+- `LANGSMITH_TRACING=false`.

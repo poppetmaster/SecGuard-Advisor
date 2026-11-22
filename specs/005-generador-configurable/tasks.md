@@ -8,9 +8,9 @@ checklists/requirements.md
 **Tests**: incluidas porque la constitución aplica test-first cuando existe una prueba determinista y
 un resultado esperado claro.
 
-**Estado**: planificación. Ninguna tarea ejecutada, ninguna dependencia instalada, ninguna llamada
-pagada realizada y ninguna aceptación declarada. Las tareas externas quedan condicionadas a
-credencial y presupuesto explícitos.
+**Estado**: T001–T038 y T040–T042 completadas. T039 real permanece pendiente por ausencia de
+presupuesto y credenciales; su versión simulada está ejecutada. 005 tiene aceptación local parcial;
+no se declara aceptación de proveedores externos ni se realizaron llamadas externas pagadas.
 
 ## Formato
 
@@ -316,14 +316,14 @@ logs/SQLite/trazas.
 **Cierre de la entrega:** comparación reproducible con Ollama real y externos condicionados;
 regresión completa verde; documentación final y decisión de aceptación basada en evidencia.
 
-- [ ] T035 [P] [US4] Crear el conjunto fijo de diez preguntas públicas/ficticias y su hash, antes de
+- [x] T035 [P] [US4] Crear el conjunto fijo de diez preguntas públicas/ficticias y su hash, antes de
   medir.
   - Story: US4
   - Dep: T034
   - Check: el conjunto no contiene datos privados ni Qualys; el hash queda registrado.
   - Evidence: `tests/fixtures/provider_comparison.py`.
 
-- [ ] T036 [P] [US4] Añadir pruebas del ejecutor de comparación: mismas preguntas, métricas,
+- [x] T036 [P] [US4] Añadir pruebas del ejecutor de comparación: mismas preguntas, métricas,
   separación medición/expectativa y omisión sin credencial/presupuesto.
   - Story: US4
   - Dep: T035
@@ -331,13 +331,13 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Check: fallan antes de implementar; una omisión no se presenta como resultado.
   - Evidence: `tests/unit/test_provider_comparison.py` con salida RED.
 
-- [ ] T037 [US4] Implementar `scripts/compare_providers.py` con reporte JSON/Markdown.
+- [x] T037 [US4] Implementar `scripts/compare_providers.py` con reporte JSON/Markdown.
   - Story: US4
   - Dep: T036
   - Check: T036 pasa; el reporte incluye latencia, citas, estructura, recomendaciones y costo.
   - Evidence: script y pruebas verdes.
 
-- [ ] T038 [US4] Ejecutar la comparación local real con Ollama y registrar los resultados medidos.
+- [x] T038 [US4] Ejecutar la comparación local real con Ollama y registrar los resultados medidos.
   - Story: US4
   - Dep: T037
   - Check: no requiere credencial externa; el reporte separa mediciones de expectativas.
@@ -350,7 +350,7 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Check: no se simula; el motivo queda en el reporte; `pytest -m external` se omite sin credencial.
   - Evidence: reporte por proveedor o registro de omisión, `pyproject.toml`.
 
-- [ ] T040 [US4] Ejecutar la regresión completa y la aceptación de los flujos afectados:
+- [x] T040 [US4] Ejecutar la regresión completa y la aceptación de los flujos afectados:
   `make check`, `make test-integration`, incluida la regresión de 001/002, la integración local de
   Ollama y la aceptación ASGI de selección/evidencia.
   - Story: Polish
@@ -359,7 +359,7 @@ regresión completa verde; documentación final y decisión de aceptación basad
     acredita el criterio.
   - Evidence: salida de comandos, `tests/acceptance/`, reporte.
 
-- [ ] T041 [US4] Actualizar `README.md`, `AGENTS.md`, la constitución (decisión de mantener Ollama
+- [x] T041 [US4] Actualizar `README.md`, `AGENTS.md`, la constitución (decisión de mantener Ollama
   junto a los proveedores externos), `005-ultimo-resultado.md` y `handoff-005.md` con el estado real.
   - Story: Polish
   - Dep: T040
@@ -367,7 +367,7 @@ regresión completa verde; documentación final y decisión de aceptación basad
     inventan presupuestos ni aprobaciones.
   - Evidence: diffs y enlaces.
 
-- [ ] T042 [US4] Declarar la aceptación de 005 solo si la evidencia de T040/T039 lo permite;
+- [x] T042 [US4] Declarar la aceptación de 005 solo si la evidencia de T040/T039 lo permite;
   conservar abiertas las tareas externas no ejecutadas.
   - Story: Polish
   - Dep: T041

@@ -1,153 +1,137 @@
-# 005 — Último resultado (Entregas 1–2 implementadas)
+# 005 — Último resultado (R1–R3 corregidos; Entrega 3 en cierre)
 
 **Fecha**: 2026-11-22 (America/Bogota, `-05`)
 **Rama**: `005-generador-configurable`
-**Estado**: **T001–T034 implementadas y verificadas con Ollama real y transporte externo simulado.
-005 no está aceptada.**
-**Alcance**: configuración y contrato común, adaptadores DeepSeek/Anthropic, contexto, costo,
-presupuesto, autorización, privacidad y evidencia. La comparación real y la aceptación (T035–T042)
-siguen pendientes.
+**Estado**: T001–T038 y T040–T042 completadas; R1–R3 corregidos; T039 real pendiente.
+**005 no tiene aceptación de proveedores externos.**
 
 ## Dictamen
 
-La Entrega 2 está completa dentro del alcance permitido: los adaptadores externos existen, usan el
-contrato común y están cubiertos por pruebas de contrato con `httpx.MockTransport`. No se realizaron
-llamadas reales a DeepSeek ni Anthropic, no se solicitó presupuesto ni credenciales y no se declara
-ningún proveedor externo aceptado en uso real.
+R1–R3 están corregidos y acreditados con pruebas. La comparación local con Ollama real se ejecutó
+sobre un conjunto congelado de diez preguntas ficticias: 8/8 citas esperadas, 2/2 abstenciones y una
+latencia media de 13948 ms. La comparación DeepSeek/Anthropic se ejecutó solo con transporte simulado.
+La comparación externa real no se ejecutó porque no hay presupuesto aprobado ni credenciales; no se
+usan valores de ejemplo como aprobación.
 
-Ollama sigue operativo y su regresión real pasó. `make check` quedó en verde.
+## R1 — Reintento externo
 
-## Estado por tarea
+- `start_retry_turn` comparte con el inicio `resolve_turn_profile`, `create_turn_record` y
+  `build_turn_context`.
+- Autorización vigente comprobada antes de cualquier conteo remoto o llamada.
+- Ausente/revocada bloquea; no se hereda ni amplía.
+- `external_scope` y `external_authorization_id` llegan al contexto y a `runs`.
+- `public_corpus` excluye contexto del caso, historial y fuentes privadas.
+- `findings_query` importado sigue bloqueado.
+- El intento nuevo registra proveedor, modelo, identidad y parámetros efectivos; conserva pregunta,
+  `attempt_no` y `retry_of_run_id`.
 
-| Rango | Estado | Evidencia |
-|---|---|---|
-| T001–T014 Entrega 1 | Completadas | Configuración, registro, Ollama, esquema tipado, migración y evidencia. |
-| T015–T018 adaptadores | Completadas | Contratos simulados DeepSeek/Anthropic; adaptadores `httpx`. |
-| T019–T020 contexto | Completadas | GGUF solo Ollama; `count_tokens` Anthropic; estimación DeepSeek identificada. |
-| T021–T022 costo | Completadas | Tarifas fechadas, cache/peak, `unknown`, nunca cero. |
-| T023–T024 presupuesto | Completadas | Reserva, liquidación, reconciliación, saldo global y por turno. |
-| T025–T026 autorización | Completadas | Tabla por caso, servicio y CLI local. |
-| T027–T028 herramientas externas | Completadas | Solo `fictional_case` + `origin=synthetic`; importados bloqueados. |
-| T029–T030 redacción | Completadas | Secretos/rutas en errores, trazas y evidencia. |
-| T031–T032 evidencia de uso | Completadas | Uso por llamada, costo y página de ejecución. |
-| T033 LangSmith independiente | Completada | Activar externo no habilita trazas. |
-| T034 documentación | Completada | Este documento, handoff y `docs/evidencia/005-entrega-2/`. |
-| T035–T042 comparación/aceptación | Pendientes | No iniciadas. |
+Evidencia: `tests/unit/test_retry_external_scope.py` — **6 passed** (cero llamadas sin autorización,
+señuelos privados, cambio local→externo, importados bloqueados, vista).
 
-## Corrección de configuración efectiva
+## R2 — Timeout por llamada
 
-Se unificaron los consumidores para que todos usen el perfil seleccionado:
+- `post_json` aplica `timeout_seconds` a `client.post`.
+- DeepSeek y Anthropic lo propagan; el nodo lo acota por perfil y tiempo restante.
+- Pruebas con cliente 12,5 s y llamada 0,25 s confirman `read=0.25`.
+- Sin reintentos implícitos; timeout conserva la reserva.
 
-- `web/app.py` construye el contador con `build_prompt_counter(settings)`:
-  - Ollama: `LazyPromptCounter(settings.provider_model)` (modelo efectivo, no el antiguo fijo).
-  - DeepSeek: estimador conservador identificado.
-  - Anthropic: `count_tokens` (o estimación si falla).
-- `conversation/budget.py` calcula el límite y la reserva con `provider_context_window` y
-  `provider_max_output_tokens`.
-- `conversation/nodes.py` usa `provider_timeout_seconds`; se eliminó `generation_config` con
-  parámetros anteriores.
-- `Run` registra `generator_max_output_tokens` y `generator_timeout_seconds`; la evidencia los muestra.
-- Las pruebas usan valores nuevos distintos de los antiguos (modelo, 64 tokens, 12.5 s).
+## R3 — Evidencia efectiva
 
-## Adaptadores externos
+- Inicio y reintento persisten salida máxima, timeout, autorización, proveedor, modelo e identidad
+  desde el mismo perfil.
+- Prueba integral con **64 tokens** y **12.5 s**: SQLite y la vista muestran esos valores.
+- Las ejecuciones históricas conservan 1200/90; no se reescriben.
 
-### DeepSeek
+## Comparación (T035–T038)
 
-- Endpoint `/chat/completions`, modelo `deepseek-flash`.
-- `response_format={"type":"json_object"}`, esquema en el system prompt, `max_tokens`.
-- `thinking=disabled` por defecto; sin reintentos implícitos del transporte.
-- Errores normalizados sin cuerpo del proveedor.
-- Uso: `prompt_tokens`, `completion_tokens`, `prompt_cache_hit_tokens`.
+- Conjunto congelado en `tests/fixtures/provider_comparison.py`; hash
+  `92778d5cdffca49c065354a4c5e816d8af678c30ae795d5fd506ffe8db5c5129`; 10 preguntas (8 con cita
+  esperada, 2 de abstención).
+- Ejecutor `scripts/compare_providers.py` con JSON/Markdown.
+- Pruebas del conjunto y ejecutor: `tests/unit/test_provider_comparison.py` — **4 passed**.
 
-### Anthropic
+### Ollama real
 
-- Endpoint `/v1/messages`, modelo `claude-haiku-5-5`, `output_config.format` JSON Schema.
-- `max_tokens`; sin `temperature`/`top_p`/`top_k`; thinking adaptativo del proveedor.
-- Errores normalizados; `count_tokens` para admisión.
-- Uso: `input_tokens`, `output_tokens`, `cache_read_input_tokens`,
-  `cache_creation_input_tokens`.
+`docs/evidencia/005-comparacion/ollama.json` y `ollama.md`:
 
-Ninguno duplica el grafo ni tiene fallback.
+```text
+transporte: real
+modelo: qwen3.5:9b
+recuperación: ollama-embeddinggemma
+turnos: 10
+respondidas: 8
+citas totales: 8
+citas esperadas acertadas: 8/8
+abstenciones esperadas/observadas: 2/2
+latencia media del turno: 13948 ms
+costo de API: no aplicable (Ollama local)
+evaluación semántica: no realizada
+```
 
-## Presupuesto, uso y costo
+Duraciones: 6929, 7738, 6816, 8008, 8114, 9666, 10216, 16992, 25881 y 39123 ms.
+Recomendaciones declaradas: 1. `missing_info` declarados: 2.
 
-- `provider_budget_ledger` reserva antes de la llamada y liquida o reconcilia después.
-- Saldo global (`external_budget_usd`) y saldo del turno (`external_run_budget_usd`) son límites
-  distintos; el turno no reinicia el global.
-- Una llamada enviada o de envío incierto sin uso confirmado conserva la reserva; no se libera como
-  gasto cero.
-- `provider_usage` registra decisión, generación, reparación y errores.
-- Costo calculado con tarifa `2026-11-22`; si falta uso o tarifa, `unknown`.
-- `external_budget_usd=0` bloquea antes de cualquier envío, incluido el conteo externo.
+### DeepSeek/Anthropic simulados
 
-## Autorización y privacidad
+- `deepseek-mock.json` / `.md`: 10 turnos, costo calculado simulado 0.000810 USD.
+- `anthropic-mock.json` / `.md`: 10 turnos, costo calculado simulado 0.000600 USD.
+- No son mediciones reales; no acreditan calidad ni latencia de los proveedores.
 
-- `external_processing_authorizations`: alcance `public_corpus` o `fictional_case`, política,
-  identidad declarada, fecha y revocación.
-- CLI: `uv run python scripts/external_authorization.py` para otorgar, listar y revocar.
-- Sin autorización vigente no se llama al proveedor ni al contador externo.
-- `public_corpus` no envía evidencia del caso ni historial previo.
-- `findings_query` externo solo en `fictional_case` + `origin=synthetic`; importados/Qualys se
-  bloquean.
-- LangSmith sigue independiente y desactivado por defecto.
-- Redacción centralizada de secretos, rutas y cabeceras.
+### T039 real
 
-## Comandos y resultados observados
+Pendiente: `deepseek-real-pending.json` y `anthropic-real-pending.json` registran «Sin presupuesto
+externo aprobado (external_budget_usd=0)». No se usaron claves ni se hizo ninguna llamada paga.
+
+## T040 — Regresión
 
 ```text
 make check
-  → 637 passed, 37 deselected, 17 warnings (17.80 s)
+  → 649 passed, 37 deselected, 17 warnings
 
-uv run pytest tests/integration/test_ollama_provider_regression.py \
-                 tests/integration/test_answer_real.py -q
-  → 2 passed in 98.81 s (Ollama real)
-
-uv run pytest tests/unit/test_provider_run_record.py -q
-  → 2 passed (migración sobre base temporal)
+make test-integration
+  → 37 passed, 649 deselected, 14 warnings (1213.60 s = 20:13)
 ```
 
-Las pruebas externas son simuladas: no hay llamadas reales ni evidencia de aceptación de DeepSeek o
-Anthropic.
+La primera ejecución de integración falló en `test_qualys_import_real` porque el prompt de decisión
+no repetía una consulta con filtro distinto; se corrigió (`decide-v6`), la prueba pasó y la suite
+completa quedó verde. No se relajaron criterios ni se ampliaron tiempos.
 
-## Archivos principales
+## T042 — Aceptación
 
-```text
-src/secguard_advisor/conversation/providers/{base,registry,context,cost,usage}.py
-src/secguard_advisor/conversation/providers/{deepseek,anthropic,http_common,redaction}.py
-src/secguard_advisor/cases/external.py
-src/secguard_advisor/evidence/budget.py
-src/secguard_advisor/config.py
-src/secguard_advisor/conversation/{budget,nodes,turn,context,views}.py
-src/secguard_advisor/db/models.py
-src/secguard_advisor/web/{app,errors}.py
-src/secguard_advisor/web/routes/chat.py
-src/secguard_advisor/web/templates/runs/show.html
-alembic/versions/e6f7a8b9c0d1_add_provider_usage_budget_auth.py
-scripts/external_authorization.py
-```
+**Aceptación local parcial**: Ollama real, comparación local, R1–R3, `make check` y
+`make test-integration` verdes. **Proveedores externos no aceptados**: solo contratos simulados;
+T039 real pendiente. T042 registra aceptación parcial, no integral.
 
 ## Limitaciones
 
-- Sin llamadas reales a proveedores externos; los contratos usan transporte simulado.
-- Esquema JSON, thinking, conteo y tarifas deben revalidarse contra las APIs reales.
-- DeepSeek: caché omitida se asume 0; feriados chinos no modelados.
-- Anthropic: tokens de entrada tratados como cache miss; confirmar semántica real.
-- La estimación DeepSeek no es un conteo exacto ni garantía contra truncamiento.
-- La regresión real completa de 001/002 no se repitió; se ejecutaron las pruebas reales afectadas y
-  `make check`.
-- No se modificaron `storage/`, `storage/demo`, Chroma, Qdrant ni datos existentes.
+- Evaluación semántica no realizada; solo comprobaciones automáticas.
+- Corpus de comparación ficticio; no representa datos del usuario.
+- Ollama: costo de API no aplicable; no se declara costo operativo total cero.
+- Sin llamadas reales a DeepSeek/Anthropic.
+- No se enviaron Qualys, derivados ni datos privados.
+- `storage/`, `storage/demo`, Chroma y Qdrant sin cambios.
 - `LANGSMITH_TRACING=false`.
 
-## Próximos pasos
+## Archivos cambiados
 
-1. Aprobar presupuesto global y por turno.
-2. Configurar credenciales locales sin versionarlas.
-3. Revalidar identificadores, precios y capacidades.
-4. Ejecutar la comparación real (T035–T039) con el conjunto fijo de diez preguntas.
-5. Regresión final y aceptación (T040–T042) solo con evidencia.
+```text
+src/secguard_advisor/conversation/turn.py
+src/secguard_advisor/conversation/retry.py
+src/secguard_advisor/conversation/providers/http_common.py
+src/secguard_advisor/conversation/providers/deepseek.py
+src/secguard_advisor/conversation/providers/anthropic.py
+src/secguard_advisor/conversation/prompts.py
+src/secguard_advisor/conversation/nodes.py
+tests/unit/test_retry_external_scope.py
+tests/contract/test_deepseek_adapter.py
+tests/contract/test_anthropic_adapter.py
+tests/fixtures/provider_comparison.py
+tests/unit/test_provider_comparison.py
+scripts/compare_providers.py
+docs/evidencia/005-comparacion/*.json
+docs/evidencia/005-comparacion/*.md
+```
 
 ## Commits
 
-- `1d5f856`, `db17347`, `bdcd892` — Entrega 1.
-- `7d4f374` — Entrega 2: adaptadores, contexto, costo, presupuesto, autorización y privacidad.
-- Commit documental de este informe: ver `git log -- docs/planificacion/005-ultimo-resultado.md`.
+Ver `git log --oneline` en `005-generador-configurable`.

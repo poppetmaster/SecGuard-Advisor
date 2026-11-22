@@ -146,8 +146,9 @@ del responsable registrada; acuerdos del equipo no constan) fija Qdrant en servi
 para 004, un proveedor API explícito para 005 y una acción externa controlada para 006. 004 reconstruye
 el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
 obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
-código en el Corte 6. 005 tiene las Entregas 1–2 implementadas y probadas con transporte externo
-simulado; ningún proveedor externo se declara aceptado en uso real. 006 sigue sin implementar.
+código en el Corte 6. 005 tiene las Entregas 1–2 implementadas y la comparación local de la Entrega 3
+ejecutada con Ollama; DeepSeek/Anthropic solo se probaron con transporte simulado y no se declaran
+aceptados en uso real. 006 sigue sin implementar.
 
 ```text
 FastAPI + Jinja2 + HTMX

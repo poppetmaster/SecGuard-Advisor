@@ -49,14 +49,16 @@ desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparació
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
 Ollama; la aceptación local de 004 sigue pendiente y no se presentan API ni Telegram como disponibles.
 
-**005 Entregas 1–2 implementadas (2026-11-22):** `specs/005-generador-configurable/` define la
+**005 Entregas 1–3 en cierre (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
 Haiku (`claude-haiku-5-5`). Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
 costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
-de uso, probados **solo contra transporte HTTP simulado**. No hay fallback ni cambio de proveedor en
+de uso, probados **solo contra transporte HTTP simulado**; la comparación local con Ollama real está
+ejecutada y la comparación externa real sigue pendiente por falta de presupuesto. No hay fallback ni cambio de proveedor en
 un turno. Los externos exigen credencial, presupuesto aprobado y autorización por caso para datos
 públicos o ficticios; Qualys y los datos privados no salen. No se ejecutaron llamadas reales ni se
-declara ningún proveedor externo aceptado en uso real; 005 **no está aceptada**.
+declara ningún proveedor externo aceptado en uso real; 005 tiene **aceptación local parcial** y
+los externos siguen pendientes.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
