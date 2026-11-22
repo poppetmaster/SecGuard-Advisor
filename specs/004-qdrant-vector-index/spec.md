@@ -4,8 +4,10 @@
 
 **Created**: 2026-11-11
 
-**Status**: Draft — ratificación comunicada por el responsable registrada; plan preparado.
-No habilita implementación por sí solo.
+**Status**: Borrador planificable — ratificación comunicada por el responsable registrada. Plan,
+diseño y tareas generados, y análisis de consistencia documental aplicado sobre los artefactos.
+Ninguna tarea ejecutada, ningún comportamiento implementado y ninguna aceptación declarada. No
+habilita implementación por sí solo.
 
 **Input**: User description: «Migración del índice documental a Qdrant»: sustituir Chroma como
 backend de recuperación documental, conservando SQLite como fuente de verdad, documentos,
@@ -277,15 +279,19 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
 - Espacio de almacenamiento separado: las pruebas no tocan la instancia del usuario.
 - Datos privados en fixtures: prohibidos; solo públicos o ficticios.
 - Dos instancias con el mismo `case_id`: no comparten documentos, aliases ni resultados.
-- Instancia copiada a otra ruta: el hash del storage no coincide; falla cerrado.
+- Instancia copiada a otra ruta: el fingerprint de ruta canónica no coincide; falla cerrado.
 - `SECGUARD_INSTANCE_ID` ausente o inválido: error de configuración; no se usa un ID generado.
 - Primer documento con extracción/embedding/Qdrant fallido: versión no disponible, sin alias nuevo.
 - Caso sin documentos privados: consulta pública normal; no error por alias privado ausente.
 - Caso con documentos esperados pero sin alias: error de índice de caso, no “sin evidencia”.
 - Público con documentos esperados pero sin alias: error de índice público.
 - Público no configurado o vacío: se omite; el caso puede continuar.
-- Reconstrucción e ingesta concurrentes: lock de archivo por instancia; rechazo explícito.
-- Proceso interrumpido con lock: el sistema operativo lo libera; el alias anterior permanece.
+- Reconstrucción e ingesta concurrentes: lock de archivo por instancia; rechazo explícito e
+  identificación de la operación que lo posee.
+- Proceso interrumpido con lock: el sistema operativo lo libera; el registro de propietario queda
+  obsoleto y se ignora; el alias anterior permanece.
+- Registro de propietario residual con el lock libre: no demuestra actividad; el estado se resuelve
+  por el bloqueo real, no por los metadatos.
 - Namespace incompatible: no se escribe, no se cambia alias, no se usa Chroma.
 
 ## Requirements *(mandatory)*
@@ -317,8 +323,14 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
   metadatos de página o sección.
 - **FR-010**: La reconstrucción MUST ser idempotente: repetirla no debe crear duplicados ni aumentar
   el conteo de fragmentos indexados.
-- **FR-011**: El sistema MUST registrar el estado de una reconstrucción: no iniciada, en curso,
-  completada, parcial o fallida.
+- **FR-011**: El sistema MUST registrar y exponer cinco estados observables de una reconstrucción:
+  `not_started` (no iniciada), `in_progress` (en curso), `completed` (completada), `partial`
+  (parcial) y `failed` (fallida). `not_started` se deriva de la ausencia de reporte y de que el lock
+  no esté tomado por una reconstrucción; `in_progress` se deriva de un lock tomado por un proceso vivo
+  cuyo registro de propietario declara la operación `rebuild`; los otros tres se leen del último
+  reporte terminal. Un lock ocupado por una ingesta NO DEBE interpretarse como reconstrucción en
+  curso; un lock activo NO DEBE interpretarse como éxito y la ausencia de reporte NO DEBE
+  interpretarse como fallo.
 - **FR-012**: Una reconstrucción interrumpida MUST NOT presentarse como completada; el reintento
   MUST ser seguro y no duplicar entradas válidas.
 - **FR-013**: Una reconstrucción parcial fallida MUST informar cuántos fragmentos quedaron sin
@@ -353,7 +365,11 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
   preguntas del corpus público, de dos casos ficticios con documentos distintos y de ausencia de
   evidencia. NO se exige comparación ejecutable con Chroma ni igualdad de orden.
 - **FR-026**: El umbral de recuperación MUST calibrarse con la métrica y configuración de Qdrant; no
-  se copia un valor de Chroma sin comprobar su significado.
+  se copia un valor de Chroma sin comprobar su significado. El valor 0.35 vigente para Chroma NO DEBE
+  conservarse como predeterminado validado ni heredarse en silencio: el valor aplicado MUST provenir
+  de la calibración con Qdrant y quedar registrado en la configuración. La calibración y la
+  evaluación final MUST usar conjuntos separados, y los criterios de aceptación MUST fijarse antes de
+  ejecutar la evaluación final.
 - **FR-027**: Los umbrales propuestos y los resultados observados MUST distinguirse en la evidencia;
   no se inventan métricas.
 
@@ -364,7 +380,11 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
 - **FR-029**: El modo embebido MUST reservarse para pruebas o una alternativa documentada; su uso NO
   sustituye la aceptación contra el servidor objetivo.
 - **FR-030**: El sistema MUST informar de forma comprensible si Qdrant está disponible, inaccesible o
-  mal configurado.
+  mal configurado, mediante errores clasificados con mensaje en español: `qdrant_unavailable` (503),
+  `case_index_unavailable` (503), `public_index_unavailable` (503),
+  `instance_namespace_mismatch` (503), `reconstruction_in_progress` (409) e
+  `ingestion_in_progress` (409). Cada error MUST conservar su propio código en la respuesta al
+  usuario y en la evidencia registrada, y MUST NOT degradarse a `internal_error`.
 - **FR-031**: Si Qdrant falla, el sistema MUST NOT cambiar en silencio a Chroma ni a otro backend.
 - **FR-032**: Un reinicio del servicio Qdrant con persistencia MUST conservar el índice y permitir
   consultas posteriores.
@@ -400,8 +420,21 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
 
 **Interfaz y observabilidad**
 
-- **FR-046**: La interfaz MUST informar el estado de la reconstrucción y los errores de forma
-  comprensible.
+- **FR-046**: El estado y el avance de una reconstrucción MUST informarse mediante el comando de
+  reconstrucción, su reporte local (estado, alcance, generación, alias, conteos, faltantes y causa) y
+  una consulta de estado de solo lectura (`uv run python scripts/rebuild_qdrant.py --status`). Esa
+  consulta MUST distinguir reconstrucción no iniciada, ingesta en curso, reconstrucción en curso y
+  último resultado terminal completado, parcial o fallido; con ausencia total de estado registrado
+  MUST devolver `not_started` y finalizar con éxito. Si el reporte terminal es ilegible, la consulta
+  MUST finalizar con salida 2, informar por `stderr` y devolver `state: null` y `last_terminal: null`
+  con un error explícito (`status_report_unreadable`), sin presentarlo como `not_started`, sin inventar
+  un estado terminal y sin borrar, sobrescribir ni reparar el reporte. La misma forma de error MUST
+  aplicarse a `instance_configuration_invalid` cuando la configuración de instancia falta o es inválida,
+  y a `lock_unreadable` cuando el archivo de lock existe pero no puede leerse; en ambos casos NO DEBE
+  devolverse `not_started`, NO DEBE afirmarse que no existe una operación activa y NO DEBE crearse
+  marcador, lock, directorio ni otro archivo. Esos comandos son la interfaz operativa de la reconstrucción en
+  004 y NO se exige una pantalla web de administración. La interfaz web MUST
+  presentar de forma comprensible los errores de índice y de disponibilidad de los flujos existentes.
 - **FR-047**: La evidencia de ejecución MUST conservar la información existente de fuentes, citas,
   herramientas, pasos y duración, añadiendo el backend sin eliminar campos previos.
 - **FR-048**: La interfaz MUST NOT presentar el cambio de backend como una capacidad nueva del
@@ -414,8 +447,12 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
   namespace MUST aplicarse a colecciones públicas y privadas, aliases, generaciones, reportes y
   locks.
 - **FR-052**: El ID de instancia NO DEBE generarse en cada arranque ni contener rutas privadas. Un
-  marcador persistente con hash del storage MUST detectar una copia o un namespace incompatible y
-  fallar cerrado.
+  marcador persistente MUST registrar el ID y un fingerprint derivado de la ruta canónica del
+  almacenamiento y del ID de instancia; el fingerprint NO DEBE depender del contenido, tamaño, fecha
+  de modificación ni hash de los archivos SQLite, de los documentos ni del propio marcador. Si el
+  marcador no coincide, o si falta y ya existen colecciones o alias de esa instancia en el servidor,
+  el sistema MUST fallar cerrado con `instance_namespace_mismatch`, sin escribir, sin cambiar alias y
+  sin adoptar el namespace de forma silenciosa.
 - **FR-053**: El primer documento válido de un caso sin índice MUST crear la generación/alias del
   caso sin exigir una reconstrucción completa. El alias MUST publicarse solo después de validar la
   versión.
@@ -433,6 +470,13 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
   documentos privados, aliases públicos ni resultados.
 - **FR-058**: El namespace y el lock MUST resolverse con configuración persistente y archivos
   locales; NO se crea una tabla SQLite nueva.
+- **FR-059**: El lock de instancia MUST identificar la operación (`ingestion` o `rebuild`) y el
+  intento que lo posee mediante un registro asociado al bloqueo real. El registro MUST considerarse
+  válido solo mientras el lock está tomado por un proceso vivo; con el lock libre, cualquier registro
+  residual MUST ignorarse y MUST NOT presentar actividad. El sistema MUST distinguir ingesta activa,
+  reconstrucción activa y último resultado terminal, sin tabla SQLite nueva ni pantalla
+  administrativa. La consulta de estado MUST ser de solo lectura: NO DEBE iniciar reconstrucciones,
+  generar embeddings, crear colecciones, registrar instancias, escribir archivos ni cambiar alias.
 
 ### Key Entities
 
@@ -445,10 +489,11 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
   persistidos; tiene estado, conteos, errores y evidencia.
 - **Instancia lógica**: namespace estable (`SECGUARD_INSTANCE_ID`) que separa almacenamiento
   habitual, presentación y pruebas en un mismo servidor Qdrant. No se genera por arranque.
-- **Marcador de instancia**: archivo persistente con el ID y un hash del storage; detecta copias o
+- **Marcador de instancia**: archivo persistente con el ID y un fingerprint de la ruta canónica del
+  almacenamiento y del ID; detecta copias o
   namespaces incompatibles sin exponer rutas legibles.
 - **Lock de instancia**: archivo exclusivo compartido por la aplicación y el comando de
-  reconstrucción; coordina procesos distintos.
+  reconstrucción; coordina procesos distintos y registra la operación y el intento que lo posee.
 - **Índice Qdrant activo**: índice derivado utilizado para la recuperación documental; registra
   instancia, versión, alias y generación en la evidencia.
 - **Resultado de recuperación**: fragmento recuperado con procedencia, puntuación y referencia a la
@@ -520,11 +565,14 @@ ingesta en otro, comprobar el rechazo; matar el proceso y comprobar que el lock 
 - El modelo de embeddings actual y su dimensión no cambian en 004.
 - Los vectores no están en SQLite; la reconstrucción los regenera con el mismo modelo local. No se
   exportan vectores de Chroma.
+- No existe atomicidad entre Qdrant y SQLite. SQLite decide la disponibilidad de documentos y
+  versiones; si falla el commit en SQLite después de escribir puntos o publicar un alias, el
+  reintento converge sin duplicados y las consultas excluyen las versiones no disponibles.
 - No hay migración de vectores, escritura dual, selección permanente de backend, comparación
   obligatoria Chroma/Qdrant ni retorno a Chroma.
 - Las pruebas iniciales usan corpus público o fixtures ficticios y almacenamiento separado.
-- Cada instancia usa un `SECGUARD_INSTANCE_ID` estable y distinto; el marcador de storage y su hash
-  detectan copias o namespaces incompatibles.
+- Cada instancia usa un `SECGUARD_INSTANCE_ID` estable y distinto; el marcador de instancia y su
+  fingerprint de ruta canónica detectan copias o namespaces incompatibles.
 - El primer documento de un caso se indexa de forma incremental; la reconstrucción completa es una
   operación de mantenimiento para documentos existentes.
 - Un caso sin documentos privados no requiere alias privado; el corpus público puede responder.

@@ -51,8 +51,20 @@ Un fallo de índice nunca se transforma en “no existe evidencia”.
    `Document` en SQLite.
 3. Descarta el resultado si el fragmento no existe, la versión no está disponible, el documento no
    pertenece al alcance o la versión no es la vigente para una búsqueda nueva.
-4. Devuelve documento, versión, página/sección, localizador, procedencia y score.
-5. Una cita histórica se valida contra el fragmento persistido y su versión, no contra Qdrant.
+4. Un punto sin fragmento correspondiente en SQLite se reporta como discrepancia y nunca se convierte
+   en cita.
+5. Devuelve documento, versión, página/sección, localizador, procedencia y score.
+6. Una cita histórica se valida contra el fragmento persistido y su versión, no contra Qdrant.
+
+## Availability and failures
+
+- No existe atomicidad entre Qdrant y SQLite: SQLite decide la disponibilidad de documentos y
+  versiones, y una consulta excluye toda versión no disponible aunque sus puntos existan.
+- Un fallo de índice detiene la respuesta documental: no se ejecuta la generación, no se produce una
+  abstención por falta de evidencia y el paso y la ejecución se registran con el error clasificado.
+- Códigos obligatorios: `qdrant_unavailable` (503), `case_index_unavailable` (503),
+  `public_index_unavailable` (503) e `instance_namespace_mismatch` (503). El código se conserva en la
+  respuesta y en la evidencia; no se degrada a `internal_error`.
 
 ## Empty and error behavior
 

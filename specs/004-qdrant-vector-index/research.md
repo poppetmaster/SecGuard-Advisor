@@ -100,7 +100,12 @@ permanente de backend; retorno a Chroma.
 
 **Decisión:** calibrar con Qdrant sobre un conjunto reproducible de preguntas relevantes,
 marginales y fuera de dominio; registrar score y elegir umbral. El valor 0.35 de Chroma es solo
-referencia histórica, no una equivalencia.
+referencia histórica, no una equivalencia, y no se conserva como predeterminado validado. El valor
+resultante se aplica en `config.py` con su documentación.
+
+**Criterios y separación:** los criterios de aceptación se fijan antes de ejecutar la evaluación
+final, y calibración y evaluación final usan conjuntos distintos. No se ajustan criterios después
+para aprobar.
 
 **Razón:** la escala de similitud y la configuración de Qdrant deben comprobarse. No se inventan
 métricas ni se declara equivalencia sin evidencia.
@@ -130,16 +135,30 @@ borrar archivos Chroma en la aceptación.
 ### D-11 — Namespace de instancia
 
 **Decisión:** `SECGUARD_INSTANCE_ID` explícito, estable y opaco; se aplica a colecciones, aliases,
-generaciones, reportes y locks. Un marcador
-`storage/qdrant/instances/<instance_id>.json` guarda el ID y un SHA-256 del storage root; si no
-coincide, falla cerrado.
+generaciones, reportes y locks. El marcador vive en
+`<SECGUARD_STORAGE_DIR>/qdrant-control/instances/<instance_id>.json` y guarda el ID, un fingerprint
+SHA-256 de la **ruta canónica del almacenamiento combinada con el `instance_id`**, la versión de
+esquema y la fecha de creación.
+
+El fingerprint **no** depende del contenido, tamaño, fecha de modificación ni hash de los archivos
+SQLite, de los documentos ni del propio marcador: esos datos cambian durante el uso normal y un hash
+autorreferente haría fallar el arranque tras escribir el marcador.
+
+Rutas separadas: el volumen del servidor es `./storage/qdrant` → `/qdrant/storage` y contiene solo
+archivos de Qdrant; los marcadores, locks y reportes viven en `qdrant-control/`, relativos a
+`SECGUARD_STORAGE_DIR`.
+
+Registro de una instancia nueva en un servidor que ya contiene otras: se permite crear el marcador si
+no existen colecciones ni alias de ese `instance_id`. Si el marcador falta pero ya existen colecciones
+o alias de esa instancia, falla cerrado con `instance_namespace_mismatch`; no hay adopción silenciosa.
 
 **Razón:** permite compartir un servidor Qdrant entre almacenamiento habitual, presentación y
-pruebas sin colisión, incluso con el mismo `case_id`. El hash detecta una copia de SQLite/storage en
-otra ruta; no se expone la ruta legible. No se crea tabla.
+pruebas sin colisión, incluso con el mismo `case_id`. El fingerprint detecta una copia en otra ruta
+sin depender de datos mutables y sin exponer la ruta legible. No se crea tabla.
 
-**Alternativas descartadas:** namespace derivado del path legible; ID generado por arranque; tabla
-SQLite de instancias; reutilizar el ID de presentación en pruebas.
+**Alternativas descartadas:** hash del contenido de SQLite u originals (inestable y costoso);
+namespace derivado del path legible; ID generado por arranque; tabla SQLite de instancias; reutilizar
+el ID de presentación en pruebas.
 
 ### D-12 — Ciclo de vida del primer documento
 
@@ -167,12 +186,76 @@ nuevo por no tener alias privado.
 ### D-14 — Lock entre procesos
 
 **Decisión:** lock de archivo exclusivo por instancia en
-`storage/qdrant/locks/<instance_id>.lock`, compartido por la aplicación y el comando de
-reconstrucción. No es un lock en memoria ni una cola.
+`<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock`, compartido por la aplicación, la
+ingesta del corpus y el comando de reconstrucción. No es un lock en memoria ni una cola.
+
+**Registro de propietario:** mientras posee el lock, el proceso escribe en el archivo
+`{operation, attempt_id, pid, started_at}` con `operation` en `ingestion` o `rebuild`. La autoridad de
+actividad es el bloqueo real: si el lock puede adquirirse, el registro está obsoleto y se ignora. El
+registro se escribe solo después de adquirir y se considera inválido al liberar.
 
 **Razón:** ambos pueden ejecutarse en procesos distintos; el sistema operativo libera el lock si el
-proceso muere. Ingesta y reconstrucción se rechazan mutuamente con errores explícitos. Consultas no
+proceso muere. Sin identificación de la operación, la mera ocupación del lock no distingue ingesta de
+reconstrucción. Ingesta y reconstrucción se rechazan mutuamente con errores explícitos. Consultas no
 toman el lock y usan el alias anterior.
+
+**Alternativas descartadas:** inferir actividad de la existencia del archivo de lock; tabla SQLite de
+operaciones; pantalla administrativa; cola de trabajos.
+
+### D-15 — Taxonomía de errores de índice y coordinación
+
+**Decisión:** los errores de índice y coordinación se registran en `web/errors.py` con código y
+estado propios: `qdrant_unavailable` (503), `case_index_unavailable` (503),
+`public_index_unavailable` (503), `instance_namespace_mismatch` (503),
+`reconstruction_in_progress` (409) e `ingestion_in_progress` (409).
+
+**Razón:** `AppError` y `error_response` degradan a `internal_error` cualquier código no registrado,
+perdiendo el estado y el código en la evidencia. Registrar la taxonomía mantiene el mensaje
+comprensible y el código clasificado.
+
+**Alternativas descartadas:** mensajes ad hoc; reutilizar `internal_error`; códigos sin prueba.
+
+### D-16 — Frontera de atomicidad entre Qdrant y SQLite
+
+**Decisión:** no se promete atomicidad entre Qdrant y SQLite. SQLite decide la disponibilidad de
+documentos y versiones. Si el commit en SQLite falla después de escribir puntos o publicar un alias,
+la versión queda no disponible, las consultas la excluyen y el reintento converge sin duplicados
+gracias al UUIDv5 determinista y a la limpieza por `version_id`.
+
+**Razón:** una transacción distribuida entre ambos sistemas está fuera de alcance y sería un
+mecanismo nuevo no justificado. La convergencia por reintento conserva la fuente de verdad.
+
+### D-17 — Propagación del fallo de índice en el turno
+
+**Decisión:** un fallo de índice detiene la respuesta documental. `retrieval/search.py` eleva un
+error clasificado; `conversation/nodes.py` registra el paso con ese error; `conversation/graph.py` y
+`conversation/turn.py` detienen el turno, registran la ejecución con el código y devuelven el estado
+correspondiente. No se ejecuta la generación documental y no se produce abstención por falta de
+evidencia.
+
+**Razón:** hoy el grafo avanza de `retrieve` a `decide` sin consumir `retrieval_status`, de modo que
+un alias ausente o Qdrant caído terminaría en una respuesta de «sin evidencia» o en un 500 genérico.
+
+### D-18 — Interfaz operativa de reconstrucción
+
+**Decisión:** el comando de reconstrucción, su reporte local y la consulta de solo lectura
+`uv run python scripts/rebuild_qdrant.py --status` son la interfaz de estado y avance. La consulta
+distingue reconstrucción no iniciada, ingesta en curso, reconstrucción en curso y último resultado
+terminal, sin escribir archivos ni iniciar trabajo. No se añade una pantalla web de administración en
+004. Los cinco estados observables se derivan del reporte terminal y del lock con su operación
+propietaria, según `data-model.md` y `contracts/rebuild.md`.
+
+**Razón:** el alcance mínimo no exige una pantalla de administración y añadirla ampliaría la
+superficie de interfaz sin necesidad demostrada.
+
+### D-19 — Papel limitado del modo embebido
+
+**Decisión:** el modo embebido del cliente Qdrant se reserva para pruebas unitarias o una alternativa
+documentada. No sustituye la aceptación contra el servidor: la aceptación, la persistencia y la
+concurrencia se verifican contra el servidor local con Docker Compose.
+
+**Razón:** el modo embebido no reproduce volumen persistente, aliases entre procesos ni el lock de
+archivo compartido.
 
 ## Versiones y compatibilidad verificadas
 

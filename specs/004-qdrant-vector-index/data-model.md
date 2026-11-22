@@ -73,12 +73,17 @@ El paso `retrieve` puede guardar en `detail_json`:
   "hits": 6,
   "status": "ok",
   "vector_backend": "qdrant",
+  "instance_id": "presentacion-2026",
   "qdrant_version": "1.20.0",
-  "collection_alias": "secguard__case__<case_id>__embeddinggemma__768__active",
+  "collection_alias": "secguard__presentacion-2026__case__<case_id>__embeddinggemma__768__active",
   "generation": "20261111T...Z",
   "score_metric": "cosine"
 }
 ```
+
+Ante un fallo de índice, el mismo paso registra `status` distinto de `ok` y `error_code` con el código
+clasificado (`qdrant_unavailable`, `case_index_unavailable`, `public_index_unavailable` o
+`instance_namespace_mismatch`).
 
 No se guardan rutas locales, secretos ni texto de documentos.
 
@@ -89,30 +94,42 @@ No se guardan rutas locales, secretos ni texto de documentos.
 `SECGUARD_INSTANCE_ID` es un slug estable y opaco, obligatorio para Qdrant. Se configura en
 entorno/`.env` y no se genera en cada arranque. No contiene rutas privadas.
 
-`storage/qdrant/instances/<instance_id>.json` conserva:
+`<SECGUARD_STORAGE_DIR>/qdrant-control/instances/<instance_id>.json` conserva:
 
 ```json
 {
   "instance_id": "presentacion-2026",
-  "storage_fingerprint": "<sha256 del storage root canónico>",
+  "storage_fingerprint": "<sha256 de la ruta canónica del almacenamiento + instance_id>",
   "schema_version": 1,
   "created_at": "2026-11-11T...Z"
 }
 ```
 
-El fingerprint es un hash, no una ruta legible. Si el marcador no existe y Qdrant está vacío, se
-crea en el primer uso. Si no coincide con el ID o el storage actual, se falla con
-`instance_namespace_mismatch`; no se escribe ni se cambia un alias. Esto distingue una copia de
-SQLite/storage en otra ruta aunque conserve el mismo contenido.
+La ruta del marcador es relativa a `SECGUARD_STORAGE_DIR`. El fingerprint se calcula sobre la ruta
+canónica del almacenamiento combinada con el `instance_id`; **no** depende del contenido, tamaño,
+fecha de modificación ni hash de los archivos SQLite, de los documentos ni del propio marcador,
+porque esos datos cambian durante el uso normal. No se expone la ruta legible.
+
+Registro y no adopción:
+
+| Situación | Comportamiento |
+|---|---|
+| Marcador ausente y sin colecciones/alias de esa instancia en el servidor | Se crea en el primer uso, aunque el servidor ya contenga otras instancias. |
+| Marcador ausente pero con colecciones/alias de esa instancia ya presentes | `instance_namespace_mismatch`; no se escribe ni se adopta el namespace. |
+| Marcador presente con `instance_id` o fingerprint distintos | `instance_namespace_mismatch`; no se escribe ni se cambia alias. |
+| Marcador presente y coincidente | Se continúa. |
 
 ### Namespace aplicado
 
 ```text
 secguard__<instance_id>__public__...
 secguard__<instance_id>__case__<case_id>__...
-storage/qdrant/locks/<instance_id>.lock
-storage/qdrant/reports/<instance_id>/
+<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock
+<SECGUARD_STORAGE_DIR>/qdrant-control/reports/<instance_id>/
 ```
+
+El volumen de datos del servidor Qdrant (`./storage/qdrant` → `/qdrant/storage`) contiene solo
+archivos del servidor. Marcadores, locks y reportes viven en `qdrant-control/`, fuera de ese volumen.
 
 No se crea tabla SQLite para la instancia.
 
@@ -193,16 +210,50 @@ Un caso sin colección/alias no se considera un error. La ingesta crea el índic
 6. Se publica el alias del caso y se marca la versión `available`.
 7. Si extracción, embedding o escritura fallan, la versión queda `failed`/no disponible y no se
    publica alias nuevo. El reintento limpia por `version_id` y repite el flujo.
-8. Documentos posteriores usan el alias existente; no crean una generación por documento.
+8. Si el commit en SQLite falla después de escribir puntos o publicar el alias, la versión queda no
+   disponible; el alias puede existir sobre puntos que no son resolubles hasta que SQLite marque la
+   versión disponible. El reintento vuelve a indexar la misma versión, limpia por `version_id` y
+   reutiliza los UUIDv5 deterministas, de modo que converge sin duplicados. No se publica un alias
+   nuevo ni se declara éxito a partir de puntos sin versión disponible.
+9. Documentos posteriores usan el alias existente; no crean una generación por documento.
+
+**No hay atomicidad entre Qdrant y SQLite.** SQLite es la única autoridad sobre disponibilidad: una
+consulta excluye toda versión que no esté `available` o que no sea la vigente, aunque sus puntos
+existan en Qdrant.
 
 La reconstrucción inicial es distinta: crea una generación nueva para todos los documentos
 existentes y cambia el alias.
 
 ## Bloqueo de mantenimiento
 
-`storage/qdrant/locks/<instance_id>.lock` es un lock de archivo exclusivo, compartido por la
-aplicación y el comando de reconstrucción. Se adquiere antes de escribir el índice y se libera en
-`finally`. El sistema operativo lo libera si el proceso muere.
+`<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock` es un lock de archivo exclusivo,
+compartido por la aplicación, la ingesta del corpus y el comando de reconstrucción. Se adquiere antes
+de escribir el índice y se libera en `finally`. El sistema operativo lo libera si el proceso muere.
+
+### Registro de propietario
+
+Mientras posee el lock, el proceso escribe en el mismo archivo de lock:
+
+```json
+{
+  "operation": "ingestion|rebuild",
+  "attempt_id": "<id opaco del intento>",
+  "pid": 12345,
+  "started_at": "2026-11-11T...Z"
+}
+```
+
+Reglas:
+
+- El registro se escribe solo después de adquirir el lock y se considera inválido al liberarlo.
+- La autoridad de actividad es el bloqueo real. Si el lock puede adquirirse, el registro está
+  obsoleto y se ignora, aunque el archivo conserve contenido de un proceso muerto.
+- Un registro obsoleto no demuestra actividad ni éxito.
+- El estado distingue ingesta activa (lock con `operation=ingestion`), reconstrucción activa (lock con
+  `operation=rebuild`) y último resultado terminal (`latest.json`).
+- El registro se escribe en el mismo archivo bloqueado con `flock`, válido en macOS y Linux; Windows
+  queda fuera del objetivo declarado.
+- No se crea tabla SQLite ni pantalla administrativa.
 
 - Ingesta con lock de reconstrucción: `reconstruction_in_progress`, sin escritura.
 - Reconstrucción con lock de ingesta: `ingestion_in_progress`, sin espera indefinida.
@@ -234,7 +285,8 @@ aplicación y el comando de reconstrucción. Se adquiere antes de escribir el í
 
 ## Estado de reconstrucción
 
-No se crea una tabla. El comando de reconstrucción produce un reporte JSON local con:
+No se crea una tabla. El comando de reconstrucción es la interfaz operativa de estado y avance, y
+produce un reporte JSON local con:
 
 ```json
 {
@@ -250,7 +302,7 @@ No se crea una tabla. El comando de reconstrucción produce un reporte JSON loca
       "scope": "public|case",
       "case_id": "<id o null>",
       "generation": "20261111T...Z",
-      "alias": "secguard__...__active",
+      "alias": "secguard__<instance_id>__...__active",
       "expected_chunks": 0,
       "indexed_chunks": 0,
       "missing_chunks": 0,
@@ -262,7 +314,72 @@ No se crea una tabla. El comando de reconstrucción produce un reporte JSON loca
 }
 ```
 
-El reporte es operativo, no fuente de verdad. No se escribe en SQLite.
+El reporte es operativo, no fuente de verdad. No se escribe en SQLite. Se guarda en
+`<SECGUARD_STORAGE_DIR>/qdrant-control/reports/<instance_id>/` con un archivo por ejecución y un
+`latest.json` con el último resultado terminal.
+
+### Cinco estados observables
+
+| Estado | De dónde se obtiene | Interpretación |
+|---|---|---|
+| `not_started` | No hay `latest.json` y el lock no está tomado por una reconstrucción | No hay reconstrucción registrada. No implica fallo: el alias existente sigue siendo el vigente. |
+| `in_progress` | Lock tomado por un proceso vivo cuyo registro declara `operation=rebuild` | Reconstrucción en curso. El `latest.json` anterior describe el intento anterior, no éste. No es éxito. |
+| `completed` | `status` del último reporte terminal | Todos los alcances declarados se validaron. |
+| `partial` | `status` del último reporte terminal | Algún alcance quedó incompleto; un alcance validado puede tener alias propio y el reporte global no declara la reconstrucción completa. |
+| `failed` | `status` del último reporte terminal | El intento terminó con error; el alias anterior se conserva. |
+
+Un lock con `operation=ingestion` indica ingesta activa, no reconstrucción en curso: se muestra el
+último resultado terminal. Un lock activo no se interpreta como éxito y un reporte ausente no se
+interpreta como fallo. Un registro residual con el lock libre se ignora.
+
+### Consulta de estado de solo lectura
+
+`uv run python scripts/rebuild_qdrant.py --status` devuelve un objeto con `state`, el propietario del
+lock cuando está activo y el último resultado terminal. El resolvedor único vive en
+`retrieval/status.py`: la CLI y el reporte lo consumen y no reimplementan el sondeo del lock, la
+lectura del propietario ni la interpretación del reporte.
+
+```json
+{
+  "state": "<not_started|ingestion_in_progress|rebuild_in_progress|completed|partial|failed>",
+  "lock_owner": null,
+  "last_terminal": null
+}
+```
+
+`lock_owner` contiene `{operation, attempt_id, pid, started_at}` solo cuando hay un lock activo.
+`last_terminal` contiene `{status, finished_at, report}` cuando existe un reporte terminal.
+
+| Situación | `state` |
+|---|---|
+| Sin lock activo y sin `latest.json` | `not_started`; `last_terminal` es `null`; salida 0 |
+| Lock tomado por un proceso vivo con `operation=ingestion` | `ingestion_in_progress` |
+| Lock tomado por un proceso vivo con `operation=rebuild` | `rebuild_in_progress` |
+| Lock libre y último reporte terminal `completed` | `completed` |
+| Lock libre y último reporte terminal `partial` | `partial` |
+| Lock libre y último reporte terminal `failed` | `failed` |
+
+La consulta no inicia reconstrucciones, no genera embeddings, no crea colecciones, no registra
+instancias, no escribe archivos y no cambia aliases. Si el archivo de lock no existe, no se crea.
+
+Casos de error de la consulta, todos con salida 2, mensaje en `stderr` y el mismo objeto
+(`state: null`, `last_terminal: null`):
+
+| Situación | `error.code` |
+|---|---|
+| Reporte terminal ilegible | `status_report_unreadable` |
+| Configuración de instancia ausente o inválida | `instance_configuration_invalid` |
+| Archivo de lock existente pero ilegible, o lock tomado con registro de propietario ausente o corrupto | `lock_unreadable` |
+
+En los tres casos no se presenta el resultado como `not_started`, no se afirma que no existe una
+operación activa, no se crea marcador, lock, directorio ni otro archivo, y no se repara, borra ni
+sobrescribe información.
+
+## Puntos huérfanos
+
+Un punto Qdrant cuyo `payload.chunk_id` no existe en SQLite (o cuya versión no existe) es una
+**discrepancia**: se cuenta en `extra_chunks`, se reporta y nunca se resuelve como cita ni se
+devuelve como resultado.
 
 ## Invariantes
 
@@ -270,12 +387,17 @@ El reporte es operativo, no fuente de verdad. No se escribe en SQLite.
 2. Qdrant no se usa para reconstruir SQLite.
 3. Un alias activo solo apunta a una generación validada.
 4. Un índice parcial no se presenta como listo.
-5. Un punto Qdrant siempre resuelve a un `chunk_id` existente en SQLite.
+5. Un punto Qdrant debe resolver a un `chunk_id` existente en SQLite; si no, se reporta como
+   discrepancia y no se resuelve como cita.
 6. Un fragmento privado de un caso no se recupera desde otro caso.
 7. El corpus público es compartido y conserva su procedencia.
 8. Los registros Qualys no se convierten en puntos, documentos ni citas.
 9. Las citas históricas no dependen de que la versión esté indexada.
 10. Los archivos y datos Chroma no se borran en 004.
+11. No existe atomicidad entre Qdrant y SQLite: SQLite decide la disponibilidad y el reintento
+    converge sin duplicados.
+12. El registro de propietario del lock no demuestra actividad si el lock está libre; la autoridad es
+    el bloqueo real.
 
 ## Sin cambios de esquema
 

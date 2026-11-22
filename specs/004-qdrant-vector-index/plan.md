@@ -95,15 +95,19 @@ specs/004-qdrant-vector-index/
 
 ```text
 src/secguard_advisor/
-├── config.py                    # Qdrant URL/timeout; retirar chroma_dir
+├── config.py                    # Qdrant URL/timeout/umbral; retirar chroma_dir
 ├── retrieval/
 │   ├── index.py                 # reemplazar ChromaIndex por QdrantIndex
-│   ├── collections.py           # nombres físicos, alias y generaciones
-│   ├── instance.py              # SECGUARD_INSTANCE_ID, marcador, hash y file lock
-│   └── search.py                # puntuación/threshold de Qdrant; resolver SQLite
-├── documents/service.py         # mismo IndexProtocol; sin cambios de dominio
+│   ├── collections.py           # nombres físicos, alias y generaciones por instancia
+│   ├── instance.py              # SECGUARD_INSTANCE_ID, marcador/fingerprint, namespace y file lock
+│   ├── status.py                # resolvedor único de estado: lock, propietario y reporte terminal
+│   └── search.py                # puntuación/umbral de Qdrant; errores clasificados; resolver SQLite
+├── documents/service.py         # mismo IndexProtocol; uso del lock y del ciclo del primer documento
 ├── web/app.py                   # fábrica Qdrant; readiness y errores
-├── conversation/nodes.py        # evidencia de recuperación con Qdrant
+├── web/errors.py                # taxonomía de errores de índice, disponibilidad y locks
+├── conversation/nodes.py        # evidencia de recuperación y paso con error clasificado
+├── conversation/graph.py        # detención del turno ante fallo de índice
+├── conversation/turn.py         # error clasificado del turno sin abstención
 └── evidence/                    # sin tablas nuevas; detalle en RunStep
 
 scripts/
@@ -187,20 +191,43 @@ secguard__<instance_id>__public__<model-slug>__<dim>__g<UTC>
 secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__g<UTC>
 secguard__<instance_id>__public__<model-slug>__<dim>__active
 secguard__<instance_id>__case__<case_id>__<model-slug>__<dim>__active
-storage/qdrant/locks/<instance_id>.lock
-storage/qdrant/reports/<instance_id>/
 ```
 
-**Vinculación persistente:** `storage/qdrant/instances/<instance_id>.json` guarda el
-`instance_id`, un **SHA-256 del storage root canónico** (no la ruta legible), la versión de esquema y
-la fecha de creación. Si el marcador no existe y Qdrant está vacío, se crea en el primer uso. Si el
-marcador existe y no coincide con el `SECGUARD_INSTANCE_ID` o con el hash del storage actual, la
-aplicación falla cerrada con `instance_namespace_mismatch`: no escribe, no cambia aliases y no usa
-Chroma. Esto distingue una instancia copiada a otra ruta aunque conserve la misma SQLite.
+Rutas de la aplicación, relativas a `SECGUARD_STORAGE_DIR`:
+
+```text
+<SECGUARD_STORAGE_DIR>/qdrant-control/instances/<instance_id>.json
+<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock
+<SECGUARD_STORAGE_DIR>/qdrant-control/reports/<instance_id>/
+```
+
+El volumen de datos del servidor Qdrant es `./storage/qdrant` montado en `/qdrant/storage` y contiene
+solo archivos del servidor. Los marcadores, locks y reportes viven en `qdrant-control/` y nunca dentro
+del volumen del servidor: así una copia o limpieza del volumen no destruye el estado operativo de la
+aplicación, y viceversa.
+
+**Vinculación persistente:** `qdrant-control/instances/<instance_id>.json` guarda el `instance_id`, un
+**fingerprint SHA-256 de la ruta canónica del almacenamiento combinada con el `instance_id`**, la
+versión de esquema y la fecha de creación. El fingerprint no depende del contenido, tamaño, fecha de
+modificación ni hash de los archivos SQLite, de los documentos ni del propio marcador, porque esos
+datos cambian durante el uso normal. No se expone la ruta legible.
+
+Reglas de registro, sin adopción silenciosa:
+
+1. Marcador ausente, sin colecciones ni alias de esa instancia en el servidor: se crea en el primer
+   uso. Un servidor que ya contiene otras instancias no impide registrar una instancia nueva.
+2. Marcador ausente pero ya existen colecciones o alias de ese `instance_id`: fallo cerrado
+   `instance_namespace_mismatch`; no se adopta el namespace.
+3. Marcador presente con `instance_id` o fingerprint distintos: fallo cerrado
+   `instance_namespace_mismatch`; no escribe y no cambia alias.
+4. Marcador presente y coincidente: se continúa.
 
 `SECGUARD_INSTANCE_ID` ausente o inválido es un error de configuración. Las pruebas deben fijar un ID
-propio y un storage separado; no se reutiliza el ID de presentación. El namespace incompatible no se
-“adopta” automáticamente: requiere corrección de configuración o un procedimiento explícito futuro.
+propio y un storage separado; no se reutiliza el ID de presentación. Una copia del almacenamiento en
+otra ruta cambia la ruta canónica: el fingerprint no coincide y la aplicación falla cerrada, salvo que
+la copia se configure con una instancia nueva y su propio marcador, retirando únicamente el marcador
+copiado. El namespace incompatible no se “adopta” automáticamente: requiere corrección de
+configuración o un procedimiento explícito futuro.
 
 ### Collections, aliases and generations
 
@@ -269,6 +296,20 @@ Esto es **incremental** y distinto de la reconstrucción inicial de documentos e
 reconstrucción crea una generación nueva para todo el alcance y cambia el alias; la ingesta del
 primer documento solo crea el índice mínimo necesario para ese caso.
 
+**Frontera de atomicidad:** no existe atomicidad entre Qdrant y SQLite. SQLite decide siempre la
+disponibilidad del documento y de la versión; Qdrant solo aporta puntos y alias. Si el commit en
+SQLite falla después de escribir puntos o de publicar el alias:
+
+- la versión queda no disponible en SQLite y las consultas la excluyen, aunque sus puntos existan;
+- el alias ya publicado apunta a una generación cuyos fragmentos no son resolubles hasta que SQLite
+  marque la versión como disponible;
+- el reintento vuelve a indexar la misma versión, limpia por `version_id` como mejor esfuerzo y
+  reutiliza los UUIDv5 deterministas, de modo que converge sin duplicados;
+- nunca se publica un alias nuevo ni se declara éxito a partir de puntos sin versión disponible.
+
+Un punto cuyo `chunk_id` no existe en SQLite es una discrepancia: se reporta y nunca se resuelve como
+cita.
+
 ### Rebuild workflow
 
 Comando objetivo: `uv run python scripts/rebuild_qdrant.py` (o target `make qdrant-rebuild`).
@@ -285,13 +326,47 @@ Comando objetivo: `uv run python scripts/rebuild_qdrant.py` (o target `make qdra
 7. Si falla o se interrumpe, no cambiar el alias; reportar estado parcial, puntos faltantes y causa.
 8. Repetir es seguro: una nueva ejecución crea otra generación y no duplica puntos en la activa.
 
+**Interfaz operativa:** el comando y su reporte local son la interfaz de estado y avance de la
+reconstrucción. No se añade una pantalla web de administración en 004.
+
+**Cinco estados observables** (`data-model.md` y `contracts/rebuild.md` fijan la fuente de cada uno):
+
+| Estado | Fuente | Interpretación |
+|---|---|---|
+| `not_started` | Sin reporte terminal del alcance y sin lock tomado por una reconstrucción | No hay reconstrucción registrada; no implica fallo. |
+| `in_progress` | Lock tomado por un proceso vivo cuyo registro de propietario declara `rebuild` | Hay una reconstrucción en curso; el alias anterior sigue siendo el vigente. |
+| `completed` | Último reporte terminal `completed` | El alcance validado corresponde a la generación activa. |
+| `partial` | Último reporte terminal `partial` | Se indexó parte del alcance; el alias de ese alcance no se publicó si la validación falló. |
+| `failed` | Último reporte terminal `failed` | El intento terminó con error; el alias anterior se conserva. |
+
+Un lock con operación `ingestion` significa que hay una ingesta activa, no una reconstrucción en
+curso: se muestra el último resultado terminal. Un lock activo nunca se interpreta como éxito y un
+reporte ausente nunca se interpreta como fallo. Un registro de propietario residual con el lock libre
+se ignora: la liveness la decide el bloqueo real, no el contenido del archivo.
+
+**Consulta de estado de solo lectura:** `uv run python scripts/rebuild_qdrant.py --status` devuelve un
+objeto JSON con `state` en `not_started`, `ingestion_in_progress`, `rebuild_in_progress`, `completed`,
+`partial` o `failed`, el propietario del lock si está activo y el último resultado terminal. El
+resolvedor único vive en `retrieval/status.py` (`resolve_operation_state`) y el reporte usa el mismo
+módulo (`terminal_status`); ni la CLI ni el reporte reimplementan el sondeo del lock, la lectura del
+propietario ni la interpretación del reporte terminal. No inicia reconstrucciones, no
+genera embeddings, no crea colecciones, no registra instancias, no escribe archivos y no cambia
+aliases; si no hay estado registrado devuelve `not_started` con salida 0. Un lock libre con metadatos
+residuales se interpreta como sin operación en curso. Si el reporte terminal es ilegible, finaliza con
+salida 2, mensaje en `stderr` y JSON con `state: null`, `last_terminal: null` y `error` explícito, sin
+borrar, sobrescribir ni reparar el reporte. El mismo formato de error y la misma prohibición de
+escritura aplican a `instance_configuration_invalid` (configuración de instancia ausente o inválida) y
+`lock_unreadable` (lock existente ilegible).
+
 **Concurrencia entre procesos:** la reconstrucción y la ingesta adquieren el mismo **lock de archivo
-exclusivo** de la instancia, `storage/qdrant/locks/<instance_id>.lock`, mediante `flock`/equivalente
+exclusivo** de la instancia, `<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock`, mediante `flock`/equivalente
 del sistema operativo. No es un lock en memoria: cualquier proceso que use el mismo storage e
 instancia lo respeta, y el sistema operativo lo libera si el proceso muere.
 
-- La reconstrucción intenta adquirirlo al inicio y lo libera en `finally`.
-- La ingesta lo adquiere para la escritura del índice y lo libera al terminar.
+- La reconstrucción intenta adquirirlo al inicio y lo libera en `finally`, con la operación
+  `rebuild`.
+- La ingesta lo adquiere para la escritura del índice con la operación `ingestion` y lo libera al
+  terminar. Aplica a la ingesta de documentos, a `scripts/ingest_corpus.py` y a `prepare_demo.py`.
 - Si la reconstrucción ya lo tiene, una ingesta nueva recibe `409 reconstruction_in_progress` y no
   escribe a medias.
 - Si una ingesta lo tiene, la reconstrucción falla con `ingestion_in_progress`; no espera
@@ -302,13 +377,31 @@ instancia lo respeta, y el sistema operativo lo libera si el proceso muere.
 - El lock se particiona por `instance_id`: dos instancias en el mismo servidor Qdrant no se bloquean
   entre sí.
 
+**Identificación de la operación:** mientras posee el lock, el proceso escribe un registro mínimo
+`{operation, attempt_id, pid, started_at}` asociado al bloqueo real. La autoridad de actividad es el
+lock, no el registro: si el lock puede adquirirse, cualquier registro residual está obsoleto y se
+ignora, incluso tras una terminación abrupta. El estado distingue ingesta activa, reconstrucción
+activa y último resultado terminal, sin tabla SQLite ni pantalla administrativa. El registro se
+escribe en el mismo archivo bloqueado con `flock`, válido en macOS y Linux; Windows queda fuera del
+objetivo declarado del proyecto.
+
 **Documentos añadidos durante la reconstrucción:** la ingesta se rechaza mientras dura; los
 documentos que ya estaban en SQLite y no entraron en la generación se incluyen en la siguiente
 reconstrucción. No hay promesa de actualización de Chroma.
 
 ### Failure behavior
 
-- Qdrant inaccesible o `/readyz` falla: error explícito, sin fallback a Chroma.
+- Qdrant inaccesible o `/readyz` falla: error explícito `qdrant_unavailable` (503), sin fallback a
+  Chroma.
+- Alias de caso ausente con documentos esperados: `case_index_unavailable` (503). Alias público
+  ausente con documentos esperados: `public_index_unavailable` (503). Namespace incompatible:
+  `instance_namespace_mismatch` (503).
+- Lock ocupado: la ingesta recibe `reconstruction_in_progress` (409) y la reconstrucción
+  `ingestion_in_progress` (409).
+- Cada error conserva su código en la respuesta y en la evidencia del paso y de la ejecución; el
+  registro de la taxonomía en `web/errors.py` es obligatorio para que no se degrade a `internal_error`.
+- Un fallo de índice detiene la respuesta documental: no se ejecuta la generación, no se produce una
+  abstención por falta de evidencia y el turno queda registrado con el error clasificado.
 - Versión incompatible: fallo antes de crear/escribir; no se cambia el alias.
 - Dimensión/modelo incompatible: se reporta y no se mezcla; no se cambia el alias.
 - Reconstrucción parcial: el alias no cambia; el reporte indica qué falta.
@@ -335,11 +428,20 @@ alcance vacío. Un alcance realmente vacío no bloquea la consulta pública.
 
 ### Chroma retirement
 
+- La sustitución de código, fixtures, pruebas y dependencias es **una sola unidad de trabajo**: no se
+  declara verde ni se integra hasta que las pruebas que instancian Chroma estén adaptadas. No se
+  conservan dos backends operativos para evitar ese trabajo.
 - Se reemplazan `ChromaIndex`, `chroma_dir`, la fábrica de índice y las dependencias
   `langchain-chroma`/`chromadb` en el código de producto.
 - Se actualizan scripts de ingesta/demo, fixtures y pruebas que instancian Chroma.
 - Se elimina la selección de backend: no existe `SECGUARD_VECTOR_BACKEND=chroma|qdrant` ni
   dual-write.
+- El cambio de backend actualiza `.specify/memory/constitution.md` en el mismo commit con el estado
+  verificado en ese momento: «backend sustituido; aceptación pendiente». No declara «implementado» ni
+  «aceptado» antes de las comprobaciones finales.
+- La aceptación final actualiza la constitución en su propio commit con «implementado y aceptado
+  localmente» solo tras observar las comprobaciones de la aceptación. `CONSTITUTION.md` sigue siendo
+  un enlace simbólico y no se duplica contenido.
 - No se borran `storage/chroma`, archivos ni bases existentes. La limpieza física queda fuera de
   004 y requiere autorización separada.
 - Las referencias históricas a Chroma en documentación/evidencia se conservan como tales.
@@ -348,7 +450,9 @@ alcance vacío. Un alcance realmente vacío no bloquea la consulta pública.
 
 - Sin tablas nuevas. El paso `retrieve` de `RunStep.detail_json` registra:
   `vector_backend="qdrant"`, `instance_id`, `qdrant_version="1.20.0"`, `collection_alias`,
-  `generation`, `hits`, `status`.
+  `generation`, `hits`, `status` y, cuando corresponda, `error_code` con el código clasificado
+  (`qdrant_unavailable`, `case_index_unavailable`, `public_index_unavailable`,
+  `instance_namespace_mismatch`).
 - La página de ejecución conserva sus campos actuales y añade la identidad del índice sin exponer
   rutas locales ni secretos.
 - La reconstrucción escribe un reporte JSON local con fecha, alcance, generación, conteos,
@@ -362,6 +466,11 @@ alcance vacío. Un alcance realmente vacío no bloquea la consulta pública.
 - Se registran distribuciones de score y se elige un umbral que separe candidatos débiles sin
   ocultar evidencia pertinente. El valor inicial propuesto se marca como propuesto; el valor
   observado se registra tras la evaluación.
+- Los criterios de aceptación se fijan antes de ejecutar la evaluación final y no se ajustan después
+  para aprobar. Calibración y evaluación final usan conjuntos separados.
+- El valor resultante se aplica en `config.py` con su documentación; el 0.35 de Chroma no se conserva
+  como predeterminado validado. La evaluación final se ejecuta con ese valor aplicado y congelado y
+  con un conjunto distinto del de calibración; no recalibra durante la evaluación.
 - No se declara equivalencia con el umbral 0.35 de Chroma.
 
 ## Phase 0 — Research
@@ -389,9 +498,11 @@ Qdrant aporta colecciones, aliases, puntos y payload; el reporte de reconstrucci
   versiones, lock y estados de primer documento.
 - Contrato: adaptador de índice, reconstrucción, recuperación, evidencia, namespace y lifecycle.
 - Integración: Qdrant 1.20.0 server + Ollama embeddinggemma; ingesta, consulta, citas, aislamiento,
-  reinicio, caída y configuración incompatible.
+  reinicio, caída, configuración incompatible y consulta de estado de solo lectura sin efectos de
+  escritura.
 - Concurrencia real: dos procesos (aplicación y comando) compiten por el lock de instancia; se
-  comprueba rechazo, liberación tras kill y ausencia de escritura parcial.
+  comprueba rechazo, liberación tras kill, registro de propietario obsoleto y ausencia de escritura
+  parcial.
 - Aceptación: corpus público, dos casos ficticios, **dos instancias con el mismo `case_id` y
   contenidos distintos**, primer documento, alcance vacío, versiones superadas/citas históricas,
   reconstrucción repetida/interrumpida, ausencia de Qualys y regresión 001/002.
@@ -406,7 +517,7 @@ Qdrant aporta colecciones, aliases, puntos y payload; el reporte de reconstrucci
 | Qdrant 1.20.0 nuevo | Versión exacta servidor/cliente; verificación `/readyz` y compatibilidad; pruebas de contrato |
 | Re-embedding costoso | Lotes, progreso, reintento; no se inventan tiempos; medir antes de aceptar |
 | Índice parcial visible | Generación + alias; el alias solo cambia tras validar; primer documento publica alias solo tras éxito |
-| Namespace incompatible o storage copiado | `SECGUARD_INSTANCE_ID` + marcador con hash de storage; fallo cerrado; tests usan ID propio |
+| Namespace incompatible o storage copiado | `SECGUARD_INSTANCE_ID` + marcador con fingerprint de ruta canónica; fallo cerrado; tests usan ID propio |
 | Diferencias de score Chroma/Qdrant | Calibración con Qdrant; no copiar 0.35 |
 | Pérdida de citas históricas | Citas resueltas desde SQLite; no dependen de Qdrant |
 | Borrado accidental de datos | No se borra Chroma; limpieza fuera de 004; backup previo para operaciones destructivas |
@@ -418,10 +529,12 @@ Qdrant aporta colecciones, aliases, puntos y payload; el reporte de reconstrucci
 ## Dependencies and Ordering
 
 1. Ratificación del responsable registrada; acuerdos del equipo no constan.
-2. Confirmar Qdrant 1.20.0 server/client y Compose.
-3. Implementar adaptador/aliases/reconstrucción en una tarea posterior.
-4. Retirar Chroma del código y dependencias, sin borrar datos.
-5. Ejecutar integración/aceptación y actualizar demo.
+2. Confirmar Qdrant 1.20.0 servidor/cliente y Compose.
+3. Implementar adaptador, namespace y alias, y la taxonomía de errores de índice.
+4. Migrar la ingesta del corpus público antes de declarar recuperación pública con Qdrant.
+5. Retirar Chroma del código, fixtures, pruebas y dependencias como una sola unidad, sin borrar datos.
+6. Actualizar `.specify/memory/constitution.md` en el mismo commit que el cambio de backend.
+7. Ejecutar integración/aceptación, calibrar el umbral y actualizar la demo.
 
 ## Expected Outcome
 

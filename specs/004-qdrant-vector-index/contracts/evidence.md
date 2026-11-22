@@ -16,9 +16,11 @@ El paso `retrieve` de `RunStep.detail_json` puede incluir:
 | `generation` | string | Generación validada detrás del alias |
 | `score_metric` | string | `cosine` |
 | `hits` | integer | Fragmentos devueltos |
-| `status` | string | `ok`, `empty` o error clasificado |
+| `status` | string | `ok`, `empty` o estado de fallo del paso |
+| `error_code` | string (opcional) | Código clasificado cuando el paso falla: `qdrant_unavailable`, `case_index_unavailable`, `public_index_unavailable` o `instance_namespace_mismatch` |
 
-No se guardan rutas locales, secretos, texto completo de documentos ni payloads de Qualys.
+No se guardan rutas locales, secretos, texto completo de documentos ni payloads de Qualys. El código
+de error se conserva tal cual; no se sustituye por `internal_error`.
 
 ## Rebuild evidence
 

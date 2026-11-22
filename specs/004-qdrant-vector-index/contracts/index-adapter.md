@@ -38,7 +38,11 @@ nunca consulta una generación parcial.
   Chroma.
 - **Errores:** conexión, timeout, versión incompatible, dimensión incompatible, namespace
   incompatible, alias ausente y payload inválido se clasifican y se reportan; no hay fallback a
-  Chroma.
+  Chroma. Los códigos y estados son obligatorios y se registran en `web/errors.py`:
+  `qdrant_unavailable` (503), `case_index_unavailable` (503), `public_index_unavailable` (503),
+  `instance_namespace_mismatch` (503), `reconstruction_in_progress` (409) e
+  `ingestion_in_progress` (409). Un código debe conservarse en la respuesta y en la evidencia; no
+  se degrada a `internal_error`.
 
 ## Out of scope
 
