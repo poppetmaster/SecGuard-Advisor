@@ -146,7 +146,8 @@ del responsable registrada; acuerdos del equipo no constan) fija Qdrant en servi
 para 004, un proveedor API explícito para 005 y una acción externa controlada para 006. 004 reconstruye
 el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
 obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
-código en el Corte 6. 005 y 006 siguen sin implementar.
+código en el Corte 6. 005 tiene las Entregas 1–2 implementadas y probadas con transporte externo
+simulado; ningún proveedor externo se declara aceptado en uso real. 006 sigue sin implementar.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -176,7 +177,7 @@ La constitución completa las decisiones de arquitectura, seguridad y calidad:
 - FastAPI, Jinja2 y HTMX.
 - Tailwind CSS y Flowbite (gratuito), servidos localmente.
 - LangChain y LangGraph.
-- Ollama para inferencia local (actual; proveedor API objetivo 005).
+- Ollama para inferencia local (actual); DeepSeek y Anthropic configurables, con pruebas simuladas en 005.
 - SQLite para estado y procedencia; Qdrant para el índice vectorial derivado y reconstruible.
 - LangSmith para trazas y evaluación.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.

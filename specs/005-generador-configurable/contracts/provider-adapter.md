@@ -59,6 +59,8 @@ priority, exploitability, malware, qid, cve, group_by, detail, limit
 | Timeout de llamada | `model_timeout` | 504 | Sí, acotado |
 | Timeout de turno | `run_timeout` | 504 | No |
 | Credencial inválida/revocada | `provider_auth_error` | 502 | No |
+| Límite de tasa del proveedor | `provider_rate_limited` | 503 | Solo si respeta `Retry-After` y el saldo |
+| Error no clasificado del proveedor | `provider_error` | 502 | No |
 | Límite de tasa | `provider_rate_limited` | 503 | Sí, respetando `Retry-After` |
 | Salida inválida o vacía | `invalid_model_output` | 500 | Una reparación |
 | Contexto excedido | `context_budget_exceeded` | 500 | No |
@@ -67,6 +69,9 @@ priority, exploitability, malware, qid, cve, group_by, detail, limit
 | Herramienta importada/mixta con proveedor externo | `external_tool_blocked` | 403 | No |
 
 Los mensajes al usuario no incluyen claves, cabeceras, cuerpos del proveedor ni rutas locales.
+
+Los adaptadores no habilitan reintentos implícitos del transporte (`httpx` sin reintentos). Un
+reintento explícito consume una operación, tiempo y reserva propios.
 
 ## Paridad funcional
 

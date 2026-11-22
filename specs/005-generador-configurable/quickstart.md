@@ -68,6 +68,20 @@ La autorización se registra por caso, con alcance `public_corpus` o `fictional_
 declarada, política y fecha. No se infiere de la credencial ni de una variable global. En 005 no se
 autoriza `private_case`.
 
+```bash
+# Otorgar (revoca la autorización vigente anterior del caso)
+uv run python scripts/external_authorization.py --case <case_id> \
+  --scope fictional_case --authorized-by "Revisora local" --note "Prueba ficticia"
+
+# Consultar la autorización vigente
+uv run python scripts/external_authorization.py --list --case <case_id>
+
+# Revocar
+uv run python scripts/external_authorization.py --case <case_id> --revoke
+```
+
+El comando no imprime secretos ni contenido del caso. No hay formulario web en 005.
+
 Con proveedor externo, `findings_query` solo se permite en un caso `fictional_case` y con
 `origin=synthetic`. Un resultado importado o mixto falla con `external_tool_blocked`; para hallazgos
 importados se usa Ollama.

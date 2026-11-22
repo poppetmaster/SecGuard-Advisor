@@ -25,6 +25,12 @@ No se aceptan credenciales por argumentos de línea de comandos, URL, SQLite ni 
 | `SECGUARD_EXTERNAL_BUDGET_USD` | No | `0` | ≥ 0; 0 bloquea llamadas externas |
 | `SECGUARD_EXTERNAL_RUN_BUDGET_USD` | No | `0` | ≥ 0; límite por turno |
 | `SECGUARD_EXTERNAL_TARIFF_VERSION` | No | fecha de la tabla | Debe existir en la tabla de tarifas |
+| `SECGUARD_EXTERNAL_CONTEXT_WINDOW_TOKENS` | No | `128000` | Ventana conservadora para prompts externos |
+| `SECGUARD_EXTERNAL_ESTIMATE_CHARS_PER_TOKEN` | No | `2.0` | Estimación conservadora; no es conteo exacto |
+| `SECGUARD_EXTERNAL_ESTIMATE_OVERHEAD_TOKENS` | No | `64` | Margen fijo de la estimación |
+| `DEEPSEEK_BASE_URL` | No | `https://api.deepseek.com` | Endpoint del adaptador |
+| `ANTHROPIC_BASE_URL` | No | `https://api.anthropic.com` | Endpoint del adaptador |
+| `ANTHROPIC_VERSION` | No | `2026-10-21` | Cabecera de versión verificada |
 | `SECGUARD_QDRANT_URL` | No | `http://127.0.0.1:6333` | Sin cambio |
 | `SECGUARD_INSTANCE_ID` | Sí para Qdrant | — | Sin cambio |
 
@@ -56,6 +62,12 @@ SECGUARD_EXTERNAL_RUN_BUDGET_USD=0
 ```
 
 Sin claves reales. `.env` no se versiona.
+
+## Autorización externa
+
+La autorización no es una variable de entorno. Se registra por caso con
+`uv run python scripts/external_authorization.py --case <id> --scope public_corpus|fictional_case
+--authorized-by "<identidad>"` y se revoca con `--revoke`. La credencial sola no autoriza.
 
 ## Registro
 

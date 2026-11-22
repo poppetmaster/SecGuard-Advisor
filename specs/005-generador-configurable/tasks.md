@@ -159,7 +159,7 @@ credencial/presupuesto, contra el proveedor real en pruebas condicionadas; el co
 proveedor; el presupuesto reserva y liquida; el contenido privado se bloquea; no hay secretos en
 logs/SQLite/trazas.
 
-- [ ] T015 [P] [US2] Añadir pruebas de contrato de DeepSeek: JSON Output, contenido vacío, uso,
+- [x] T015 [P] [US2] Añadir pruebas de contrato de DeepSeek: JSON Output, contenido vacío, uso,
   error de autenticación, 429 y timeout.
   - Story: US2
   - Dep: T005
@@ -167,14 +167,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; usan un servidor HTTP simulado, sin llamada pagada.
   - Evidence: `tests/contract/test_deepseek_adapter.py` con salida RED.
 
-- [ ] T016 [US2] Implementar el adaptador DeepSeek con `httpx`, `response_format=json_object`,
+- [x] T016 [US2] Implementar el adaptador DeepSeek con `httpx`, `response_format=json_object`,
   razonamiento desactivado por defecto y normalización de errores/uso.
   - Story: US2
   - Dep: T015
   - Check: T015 pasa; el contenido vacío se clasifica como `invalid_model_output`.
   - Evidence: `src/secguard_advisor/conversation/providers/deepseek.py`.
 
-- [ ] T017 [P] [US2] Añadir pruebas de contrato de Anthropic: `output_config.format`, respuesta
+- [x] T017 [P] [US2] Añadir pruebas de contrato de Anthropic: `output_config.format`, respuesta
   estructurada, `count_tokens`, autenticación, 429 y timeout.
   - Story: US2
   - Dep: T005
@@ -182,14 +182,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; no realizan llamadas reales.
   - Evidence: `tests/contract/test_anthropic_adapter.py` con salida RED.
 
-- [ ] T018 [US2] Implementar el adaptador Anthropic con `json_schema`, `effort` bajo, omisión de
+- [x] T018 [US2] Implementar el adaptador Anthropic con `json_schema`, `effort` bajo, omisión de
   parámetros de muestreo y normalización de errores/uso.
   - Story: US2
   - Dep: T017
   - Check: T017 pasa; el esquema Pydantic se transforma y se valida localmente.
   - Evidence: `src/secguard_advisor/conversation/providers/anthropic.py`.
 
-- [ ] T019 [P] [US3] Añadir pruebas de admisión de contexto por proveedor: GGUF en Ollama,
+- [x] T019 [P] [US3] Añadir pruebas de admisión de contexto por proveedor: GGUF en Ollama,
   `count_tokens` en Anthropic, estimador conservador en DeepSeek, reducción y fallo mínimo.
   - Story: US3
   - Dep: T016, T018
@@ -197,14 +197,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; la pregunta y el contexto declarado no se recortan.
   - Evidence: `tests/unit/test_provider_context.py` con salida RED.
 
-- [ ] T020 [US3] Implementar `PromptCounter` por proveedor y conectarlo a `budget.plan_prompt`.
+- [x] T020 [US3] Implementar `PromptCounter` por proveedor y conectarlo a `budget.plan_prompt`.
   - Story: US3
   - Dep: T019
   - Check: T019 pasa; Ollama conserva su tokenizador; el conteo externo respeta la compuerta de
     privacidad.
   - Evidence: `conversation/providers/context.py`, `conversation/budget.py`.
 
-- [ ] T021 [P] [US3] Añadir pruebas del cálculo de costo: tramos de Anthropic, peak/off-peak y caché
+- [x] T021 [P] [US3] Añadir pruebas del cálculo de costo: tramos de Anthropic, peak/off-peak y caché
   de DeepSeek, uso faltante = `unknown`, Ollama = `not_applicable`.
   - Story: US3
   - Dep: T016, T018
@@ -212,13 +212,13 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; nunca se inventa cero.
   - Evidence: `tests/unit/test_provider_cost.py` con salida RED.
 
-- [ ] T022 [US3] Implementar la tabla de tarifas versionada y el cálculo de costo/uso.
+- [x] T022 [US3] Implementar la tabla de tarifas versionada y el cálculo de costo/uso.
   - Story: US3
   - Dep: T021
   - Check: T021 pasa; la tarifa registra fecha, fuente y versión.
   - Evidence: `conversation/providers/cost.py`.
 
-- [ ] T023 [P] [US3] Añadir pruebas del libro de presupuesto: reserva antes de enviar, bloqueo por
+- [x] T023 [P] [US3] Añadir pruebas del libro de presupuesto: reserva antes de enviar, bloqueo por
   saldo, liquidación, liberación y reconciliación tras reinicio.
   - Story: US3
   - Dep: T022
@@ -226,14 +226,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; no se duplica gasto.
   - Evidence: `tests/unit/test_budget_ledger.py` con salida RED.
 
-- [ ] T024 [US3] Implementar `provider_budget_ledger`, reserva/liquidación y reconciliación de
+- [x] T024 [US3] Implementar `provider_budget_ledger`, reserva/liquidación y reconciliación de
   arranque.
   - Story: US3
   - Dep: T023
   - Check: T023 pasa; `external_budget_usd=0` bloquea toda llamada externa.
   - Evidence: migración, `evidence/budget.py`, pruebas verdes.
 
-- [ ] T025 [P] [US2] Añadir pruebas de autorización externa: bloqueo sin autorización, permiso con
+- [x] T025 [P] [US2] Añadir pruebas de autorización externa: bloqueo sin autorización, permiso con
   `public_corpus`/`fictional_case`, revocación y rechazo de `private_case`.
   - Story: US2
   - Dep: T005
@@ -241,14 +241,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; la credencial sola no autoriza.
   - Evidence: `tests/unit/test_external_authorization.py` con salida RED.
 
-- [ ] T026 [US2] Implementar `ExternalProcessingAuthorization` y la compuerta previa a cualquier
+- [x] T026 [US2] Implementar `ExternalProcessingAuthorization` y la compuerta previa a cualquier
   llamada externa o conteo externo.
   - Story: US2
   - Dep: T025
   - Check: T025 pasa; el error es `external_processing_blocked`.
   - Evidence: `db/models.py`, `cases/external.py`, migración.
 
-- [ ] T027 [P] [US2] Añadir pruebas de `findings_query` con proveedor externo: permitido solo para
+- [x] T027 [P] [US2] Añadir pruebas de `findings_query` con proveedor externo: permitido solo para
   `fictional_case` + `origin=synthetic`; bloqueo de importados/mixtos y ausencia de Qualys en el
   prompt.
   - Story: US2
@@ -257,7 +257,7 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; un resultado importado bloquea antes de ejecutar.
   - Evidence: `tests/unit/test_external_tool_block.py` con salida RED.
 
-- [ ] T028 [US2] Implementar la compuerta de `findings_query` externa (`fictional_case` +
+- [x] T028 [US2] Implementar la compuerta de `findings_query` externa (`fictional_case` +
   `origin=synthetic`), `external_tool_blocked` y la instrucción de usar Ollama para hallazgos
   importados.
   - Story: US2
@@ -265,7 +265,7 @@ logs/SQLite/trazas.
   - Check: T027 pasa; nunca se envía un resultado importado ni una fila Qualys.
   - Evidence: `conversation/nodes.py`, `web/errors.py`.
 
-- [ ] T029 [P] [US2] Añadir pruebas de redacción y escaneo de secretos en logs, SQLite, trazas,
+- [x] T029 [P] [US2] Añadir pruebas de redacción y escaneo de secretos en logs, SQLite, trazas,
   errores y capturas.
   - Story: US2
   - Dep: T016, T018
@@ -273,14 +273,14 @@ logs/SQLite/trazas.
   - Check: fallan antes de implementar; una clave ficticia no aparece en ningún artefacto.
   - Evidence: `tests/unit/test_secret_redaction.py` con salida RED.
 
-- [ ] T030 [US2] Centralizar la redacción de secretos, rutas y cabeceras; aplicarla a errores,
+- [x] T030 [US2] Centralizar la redacción de secretos, rutas y cabeceras; aplicarla a errores,
   logs, trazas y evidencia.
   - Story: US2
   - Dep: T029
   - Check: T029 pasa; no se registra la clave ni el cuerpo del proveedor.
   - Evidence: `conversation/providers/redaction.py`, `evidence/tracing.py`.
 
-- [ ] T031 [P] [US3] Añadir una prueba de contrato de la página de ejecución con uso y costo:
+- [x] T031 [P] [US3] Añadir una prueba de contrato de la página de ejecución con uso y costo:
   calculado, desconocido y no aplicable, sin secretos.
   - Story: US3
   - Dep: T024, T030
@@ -288,13 +288,13 @@ logs/SQLite/trazas.
   - Check: la página muestra la tarifa y el estado; nunca muestra la clave.
   - Evidence: `tests/contract/test_run_usage_view.py` con salida RED.
 
-- [ ] T032 [US3] Actualizar `runs/show.html` y la vista con proveedor, uso, tarifa y costo.
+- [x] T032 [US3] Actualizar `runs/show.html` y la vista con proveedor, uso, tarifa y costo.
   - Story: US3
   - Dep: T031
   - Check: T031 pasa; la evidencia histórica no cambia.
   - Evidence: plantilla y vista.
 
-- [ ] T033 [P] [US2] Añadir la prueba de independencia de LangSmith: activar proveedor externo no
+- [x] T033 [P] [US2] Añadir la prueba de independencia de LangSmith: activar proveedor externo no
   habilita trazas ni envía contenido.
   - Story: US2
   - Dep: T030
@@ -302,7 +302,7 @@ logs/SQLite/trazas.
   - Check: `LANGSMITH_TRACING=false` permanece; el tracer recibe solo metadatos.
   - Evidence: `tests/unit/test_langsmith_independence.py`.
 
-- [ ] T034 [US2] Documentar la entrega 2 y sus límites en `005-ultimo-resultado.md` y
+- [x] T034 [US2] Documentar la entrega 2 y sus límites en `005-ultimo-resultado.md` y
   `docs/planificacion/handoff-005.md`.
   - Story: US2
   - Dep: T024, T030, T032, T033

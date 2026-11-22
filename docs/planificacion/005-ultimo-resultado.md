@@ -1,152 +1,153 @@
-# 005 — Último resultado (Entrega 1 implementada)
+# 005 — Último resultado (Entregas 1–2 implementadas)
 
 **Fecha**: 2026-11-22 (America/Bogota, `-05`)
 **Rama**: `005-generador-configurable`
-**Estado**: **Entrega 1 (T001–T014) implementada y verificada. 005 no está aceptada.**
-**Alcance**: configuración y contrato común de proveedores, conservando Ollama como generador
-operativo. DeepSeek y Anthropic siguen sin implementar.
+**Estado**: **T001–T034 implementadas y verificadas con Ollama real y transporte externo simulado.
+005 no está aceptada.**
+**Alcance**: configuración y contrato común, adaptadores DeepSeek/Anthropic, contexto, costo,
+presupuesto, autorización, privacidad y evidencia. La comparación real y la aceptación (T035–T042)
+siguen pendientes.
 
 ## Dictamen
 
-La Entrega 1 está completa: la aplicación selecciona el proveedor de forma explícita, valida la
-configuración, conserva Ollama con su comportamiento actual, registra proveedor/modelo/identidad/
-límites y costo de API no aplicable, y rechaza proveedores externos no implementados sin fallback.
-La migración es aditiva y conserva las ejecuciones anteriores. `make check` y la regresión real con
-Ollama/Qdrant pasan.
+La Entrega 2 está completa dentro del alcance permitido: los adaptadores externos existen, usan el
+contrato común y están cubiertos por pruebas de contrato con `httpx.MockTransport`. No se realizaron
+llamadas reales a DeepSeek ni Anthropic, no se solicitó presupuesto ni credenciales y no se declara
+ningún proveedor externo aceptado en uso real.
 
-Lo que **no** está hecho: adaptadores DeepSeek/Anthropic, autorización externa, presupuesto,
-comparación y aceptación de 005. No se ejecutaron llamadas pagadas ni se solicitaron claves.
+Ollama sigue operativo y su regresión real pasó. `make check` quedó en verde.
 
 ## Estado por tarea
 
-| Tarea | Estado | Evidencia |
+| Rango | Estado | Evidencia |
 |---|---|---|
-| T001 pruebas de configuración | Completada | `tests/unit/test_provider_config.py`: 10 passed. |
-| T002 Settings de proveedor | Completada | `config.py`: proveedor, modelo, límites, secretos, presupuesto. |
-| T003 `.env.example` | Completada | Plantilla sin claves; `.env` ignorado por Git. |
-| T004 pruebas de registro | Completada | `tests/unit/test_provider_registry.py`: 4 passed. |
-| T005 protocolo y registro | Completada | `conversation/providers/{base,registry}.py`. |
-| T006 pruebas del esquema tipado | Completada | `tests/unit/test_tool_decision_schema.py`: 5 passed. |
-| T007 `ToolDecision.arguments` tipado | Completada | `ToolArguments` con claves estrictas; valores delegados a `FindingsArguments`. |
-| T008 pruebas de migración/registro | Completada | `tests/unit/test_provider_run_record.py`: 2 passed. |
-| T009 migración y registro por ejecución | Completada | `alembic/versions/d4b8c1e2f3a5_*.py`; `create_run`/`turn.py`. |
-| T010 contrato de evidencias | Completada | `tests/contract/test_run_provider_view.py`: 1 passed. |
-| T011 vista de proveedor/costo | Completada | `runs/show.html` y `conversation/views.py`. |
-| T012 regresión real Ollama/Qdrant | Completada | `test_journey_real.py`: 1 passed; `test_ollama_provider_regression.py`: 1 passed. |
-| T013 ausencia de fallback | Completada | `tests/contract/test_provider_not_implemented.py`: 1 passed. |
-| T014 documentación de la entrega | Completada | Este documento, handoff y `docs/evidencia/005-entrega-1/`. |
-| T015–T042 | Pendientes | Entrega 2 y 3; no iniciadas. |
+| T001–T014 Entrega 1 | Completadas | Configuración, registro, Ollama, esquema tipado, migración y evidencia. |
+| T015–T018 adaptadores | Completadas | Contratos simulados DeepSeek/Anthropic; adaptadores `httpx`. |
+| T019–T020 contexto | Completadas | GGUF solo Ollama; `count_tokens` Anthropic; estimación DeepSeek identificada. |
+| T021–T022 costo | Completadas | Tarifas fechadas, cache/peak, `unknown`, nunca cero. |
+| T023–T024 presupuesto | Completadas | Reserva, liquidación, reconciliación, saldo global y por turno. |
+| T025–T026 autorización | Completadas | Tabla por caso, servicio y CLI local. |
+| T027–T028 herramientas externas | Completadas | Solo `fictional_case` + `origin=synthetic`; importados bloqueados. |
+| T029–T030 redacción | Completadas | Secretos/rutas en errores, trazas y evidencia. |
+| T031–T032 evidencia de uso | Completadas | Uso por llamada, costo y página de ejecución. |
+| T033 LangSmith independiente | Completada | Activar externo no habilita trazas. |
+| T034 documentación | Completada | Este documento, handoff y `docs/evidencia/005-entrega-2/`. |
+| T035–T042 comparación/aceptación | Pendientes | No iniciadas. |
 
-## Decisiones implementadas
+## Corrección de configuración efectiva
 
-### Configuración y precedencia
+Se unificaron los consumidores para que todos usen el perfil seleccionado:
 
-- `SECGUARD_GENERATION_PROVIDER` (`ollama` predeterminado, `deepseek`, `anthropic`).
-- Para Ollama, los nombres nuevos tienen precedencia sobre los anteriores:
-  - `SECGUARD_GENERATION_MODEL` > `OLLAMA_MODEL`.
-  - `SECGUARD_GENERATION_MAX_OUTPUT_TOKENS` > `generator_num_predict`.
-  - `SECGUARD_GENERATION_TIMEOUT_SECONDS` > `llm_timeout_seconds`.
-- Precedencia general: variables de entorno > `.env` > predeterminados.
-- Credenciales `SecretStr` (`DEEPSEEK_API_KEY`, `ANTHROPIC_API_KEY`); ausentes por defecto.
-- Un proveedor externo sin credencial no arranca. Un proveedor desconocido o un límite inválido
-  tampoco.
-- `external_budget_usd` y `external_run_budget_usd` existen; `0` bloquea externos en la Entrega 2.
+- `web/app.py` construye el contador con `build_prompt_counter(settings)`:
+  - Ollama: `LazyPromptCounter(settings.provider_model)` (modelo efectivo, no el antiguo fijo).
+  - DeepSeek: estimador conservador identificado.
+  - Anthropic: `count_tokens` (o estimación si falla).
+- `conversation/budget.py` calcula el límite y la reserva con `provider_context_window` y
+  `provider_max_output_tokens`.
+- `conversation/nodes.py` usa `provider_timeout_seconds`; se eliminó `generation_config` con
+  parámetros anteriores.
+- `Run` registra `generator_max_output_tokens` y `generator_timeout_seconds`; la evidencia los muestra.
+- Las pruebas usan valores nuevos distintos de los antiguos (modelo, 64 tokens, 12.5 s).
 
-### Contrato y registro
+## Adaptadores externos
 
-- `GeneratorProtocol` con `provider`, `model`, `identity`, `decide`, `generate`, `last_usage`,
-  `close`.
-- `ProviderRegistry` resuelve el generador una vez por turno desde `Settings`.
-- `OllamaGenerator` implementa el protocolo y conserva su comportamiento.
-- Un proveedor externo configurado lanza `ProviderNotImplemented` (código
-  `provider_not_implemented`, HTTP 501) y **no** cae a Ollama.
-- La fábrica `create_app` usa el registro; el turno registra el proveedor y la identidad.
+### DeepSeek
 
-### Argumentos de herramienta
+- Endpoint `/chat/completions`, modelo `deepseek-flash`.
+- `response_format={"type":"json_object"}`, esquema en el system prompt, `max_tokens`.
+- `thinking=disabled` por defecto; sin reintentos implícitos del transporte.
+- Errores normalizados sin cuerpo del proveedor.
+- Uso: `prompt_tokens`, `completion_tokens`, `prompt_cache_hit_tokens`.
 
-- `ToolDecision.arguments` usa `ToolArguments`, un esquema estructural con `extra="forbid"` que
-  rechaza `case_id` y claves desconocidas.
-- Los valores (severidad, estado, límites) se validan con `FindingsArguments`/`parse_arguments`, por
-  lo que se conserva la corrección de argumentos inválidos por el modelo.
-- Los consumidores guardan solo los argumentos proporcionados (`exclude_unset=True`), sin cambiar
-  conteos, filtros ni aislamiento.
+### Anthropic
 
-### Persistencia y evidencia
+- Endpoint `/v1/messages`, modelo `claude-haiku-5-5`, `output_config.format` JSON Schema.
+- `max_tokens`; sin `temperature`/`top_p`/`top_k`; thinking adaptativo del proveedor.
+- Errores normalizados; `count_tokens` para admisión.
+- Uso: `input_tokens`, `output_tokens`, `cache_read_input_tokens`,
+  `cache_creation_input_tokens`.
 
-- Columnas nuevas en `runs`: `generator_provider`, `generator_identity`, `cost_status`, `cost_usd`,
-  `cost_tariff_version`.
-- Las filas anteriores se rellenan con `provider=ollama`, `cost_status=not_applicable`.
-- La página de ejecución muestra proveedor, generador, identidad, digest y costo de API.
-- Para Ollama: **No aplicable (API)**. No se afirma costo operativo total cero.
-- No se guardan secretos.
+Ninguno duplica el grafo ni tiene fallback.
+
+## Presupuesto, uso y costo
+
+- `provider_budget_ledger` reserva antes de la llamada y liquida o reconcilia después.
+- Saldo global (`external_budget_usd`) y saldo del turno (`external_run_budget_usd`) son límites
+  distintos; el turno no reinicia el global.
+- Una llamada enviada o de envío incierto sin uso confirmado conserva la reserva; no se libera como
+  gasto cero.
+- `provider_usage` registra decisión, generación, reparación y errores.
+- Costo calculado con tarifa `2026-11-22`; si falta uso o tarifa, `unknown`.
+- `external_budget_usd=0` bloquea antes de cualquier envío, incluido el conteo externo.
+
+## Autorización y privacidad
+
+- `external_processing_authorizations`: alcance `public_corpus` o `fictional_case`, política,
+  identidad declarada, fecha y revocación.
+- CLI: `uv run python scripts/external_authorization.py` para otorgar, listar y revocar.
+- Sin autorización vigente no se llama al proveedor ni al contador externo.
+- `public_corpus` no envía evidencia del caso ni historial previo.
+- `findings_query` externo solo en `fictional_case` + `origin=synthetic`; importados/Qualys se
+  bloquean.
+- LangSmith sigue independiente y desactivado por defecto.
+- Redacción centralizada de secretos, rutas y cabeceras.
 
 ## Comandos y resultados observados
 
 ```text
 make check
-  → 585 passed, 37 deselected, 17 warnings
+  → 637 passed, 37 deselected, 17 warnings (17.80 s)
 
-uv run pytest tests/acceptance/test_journey_real.py -q
-  → 1 passed in 715.47 s (11:55), Ollama + Qdrant reales
-     cubre consulta con cita, memoria y herramienta
-
-uv run pytest tests/integration/test_ollama_provider_regression.py -q
-  → 1 passed in 7.68 s
+uv run pytest tests/integration/test_ollama_provider_regression.py \
+                 tests/integration/test_answer_real.py -q
+  → 2 passed in 98.81 s (Ollama real)
 
 uv run pytest tests/unit/test_provider_run_record.py -q
-  → 2 passed (migración desde b7f2c9d1e4a6 con datos anteriores + registro)
+  → 2 passed (migración sobre base temporal)
 ```
 
-Pruebas enfocadas adicionales: configuración (10), registro (4), esquema (5), contrato de evidencia
-(1) y ausencia de fallback (1). Todas en verde.
+Las pruebas externas son simuladas: no hay llamadas reales ni evidencia de aceptación de DeepSeek o
+Anthropic.
 
-## Limitaciones observadas
-
-- DeepSeek y Anthropic no están implementados; el error es explícito y no hay fallback.
-- No se ejecutaron llamadas externas ni se solicitaron credenciales.
-- La regresión real usa el presupuesto de prueba ya existente de 600 s/300 s para el modelo local;
-  el producto conserva 120 s/90 s. No se amplió durante esta entrega para ocultar fallos.
-- El modelo local puede variar en la decisión de herramienta. Se mejoró el prompt de decisión con
-  ejemplos y la instrucción de no repetir una consulta ya respondida; la prueba real exige que
-  exista una llamada filtrada correcta, no que sea la primera.
-- Los proveedores externos no tienen aún autorización por caso, presupuesto ni comparación.
-
-## Archivos modificados
+## Archivos principales
 
 ```text
+src/secguard_advisor/conversation/providers/{base,registry,context,cost,usage}.py
+src/secguard_advisor/conversation/providers/{deepseek,anthropic,http_common,redaction}.py
+src/secguard_advisor/cases/external.py
+src/secguard_advisor/evidence/budget.py
 src/secguard_advisor/config.py
-src/secguard_advisor/conversation/llm.py
-src/secguard_advisor/conversation/nodes.py
-src/secguard_advisor/conversation/prompts.py
-src/secguard_advisor/conversation/turn.py
-src/secguard_advisor/conversation/views.py
-src/secguard_advisor/conversation/providers/{__init__,base,registry}.py
+src/secguard_advisor/conversation/{budget,nodes,turn,context,views}.py
 src/secguard_advisor/db/models.py
-src/secguard_advisor/evidence/runs.py
-src/secguard_advisor/web/app.py
-src/secguard_advisor/web/errors.py
+src/secguard_advisor/web/{app,errors}.py
 src/secguard_advisor/web/routes/chat.py
 src/secguard_advisor/web/templates/runs/show.html
-alembic/versions/d4b8c1e2f3a5_add_generation_provider.py
-.env.example
-tests/unit/test_provider_config.py
-tests/unit/test_provider_registry.py
-tests/unit/test_tool_decision_schema.py
-tests/unit/test_provider_run_record.py
-tests/contract/test_run_provider_view.py
-tests/contract/test_provider_not_implemented.py
-tests/integration/test_ollama_provider_regression.py
-tests/acceptance/test_journey_real.py
+alembic/versions/e6f7a8b9c0d1_add_provider_usage_budget_auth.py
+scripts/external_authorization.py
 ```
 
-## Evidencia persistente
+## Limitaciones
 
-- `docs/evidencia/005-entrega-1/README.md`
-- `docs/planificacion/handoff-005.md`
-- `specs/005-generador-configurable/tasks.md` (T001–T014 marcadas)
+- Sin llamadas reales a proveedores externos; los contratos usan transporte simulado.
+- Esquema JSON, thinking, conteo y tarifas deben revalidarse contra las APIs reales.
+- DeepSeek: caché omitida se asume 0; feriados chinos no modelados.
+- Anthropic: tokens de entrada tratados como cache miss; confirmar semántica real.
+- La estimación DeepSeek no es un conteo exacto ni garantía contra truncamiento.
+- La regresión real completa de 001/002 no se repitió; se ejecutaron las pruebas reales afectadas y
+  `make check`.
+- No se modificaron `storage/`, `storage/demo`, Chroma, Qdrant ni datos existentes.
+- `LANGSMITH_TRACING=false`.
 
-## Próximo paso
+## Próximos pasos
 
-Revisar la Entrega 1. Si se aprueba, iniciar la **Entrega 2 (T015–T034)**: adaptadores DeepSeek y
-Anthropic contra servidor simulado, contexto, costo, presupuesto, autorización externa y bloqueo de
-herramientas importadas. No se inicia 005 Entrega 2 en este cierre.
+1. Aprobar presupuesto global y por turno.
+2. Configurar credenciales locales sin versionarlas.
+3. Revalidar identificadores, precios y capacidades.
+4. Ejecutar la comparación real (T035–T039) con el conjunto fijo de diez preguntas.
+5. Regresión final y aceptación (T040–T042) solo con evidencia.
+
+## Commits
+
+- `1d5f856`, `db17347`, `bdcd892` — Entrega 1.
+- `7d4f374` — Entrega 2: adaptadores, contexto, costo, presupuesto, autorización y privacidad.
+- Commit documental de este informe: ver `git log -- docs/planificacion/005-ultimo-resultado.md`.

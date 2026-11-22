@@ -49,14 +49,14 @@ desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparació
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
 Ollama; la aceptación local de 004 sigue pendiente y no se presentan API ni Telegram como disponibles.
 
-**005 Entrega 1 implementada (2026-11-22):** `specs/005-generador-configurable/` define la selección
-explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude Haiku
-(`claude-haiku-5-5`). La Entrega 1 implementa configuración, protocolo/registro, Ollama operativo,
-`ToolDecision.arguments` tipado, migración y evidencia con proveedor/identidad/costo no aplicable.
-Ollama se mantiene disponible; no hay fallback ni cambio de proveedor en un turno. Los proveedores
-externos siguen sin implementar: responden con un error explícito y no caen a Ollama. Exigen
-credencial, presupuesto aprobado y autorización por caso para datos públicos o ficticios; Qualys y
-los datos privados no salen. 005 **no está aceptada** y no se ejecutaron llamadas pagadas.
+**005 Entregas 1–2 implementadas (2026-11-22):** `specs/005-generador-configurable/` define la
+selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
+Haiku (`claude-haiku-5-5`). Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
+costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
+de uso, probados **solo contra transporte HTTP simulado**. No hay fallback ni cambio de proveedor en
+un turno. Los externos exigen credencial, presupuesto aprobado y autorización por caso para datos
+públicos o ficticios; Qualys y los datos privados no salen. No se ejecutaron llamadas reales ni se
+declara ningún proveedor externo aceptado en uso real; 005 **no está aceptada**.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
