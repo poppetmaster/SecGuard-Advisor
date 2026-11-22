@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
+from secguard_advisor.cases.external import ExternalProcessingBlocked, ensure_external_allowed
 from secguard_advisor.cases.scope import (
     CaseNotFoundError,
     CaseScope,
@@ -135,6 +136,13 @@ def _run_generation(request: Request, scope: CaseScope, starter):
 
     embedder = None
     try:
+        provider = request.app.state.settings.generation_provider
+        if provider != "ollama":
+            try:
+                with request.app.state.session_factory() as session:
+                    ensure_external_allowed(session, case_id=scope.case_id, provider=provider)
+            except ExternalProcessingBlocked as exc:
+                return 403, {"notice": str(exc), "failure": None}
         embedder = request.app.state.embedder_factory()
         index = request.app.state.index_factory()
         try:
@@ -151,6 +159,8 @@ def _run_generation(request: Request, scope: CaseScope, starter):
                     "failure": None,
                 },
             )
+        except ExternalProcessingBlocked as exc:
+            return 403, {"notice": str(exc), "failure": None}
 
         result = execute_turn(context, memory=request.app.state.memory)
         if result.status == "succeeded":

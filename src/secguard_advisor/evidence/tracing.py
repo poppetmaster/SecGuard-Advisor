@@ -14,9 +14,22 @@ from typing import Any
 
 from secguard_advisor.config import Settings
 
-_SECRET_KEYS = frozenset({"api_key", "authorization", "password", "secret", "token"})
+_SECRET_KEYS = frozenset(
+    {
+        "api_key",
+        "apikey",
+        "authorization",
+        "x-api-key",
+        "deepseek_api_key",
+        "anthropic_api_key",
+        "langsmith_api_key",
+        "password",
+        "secret",
+        "token",
+    }
+)
 _PATH_PATTERN = re.compile(r"(?:/(?:Users|home|private|tmp|var)/[^\s\"']+)")
-_SECRET_PATTERN = re.compile(r"\b(?:lsv2_|sk-)[A-Za-z0-9_-]{8,}\b")
+_SECRET_PATTERN = re.compile(r"\b(?:sk-ant-|lsv2_|sk-)[A-Za-z0-9_-]{8,}\b")
 _FLUSH_TIMEOUT_SECONDS = 5.0
 _CLIENT_TIMEOUT_MS = 3000
 
@@ -104,7 +117,10 @@ class LangSmithTracer:
                 "prompt_version": prompt_version,
                 "app_version": self._settings.app_version,
                 "app_env": self._settings.app_env,
-                "generator_model": self._settings.ollama_model,
+                "generator_model": self._settings.provider_model,
+                "generator_provider": self._settings.generation_provider,
+                "generator_max_output_tokens": self._settings.provider_max_output_tokens,
+                "generator_timeout_seconds": self._settings.provider_timeout_seconds,
                 "embedding_model": self._settings.ollama_embedding_model,
                 "embedding_dim": self._settings.embedding_dim,
                 "num_ctx": self._settings.generator_num_ctx,

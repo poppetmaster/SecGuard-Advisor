@@ -43,6 +43,9 @@ EXPECTED_TABLES = {
     "qualys_imports",
     "qualys_vulnerabilities",
     "qualys_vulnerability_cves",
+    "external_processing_authorizations",
+    "provider_usage",
+    "provider_budget_ledger",
 }
 
 

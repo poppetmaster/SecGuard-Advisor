@@ -321,6 +321,20 @@ class Run(Base):
     )
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
     cost_tariff_version: Mapped[str | None] = mapped_column(String(40))
+    generator_max_output_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1200, server_default="1200"
+    )
+    generator_timeout_seconds: Mapped[float] = mapped_column(
+        Float, nullable=False, default=90.0, server_default="90"
+    )
+    usage_input_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_output_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_cached_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_cache_write_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_source: Mapped[str | None] = mapped_column(String(20))
+    external_authorization_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("external_processing_authorizations.id")
+    )
     generator_num_ctx: Mapped[int] = mapped_column(Integer, nullable=False)
     generator_temperature: Mapped[float] = mapped_column(Float, nullable=False)
     generator_seed: Mapped[int | None] = mapped_column(Integer)
@@ -378,6 +392,83 @@ class Run(Base):
             "trace_status", ("disabled", "submitted", "confirmed", "failed"), "trace_valid"
         ),
         CheckConstraint("attempt_no >= 1", name="attempt_positive"),
+    )
+
+
+class ExternalProcessingAuthorization(Base):
+    __tablename__ = "external_processing_authorizations"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    case_id: Mapped[str] = mapped_column(String(32), ForeignKey("cases.id"), nullable=False)
+    scope: Mapped[str] = mapped_column(String(40), nullable=False)
+    policy_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    authorized_by: Mapped[str] = mapped_column(String(200), nullable=False)
+    authorized_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    revoked_at: Mapped[str | None] = mapped_column(String(40))
+    note: Mapped[str | None] = mapped_column(Text)
+
+    __table_args__ = (
+        Index("ix_external_auth_case", "case_id", "revoked_at"),
+        _status_check("scope", ("public_corpus", "fictional_case"), "external_auth_scope_valid"),
+    )
+
+
+class ProviderUsage(Base):
+    __tablename__ = "provider_usage"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    run_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False
+    )
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    operation: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cached_tokens: Mapped[int | None] = mapped_column(Integer)
+    cache_write_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_source: Mapped[str] = mapped_column(String(20), nullable=False)
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    cost_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    tariff_version: Mapped[str | None] = mapped_column(String(40))
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        Index("ix_provider_usage_run", "run_id"),
+        _status_check(
+            "operation", ("decide", "generate", "repair"), "provider_usage_operation_valid"
+        ),
+        _status_check("usage_source", ("observed", "estimated", "unknown"), "usage_source_valid"),
+        _status_check(
+            "cost_status", ("calculated", "unknown", "not_applicable"), "usage_cost_status_valid"
+        ),
+    )
+
+
+class ProviderBudgetLedger(Base):
+    __tablename__ = "provider_budget_ledger"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    run_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False
+    )
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False, default="reserved")
+    reserved_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), nullable=False)
+    settled_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        Index("ix_provider_budget_run", "run_id"),
+        Index("ix_provider_budget_state", "state"),
+        _status_check(
+            "state", ("reserved", "settled", "released", "reconciled"), "budget_state_valid"
+        ),
     )
 
 

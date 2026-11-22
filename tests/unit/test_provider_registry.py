@@ -3,10 +3,7 @@
 import pytest
 
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.providers.base import (
-    GeneratorProtocol,
-    ProviderNotImplemented,
-)
+from secguard_advisor.conversation.providers.base import GeneratorProtocol
 from secguard_advisor.conversation.providers.registry import ProviderRegistry
 
 
@@ -46,7 +43,7 @@ def test_registry_reuses_legacy_ollama_model_when_new_name_is_absent() -> None:
         ("anthropic", "anthropic_api_key", "claude-haiku-5-5"),
     ],
 )
-def test_unimplemented_external_provider_fails_without_fallback(
+def test_external_provider_creates_its_adapter_without_fallback(
     provider: str, credential_name: str, expected_model: str
 ) -> None:
     settings = _settings(
@@ -54,10 +51,8 @@ def test_unimplemented_external_provider_fails_without_fallback(
         **{credential_name: "secret"},
     )
 
-    with pytest.raises(ProviderNotImplemented) as error:
-        ProviderRegistry(settings).create(resolve_digest=False)
+    generator = ProviderRegistry(settings).create(resolve_digest=False)
 
-    assert error.value.code == "provider_not_implemented"
-    assert error.value.provider == provider
-    assert error.value.model == expected_model
-    assert "Ollama" in str(error.value)
+    assert generator.provider == provider
+    assert generator.model == expected_model
+    generator.close()

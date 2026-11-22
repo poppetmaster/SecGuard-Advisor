@@ -8,6 +8,11 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from secguard_advisor.cases.external import (
+    ExternalProcessingBlocked,
+    ExternalToolBlocked,
+    ensure_external_allowed,
+)
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.cases.service import case_context as build_case_context
 from secguard_advisor.cases.service import get_case
@@ -27,10 +32,15 @@ from secguard_advisor.conversation.llm import (
     StepLimit,
     elapsed_ms,
 )
-from secguard_advisor.conversation.nodes import generation_config  # noqa: F401
 from secguard_advisor.conversation.persistence import StepRecord, fail_run
 from secguard_advisor.conversation.prompts import PROMPT_VERSION
+from secguard_advisor.conversation.providers import (
+    ProviderAuthError,
+    ProviderError,
+    ProviderRateLimited,
+)
 from secguard_advisor.db.models import utc_now_iso
+from secguard_advisor.evidence.budget import BudgetExceeded
 from secguard_advisor.evidence.runs import ActiveRunConflict, create_run, record_trace
 from secguard_advisor.evidence.tracing import build_tracer
 from secguard_advisor.retrieval.errors import IndexError as IndexFailure
@@ -63,6 +73,10 @@ def start_question_turn(
         conversation = service.get_or_create_conversation(session, scope.case_id)
         case = get_case(session, scope)
         message = service.create_question_message(session, conversation.id, question)
+        provider = getattr(generator, "provider", settings.generation_provider)
+        authorization = ensure_external_allowed(session, case_id=scope.case_id, provider=provider)
+        external_scope = authorization.scope if authorization else None
+        external_authorization_id = authorization.id if authorization else None
 
         try:
             run = create_run(
@@ -104,7 +118,9 @@ def start_question_turn(
             question=question,
             started_perf=time.perf_counter(),
             started_at=utc_now_iso(),
-            case_context=build_case_context(case),
+            case_context=(None if external_scope == "public_corpus" else build_case_context(case)),
+            external_scope=external_scope,
+            external_authorization_id=external_authorization_id,
         )
 
 
@@ -216,6 +232,24 @@ def _execute_turn(context: TurnContext, memory, tracer) -> TurnResult:
             step_name="retrieve",
         )
         return TurnResult("failed", "error", 503, exc.code)
+    except ExternalProcessingBlocked as exc:
+        _fail(context, status="failed", code="external_processing_blocked", message=str(exc))
+        return TurnResult("failed", "error", 403, "external_processing_blocked")
+    except ExternalToolBlocked as exc:
+        _fail(context, status="failed", code="external_tool_blocked", message=str(exc))
+        return TurnResult("failed", "error", 403, "external_tool_blocked")
+    except BudgetExceeded as exc:
+        _fail(context, status="failed", code="budget_exceeded", message=str(exc))
+        return TurnResult("failed", "error", 402, "budget_exceeded")
+    except ProviderAuthError as exc:
+        _fail(context, status="failed", code="provider_auth_error", message=str(exc))
+        return TurnResult("failed", "error", 502, "provider_auth_error")
+    except ProviderRateLimited as exc:
+        _fail(context, status="failed", code="provider_rate_limited", message=str(exc))
+        return TurnResult("failed", "error", 503, "provider_rate_limited")
+    except ProviderError as exc:
+        _fail(context, status="failed", code="provider_error", message=str(exc))
+        return TurnResult("failed", "error", 502, "provider_error")
     except ModelUnavailable:
         _fail(
             context,

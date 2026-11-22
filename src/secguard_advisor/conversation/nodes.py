@@ -5,13 +5,13 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from secguard_advisor.cases.external import ExternalToolBlocked
 from secguard_advisor.cases.scope import require_case
 from secguard_advisor.conversation import service
 from secguard_advisor.conversation.budget import check_prompt, plan_prompt
 from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
-    GenerationConfig,
     ModelTimeout,
     RunTimeout,
     StepLimit,
@@ -28,6 +28,8 @@ from secguard_advisor.conversation.prompts import (
     DECISION_SYSTEM_PROMPT,
     build_decision_prompt,
 )
+from secguard_advisor.conversation.providers.usage import provider_call
+from secguard_advisor.evidence.budget import ensure_budget_available
 from secguard_advisor.evidence.tracing import NullTracer
 from secguard_advisor.retrieval.citations import check_citation
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
@@ -97,7 +99,7 @@ def _model_timeout(context) -> float:
     remaining = _remaining_turn_seconds(context)
     if remaining <= 0:
         raise RunTimeout("Se agotó el tiempo del turno.")
-    return min(context.deps.settings.llm_timeout_seconds, remaining)
+    return min(context.deps.settings.provider_timeout_seconds, remaining)
 
 
 def _call_model(context, call, timeout_seconds: float):
@@ -105,7 +107,7 @@ def _call_model(context, call, timeout_seconds: float):
     try:
         return call(timeout_seconds=timeout_seconds)
     except ModelTimeout:
-        if timeout_seconds < context.deps.settings.llm_timeout_seconds:
+        if timeout_seconds < context.deps.settings.provider_timeout_seconds:
             raise RunTimeout("Se agotó el tiempo del turno.") from None
         raise
 
@@ -161,6 +163,8 @@ def load_memory(state: dict[str, Any], config) -> dict[str, Any]:
             max_messages=settings.history_max_messages,
             max_chars=settings.history_max_chars,
         )
+    if getattr(context, "external_scope", None) == "public_corpus":
+        turns = ()
 
     memory = memory_of(config)
     status = "disabled"
@@ -238,8 +242,11 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             min_score=settings.retrieval_min_score,
             token_budget=settings.retrieval_token_budget,
         )
+    hits = result.hits
+    if getattr(context, "external_scope", None) == "public_corpus":
+        hits = tuple(hit for hit in hits if hit.origin == "public_corpus")
     origin_counts: dict[str, int] = {}
-    for hit in result.hits:
+    for hit in hits:
         origin_counts[hit.origin] = origin_counts.get(hit.origin, 0) + 1
     evidence = _index_evidence(result)
     tracer_of(config).operation(
@@ -260,7 +267,7 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
         duration_ms=elapsed_ms(started),
     )
     return {
-        "hits": result.hits,
+        "hits": hits,
         "retrieval_status": result.status,
         "steps": record_step(
             state,
@@ -282,6 +289,9 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
     step_count = _consume_step(state, context)
+    if getattr(context, "external_scope", None) is not None:
+        with context.factory() as session:
+            ensure_budget_available(session, context.deps.settings, run_id=context.run_id)
     plan = plan_prompt(
         question=context.question,
         hits=state.get("hits", ()),
@@ -294,13 +304,14 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
     timeout = _model_timeout(context)
     tracer = tracer_of(config)
     try:
-        payload = _call_model(
-            context,
-            lambda **kwargs: context.deps.generator.generate(
-                system=plan.system, user=plan.user, **kwargs
-            ),
-            timeout,
-        )
+        with provider_call(context, operation="generate", admitted_tokens=plan.admitted_tokens):
+            payload = _call_model(
+                context,
+                lambda **kwargs: context.deps.generator.generate(
+                    system=plan.system, user=plan.user, **kwargs
+                ),
+                timeout,
+            )
     except Exception as exc:
         tracer.operation(
             "agent.generate",
@@ -411,6 +422,9 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
         }
 
     step_count = _consume_step(state, context)
+    if getattr(context, "external_scope", None) is not None:
+        with context.factory() as session:
+            ensure_budget_available(session, settings, run_id=context.run_id)
     user_prompt = build_decision_prompt(
         context.question,
         state.get("history", ()),
@@ -425,13 +439,14 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
     timeout = _model_timeout(context)
     tracer = tracer_of(config)
     try:
-        decision = _call_model(
-            context,
-            lambda **kwargs: context.deps.generator.decide(
-                system=DECISION_SYSTEM_PROMPT, user=user_prompt, **kwargs
-            ),
-            timeout,
-        )
+        with provider_call(context, operation="decide", admitted_tokens=admitted):
+            decision = _call_model(
+                context,
+                lambda **kwargs: context.deps.generator.decide(
+                    system=DECISION_SYSTEM_PROMPT, user=user_prompt, **kwargs
+                ),
+                timeout,
+            )
     except Exception as exc:
         tracer.operation(
             "tool.decide",
@@ -498,6 +513,14 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
         raise RunTimeout("Se agotó el tiempo del turno.")
     decision = state.get("decision") or {}
     arguments = decision.get("arguments") or {}
+    external_scope = getattr(context, "external_scope", None)
+    if external_scope is not None and (
+        external_scope != "fictional_case" or arguments.get("origin") != "synthetic"
+    ):
+        raise ExternalToolBlocked(
+            "findings_query con proveedor externo solo se permite en un caso "
+            "ficticio y con origin=synthetic."
+        )
     selected_import_id = state.get("selected_import_id")
     query = FindingsQuery(
         context.factory,
@@ -782,6 +805,9 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
     step_count = _consume_step(state, context)
+    if getattr(context, "external_scope", None) is not None:
+        with context.factory() as session:
+            ensure_budget_available(session, context.deps.settings, run_id=context.run_id)
     reasons = [draft.check_reason or "cita inválida" for draft in state.get("rejected", ())]
     plan = plan_prompt(
         question=context.question,
@@ -795,13 +821,14 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
     timeout = _model_timeout(context)
     tracer = tracer_of(config)
     try:
-        payload = _call_model(
-            context,
-            lambda **kwargs: context.deps.generator.generate(
-                system=plan.system, user=plan.user, **kwargs
-            ),
-            timeout,
-        )
+        with provider_call(context, operation="repair", admitted_tokens=plan.admitted_tokens):
+            payload = _call_model(
+                context,
+                lambda **kwargs: context.deps.generator.generate(
+                    system=plan.system, user=plan.user, **kwargs
+                ),
+                timeout,
+            )
     except Exception as exc:
         tracer.operation(
             "agent.repair",
@@ -963,18 +990,6 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
 
 def _turn_duration(context) -> int:
     return elapsed_ms(context.started_perf)
-
-
-def generation_config(settings) -> GenerationConfig:
-    return GenerationConfig(
-        base_url=settings.ollama_base_url,
-        model=settings.ollama_model,
-        num_ctx=settings.generator_num_ctx,
-        num_predict=settings.generator_num_predict,
-        temperature=settings.generator_temperature,
-        seed=settings.generator_seed,
-        timeout_seconds=settings.llm_timeout_seconds,
-    )
 
 
 def failure_step(state: dict[str, Any], name: str, code: str) -> tuple[StepRecord, ...]:

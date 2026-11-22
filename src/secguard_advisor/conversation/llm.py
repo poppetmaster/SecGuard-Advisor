@@ -260,7 +260,14 @@ def _usage_of(raw) -> dict | None:
         output_tokens = usage.get("output_tokens")
     if prompt_tokens is None:
         return None
-    return {"prompt_tokens": prompt_tokens, "output_tokens": output_tokens}
+    return {
+        "prompt_tokens": prompt_tokens,
+        "input_tokens": prompt_tokens,
+        "output_tokens": output_tokens,
+        "cached_tokens": None,
+        "cache_write_tokens": None,
+        "source": "observed",
+    }
 
 
 @dataclass(frozen=True, slots=True)

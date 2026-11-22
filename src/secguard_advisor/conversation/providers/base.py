@@ -7,6 +7,24 @@ from typing import Protocol, runtime_checkable
 from secguard_advisor.conversation.llm import AnswerPayload, ToolDecision
 
 
+class ProviderAuthError(RuntimeError):
+    """La credencial fue rechazada por el proveedor."""
+
+    code = "provider_auth_error"
+
+
+class ProviderRateLimited(RuntimeError):
+    """El proveedor aplicó un límite de tasa."""
+
+    code = "provider_rate_limited"
+
+
+class ProviderError(RuntimeError):
+    """Error del proveedor no clasificado."""
+
+    code = "provider_error"
+
+
 class ProviderNotImplemented(RuntimeError):
     """El proveedor está configurado pero todavía no tiene adaptador."""
 

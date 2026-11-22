@@ -237,7 +237,10 @@ def test_observed_usage_is_recorded(monkeypatch) -> None:
     result = generator.generate(system="s", user="u")
 
     assert result.answer == "hola"
-    assert generator.last_usage == {"prompt_tokens": 1234, "output_tokens": 56}
+    assert generator.last_usage["prompt_tokens"] == 1234
+    assert generator.last_usage["input_tokens"] == 1234
+    assert generator.last_usage["output_tokens"] == 56
+    assert generator.last_usage["source"] == "observed"
 
 
 def test_parsing_error_with_raw_output_is_invalid(monkeypatch) -> None:

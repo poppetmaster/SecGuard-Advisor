@@ -6,10 +6,12 @@ from dataclasses import dataclass
 
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
+from secguard_advisor.conversation.providers.anthropic import AnthropicGenerator
 from secguard_advisor.conversation.providers.base import (
     GeneratorProtocol,
     ProviderNotImplemented,
 )
+from secguard_advisor.conversation.providers.deepseek import DeepSeekGenerator
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,4 +38,8 @@ class ProviderRegistry:
             if resolve_digest:
                 generator.digest = generator.resolve_digest()
             return generator
+        if provider == "deepseek":
+            return DeepSeekGenerator(self.settings)
+        if provider == "anthropic":
+            return AnthropicGenerator(self.settings)
         raise ProviderNotImplemented(provider, model)

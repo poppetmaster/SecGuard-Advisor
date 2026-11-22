@@ -8,12 +8,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from secguard_advisor.cases.scope import CaseScope
+from secguard_advisor.conversation.providers.redaction import redact_text
 from secguard_advisor.db.models import (
     Conversation,
     Document,
     DocumentVersion,
     Message,
     MessageCitation,
+    ProviderUsage,
     Run,
 )
 from secguard_advisor.evidence.runs import (
@@ -267,6 +269,13 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
     if validate_step and validate_step.get("detail"):
         rejected_reasons = list(validate_step["detail"].get("reasons") or [])
     tool_calls = tool_calls_view(session, run.id, factory=factory, scope=scope)
+    usage_rows = list(
+        session.scalars(
+            select(ProviderUsage)
+            .where(ProviderUsage.run_id == run.id)
+            .order_by(ProviderUsage.created_at, ProviderUsage.id)
+        )
+    )
     tool_evidence = any(call["status"] == "ok" for call in tool_calls)
     budget = _budget_view(steps)
     return {
@@ -293,14 +302,38 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
         "cost_status_label": COST_STATUS_LABELS.get(run.cost_status, run.cost_status),
         "cost_usd": run.cost_usd,
         "cost_tariff_version": run.cost_tariff_version,
+        "usage_input_tokens": run.usage_input_tokens,
+        "usage_output_tokens": run.usage_output_tokens,
+        "usage_cached_tokens": run.usage_cached_tokens,
+        "usage_source": run.usage_source,
+        "external_authorization_id": run.external_authorization_id,
+        "provider_usage": [
+            {
+                "operation": item.operation,
+                "provider": item.provider,
+                "model": item.model,
+                "input_tokens": item.input_tokens,
+                "output_tokens": item.output_tokens,
+                "cached_tokens": item.cached_tokens,
+                "usage_source": item.usage_source,
+                "duration_ms": item.duration_ms,
+                "cost_usd": item.cost_usd,
+                "cost_status": item.cost_status,
+                "cost_status_label": COST_STATUS_LABELS.get(item.cost_status, item.cost_status),
+                "tariff_version": item.tariff_version,
+            }
+            for item in usage_rows
+        ],
         "generator_num_ctx": run.generator_num_ctx,
         "generator_temperature": run.generator_temperature,
         "generator_seed": run.generator_seed,
+        "generator_max_output_tokens": run.generator_max_output_tokens,
+        "generator_timeout_seconds": run.generator_timeout_seconds,
         "embedding_model": run.embedding_model,
         "embedding_dim": run.embedding_dim,
         "prompt_version": run.prompt_version,
         "error_code": run.error_code,
-        "error_message": run.error_message,
+        "error_message": redact_text(run.error_message) if run.error_message else None,
         "trace_status": run.trace_status,
         "trace_status_label": TRACE_STATUS_LABELS.get(run.trace_status, run.trace_status),
         "trace_id": run.trace_id,

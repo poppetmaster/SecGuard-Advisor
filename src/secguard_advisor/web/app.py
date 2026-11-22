@@ -16,10 +16,11 @@ from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
 from secguard_advisor.conversation.memory import open_memory
 from secguard_advisor.conversation.providers import ProviderRegistry
-from secguard_advisor.conversation.tokenizer import LazyPromptCounter
+from secguard_advisor.conversation.providers.context import build_prompt_counter
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
+from secguard_advisor.evidence.budget import reconcile_startup as reconcile_budget_startup
 from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.retrieval.index import QdrantIndex
 from secguard_advisor.retrieval.instance import InstanceLockBusy, lock_conflict_code
@@ -114,6 +115,8 @@ def create_app(
         try:
             with factory() as session:
                 reconcile_startup(session)
+                reconcile_budget_startup(session)
+                session.commit()
             yield
         finally:
             memory.close()
@@ -133,7 +136,7 @@ def create_app(
     app.state.generation_slot = generation_slot or GenerationSlot(
         resolved.generation_queue_timeout_seconds
     )
-    app.state.token_counter = token_counter or LazyPromptCounter(resolved.ollama_model)
+    app.state.token_counter = token_counter or build_prompt_counter(resolved)
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(cases.router)

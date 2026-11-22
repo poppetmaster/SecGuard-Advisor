@@ -27,6 +27,24 @@ ERRORS: dict[str, ErrorSpec] = {
         "unsupported_media_type", 415, "El tipo de archivo no está permitido."
     ),
     "model_unavailable": ErrorSpec("model_unavailable", 503, "El modelo local no responde."),
+    "external_processing_blocked": ErrorSpec(
+        "external_processing_blocked",
+        403,
+        "El caso no tiene autorización vigente para procesamiento externo.",
+    ),
+    "provider_auth_error": ErrorSpec(
+        "provider_auth_error", 502, "El proveedor rechazó la credencial."
+    ),
+    "provider_rate_limited": ErrorSpec(
+        "provider_rate_limited", 503, "El proveedor limitó la tasa de solicitudes."
+    ),
+    "provider_error": ErrorSpec("provider_error", 502, "El proveedor devolvió un error."),
+    "budget_exceeded": ErrorSpec("budget_exceeded", 402, "El presupuesto externo no alcanza."),
+    "external_tool_blocked": ErrorSpec(
+        "external_tool_blocked",
+        403,
+        "La consulta de hallazgos no está permitida con un proveedor externo.",
+    ),
     "provider_not_implemented": ErrorSpec(
         "provider_not_implemented",
         501,

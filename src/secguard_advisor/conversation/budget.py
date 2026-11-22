@@ -74,10 +74,10 @@ def estimate_tokens(text: str) -> int:
 
 
 def prompt_limit(settings: Settings) -> int:
-    """Tokens disponibles para el prompt: contexto menos salida y margen."""
+    """Tokens disponibles para el prompt: contexto efectivo menos salida y margen."""
     return (
-        settings.generator_num_ctx
-        - settings.generator_num_predict
+        settings.provider_context_window
+        - settings.provider_max_output_tokens
         - settings.context_safety_margin_tokens
     )
 
@@ -93,7 +93,7 @@ def check_prompt(*, system: str, user: str, settings: Settings, counter) -> int:
         admitted = counter.count(system, user)
     except Exception as exc:
         raise ContextBudgetUnavailable(
-            "No se pudo cargar el tokenizador del generador para medir el prompt."
+            "No se pudo medir el prompt con el contador del proveedor."
         ) from exc
     if admitted > limit:
         raise ContextBudgetExceeded("La consulta excede el presupuesto de contexto del turno.")
@@ -141,7 +141,7 @@ def plan_prompt(
         counter.count(SYSTEM_PROMPT, "")
     except Exception as exc:
         raise ContextBudgetUnavailable(
-            "No se pudo cargar el tokenizador del generador para medir el prompt."
+            "No se pudo medir el prompt con el contador del proveedor."
         ) from exc
 
     kept_history = list(history)
@@ -171,7 +171,7 @@ def plan_prompt(
             admitted = counter.count(SYSTEM_PROMPT, user_prompt)
         except Exception as exc:
             raise ContextBudgetUnavailable(
-                "No se pudo cargar el tokenizador del generador para medir el prompt."
+                "No se pudo medir el prompt con el contador del proveedor."
             ) from exc
         if admitted <= limit:
             return PromptPlan(
@@ -182,7 +182,7 @@ def plan_prompt(
                 admitted_tokens=admitted,
                 estimated_tokens=_diagnostic_estimate(SYSTEM_PROMPT, user_prompt),
                 prompt_limit=limit,
-                output_reserve=settings.generator_num_predict,
+                output_reserve=settings.provider_max_output_tokens,
                 safety_margin=settings.context_safety_margin_tokens,
                 dropped_history_messages=dropped_history,
                 dropped_sources=dropped_sources,

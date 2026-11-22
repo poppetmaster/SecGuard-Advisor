@@ -36,3 +36,5 @@ class TurnContext:
     started_perf: float
     started_at: str
     case_context: dict[str, str | None] | None = None
+    external_scope: str | None = None
+    external_authorization_id: str | None = None

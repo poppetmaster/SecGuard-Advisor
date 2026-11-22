@@ -81,6 +81,22 @@ class Settings(BaseSettings):
     external_tariff_version: str = Field(
         default="2026-11-22", validation_alias="SECGUARD_EXTERNAL_TARIFF_VERSION"
     )
+    external_context_window_tokens: int = Field(
+        default=128_000, validation_alias="SECGUARD_EXTERNAL_CONTEXT_WINDOW_TOKENS"
+    )
+    external_estimate_chars_per_token: float = Field(
+        default=2.0, validation_alias="SECGUARD_EXTERNAL_ESTIMATE_CHARS_PER_TOKEN"
+    )
+    external_estimate_overhead_tokens: int = Field(
+        default=64, validation_alias="SECGUARD_EXTERNAL_ESTIMATE_OVERHEAD_TOKENS"
+    )
+    deepseek_base_url: str = Field(
+        default="https://api.deepseek.com", validation_alias="DEEPSEEK_BASE_URL"
+    )
+    anthropic_base_url: str = Field(
+        default="https://api.anthropic.com", validation_alias="ANTHROPIC_BASE_URL"
+    )
+    anthropic_version: str = Field(default="2026-10-21", validation_alias="ANTHROPIC_VERSION")
 
     generator_num_ctx: int = 8192
     generator_num_predict: int = 1200
@@ -175,6 +191,27 @@ class Settings(BaseSettings):
             raise ValueError("SECGUARD_GENERATION_TIMEOUT_SECONDS debe ser mayor que cero.")
         return value
 
+    @field_validator("external_context_window_tokens")
+    @classmethod
+    def _validate_external_context_window(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("SECGUARD_EXTERNAL_CONTEXT_WINDOW_TOKENS debe ser mayor que cero.")
+        return value
+
+    @field_validator("external_estimate_chars_per_token")
+    @classmethod
+    def _validate_estimate_ratio(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("SECGUARD_EXTERNAL_ESTIMATE_CHARS_PER_TOKEN debe ser mayor que cero.")
+        return value
+
+    @field_validator("external_estimate_overhead_tokens")
+    @classmethod
+    def _validate_estimate_overhead(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("SECGUARD_EXTERNAL_ESTIMATE_OVERHEAD_TOKENS no puede ser negativo.")
+        return value
+
     @field_validator("external_budget_usd", "external_run_budget_usd")
     @classmethod
     def _validate_budget(cls, value: Decimal) -> Decimal:
@@ -212,6 +249,13 @@ class Settings(BaseSettings):
         return {"deepseek": "deepseek-flash", "anthropic": "claude-haiku-5-5"}[
             self.generation_provider
         ]
+
+    @property
+    def provider_context_window(self) -> int:
+        """Ventana de contexto efectiva del proveedor activo."""
+        if self.generation_provider == "ollama":
+            return self.generator_num_ctx
+        return self.external_context_window_tokens
 
     @property
     def provider_max_output_tokens(self) -> int:
