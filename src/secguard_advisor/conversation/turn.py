@@ -257,7 +257,7 @@ def _fail(
                 origin="model",
                 status="error",
                 duration_ms=duration,
-                detail={"error": code},
+                detail={"error": code, "error_code": code},
             ),
         ),
     )

@@ -30,6 +30,8 @@ from secguard_advisor.conversation.prompts import (
 )
 from secguard_advisor.evidence.tracing import NullTracer
 from secguard_advisor.retrieval.citations import check_citation
+from secguard_advisor.retrieval.collections import case_scope as collection_case_scope
+from secguard_advisor.retrieval.collections import public_scope
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
 from secguard_advisor.tools.findings import (
     TOOL_NAME,
@@ -194,6 +196,34 @@ def load_memory(state: dict[str, Any], config) -> dict[str, Any]:
     }
 
 
+def _index_evidence(index, scope, embedder) -> dict[str, Any]:
+    describe = getattr(index, "describe", None)
+    if not callable(describe):
+        return {}
+    try:
+        public = describe(public_scope(), embedder.model, embedder.dimension)
+        case = describe(collection_case_scope(scope.case_id), embedder.model, embedder.dimension)
+    except Exception:
+        return {}
+    evidence = {
+        key: public.get(key)
+        for key in (
+            "vector_backend",
+            "instance_id",
+            "qdrant_version",
+            "embedding_model",
+            "embedding_dim",
+            "score_metric",
+        )
+    }
+    evidence["collection_alias"] = case.get("collection_alias") or public.get("collection_alias")
+    evidence["generation"] = case.get("generation") or public.get("generation")
+    evidence["error_code"] = None
+    evidence["public_alias"] = public.get("collection_alias")
+    evidence["public_generation"] = public.get("generation")
+    return evidence
+
+
 def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
@@ -213,6 +243,7 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
     origin_counts: dict[str, int] = {}
     for hit in result.hits:
         origin_counts[hit.origin] = origin_counts.get(hit.origin, 0) + 1
+    evidence = _index_evidence(context.deps.index, context.scope, context.deps.embedder)
     tracer_of(config).operation(
         "retrieve",
         run_type="retriever",
@@ -226,6 +257,7 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             "hits": len(result.hits),
             "status": result.status,
             "origin_counts": origin_counts,
+            **evidence,
         },
         duration_ms=elapsed_ms(started),
     )
@@ -238,7 +270,7 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             "deterministic",
             "ok",
             started,
-            {"hits": len(result.hits), "status": result.status},
+            {"hits": len(result.hits), "status": result.status, **evidence},
         ),
     }
 
