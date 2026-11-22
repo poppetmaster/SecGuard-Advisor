@@ -39,12 +39,29 @@ from secguard_advisor.conversation.providers import (
     ProviderError,
     ProviderRateLimited,
 )
-from secguard_advisor.db.models import utc_now_iso
+from secguard_advisor.db.models import ExternalProcessingAuthorization, Run, utc_now_iso
 from secguard_advisor.evidence.budget import BudgetExceeded
 from secguard_advisor.evidence.runs import ActiveRunConflict, create_run, record_trace
 from secguard_advisor.evidence.tracing import build_tracer
 from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.tools.findings import ToolExecutionError, ToolTimeout
+
+
+@dataclass(frozen=True, slots=True)
+class TurnProfile:
+    """Parámetros efectivos del generador para una ejecución."""
+
+    provider: str
+    model: str
+    identity: str | None
+    digest: str | None
+    context_window: int
+    max_output_tokens: int
+    timeout_seconds: float
+    temperature: float
+    seed: int | None
+    embedding_model: str
+    embedding_dim: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +72,105 @@ class TurnResult:
     outcome: str | None
     http_status: int
     error_code: str | None
+
+
+def resolve_turn_profile(settings: Settings, generator: object, embedder: object) -> TurnProfile:
+    """Perfil efectivo único para inicio y reintento."""
+    provider = getattr(generator, "provider", settings.generation_provider)
+    return TurnProfile(
+        provider=provider,
+        model=getattr(generator, "model", settings.provider_model),
+        identity=getattr(generator, "identity", None),
+        digest=getattr(generator, "digest", None),
+        context_window=settings.provider_context_window,
+        max_output_tokens=settings.provider_max_output_tokens,
+        timeout_seconds=settings.provider_timeout_seconds,
+        temperature=settings.generator_temperature,
+        seed=(settings.generator_seed if provider == "ollama" else None),
+        embedding_model=getattr(embedder, "model", settings.ollama_embedding_model),
+        embedding_dim=getattr(embedder, "dimension", settings.embedding_dim),
+    )
+
+
+def create_turn_record(
+    session: Session,
+    settings: Settings,
+    scope: CaseScope,
+    *,
+    conversation_id: str,
+    question_message_id: str,
+    generator: object,
+    embedder: object,
+    attempt_no: int = 1,
+    retry_of_run_id: str | None = None,
+) -> tuple[Run, ExternalProcessingAuthorization | None]:
+    """Crea la ejecución con autorización y parámetros efectivos comunes."""
+    profile = resolve_turn_profile(settings, generator, embedder)
+    authorization = ensure_external_allowed(
+        session, case_id=scope.case_id, provider=profile.provider
+    )
+    run = create_run(
+        session,
+        case_id=scope.case_id,
+        conversation_id=conversation_id,
+        question_message_id=question_message_id,
+        generator_model=profile.model,
+        generator_provider=profile.provider,
+        generator_identity=profile.identity,
+        generator_max_output_tokens=profile.max_output_tokens,
+        generator_timeout_seconds=profile.timeout_seconds,
+        external_authorization_id=(authorization.id if authorization else None),
+        generator_digest=profile.digest,
+        generator_num_ctx=profile.context_window,
+        generator_temperature=profile.temperature,
+        generator_seed=profile.seed,
+        embedding_model=profile.embedding_model,
+        embedding_dim=profile.embedding_dim,
+        prompt_version=PROMPT_VERSION,
+        attempt_no=attempt_no,
+        retry_of_run_id=retry_of_run_id,
+    )
+    return run, authorization
+
+
+def build_turn_context(
+    *,
+    factory: sessionmaker[Session],
+    settings: Settings,
+    scope: CaseScope,
+    generator: object,
+    embedder: object,
+    index: object,
+    token_counter,
+    conversation_id: str,
+    question_message_id: str,
+    run: Run,
+    authorization: ExternalProcessingAuthorization | None,
+    question: str,
+    case,
+) -> TurnContext:
+    external_scope = authorization.scope if authorization else None
+    return TurnContext(
+        factory=factory,
+        deps=TurnDependencies(
+            generator=generator,
+            embedder=embedder,
+            index=index,
+            settings=settings,
+            token_counter=token_counter,
+        ),
+        scope=scope,
+        conversation_id=conversation_id,
+        question_message_id=question_message_id,
+        run_id=run.id,
+        attempt_no=run.attempt_no,
+        question=question,
+        started_perf=time.perf_counter(),
+        started_at=utc_now_iso(),
+        case_context=(None if external_scope == "public_corpus" else build_case_context(case)),
+        external_scope=external_scope,
+        external_authorization_id=(authorization.id if authorization else None),
+    )
 
 
 def start_question_turn(
@@ -73,54 +189,35 @@ def start_question_turn(
         conversation = service.get_or_create_conversation(session, scope.case_id)
         case = get_case(session, scope)
         message = service.create_question_message(session, conversation.id, question)
-        provider = getattr(generator, "provider", settings.generation_provider)
-        authorization = ensure_external_allowed(session, case_id=scope.case_id, provider=provider)
-        external_scope = authorization.scope if authorization else None
-        external_authorization_id = authorization.id if authorization else None
-
         try:
-            run = create_run(
+            run, authorization = create_turn_record(
                 session,
-                case_id=scope.case_id,
+                settings,
+                scope,
                 conversation_id=conversation.id,
                 question_message_id=message.id,
-                generator_model=getattr(generator, "model", settings.provider_model),
-                generator_provider=getattr(generator, "provider", settings.generation_provider),
-                generator_identity=getattr(generator, "identity", None),
-                generator_digest=getattr(generator, "digest", None),
-                generator_num_ctx=settings.generator_num_ctx,
-                generator_temperature=settings.generator_temperature,
-                generator_seed=settings.generator_seed,
-                embedding_model=getattr(embedder, "model", settings.ollama_embedding_model),
-                embedding_dim=getattr(embedder, "dimension", settings.embedding_dim),
-                prompt_version=PROMPT_VERSION,
+                generator=generator,
+                embedder=embedder,
             )
         except ActiveRunConflict:
             session.rollback()
             raise
-
         message.run_id = run.id
         session.commit()
-        return TurnContext(
+        return build_turn_context(
             factory=factory,
-            deps=TurnDependencies(
-                generator=generator,
-                embedder=embedder,
-                index=index,
-                settings=settings,
-                token_counter=token_counter,
-            ),
+            settings=settings,
             scope=scope,
+            generator=generator,
+            embedder=embedder,
+            index=index,
+            token_counter=token_counter,
             conversation_id=conversation.id,
             question_message_id=message.id,
-            run_id=run.id,
-            attempt_no=run.attempt_no,
+            run=run,
+            authorization=authorization,
             question=question,
-            started_perf=time.perf_counter(),
-            started_at=utc_now_iso(),
-            case_context=(None if external_scope == "public_corpus" else build_case_context(case)),
-            external_scope=external_scope,
-            external_authorization_id=external_authorization_id,
+            case=case,
         )
 
 

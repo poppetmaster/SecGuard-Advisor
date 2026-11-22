@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from secguard_advisor.cases.scope import CaseScope
-from secguard_advisor.cases.service import case_context as build_case_context
 from secguard_advisor.cases.service import get_case
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.context import TurnContext, TurnDependencies
-from secguard_advisor.conversation.prompts import PROMPT_VERSION
-from secguard_advisor.db.models import Message, Run, utc_now_iso
-from secguard_advisor.evidence.runs import ActiveRunConflict, create_run
+from secguard_advisor.conversation.context import TurnContext
+from secguard_advisor.conversation.turn import build_turn_context, create_turn_record
+from secguard_advisor.db.models import Message, Run
+from secguard_advisor.evidence.runs import ActiveRunConflict
 
 RETRYABLE_STATUSES = {"failed", "timeout", "interrupted"}
 
@@ -83,19 +81,14 @@ def start_retry_turn(
             raise RunNotFound(plan.run_id)
         case = get_case(session, scope)
         try:
-            run = create_run(
+            run, authorization = create_turn_record(
                 session,
-                case_id=original.case_id,
+                settings,
+                scope,
                 conversation_id=original.conversation_id,
                 question_message_id=plan.question_message_id,
-                generator_model=getattr(generator, "model", settings.ollama_model),
-                generator_digest=getattr(generator, "digest", None),
-                generator_num_ctx=settings.generator_num_ctx,
-                generator_temperature=settings.generator_temperature,
-                generator_seed=settings.generator_seed,
-                embedding_model=getattr(embedder, "model", settings.ollama_embedding_model),
-                embedding_dim=getattr(embedder, "dimension", settings.embedding_dim),
-                prompt_version=PROMPT_VERSION,
+                generator=generator,
+                embedder=embedder,
                 attempt_no=plan.attempt_no,
                 retry_of_run_id=original.id,
             )
@@ -103,22 +96,18 @@ def start_retry_turn(
             session.rollback()
             raise
         session.commit()
-        return TurnContext(
+        return build_turn_context(
             factory=factory,
-            deps=TurnDependencies(
-                generator=generator,
-                embedder=embedder,
-                index=index,
-                settings=settings,
-                token_counter=token_counter,
-            ),
+            settings=settings,
             scope=scope,
+            generator=generator,
+            embedder=embedder,
+            index=index,
+            token_counter=token_counter,
             conversation_id=original.conversation_id,
             question_message_id=plan.question_message_id,
-            run_id=run.id,
-            attempt_no=run.attempt_no,
+            run=run,
+            authorization=authorization,
             question=plan.question,
-            started_perf=time.perf_counter(),
-            started_at=utc_now_iso(),
-            case_context=build_case_context(case),
+            case=case,
         )

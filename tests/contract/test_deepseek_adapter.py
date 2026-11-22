@@ -169,3 +169,27 @@ def test_read_timeout_is_model_timeout() -> None:
             generator.generate(system="Respondé.", user="¿Qué?")
     finally:
         generator.close()
+
+
+def test_per_call_timeout_reaches_the_transport() -> None:
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["timeout"] = request.extensions.get("timeout")
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "{}"}}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            },
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler), timeout=12.5)
+    generator = DeepSeekGenerator(_settings(), client=client)
+    try:
+        with pytest.raises(InvalidModelOutput):
+            generator.generate(system="Respondé.", user="¿Qué?", timeout_seconds=0.25)
+    finally:
+        generator.close()
+
+    assert seen["timeout"]["read"] == 0.25

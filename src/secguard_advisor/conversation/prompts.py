@@ -7,7 +7,7 @@ import json
 from secguard_advisor.retrieval.search import RetrievedChunk
 
 PROMPT_VERSION = "chat-v8"
-DECISION_PROMPT_VERSION = "decide-v5"
+DECISION_PROMPT_VERSION = "decide-v6"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad empresarial.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
@@ -223,8 +223,10 @@ filtro en lugar de mezclar escalas.
 La primera resolución de una instantánea fija el snapshot del turno; no cambies snapshot_id después.
 Si el servidor devuelve snapshot_locked, reutilizá la instantánea fijada.
 Si un intento anterior devolvió un error de argumentos, corregí los argumentos.
-Si un intento anterior ya devolvió un resultado que responde la pregunta, devolvé
-{"use_findings": false, "arguments": {}}; no repitas ni amplíes la consulta.
+Si un intento anterior ya devolvió un resultado que responde exactamente esta pregunta, devolvé
+{"use_findings": false, "arguments": {}}; no repitas la misma consulta. Si la pregunta actual pide
+otro filtro, severidad, grupo o conteo distinto, consultá de nuevo con los argumentos
+correspondientes.
 Ejemplo para "¿Cuántos hallazgos High hay por activo?": devolvé
 {"use_findings":true,"arguments":{"origin":"synthetic","severity":"High","group_by":"asset"}}.
 Ejemplo para "¿Cuántos registros pendientes hay?": devolvé

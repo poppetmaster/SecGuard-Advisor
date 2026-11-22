@@ -79,6 +79,7 @@ class AnthropicGenerator:
                 "content-type": "application/json",
             },
             payload=payload,
+            timeout_seconds=timeout_seconds,
         )
         self.identity = data.get("model") or self.model
         content = "".join(

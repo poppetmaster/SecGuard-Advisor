@@ -57,9 +57,19 @@ def raise_for_status(response: httpx.Response) -> None:
         raise ProviderError("El proveedor devolvió un error.")
 
 
-def post_json(client: httpx.Client, url: str, *, headers: dict, payload: dict) -> dict:
+def post_json(
+    client: httpx.Client,
+    url: str,
+    *,
+    headers: dict,
+    payload: dict,
+    timeout_seconds: float | None = None,
+) -> dict:
+    request_kwargs = {"headers": headers, "json": payload}
+    if timeout_seconds is not None:
+        request_kwargs["timeout"] = timeout_seconds
     try:
-        response = client.post(url, headers=headers, json=payload)
+        response = client.post(url, **request_kwargs)
     except (httpx.ReadTimeout, httpx.ConnectTimeout, TimeoutError) as exc:
         raise ModelTimeout("Se agotó el tiempo de espera del proveedor.") from exc
     except (httpx.ConnectError, ConnectionError) as exc:

@@ -147,3 +147,27 @@ def test_auth_error_is_normalized_without_leaking_the_key() -> None:
         generator.close()
 
     assert "sk-ant-secret" not in str(captured.value)
+
+
+def test_per_call_timeout_reaches_the_transport() -> None:
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["timeout"] = request.extensions.get("timeout")
+        return httpx.Response(
+            200,
+            json={
+                "content": [{"type": "text", "text": "{}"}],
+                "usage": {"input_tokens": 1, "output_tokens": 1},
+            },
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler), timeout=12.5)
+    generator = AnthropicGenerator(_settings(), client=client)
+    try:
+        with pytest.raises(InvalidModelOutput):
+            generator.generate(system="Respondé.", user="¿Qué?", timeout_seconds=0.25)
+    finally:
+        generator.close()
+
+    assert seen["timeout"]["read"] == 0.25
