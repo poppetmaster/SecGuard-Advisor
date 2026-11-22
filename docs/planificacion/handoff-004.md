@@ -759,3 +759,19 @@ Siguiente paso: Corte 4 (T054–T064). No se inició T054 ni ninguna tarea poste
 - Limitaciones: sin calibración; Chroma conservado; sin aceptación de 004.
 
 Siguiente paso: Corte 5 (T065–T069). No se inició T065.
+
+---
+
+## 25. Corrección de concurrencia del Corte 4 (2026-11-22 12:26)
+
+**Vigente.** §10–§24 son históricas.
+
+- Corregido: la ingesta mantiene el lock hasta confirmar la disponibilidad en SQLite o registrar el
+  fallo; una reconstrucción no puede entrar en la ventana.
+- Regresión: segundo documento distinto, `rebuild` rechazado con `ingestion_in_progress` durante
+  `_mark_available`, ambos documentos recuperables tras reconstruir; fallo de commit libera el lock y
+  el reintento converge sin duplicados.
+- `make check`: 537 passed; `pre-commit`: verde.
+- Contratos y modelo sincronizados. Avance: **64/82**. Sin tareas posteriores.
+
+Siguiente paso: Corte 5 (T065–T069). No se inició T065.

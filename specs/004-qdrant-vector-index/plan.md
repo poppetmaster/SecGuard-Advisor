@@ -367,8 +367,9 @@ instancia lo respeta, y el sistema operativo lo libera si el proceso muere.
 
 - La reconstrucción intenta adquirirlo al inicio y lo libera en `finally`, con la operación
   `rebuild`.
-- La ingesta lo adquiere para la escritura del índice con la operación `ingestion` y lo libera al
-  terminar. Aplica a la ingesta de documentos, a `scripts/ingest_corpus.py` y a `prepare_demo.py`.
+- La ingesta lo adquiere para la escritura del índice con la operación `ingestion` y lo mantiene hasta
+  confirmar la disponibilidad en SQLite o registrar el fallo; no hay hueco entre los puntos escritos y
+  el commit de disponibilidad. Aplica a la ingesta de documentos, a `scripts/ingest_corpus.py` y a `prepare_demo.py`.
 - Si la reconstrucción ya lo tiene, una ingesta nueva recibe `409 reconstruction_in_progress` y no
   escribe a medias.
 - Si una ingesta lo tiene, la reconstrucción falla con `ingestion_in_progress`; no espera

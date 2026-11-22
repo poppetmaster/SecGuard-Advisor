@@ -129,6 +129,9 @@ disponible.
 
 ## Concurrency
 
+- La ingesta mantiene el lock hasta confirmar la disponibilidad en SQLite o registrar el fallo del
+  commit; una reconstrucción no puede entrar en esa ventana. Las transacciones SQLite siguen siendo
+  cortas y no hay atomicidad entre Qdrant y SQLite.
 - Reconstrucción, ingesta de documentos, `ingest_corpus.py` y `prepare_demo.py` comparten
   `<SECGUARD_STORAGE_DIR>/qdrant-control/locks/<instance_id>.lock`, un lock de archivo exclusivo
   entre procesos (no en memoria). La primitiva vive en `retrieval/instance.py`; los escritores solo la

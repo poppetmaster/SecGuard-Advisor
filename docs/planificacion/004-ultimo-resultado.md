@@ -94,3 +94,31 @@ uv run pre-commit run --all-files → Passed
 ## Siguiente paso
 
 Corte 5 (T065–T069): aislamiento de instancias y lock entre procesos. No se inició T065.
+
+## Corrección de concurrencia del Corte 4 (2026-11-22 12:26)
+
+**Causa**: `_process_version` liberaba el lock de ingesta antes de `_mark_available`. Una
+reconstrucción podía ejecutarse en esa ventana, excluir la versión aún no disponible y publicar otra
+generación; después la ingesta confirmaba la versión como disponible con sus puntos fuera del índice
+activo. Reproducido: segundo documento no recuperable tras `rebuild = completed` e ingesta `created`.
+
+**Solución**: la confirmación de disponibilidad (`_mark_available`) y el tratamiento del fallo de
+commit (`_finish_failed`) se ejecutan dentro del lock de ingesta. Las transacciones SQLite siguen
+siendo cortas, SQLite sigue siendo la fuente de verdad y no se promete atomicidad entre Qdrant y
+SQLite. El context manager libera el lock ante éxito, excepción o fallo de commit. No se añadió otra
+primitiva ni un bloqueo global.
+
+**Regresión** (`tests/integration/test_qdrant_ingestion_lock.py`):
+
+- Segundo documento con contenido distinto (`sample.md`, no `duplicate`); durante `_mark_available` el
+  lock lo posee `ingestion` y `rebuild` se rechaza con `ingestion_in_progress`.
+- Tras la ingesta el lock queda libre; `rebuild` posterior es `completed` y ambos documentos son
+  recuperables.
+- Fallo de commit: lock liberado, versión `failed`; reintento `created` y conteo igual a los
+  fragmentos, sin duplicados.
+
+**Comandos**: pruebas afectadas de primer documento, reconstrucción, recuperación, parciales y lock →
+21 passed; `make check` → 537 passed; `pre-commit` → Passed.
+
+Contratos sincronizados: `contracts/rebuild.md`, `data-model.md` y `plan.md` indican que el lock cubre
+la confirmación de disponibilidad. Avance: **64/82**, sin marcar tareas posteriores.

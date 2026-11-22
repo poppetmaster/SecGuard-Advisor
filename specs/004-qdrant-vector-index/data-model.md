@@ -260,6 +260,8 @@ Reglas:
   queda fuera del objetivo declarado.
 - No se crea tabla SQLite ni pantalla administrativa.
 
+- La ingesta conserva el lock hasta confirmar la disponibilidad en SQLite o marcar el fallo; la
+  reconstrucción no puede entrar entre la escritura de puntos y el commit de disponibilidad.
 - Ingesta con lock de reconstrucción: `reconstruction_in_progress`, sin escritura.
 - Reconstrucción con lock de ingesta: `ingestion_in_progress`, sin espera indefinida.
 - Consultas: no toman el lock; usan el alias anterior.

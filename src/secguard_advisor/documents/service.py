@@ -418,24 +418,26 @@ def _process_version(
                 "No se pudo indexar el documento.",
             )
 
-    try:
-        return _mark_available(
-            factory,
-            version_id=version_id,
-            document_id=document_id,
-            job_id=job_id,
-            extraction=extraction,
-            embedder=embedder,
-            payload=payload,
-        )
-    except Exception:
-        return _finish_failed(
-            factory,
-            version_id,
-            job_id,
-            "sqlite_commit_failed",
-            "No se pudo confirmar la versión en SQLite.",
-        )
+        # La disponibilidad se confirma dentro del lock: una reconstrucción no
+        # puede excluir esta versión y publicar otra generación en la ventana.
+        try:
+            return _mark_available(
+                factory,
+                version_id=version_id,
+                document_id=document_id,
+                job_id=job_id,
+                extraction=extraction,
+                embedder=embedder,
+                payload=payload,
+            )
+        except Exception:
+            return _finish_failed(
+                factory,
+                version_id,
+                job_id,
+                "sqlite_commit_failed",
+                "No se pudo confirmar la versión en SQLite.",
+            )
 
 
 def ingest_document(

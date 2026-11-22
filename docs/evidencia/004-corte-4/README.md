@@ -83,3 +83,28 @@ el CSV privado de Qualys ni servicios externos.
 - Sin calibración de umbral.
 - El volumen local de Qdrant conserva colecciones de smokes propios.
 - Sin aceptación integral de 004.
+
+## Corrección: lock hasta la confirmación de disponibilidad (2026-11-22 12:26)
+
+Defecto: `_process_version` liberaba el lock antes de `_mark_available`. Una reconstrucción podía
+entrar entre los puntos escritos y el commit de disponibilidad, excluir la versión no disponible y
+publicar otra generación; la ingesta luego confirmaba la versión con sus puntos fuera del índice
+activo. Reproducción: segundo documento con contenido distinto, `rebuild = completed` e ingesta
+`created`, pero el segundo documento no recuperable.
+
+Corrección: `_mark_available` y el tratamiento de su fallo ocurren dentro del lock de ingesta. Sin
+nueva primitiva ni bloqueo global; liberación garantizada en éxito, excepción y fallo de commit.
+
+Regresión determinista (`tests/integration/test_qdrant_ingestion_lock.py`):
+
+- `sample.md` como segundo documento (contenido distinto; no `duplicate`).
+- Dentro de `_mark_available`, el lock pertenece a `ingestion` y `rebuild` falla con
+  `ingestion_in_progress`.
+- Lock libre tras la ingesta; `rebuild` posterior `completed` y ambos documentos recuperables.
+- Fallo de commit: lock libre, versión `failed`; reintento sin duplicados.
+
+```text
+pruebas afectadas: 21 passed
+make check: 537 passed, 35 deselected
+pre-commit: Passed
+```
