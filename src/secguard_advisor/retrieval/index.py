@@ -1,4 +1,6 @@
-"""Índice vectorial derivado sobre Chroma."""
+"""Índice vectorial derivado: Chroma (actual) y Qdrant (004)."""
+
+from __future__ import annotations
 
 import uuid
 from contextlib import suppress
@@ -69,7 +71,7 @@ class QueryHit:
 
 
 class ChromaIndex:
-    """Envoltura mínima del índice, con alcance explícito."""
+    """Envoltura mínima del índice Chroma, con alcance explícito."""
 
     def __init__(self, path: Path, client=None) -> None:
         self._client = client or chromadb.PersistentClient(path=str(path))
@@ -177,7 +179,7 @@ class ChromaIndex:
         ]
 
 
-# --- Adaptador Qdrant (004, corte 2) ----------------------------------------
+# --- Adaptador Qdrant (004) -------------------------------------------------
 
 SECGUARD_POINT_NAMESPACE = uuid.UUID("6f6d2f10-8f0e-5d4b-9a57-2f6f5f8f1c11")
 
@@ -274,7 +276,16 @@ class QdrantIndex:
                 return entry.collection_name
         raise self._unavailable(scope)
 
-    def _create_generation(self, scope: CollectionScope, model: str, dimension: int) -> str:
+    def active_collection(self, scope: CollectionScope, model: str, dimension: int) -> str | None:
+        try:
+            return self._resolve(scope, model, dimension)
+        except CaseIndexUnavailable, PublicIndexUnavailable:
+            return None
+
+    def create_generation(
+        self, scope: CollectionScope, model: str, dimension: int
+    ) -> tuple[str, str]:
+        """Crea una colección de generación nueva sin publicar alias."""
         generation = new_generation_id()
         name = instance_collection_name(self.instance_id, scope, model, dimension, generation)
         try:
@@ -290,7 +301,7 @@ class QdrantIndex:
                 )
         except Exception as exc:
             raise QdrantUnavailable("No se pudo crear la colección de Qdrant.") from exc
-        return name
+        return generation, name
 
     def _activate_alias(self, alias: str, collection: str) -> None:
         try:
@@ -309,24 +320,14 @@ class QdrantIndex:
         except Exception as exc:
             raise QdrantUnavailable("No se pudo publicar el alias de Qdrant.") from exc
 
-    def _ensure_collection(self, scope: CollectionScope, model: str, dimension: int) -> str:
-        try:
-            return self._resolve(scope, model, dimension)
-        except CaseIndexUnavailable, PublicIndexUnavailable:
-            collection = self._create_generation(scope, model, dimension)
-            self._activate_alias(self._alias(scope, model, dimension), collection)
-            return collection
-
-    def upsert(
-        self,
-        scope: CollectionScope,
-        model: str,
-        dimension: int,
-        chunks: list[IndexedChunk],
+    def activate_alias(
+        self, scope: CollectionScope, model: str, dimension: int, collection: str
     ) -> None:
+        self._activate_alias(self._alias(scope, model, dimension), collection)
+
+    def _write_points(self, collection: str, chunks: list[IndexedChunk]) -> None:
         if not chunks:
             return
-        collection = self._ensure_collection(scope, model, dimension)
         points = [
             PointStruct(
                 id=point_id(chunk.chunk_id),
@@ -339,6 +340,45 @@ class QdrantIndex:
             self.client.upsert(collection_name=collection, points=points, wait=True)
         except Exception as exc:
             raise QdrantUnavailable("No se pudieron escribir puntos en Qdrant.") from exc
+
+    def upsert_to(self, collection: str, chunks: list[IndexedChunk]) -> None:
+        self._write_points(collection, chunks)
+
+    def chunk_ids(self, collection: str) -> set[str]:
+        ids: set[str] = set()
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=collection,
+                limit=256,
+                offset=offset,
+                with_payload=["chunk_id"],
+                with_vectors=False,
+            )
+            ids.update(str((point.payload or {}).get("chunk_id", "")) for point in points)
+            if offset is None:
+                break
+        ids.discard("")
+        return ids
+
+    def upsert(
+        self,
+        scope: CollectionScope,
+        model: str,
+        dimension: int,
+        chunks: list[IndexedChunk],
+    ) -> None:
+        if not chunks:
+            return
+        collection = self._ensure_collection(scope, model, dimension)
+        self._write_points(collection, chunks)
+
+    def _ensure_collection(self, scope: CollectionScope, model: str, dimension: int) -> str:
+        collection = self.active_collection(scope, model, dimension)
+        if collection is None:
+            _, collection = self.create_generation(scope, model, dimension)
+            self.activate_alias(scope, model, dimension, collection)
+        return collection
 
     def delete_ids(
         self,

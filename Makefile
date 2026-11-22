@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
-.PHONY: help install assets dev demo demo-prepare corpus seed-demo qdrant-up qdrant-down qdrant-health lint format format-check test test-integration check clean
+.PHONY: help install assets dev demo demo-prepare corpus seed-demo qdrant-up qdrant-down qdrant-health qdrant-rebuild lint format format-check test test-integration check clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ qdrant-down: ## Detiene el servidor Qdrant conservando el volumen
 qdrant-health: ## Comprueba /readyz y muestra la versión del servidor Qdrant
 	@curl -fsS http://127.0.0.1:6333/readyz
 	@curl -fsS http://127.0.0.1:6333/
+
+qdrant-rebuild: ## Reconstruye el índice documental en Qdrant desde SQLite
+	uv run python scripts/rebuild_qdrant.py
 
 lint: ## Ejecuta Ruff (lint)
 	uv run ruff check .

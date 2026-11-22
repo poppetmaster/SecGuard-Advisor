@@ -276,6 +276,13 @@ def acquire_instance_lock(
         os.close(fd)
 
 
+def lock_conflict_code(owner: LockOwner | None) -> str:
+    """Código de error para una ingesta que encuentra el lock ocupado."""
+    if owner is not None and owner.operation == "rebuild":
+        return "reconstruction_in_progress"
+    return "ingestion_in_progress"
+
+
 def inspect_lock(storage_dir: Path, instance_id: str) -> LockOwner | None:
     """Sondea el lock sin crear, truncar ni modificar archivos.
 

@@ -15,7 +15,11 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from secguard_advisor.config import get_settings
+from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
+from secguard_advisor.documents.embedding import OllamaEmbeddingClient
 from secguard_advisor.retrieval import instance, status
+from secguard_advisor.retrieval.index import QdrantIndex
+from secguard_advisor.retrieval.rebuild import rebuild
 
 
 def _domain(storage_dir: Path, instance_id: str | None) -> tuple[Path, str]:
@@ -75,6 +79,45 @@ def status_command(storage_dir: Path | None, instance_id: str | None) -> int:
     return 0
 
 
+def rebuild_command(storage_dir: Path | None, instance_id: str | None) -> int:
+    settings = get_settings()
+    if storage_dir is not None:
+        settings = settings.model_copy(update={"storage_dir": storage_dir})
+    if instance_id is not None:
+        settings = settings.model_copy(update={"instance_id": instance_id})
+    try:
+        resolved_instance = instance.validate_instance_id(settings.instance_id)
+    except instance.InstanceConfigurationError as exc:
+        return _error("instance_configuration_invalid", str(exc))
+
+    engine = create_engine_for_settings(settings)
+    factory = create_session_factory(engine)
+    embedder = OllamaEmbeddingClient(
+        base_url=settings.ollama_base_url,
+        model=settings.ollama_embedding_model,
+        dimension=settings.embedding_dim,
+        context_tokens=settings.embedding_context_tokens,
+    )
+    index = QdrantIndex(
+        url=settings.qdrant_url,
+        instance_id=resolved_instance,
+        timeout=settings.qdrant_timeout_seconds,
+    )
+    try:
+        report = rebuild(factory, settings, embedder=embedder, index=index)
+    except instance.InstanceLockBusy as exc:
+        return _error(
+            instance.lock_conflict_code(exc.owner),
+            "Otra operación mantiene el lock de instancia.",
+        )
+    finally:
+        index.close()
+        embedder.close()
+        engine.dispose()
+    _emit(report)
+    return 0 if report["status"] != "failed" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Reconstruye el índice documental en Qdrant y consulta su estado."
@@ -88,10 +131,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--instance", default=None)
     args = parser.parse_args(argv)
 
-    if not args.status:
-        parser.error("solo se admite --status en este corte")
-
-    return status_command(args.storage, args.instance)
+    if args.status:
+        return status_command(args.storage, args.instance)
+    return rebuild_command(args.storage, args.instance)
 
 
 if __name__ == "__main__":
