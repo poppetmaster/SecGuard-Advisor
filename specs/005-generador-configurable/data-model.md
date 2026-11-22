@@ -17,8 +17,8 @@
 | `generation_reasoning` | `Literal["off","low","high"]` | `off` por defecto en externos; se registra |
 | `deepseek_api_key` | `SecretStr \| None` | Requerida si el proveedor es `deepseek` |
 | `anthropic_api_key` | `SecretStr \| None` | Requerida si el proveedor es `anthropic` |
-| `external_budget_usd` | `Decimal` | ≥ 0; 0 bloquea llamadas externas |
-| `external_run_budget_usd` | `Decimal` | ≥ 0; límite por turno |
+| `external_budget_usd` | `Decimal` | ≥ 0; saldo global; 0 bloquea llamadas externas |
+| `external_run_budget_usd` | `Decimal` | ≥ 0; saldo acumulado del turno, incluidos reintentos |
 | `external_cost_tariff_version` | `str` | Fecha/versión de la tarifa aplicada |
 
 Precedencia: variables de entorno > `.env` > predeterminados. Ningún secreto se escribe en SQLite,
@@ -90,9 +90,14 @@ Libro de reservas y liquidaciones. Una fila por intento de llamada externa.
 Invariantes:
 
 - Una reserva se crea antes del envío y se liquida o libera exactamente una vez.
-- La suma de reservas abiertas + gasto liquidado no supera `external_budget_usd`.
+- La suma de reservas abiertas + gasto liquidado no supera el saldo global ni el saldo del turno.
+- El saldo global (`external_budget_usd`) y el saldo acumulado del turno
+  (`external_run_budget_usd`) son límites distintos: el turno no reinicia el global.
+- Una llamada enviada con uso/costo desconocido **no libera la reserva como gasto cero**. La reserva
+  conservadora permanece computable hasta su conciliación; el costo se marca `unknown`.
 - Al arrancar, una reserva abierta sin ejecución terminal se reconcilia: se libera si la llamada no
-  se envió; se liquida con el uso persistido si se envió.
+  se envió; se liquida con el uso persistido si se envió; si se envió sin uso, se conserva la reserva
+  computable y el costo queda `unknown`.
 
 ### `external_processing_authorizations`
 

@@ -8,6 +8,15 @@
 - Dinero: USD con 6 decimales; se persiste `Numeric(12,6)`.
 - Tarifa: USD por millón de tokens (MTok), versionada y fechada.
 
+## Saldo global y saldo acumulado del turno
+
+- `external_budget_usd` es el **saldo global** disponible para todas las llamadas externas.
+- `external_run_budget_usd` es el **saldo acumulado del turno**: la suma de reservas y
+  liquidaciones de esa ejecución, incluidos reintentos y reparaciones.
+- Una llamada debe cumplir ambos límites. Agotar el saldo del turno no consume ni reinicia el saldo
+  global; agotar el global bloquea también los turnos siguientes.
+- El saldo del turno se reinicia solo al crear una ejecución nueva, nunca dentro del mismo turno.
+
 ## Reserva antes de la llamada
 
 Para cada llamada externa:
@@ -29,6 +38,12 @@ Para cada llamada externa:
 
 La reserva incluye reintentos: cada intento tiene su propia reserva. Un reintento no recibe saldo
 nuevo si el turno ya lo agotó.
+
+**Uso o costo desconocido:** si una llamada fue enviada pero el proveedor no reporta uso suficiente
+para calcular el costo, la reserva conservadora **no se libera como gasto cero**. Permanece
+`reserved` (o pasa a `reconciled` con el monto reservado) hasta que exista evidencia para conciliarla.
+El costo mostrado es `unknown`; el saldo comprometido sigue siendo computable y no se presenta como
+gasto cero.
 
 ## Costo observado
 

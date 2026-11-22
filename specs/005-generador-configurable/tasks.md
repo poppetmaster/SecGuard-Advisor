@@ -41,7 +41,7 @@ archivos editables y sus dependencias ya están completas.
 configuración externa incompleta falla con un mensaje claro; el generador se selecciona una vez; el
 esquema de herramienta es tipado y el proveedor/modelo se registra por ejecución.
 
-- [ ] T001 [P] [US1] Añadir pruebas de configuración: selección de proveedor, precedencia entorno >
+- [x] T001 [P] [US1] Añadir pruebas de configuración: selección de proveedor, precedencia entorno >
   `.env` > predeterminados, credencial ausente, proveedor desconocido y límites inválidos.
   - Story: Foundational
   - Dep: none
@@ -49,14 +49,14 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: fallan antes de implementar; cubren cada mensaje de error sin imprimir valores.
   - Evidence: `tests/unit/test_provider_config.py` con salida RED.
 
-- [ ] T002 [US1] Extender `Settings` con proveedor, modelo, límite de salida, timeout, razonamiento,
+- [x] T002 [US1] Extender `Settings` con proveedor, modelo, límite de salida, timeout, razonamiento,
   `SecretStr` para DeepSeek/Anthropic, presupuesto y versión de tarifa.
   - Story: Foundational
   - Dep: T001
   - Check: T001 pasa; `ollama` no exige credencial; un proveedor externo sin credencial falla cerrado.
   - Evidence: `src/secguard_advisor/config.py`, pruebas verdes.
 
-- [ ] T003 [P] [US1] Actualizar `.env.example` con marcadores vacíos y verificar que `.env` sigue
+- [x] T003 [P] [US1] Actualizar `.env.example` con marcadores vacíos y verificar que `.env` sigue
   ignorado por Git.
   - Story: Foundational
   - Dep: T002
@@ -64,7 +64,7 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: la plantilla no contiene claves reales; `git check-ignore .env` lo confirma.
   - Evidence: `.env.example`, salida de `git check-ignore`.
 
-- [ ] T004 [P] [US1] Añadir pruebas del protocolo común y del registro de proveedores: selección
+- [x] T004 [P] [US1] Añadir pruebas del protocolo común y del registro de proveedores: selección
   explícita, sin fallback, identidad y cierre.
   - Story: US1
   - Dep: T002
@@ -72,14 +72,14 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: fallan antes de implementar; un proveedor desconocido no cae a Ollama.
   - Evidence: `tests/unit/test_provider_registry.py` con salida RED.
 
-- [ ] T005 [US1] Implementar `ProviderProtocol`, `ProviderIdentity` y `ProviderRegistry` con
+- [x] T005 [US1] Implementar `ProviderProtocol`, `ProviderIdentity` y `ProviderRegistry` con
   `provider`, `model`, `identity`, `decide`, `generate`, `last_usage` y `close`.
   - Story: US1
   - Dep: T004
   - Check: T004 pasa; el grafo recibe el generador por inyección y no conoce el proveedor.
   - Evidence: `src/secguard_advisor/conversation/providers/{base,registry}.py`.
 
-- [ ] T006 [P] [US1] Añadir pruebas del esquema tipado de `ToolDecision.arguments` y de la
+- [x] T006 [P] [US1] Añadir pruebas del esquema tipado de `ToolDecision.arguments` y de la
   compatibilidad con `FindingsArguments`, incluido el rechazo de campos extra y la ausencia de
   `case_id`.
   - Story: US1
@@ -88,7 +88,7 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: fallan antes de implementar; los valores inválidos no llegan a la herramienta.
   - Evidence: `tests/unit/test_tool_decision_schema.py` con salida RED.
 
-- [ ] T007 [US1] Sustituir `ToolDecision.arguments: dict` por un esquema tipado y acotado compatible
+- [x] T007 [US1] Sustituir `ToolDecision.arguments: dict` por un esquema tipado y acotado compatible
   con `findings_query`; adaptar el generador Ollama y los consumidores.
   - Story: US1
   - Dep: T006
@@ -96,7 +96,7 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
     Ollama sigue funcionando.
   - Evidence: `src/secguard_advisor/conversation/llm.py`, `tools/findings.py`, pruebas verdes.
 
-- [ ] T008 [P] [US1] Añadir pruebas de migración y de registro por ejecución: proveedor, identidad,
+- [x] T008 [P] [US1] Añadir pruebas de migración y de registro por ejecución: proveedor, identidad,
   límites, uso y costo inicial.
   - Story: US1
   - Dep: T005
@@ -105,14 +105,14 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
     seleccionado.
   - Evidence: `tests/integration/test_provider_run_record.py` con salida RED.
 
-- [ ] T009 [US1] Crear la migración aditiva de `runs` y actualizar `create_run`/`turn.py` para
+- [x] T009 [US1] Crear la migración aditiva de `runs` y actualizar `create_run`/`turn.py` para
   registrar proveedor, identidad y límites.
   - Story: US1
   - Dep: T008
   - Check: T008 pasa; las filas previas conservan sus datos; `alembic upgrade head` es reversible.
   - Evidence: migración Alembic, `src/secguard_advisor/evidence/runs.py`, `conversation/turn.py`.
 
-- [ ] T010 [P] [US1] Añadir una prueba de contrato de la página de ejecución que muestre proveedor y
+- [x] T010 [P] [US1] Añadir una prueba de contrato de la página de ejecución que muestre proveedor y
   modelo sin secretos.
   - Story: US1
   - Dep: T009
@@ -120,14 +120,14 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: la página muestra `ollama` y el modelo; no muestra claves.
   - Evidence: `tests/contract/test_run_provider_view.py` con salida RED.
 
-- [ ] T011 [US1] Actualizar `runs/show.html` y la vista para mostrar proveedor, modelo, identidad y
+- [x] T011 [US1] Actualizar `runs/show.html` y la vista para mostrar proveedor, modelo, identidad y
   límites.
   - Story: US1
   - Dep: T010
   - Check: T010 pasa; la evidencia existente sigue visible.
   - Evidence: plantilla y vista, pruebas verdes.
 
-- [ ] T012 [P] [US1] Añadir la regresión local real de Ollama: consulta con citas, memoria y
+- [x] T012 [P] [US1] Añadir la regresión local real de Ollama: consulta con citas, memoria y
   herramienta, sin cambios funcionales.
   - Story: US1
   - Dep: T009
@@ -135,7 +135,7 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: pasa con Ollama y Qdrant locales; no requiere credencial externa.
   - Evidence: `tests/integration/test_ollama_provider_regression.py`.
 
-- [ ] T013 [P] [US1] Añadir la prueba de ausencia de fallback: un fallo externo no intenta Ollama y
+- [x] T013 [P] [US1] Añadir la prueba de ausencia de fallback: un fallo externo no intenta Ollama y
   un fallo local no intenta externo.
   - Story: US1
   - Dep: T005
@@ -143,7 +143,7 @@ esquema de herramienta es tipado y el proveedor/modelo se registra por ejecució
   - Check: el código de error conserva el proveedor seleccionado; no hay segunda llamada.
   - Evidence: `tests/unit/test_no_provider_fallback.py`.
 
-- [ ] T014 [US1] Documentar la entrega 1 y su criterio de cierre en
+- [x] T014 [US1] Documentar la entrega 1 y su criterio de cierre en
   `docs/planificacion/005-ultimo-resultado.md`.
   - Story: US1
   - Dep: T012, T013

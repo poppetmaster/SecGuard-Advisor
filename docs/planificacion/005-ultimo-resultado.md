@@ -1,157 +1,152 @@
-# 005 — Último resultado (preparación documental)
+# 005 — Último resultado (Entrega 1 implementada)
 
 **Fecha**: 2026-11-22 (America/Bogota, `-05`)
-**Rama**: `004-qdrant-vector-index` (no se creó una rama de 005 en esta preparación)
-**Estado**: **planificación completa; nada implementado, nada aceptado.**
-**Alcance**: paquete documental de 005, listo para revisión previa a implementación.
+**Rama**: `005-generador-configurable`
+**Estado**: **Entrega 1 (T001–T014) implementada y verificada. 005 no está aceptada.**
+**Alcance**: configuración y contrato común de proveedores, conservando Ollama como generador
+operativo. DeepSeek y Anthropic siguen sin implementar.
 
 ## Dictamen
 
-El paquete de 005 está **listo para implementar por entregas**, no para declarar la funcionalidad
-disponible. Se generaron especificación, investigación, plan, modelo de datos, contratos, quickstart,
-tareas y el análisis de consistencia documental. No se instalaron dependencias, no se modificó código
-de producto, no se ejecutaron llamadas pagadas y no se tocaron datos existentes.
+La Entrega 1 está completa: la aplicación selecciona el proveedor de forma explícita, valida la
+configuración, conserva Ollama con su comportamiento actual, registra proveedor/modelo/identidad/
+límites y costo de API no aplicable, y rechaza proveedores externos no implementados sin fallback.
+La migración es aditiva y conserva las ejecuciones anteriores. `make check` y la regresión real con
+Ollama/Qdrant pasan.
 
-Prerequisito para implementar: aprobar un presupuesto externo y decidir si se autoriza el alcance
-`fictional_case` para las primeras pruebas. Sin presupuesto, el proveedor externo queda bloqueado por
-configuración y la entrega 1 (Ollama) sigue siendo la única operativa.
+Lo que **no** está hecho: adaptadores DeepSeek/Anthropic, autorización externa, presupuesto,
+comparación y aceptación de 005. No se ejecutaron llamadas pagadas ni se solicitaron claves.
 
-## Decisiones autorizadas registradas
+## Estado por tarea
 
-- Ollama local se mantiene disponible con el modelo actual.
-- Se añaden adaptadores para DeepSeek y Anthropic (Claude Haiku); no se selecciona un proveedor.
-- EmbeddingGemma sigue local y Qdrant sigue siendo el índice documental.
-- La selección es explícita por configuración local; no hay fallback ni cambio en un turno.
-- El archivo con secretos no se versiona; se entrega plantilla sin credenciales.
-- No se añaden otros proveedores, Telegram, informes nuevos ni P1–P4.
-- La decisión se registró en `.specify/memory/constitution.md` (fila 2026-11-22) y en `AGENTS.md`.
+| Tarea | Estado | Evidencia |
+|---|---|---|
+| T001 pruebas de configuración | Completada | `tests/unit/test_provider_config.py`: 10 passed. |
+| T002 Settings de proveedor | Completada | `config.py`: proveedor, modelo, límites, secretos, presupuesto. |
+| T003 `.env.example` | Completada | Plantilla sin claves; `.env` ignorado por Git. |
+| T004 pruebas de registro | Completada | `tests/unit/test_provider_registry.py`: 4 passed. |
+| T005 protocolo y registro | Completada | `conversation/providers/{base,registry}.py`. |
+| T006 pruebas del esquema tipado | Completada | `tests/unit/test_tool_decision_schema.py`: 5 passed. |
+| T007 `ToolDecision.arguments` tipado | Completada | `ToolArguments` con claves estrictas; valores delegados a `FindingsArguments`. |
+| T008 pruebas de migración/registro | Completada | `tests/unit/test_provider_run_record.py`: 2 passed. |
+| T009 migración y registro por ejecución | Completada | `alembic/versions/d4b8c1e2f3a5_*.py`; `create_run`/`turn.py`. |
+| T010 contrato de evidencias | Completada | `tests/contract/test_run_provider_view.py`: 1 passed. |
+| T011 vista de proveedor/costo | Completada | `runs/show.html` y `conversation/views.py`. |
+| T012 regresión real Ollama/Qdrant | Completada | `test_journey_real.py`: 1 passed; `test_ollama_provider_regression.py`: 1 passed. |
+| T013 ausencia de fallback | Completada | `tests/contract/test_provider_not_implemented.py`: 1 passed. |
+| T014 documentación de la entrega | Completada | Este documento, handoff y `docs/evidencia/005-entrega-1/`. |
+| T015–T042 | Pendientes | Entrega 2 y 3; no iniciadas. |
 
-## Identificadores y tarifas verificados
+## Decisiones implementadas
 
-Verificación realizada el **2026-11-22** en documentación oficial. Debe revalidarse antes de
-implementar y antes de aceptar, porque modelos y precios cambian.
+### Configuración y precedencia
 
-| Proveedor | Identificador de API | Contexto / salida | Tarifa base |
-|---|---|---|---|
-| Anthropic | `claude-haiku-5-5` | 1M / 128K | Entrada $0.10/MTok (prompt ≤100k); salida $0.50/MTok |
-| DeepSeek | `deepseek-flash` | 1M / 384K | Entrada cache miss $0.15/MTok off-peak y $0.30 peak; salida $0.60/$1.20; cache hit $0.003/$0.006 |
+- `SECGUARD_GENERATION_PROVIDER` (`ollama` predeterminado, `deepseek`, `anthropic`).
+- Para Ollama, los nombres nuevos tienen precedencia sobre los anteriores:
+  - `SECGUARD_GENERATION_MODEL` > `OLLAMA_MODEL`.
+  - `SECGUARD_GENERATION_MAX_OUTPUT_TOKENS` > `generator_num_predict`.
+  - `SECGUARD_GENERATION_TIMEOUT_SECONDS` > `llm_timeout_seconds`.
+- Precedencia general: variables de entorno > `.env` > predeterminados.
+- Credenciales `SecretStr` (`DEEPSEEK_API_KEY`, `ANTHROPIC_API_KEY`); ausentes por defecto.
+- Un proveedor externo sin credencial no arranca. Un proveedor desconocido o un límite inválido
+  tampoco.
+- `external_budget_usd` y `external_run_budget_usd` existen; `0` bloquea externos en la Entrega 2.
 
-Fuentes:
+### Contrato y registro
 
-- <https://platform.claude.com/docs/en/models/overview>
-- <https://platform.claude.com/docs/en/models/haiku-5-5/overview>
-- <https://platform.claude.com/docs/en/build-with-claude/token-counting>
-- <https://platform.claude.com/docs/en/build-with-claude/structured-outputs>
-- <https://api-docs.deepseek.com/quick_start/pricing>
-- <https://api-docs.deepseek.com/quick_start/token_usage>
-- <https://api-docs.deepseek.com/guides/json_mode>
-- <https://api-docs.deepseek.com/guides/thinking_mode>
+- `GeneratorProtocol` con `provider`, `model`, `identity`, `decide`, `generate`, `last_usage`,
+  `close`.
+- `ProviderRegistry` resuelve el generador una vez por turno desde `Settings`.
+- `OllamaGenerator` implementa el protocolo y conserva su comportamiento.
+- Un proveedor externo configurado lanza `ProviderNotImplemented` (código
+  `provider_not_implemented`, HTTP 501) y **no** cae a Ollama.
+- La fábrica `create_app` usa el registro; el turno registra el proveedor y la identidad.
 
-No se asumió que «Haiku 5.5» o «DeepSeek V4.1 Flash» fueran identificadores de API. Los
-identificadores usados son los que la documentación oficial publica.
+### Argumentos de herramienta
 
-## Artefactos creados
+- `ToolDecision.arguments` usa `ToolArguments`, un esquema estructural con `extra="forbid"` que
+  rechaza `case_id` y claves desconocidas.
+- Los valores (severidad, estado, límites) se validan con `FindingsArguments`/`parse_arguments`, por
+  lo que se conserva la corrección de argumentos inválidos por el modelo.
+- Los consumidores guardan solo los argumentos proporcionados (`exclude_unset=True`), sin cambiar
+  conteos, filtros ni aislamiento.
+
+### Persistencia y evidencia
+
+- Columnas nuevas en `runs`: `generator_provider`, `generator_identity`, `cost_status`, `cost_usd`,
+  `cost_tariff_version`.
+- Las filas anteriores se rellenan con `provider=ollama`, `cost_status=not_applicable`.
+- La página de ejecución muestra proveedor, generador, identidad, digest y costo de API.
+- Para Ollama: **No aplicable (API)**. No se afirma costo operativo total cero.
+- No se guardan secretos.
+
+## Comandos y resultados observados
 
 ```text
-specs/005-generador-configurable/
-├── spec.md
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-├── contracts/
-│   ├── provider-adapter.md
-│   ├── configuration.md
-│   ├── budget.md
-│   └── privacy.md
-├── checklists/requirements.md
-└── tasks.md
-docs/planificacion/005-ultimo-resultado.md
-docs/planificacion/handoff-005.md
+make check
+  → 585 passed, 37 deselected, 17 warnings
+
+uv run pytest tests/acceptance/test_journey_real.py -q
+  → 1 passed in 715.47 s (11:55), Ollama + Qdrant reales
+     cubre consulta con cita, memoria y herramienta
+
+uv run pytest tests/integration/test_ollama_provider_regression.py -q
+  → 1 passed in 7.68 s
+
+uv run pytest tests/unit/test_provider_run_record.py -q
+  → 2 passed (migración desde b7f2c9d1e4a6 con datos anteriores + registro)
 ```
 
-También se actualizó `.specify/feature.json` para apuntar a 005.
+Pruebas enfocadas adicionales: configuración (10), registro (4), esquema (5), contrato de evidencia
+(1) y ausencia de fallback (1). Todas en verde.
 
-## Entregas y tareas
+## Limitaciones observadas
 
-| Entrega | Tareas | Cierre |
-|---|---|---|
-| 1. Configuración y contrato común, conservando Ollama | T001–T014 | Arranque con `ollama` sin cambios; configuración externa incompleta falla claro; selección única; esquema tipado; proveedor/modelo registrados. |
-| 2. Adaptadores externos y controles de datos, contexto y costos | T015–T034 | DeepSeek/Anthropic contra servidor simulado; contexto por proveedor; presupuesto con reserva/liquidación; bloqueo de datos privados; sin secretos. |
-| 3. Comparación, regresión y documentación | T035–T042 | Comparación reproducible; regresión completa; aceptación solo con evidencia; documentación final. |
+- DeepSeek y Anthropic no están implementados; el error es explícito y no hay fallback.
+- No se ejecutaron llamadas externas ni se solicitaron credenciales.
+- La regresión real usa el presupuesto de prueba ya existente de 600 s/300 s para el modelo local;
+  el producto conserva 120 s/90 s. No se amplió durante esta entrega para ocultar fallos.
+- El modelo local puede variar en la decisión de herramienta. Se mejoró el prompt de decisión con
+  ejemplos y la instrucción de no repetir una consulta ya respondida; la prueba real exige que
+  exista una llamada filtrada correcta, no que sea la primera.
+- Los proveedores externos no tienen aún autorización por caso, presupuesto ni comparación.
 
-Detalle completo en [tasks.md](../../specs/005-generador-configurable/tasks.md).
+## Archivos modificados
 
-## Hallazgos de diseño relevantes
+```text
+src/secguard_advisor/config.py
+src/secguard_advisor/conversation/llm.py
+src/secguard_advisor/conversation/nodes.py
+src/secguard_advisor/conversation/prompts.py
+src/secguard_advisor/conversation/turn.py
+src/secguard_advisor/conversation/views.py
+src/secguard_advisor/conversation/providers/{__init__,base,registry}.py
+src/secguard_advisor/db/models.py
+src/secguard_advisor/evidence/runs.py
+src/secguard_advisor/web/app.py
+src/secguard_advisor/web/errors.py
+src/secguard_advisor/web/routes/chat.py
+src/secguard_advisor/web/templates/runs/show.html
+alembic/versions/d4b8c1e2f3a5_add_generation_provider.py
+.env.example
+tests/unit/test_provider_config.py
+tests/unit/test_provider_registry.py
+tests/unit/test_tool_decision_schema.py
+tests/unit/test_provider_run_record.py
+tests/contract/test_run_provider_view.py
+tests/contract/test_provider_not_implemented.py
+tests/integration/test_ollama_provider_regression.py
+tests/acceptance/test_journey_real.py
+```
 
-1. **`ToolDecision.arguments` debe ser tipado.** Un `dict` libre no produce un esquema útil para
-   Anthropic Structured Outputs. Se define un esquema acotado compatible con `findings_query`.
-2. **El tokenizador GGUF no sirve para externos.** Anthropic tiene conteo gratuito; DeepSeek
-   devuelve uso observado y publica tokenizador fuera de línea. La primera entrega usa un estimador
-   conservador para DeepSeek y valida contra el uso observado.
-3. **DeepSeek JSON Output puede devolver contenido vacío.** Se trata como salida inválida y se aplica
-   la reparación acotada existente.
-4. **La herramienta de hallazgos necesita una regla explícita.** Con proveedor externo solo se
-   permite `findings_query` en `fictional_case` con `origin=synthetic`; datos importados o mixtos se
-   bloquean con `external_tool_blocked`.
-5. **El presupuesto es local.** Se reserva antes de la llamada y se liquida con el uso observado; no
-   se promete un tope exacto del proveedor.
-6. **La autorización externa es por caso.** Una credencial no autoriza el envío. Sin autorización
-   vigente no se llama ni siquiera al contador de tokens externo.
+## Evidencia persistente
 
-## Análisis de consistencia documental (única ejecución)
-
-Se aplicó una revisión de consistencia sobre `spec.md`, `plan.md` y `tasks.md` con la constitución.
-
-### Hallazgos corregidos
-
-| Hallazgo | Corrección |
-|---|---|
-| `ToolDecision.arguments` libre era incompatible con Anthropic | Esquema tipado y acotado (FR-010, T006–T007) |
-| La prohibición total de herramientas externas contradecía el principio IV | Regla acotada: solo `fictional_case` + `origin=synthetic`; importados bloqueados (FR-021/FR-031) |
-| Faltaba un requisito explícito de bloqueo de herramienta importada | FR-031 y T027–T028 |
-| Faltaba un requisito de alcance de autorización | FR-032 |
-| Faltaba un requisito de identidad de modelo | FR-033 |
-| El plan usaba `db/migrations/` inexistente | Corregido a `alembic/versions/` |
-| La aceptación no estaba en la regresión | T040 incluye aceptación ASGI |
-| El marker `external` no tenía tarea | T039 |
-
-### Resultado
-
-- No quedan conflictos CRITICAL con la constitución.
-- No quedan requisitos funcionales sin tarea asociada.
-- No quedan contradicciones entre spec, plan y tasks.
-- Persisten dependencias externas que no son defectos documentales: presupuesto aprobado,
-  credenciales y decisión de alcance para datos ficticios.
-
-## Verificación realizada
-
-- Lectura de `AGENTS.md`, constitución y código de generación, presupuesto, configuración,
-  persistencia y trazas.
-- Verificación de documentación oficial de Anthropic y DeepSeek (fecha y fuentes arriba).
-- Comprobación de la estructura de Spec Kit y de los artefactos de 004 para consistencia de estilo.
-- **No** se ejecutaron pruebas de la aplicación, migraciones, instalaciones ni llamadas externas.
-
-## Pendientes que requieren información del usuario
-
-1. **Presupuesto externo**: monto autorizado y si se permite gasto por ejecución. Sin esto,
-   `SECGUARD_EXTERNAL_BUDGET_USD=0` bloquea los proveedores externos.
-2. **Alcance de las primeras pruebas externas**: confirmar que se limitan a corpus público y casos
-   ficticios (`public_corpus`/`fictional_case`), sin datos privados.
-3. **Credenciales**: decidir si se proporcionarán claves locales para la comparación; no se solicitan
-   en esta preparación.
-4. **Revalidación de modelos**: confirmar los identificadores y precios al iniciar la implementación.
-5. **Proveedor definitivo**: no se selecciona en 005; la comparación sustenta una decisión posterior.
-
-## Limitaciones
-
-- No hay implementación, pruebas de la aplicación ni aceptación.
-- La comparación entre proveedores no se ejecutó y no se presentan resultados.
-- Los precios están fechados y pueden cambiar.
-- El modo embebido de Qdrant y la aceptación de 004 no se reabren.
-- 003 sigue suspendida; 004 permanece cerrado.
+- `docs/evidencia/005-entrega-1/README.md`
+- `docs/planificacion/handoff-005.md`
+- `specs/005-generador-configurable/tasks.md` (T001–T014 marcadas)
 
 ## Próximo paso
 
-Revisar este paquete y, si se aprueba, comenzar por la **Entrega 1 (T001–T014)**: configuración y
-contrato común conservando Ollama. La entrega 1 no requiere presupuesto externo.
+Revisar la Entrega 1. Si se aprueba, iniciar la **Entrega 2 (T015–T034)**: adaptadores DeepSeek y
+Anthropic contra servidor simulado, contexto, costo, presupuesto, autorización externa y bloqueo de
+herramientas importadas. No se inicia 005 Entrega 2 en este cierre.
