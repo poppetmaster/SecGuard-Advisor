@@ -700,3 +700,25 @@ posterior.
   Chroma conservado; sin aceptación de 004.
 
 Siguiente paso: Corte 3 (T043–T053). No se inició T043.
+
+---
+
+## 22. Corte 3 completado (2026-11-22 11:52)
+
+**Vigente.** §10–§21 son históricas.
+
+- Corte 3: T043–T053 completadas. **Acumulado T001–T053 = 53/82.**
+- `make check`: 514 passed; `pre-commit`: verde.
+- Versiones vigentes y citas históricas verificadas; `citations.py` no se reimplementó.
+- Evidencia del paso `retrieve` con identidad del índice y `error_code`; página de ejecución validada
+  con Playwright MCP (`docs/evidencia/004-corte-3/run-detail.png`).
+- Qualys sigue fuera del RAG: la importación no crea documentos, fragmentos ni puntos Qdrant.
+- Reinicio persistente y disponibilidad: reinicio con cliente reabierto y con servidor real;
+  `qdrant_unavailable` e `instance_namespace_mismatch` sin fallback a Chroma.
+- Smoke real con Qdrant 1.20.0 + EmbeddingGemma, instancia `cut3-smoke`, storage temporal: dos
+  reconstrucciones `completed`, búsqueda sin cruces, versión superada excluida, cita histórica válida,
+  reinicio conservado y errores explícitos. Servicio detenido con `make qdrant-down`.
+- Limitaciones: caso sin documentos privados → `case_index_unavailable` hasta T054–T059; sin
+  calibración; Chroma conservado; colecciones de smokes propios en el volumen local.
+
+Siguiente paso: Corte 4 (T054–T064). No se inició T054 ni ninguna tarea posterior.

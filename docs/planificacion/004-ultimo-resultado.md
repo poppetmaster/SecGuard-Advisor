@@ -1,90 +1,84 @@
-# 004 — Último resultado (Corte 2 corregido)
+# 004 — Último resultado (Corte 3 completado)
 
-**Fecha**: 2026-11-22 10:10–11:40 (America/Bogota, `-05`)
+**Fecha**: 2026-11-22 11:36–11:52 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
-**Alcance**: Corte 2, **T010–T042 = 33 tareas**. Acumulado del proyecto: **T001–T042 = 42 tareas**
-completadas.
+**Alcance**: Corte 3, T043–T053 (11 tareas). **Acumulado: T001–T053 = 53 de 82 tareas.**
 **Backend**: Qdrant es el índice de la aplicación; Chroma se conserva hasta el Corte 6. SQLite sigue
 siendo la fuente de verdad. No se declara aceptación de 004.
 
-## Correcciones aplicadas
+## Estado por tarea
 
-### 1. La candidata decide la publicación; la generación anterior es diagnóstico
+| Tarea | Estado | Evidencia |
+|---|---|---|
+| T043 versiones/citas/aislamiento | Completada | `test_qdrant_citations.py` (2 pruebas): versión superada excluida, cita histórica válida, casos aislados. |
+| T044 adaptación de selección vigente | Completada | El filtro existente de `search.py` se conserva; no se tocó `citations.py`. |
+| T045 contrato de evidencia | Completada | RED observado (test falla sin los campos); GREEN con 1 prueba. |
+| T046 evidencia del paso retrieve | Completada | `nodes.py` registra instancia, backend, versión, modelo, dimensión, alias, generación, `score_metric` y `error_code`. |
+| T047 verificación citas/evidencia | Completada | 3 pruebas en verde. |
+| T048 Qualys fuera del RAG | Completada | 2 pruebas: la importación no crea documentos, fragmentos ni puntos Qdrant. |
+| T049 reinicio persistente | Completada | `test_qdrant_restart.py`: cliente cerrado y reabierto conserva alias, conteo y resultados. |
+| T050 readiness y validación | Completada | `/healthz` informa `qdrant`; validación de instancia y errores claros. |
+| T051 caída/config incompatible | Completada | `test_qdrant_availability.py` (4 pruebas). |
+| T052 errores explícitos | Completada | `qdrant_unavailable` e `instance_namespace_mismatch` sin fallback a Chroma. |
+| T053 verificación US4 | Completada | 4 pruebas; smoke real con reinicio y caída. |
 
-Antes, un huérfano en la generación anterior impedía activar una candidata correcta y los reintentos
-quedaban en `partial`. Ahora:
+## Cambios realizados
 
-- `missing_chunks`, `extra_chunks` y `skipped_chunks` describen la **candidata** y deciden su
-  publicación.
-- `previous_missing_chunks` y `previous_extra_chunks` describen la generación activa anterior y son
-  **diagnóstico**. Un índice anterior desactualizado no bloquea una candidata completa.
-- Siguen bloqueando la publicación: faltantes o sobrantes de la candidata, fragmentos incompatibles y
-  errores de escritura.
-- La generación anterior se conserva; no se borra nada.
-- Los huérfanos se siguen detectando y reportando; nunca se resuelven como cita.
+- `retrieval/index.py`: `describe()` para evidencia (sin escrituras), validación del marcador de
+  instancia por almacenamiento y `ping()` para readiness.
+- `web/app.py`: sonda de Qdrant y campo `qdrant` en `/healthz` (`ok`, `unavailable`,
+  `not_configured`); la fábrica pasa `storage_dir` al índice.
+- `conversation/nodes.py`: evidencia del paso `retrieve` con identidad del índice, sin rutas ni texto.
+- `conversation/turn.py`: el detalle del paso de fallo incluye `error_code`.
+- Pruebas nuevas: citas/versiones, evidencia, reinicio, disponibilidad y Qualys con Qdrant.
+- `test_app_shell.py`: el contrato de `/healthz` incluye `qdrant` (adaptación mínima documentada).
 
-Contratos y diseño sincronizados: `contracts/rebuild.md`, `data-model.md` (esquema del reporte) y
-`plan.md` §Rebuild workflow. La constitución no cambia: no se altera una decisión de diseño, solo se
-precisa la validación ya prevista.
-
-### 2. El reporte terminal se publica dentro del lock
-
-`rebuild()` construye y escribe `latest.json` dentro de la sección protegida; el context manager
-libera el lock incluso si la escritura falla. Una ejecución anterior no puede sobrescribir el reporte
-después de otra operación.
-
-### 3. Conteo del corte
-
-El Corte 2 son 33 tareas (T010–T042); las 42 completadas corresponden al acumulado T001–T042.
-
-## Pruebas ejecutadas
+## Comandos y resultados
 
 ```text
-uv run pytest test_qdrant_rebuild.py test_qdrant_rebuild_failures.py \
-  test_qdrant_status.py test_qdrant_retrieval.py → 17 passed
-make check → 505 passed, 35 deselected
-uv run pre-commit run --all-files → Passed
+T047: uv run pytest test_qdrant_citations.py test_qdrant_evidence.py → 3 passed
+T048: uv run pytest test_qualys_not_rag.py → 2 passed
+T053: uv run pytest test_qdrant_restart.py test_qdrant_availability.py → 4 passed
+make check → 514 passed, 35 deselected
+pre-commit → todas las comprobaciones Passed
 ```
 
-Regresiones nuevas (en `test_qdrant_rebuild_failures.py`):
+RED capturado en T045 al restaurar temporalmente el `nodes.py` previo (test falla; luego GREEN). Las
+capacidades de T043/T049/T051 ya existían en parte; se verificaron sin introducir fallos artificiales.
 
-- Índice anterior con huérfano → candidata válida → `completed`, `previous_extra_chunks=1`, alias
-  nuevo y recuperación sin el huérfano.
-- Versión anterior sustituida por la vigente → `completed` y solo los `chunk_id` de la versión actual.
-- Reconstrucción repetida → `completed`, nueva generación, mismo conteo, sin duplicados.
-- Candidata defectuosa (punto extra inyectado en la candidata) → `partial` y alias anterior conservado.
-- Publicación del reporte con el lock adquirido (sonda `inspect_lock` durante `_write_report`).
+## Pruebas embebidas frente a servidor real
 
-## Prueba real: Qdrant servidor + EmbeddingGemma
+- **Embebidas (automatizadas)**: citas/versiones, evidencia, reinicio por reapertura del cliente,
+  caída por puerto cerrado y configuración incompatible con marcador copiado.
+- **Servidor real** (instancia `cut3-smoke`, storage temporal, Qdrant 1.20.0 + EmbeddingGemma):
+  - Dos reconstrucciones `completed` (público 2 fragmentos, dos casos con 1 cada uno).
+  - Recuperación con orígenes público y de caso, sin cruces entre casos.
+  - Versión superada excluida; cita histórica `valid` desde SQLite.
+  - Reinicio con `make qdrant-down/up`: conteo y búsqueda conservados.
+  - Caída: `qdrant_unavailable`; marcador copiado: `instance_namespace_mismatch`.
+  - Sin generación ni “información insuficiente”: el fallo se propaga como error (pruebas de rutas).
 
-Instancia `cut2-fix-smoke`, storage y corpus temporales, `sample.pdf` ficticio, 768 dimensiones.
+## Revisión visual
 
-```text
-rebuild 1: completed  public(extra=0, prev_extra=0, skipped=0) case(0,0,0)
-rebuild 2: completed  public(0,0) case(0,0)
-huérfano inyectado en la generación pública activa
-rebuild 3: completed  public(extra=0, prev_extra=1) case(0,0)
-search: ok, 2 hits, orígenes case_evidence + public_corpus, huérfano ausente
-```
+La página de ejecución muestra `step.detail` como JSON y ahora incluye los campos nuevos. Se validó con
+Playwright MCP sobre una ejecución sembrada: el detalle expandido muestra `vector_backend`,
+`qdrant_version`, alias, generación y `score_metric`. Captura:
+`docs/evidencia/004-corte-3/run-detail.png`. Los mensajes de error no cambiaron de plantilla; su texto
+se verifica en las pruebas de contrato.
 
-La tercera reconstrucción diagnostica el índice anterior desactualizado y publica la candidata. El
-servicio se detuvo con `make qdrant-down` (sin `-v`) y el volumen se conservó.
+## Limitaciones
 
-## Limitaciones vigentes
-
-- Un caso sin documentos privados sigue devolviendo `case_index_unavailable`; el alcance esperado es
-  T053 (Corte 4).
+- Un caso sin documentos privados sigue devolviendo `case_index_unavailable` (T054–T059, Corte 4).
 - Sin calibración de umbral.
 - Chroma y sus datos permanecen.
-- En el volumen local de Qdrant quedan colecciones de smokes propios (`cut2-smoke`, `cut2-fix-smoke`).
+- El volumen local de Qdrant conserva colecciones de smokes propios (`cut2-*`, `cut3-smoke`).
 - No se declara aceptación de 004.
 
-## Commits de esta pasada
+## Commits
 
-- `12d6e51` corpus con lock · `5be439b` reconstrucción · `83f2fc4` lock y mapeo de conflictos ·
-  `373b136` pruebas de recuperación y turno · `6fc5e84` evidencia del corte.
-- `c1ccf0c` validación de la candidata y reporte bajo lock.
+`149e499` evidencia y readiness · `1ab8a07` identidad en retrieve · `9c18966` pruebas de versiones,
+reinicio y disponibilidad · `0b864ab` correcciones del Corte 2 (previo).
 
 ## Siguiente paso
 
-Corte 3 (T043–T053): citas/evidencia y reinicio/disponibilidad. No se inició T043.
+Corte 4 (T054–T064): primer documento, alcance vacío, recuperación y parciales. No se inició T054.

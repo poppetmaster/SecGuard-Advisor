@@ -371,40 +371,40 @@ documental es Corte 1 + Corte 2.
 **Objetivo**: conservar versiones, citas históricas y evidencia del índice sin reimplementar la lógica
 existente.
 
-- [ ] T043 [P] [US3] Añadir pruebas de regresión en rojo de versiones superadas, citas históricas y aislamiento entre casos en `tests/integration/test_qdrant_citations.py`, preservando el comportamiento de 001/002.
+- [x] T043 [P] [US3] Añadir pruebas de regresión en rojo de versiones superadas, citas históricas y aislamiento entre casos en `tests/integration/test_qdrant_citations.py`, preservando el comportamiento de 001/002.
   - Story: US3
   - Dep: T035, T036
   - Verifies: T044
   - Check: fallan antes de la adaptación, no por comportamiento ausente.
   - Evidence: salida RED.
 
-- [ ] T044 [US3] Adaptar la selección de versión vigente en `src/secguard_advisor/retrieval/search.py` preservando el filtro existente; las citas históricas siguen resolviéndose desde SQLite y `retrieval/citations.py` no se reimplementa.
+- [x] T044 [US3] Adaptar la selección de versión vigente en `src/secguard_advisor/retrieval/search.py` preservando el filtro existente; las citas históricas siguen resolviéndose desde SQLite y `retrieval/citations.py` no se reimplementa.
   - Story: US3
   - Dep: T043
   - Check: T043 pasa; el control automático de citas conserva existencia, versión, localizador y cita literal.
   - Evidence: salida GREEN y diff mínimo.
 
-- [ ] T045 [P] [US3] Añadir pruebas de contrato en rojo de los campos de evidencia del paso `retrieve` en `tests/contract/test_qdrant_evidence.py` (instancia, backend, versión, modelo, dimensión, alias, generación y `error_code`).
+- [x] T045 [P] [US3] Añadir pruebas de contrato en rojo de los campos de evidencia del paso `retrieve` en `tests/contract/test_qdrant_evidence.py` (instancia, backend, versión, modelo, dimensión, alias, generación y `error_code`).
   - Story: US3
   - Dep: T035
   - Verifies: T046
   - Check: fallan antes de los campos de evidencia.
   - Evidence: salida RED.
 
-- [ ] T046 [US3] Implementar en `src/secguard_advisor/conversation/nodes.py` los campos de evidencia y el `error_code` clasificado, sin tablas nuevas ni rutas o secretos.
+- [x] T046 [US3] Implementar en `src/secguard_advisor/conversation/nodes.py` los campos de evidencia y el `error_code` clasificado, sin tablas nuevas ni rutas o secretos.
   - Story: US3
   - Dep: T045
   - Check: T045 pasa; la página de ejecución sigue mostrando la evidencia existente.
   - Evidence: diff y salida de pruebas.
 
-- [ ] T047 [US3] Verificar citas, versiones, aislamiento y evidencia con `uv run pytest tests/integration/test_qdrant_citations.py tests/contract/test_qdrant_evidence.py`.
+- [x] T047 [US3] Verificar citas, versiones, aislamiento y evidencia con `uv run pytest tests/integration/test_qdrant_citations.py tests/contract/test_qdrant_evidence.py`.
   - Story: US3
   - Dep: T044, T046
   - Verifies: T044, T046
   - Check: pasan todas; ninguna cita histórica depende de Qdrant; la evidencia identifica el índice y el código de error cuando falla.
   - Evidence: salida de pruebas.
 
-- [ ] T048 [P] [US3] Actualizar `tests/integration/test_qualys_not_rag.py` para contar puntos Qdrant y verificar que ningún registro Qualys entra en el índice documental; ejecutar la regresión de 002.
+- [x] T048 [P] [US3] Actualizar `tests/integration/test_qualys_not_rag.py` para contar puntos Qdrant y verificar que ningún registro Qualys entra en el índice documental; ejecutar la regresión de 002.
   - Story: US3
   - Dep: T044
   - Check: cero registros Qualys en las colecciones pública y de caso; la regresión de 002 pasa.
@@ -416,33 +416,33 @@ existente.
 
 **Objetivo**: persistencia tras reinicio y errores explícitos sin fallback.
 
-- [ ] T049 [P] [US4] Añadir prueba de integración en rojo del reinicio de Qdrant con volumen persistente en `tests/integration/test_qdrant_restart.py`.
+- [x] T049 [P] [US4] Añadir prueba de integración en rojo del reinicio de Qdrant con volumen persistente en `tests/integration/test_qdrant_restart.py`.
   - Story: US4
   - Dep: T012, T014
   - Verifies: T050
   - Check: falla antes del manejo de readiness y persistencia.
   - Evidence: salida RED.
 
-- [ ] T050 [US4] Implementar readiness de arranque, validación de instancia y fallo explícito de Qdrant en `src/secguard_advisor/web/app.py`.
+- [x] T050 [US4] Implementar readiness de arranque, validación de instancia y fallo explícito de Qdrant en `src/secguard_advisor/web/app.py`.
   - Story: US4
   - Dep: T049
   - Check: T049 pasa; no hay fallback a Chroma.
   - Evidence: salida GREEN.
 
-- [ ] T051 [P] [US4] Añadir pruebas de integración en rojo de Qdrant caído y configuración incompatible en `tests/integration/test_qdrant_availability.py`.
+- [x] T051 [P] [US4] Añadir pruebas de integración en rojo de Qdrant caído y configuración incompatible en `tests/integration/test_qdrant_availability.py`.
   - Story: US4
   - Dep: T014, T049
   - Verifies: T052
   - Check: fallan antes del mapeo de errores.
   - Evidence: salida RED.
 
-- [ ] T052 [US4] Implementar los errores explícitos de disponibilidad y configuración, sin fallback, en `retrieval/index.py` y `web/app.py`.
+- [x] T052 [US4] Implementar los errores explícitos de disponibilidad y configuración, sin fallback, en `retrieval/index.py` y `web/app.py`.
   - Story: US4
   - Dep: T051
   - Check: T051 pasa; los mensajes son accionables y conservan su código.
   - Evidence: salida GREEN y evidencia de ruta.
 
-- [ ] T053 [US4] Verificar reinicio y disponibilidad con `uv run pytest tests/integration/test_qdrant_restart.py tests/integration/test_qdrant_availability.py`.
+- [x] T053 [US4] Verificar reinicio y disponibilidad con `uv run pytest tests/integration/test_qdrant_restart.py tests/integration/test_qdrant_availability.py`.
   - Story: US4
   - Dep: T050, T052
   - Verifies: T050, T052
