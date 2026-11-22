@@ -119,53 +119,53 @@ backend de la aplicación.
 **Objetivo**: adaptador Qdrant, taxonomía de errores y ingesta del corpus público listos para las
 historias.
 
-- [ ] T010 [P] Añadir pruebas unitarias en rojo del adaptador en `tests/unit/test_qdrant_index.py`: UUIDv5 determinista, mapeo de payload, semántica de score y errores clasificados.
+- [x] T010 [P] Añadir pruebas unitarias en rojo del adaptador en `tests/unit/test_qdrant_index.py`: UUIDv5 determinista, mapeo de payload, semántica de score y errores clasificados.
   - Story: Foundational
   - Dep: T007
   - Verifies: T013
   - Check: fallan antes de `QdrantIndex`.
   - Evidence: salida RED.
 
-- [ ] T011 [P] Añadir pruebas de contrato en rojo de colecciones y alias en `tests/contract/test_qdrant_index_contract.py`: aislamiento por alcance, resolución de alias, nombres con namespace de instancia y payload sin texto.
+- [x] T011 [P] Añadir pruebas de contrato en rojo de colecciones y alias en `tests/contract/test_qdrant_index_contract.py`: aislamiento por alcance, resolución de alias, nombres con namespace de instancia y payload sin texto.
   - Story: Foundational
   - Dep: T007
   - Verifies: T012, T013
   - Check: fallan antes de las colecciones y del adaptador.
   - Evidence: salida RED.
 
-- [ ] T012 Implementar `src/secguard_advisor/retrieval/collections.py` con nombres físicos, alias y generaciones que incluyan el namespace de instancia, usando la primitiva de T007.
+- [x] T012 Implementar `src/secguard_advisor/retrieval/collections.py` con nombres físicos, alias y generaciones que incluyan el namespace de instancia, usando la primitiva de T007.
   - Story: Foundational
   - Dep: T007
   - Check: las pruebas cubren público/caso, alias, separación de instancias y nombres inválidos.
   - Evidence: módulo y salida de pruebas.
 
-- [ ] T013 Implementar `QdrantIndex` en `src/secguard_advisor/retrieval/index.py` con `upsert`, `delete_ids`, `delete_version`, `count`, `query` y errores clasificados.
+- [x] T013 Implementar `QdrantIndex` en `src/secguard_advisor/retrieval/index.py` con `upsert`, `delete_ids`, `delete_version`, `count`, `query` y errores clasificados.
   - Story: Foundational
   - Dep: T010, T011, T012
   - Check: T010 y T011 pasan; no se guarda texto en el payload; no hay fallback a Chroma.
   - Evidence: módulo y salida GREEN.
 
-- [ ] T014 Actualizar `src/secguard_advisor/web/app.py` para construir Qdrant desde la configuración, resolver la instancia y exponer errores de readiness y de configuración.
+- [x] T014 Actualizar `src/secguard_advisor/web/app.py` para construir Qdrant desde la configuración, resolver la instancia y exponer errores de readiness y de configuración.
   - Story: Foundational
   - Dep: T012, T013
   - Check: la fábrica usa Qdrant; un ID de instancia o una URL ausentes fallan con un mensaje claro.
   - Evidence: diff de la fábrica y salida de pruebas.
 
-- [ ] T015 Pruebas de contrato de la fábrica, readiness y errores de configuración en `tests/contract/test_qdrant_app.py`.
+- [x] T015 Pruebas de contrato de la fábrica, readiness y errores de configuración en `tests/contract/test_qdrant_app.py`.
   - Story: Foundational
   - Dep: T014
   - Verifies: T014
   - Check: pasan sin levantar un servidor Qdrant real.
   - Evidence: salida de pruebas.
 
-- [ ] T016 [P] Añadir pruebas unitarias en rojo de la taxonomía de errores en `tests/unit/test_error_messages.py`: los seis códigos conservan su propio código y estado (503/409), presentan mensaje en español y nunca se resuelven como `internal_error`.
+- [x] T016 [P] Añadir pruebas unitarias en rojo de la taxonomía de errores en `tests/unit/test_error_messages.py`: los seis códigos conservan su propio código y estado (503/409), presentan mensaje en español y nunca se resuelven como `internal_error`.
   - Story: Foundational
   - Dep: none
   - Verifies: T017
   - Check: fallan mientras los códigos no estén registrados.
   - Evidence: salida RED.
 
-- [ ] T017 Registrar en `src/secguard_advisor/web/errors.py` los códigos `qdrant_unavailable` (503), `case_index_unavailable` (503), `public_index_unavailable` (503), `instance_namespace_mismatch` (503), `reconstruction_in_progress` (409) e `ingestion_in_progress` (409), con mensaje comprensible.
+- [x] T017 Registrar en `src/secguard_advisor/web/errors.py` los códigos `qdrant_unavailable` (503), `case_index_unavailable` (503), `public_index_unavailable` (503), `instance_namespace_mismatch` (503), `reconstruction_in_progress` (409) e `ingestion_in_progress` (409), con mensaje comprensible.
   - Story: Foundational
   - Dep: T016
   - Check: T016 pasa; `AppError("case_index_unavailable").code` devuelve `case_index_unavailable` y no `internal_error`.
@@ -218,14 +218,14 @@ repetir sin duplicados.
   - Check: T021 avanza hasta la generación esperada sin usar Chroma; el lock se toma antes de leer o escribir y se libera incluso si la reconstrucción falla; con una ingesta activa, el comando falla con `ingestion_in_progress`.
   - Evidence: script y salida RED-to-progress.
 
-- [ ] T023 [P] [US1] Añadir pruebas unitarias en rojo del resolvedor único de estado en `tests/unit/test_qdrant_state.py`: `not_started` sin estado, `ingestion_in_progress`, `rebuild_in_progress`, `completed`, `partial`, `failed`, metadatos residuales con el lock libre ignorados, reporte terminal ilegible como error explícito con `state: null` y `last_terminal: null` (nunca `not_started` ni estado inventado) y ausencia de escrituras.
+- [x] T023 [P] [US1] Añadir pruebas unitarias en rojo del resolvedor único de estado en `tests/unit/test_qdrant_state.py`: `not_started` sin estado, `ingestion_in_progress`, `rebuild_in_progress`, `completed`, `partial`, `failed`, metadatos residuales con el lock libre ignorados, reporte terminal ilegible como error explícito con `state: null` y `last_terminal: null` (nunca `not_started` ni estado inventado) y ausencia de escrituras.
   - Story: US1
   - Dep: T022
   - Verifies: T024
   - Check: fallan antes de `retrieval/status.py`; el caso ilegible no borra, sobrescribe ni repara el reporte.
   - Evidence: salida RED y comparación de archivos del directorio de control.
 
-- [ ] T024 [US1] Implementar `src/secguard_advisor/retrieval/status.py` como resolvedor único: `resolve_operation_state(...)` (sondeo del lock, lectura del propietario e interpretación del reporte terminal), `terminal_status(...)` para el estado global del reporte y errores tipados `instance_configuration_invalid`, `lock_unreadable` y `status_report_unreadable`, sin escrituras ni efectos.
+- [x] T024 [US1] Implementar `src/secguard_advisor/retrieval/status.py` como resolvedor único: `resolve_operation_state(...)` (sondeo del lock, lectura del propietario e interpretación del reporte terminal), `terminal_status(...)` para el estado global del reporte y errores tipados `instance_configuration_invalid`, `lock_unreadable` y `status_report_unreadable`, sin escrituras ni efectos.
   - Story: US1
   - Dep: T023
   - Check: las pruebas de T023 pasan; no existe otra implementación del sondeo, del propietario ni de la interpretación del reporte; un reporte ilegible devuelve error con `last_terminal: null`.
@@ -237,14 +237,14 @@ repetir sin duplicados.
   - Check: T021 pasa; una validación parcial no cambia el alias; un lock con operación `rebuild` no se reporta como éxito; una ingesta activa no se reporta como reconstrucción en curso; un registro residual con el lock libre no demuestra actividad; la ausencia de reporte no se reporta como fallo.
   - Evidence: salida GREEN y reporte JSON.
 
-- [ ] T026 [P] [US1] Añadir pruebas en rojo de la consulta de estado de solo lectura en `tests/integration/test_qdrant_status.py`: `not_started` sin estado registrado, ingesta en curso, reconstrucción en curso, último resultado terminal `completed`, `partial` o `failed`, metadatos obsoletos sin lock activo ignorados, reporte terminal ilegible, configuración de instancia ausente o inválida y archivo de lock existente pero ilegible o lock tomado con registro de propietario ausente o corrupto (en los tres, salida 2, mensaje en `stderr`, JSON con `state: null`, `last_terminal: null` y `error` explícito, sin reparación) y ausencia de efectos de escritura (sin marcador de instancia, colecciones, embeddings, archivos nuevos ni cambio de alias).
+- [x] T026 [P] [US1] Añadir pruebas en rojo de la consulta de estado de solo lectura en `tests/integration/test_qdrant_status.py`: `not_started` sin estado registrado, ingesta en curso, reconstrucción en curso, último resultado terminal `completed`, `partial` o `failed`, metadatos obsoletos sin lock activo ignorados, reporte terminal ilegible, configuración de instancia ausente o inválida y archivo de lock existente pero ilegible o lock tomado con registro de propietario ausente o corrupto (en los tres, salida 2, mensaje en `stderr`, JSON con `state: null`, `last_terminal: null` y `error` explícito, sin reparación) y ausencia de efectos de escritura (sin marcador de instancia, colecciones, embeddings, archivos nuevos ni cambio de alias).
   - Story: US1
   - Dep: T024, T025
   - Verifies: T027
   - Check: fallan antes de `--status`; el caso sin estado devuelve `not_started` con salida 0 y no crea archivos; el caso ilegible no se presenta como `not_started` ni como estado terminal y no modifica el reporte.
   - Evidence: salida RED, salida JSON de error y listado de archivos antes y después.
 
-- [ ] T027 [US1] Implementar `uv run python scripts/rebuild_qdrant.py --status` como adaptador de la CLI sobre el resolvedor único `retrieval/status.py`: consulta de solo lectura que devuelve `not_started`, `ingestion_in_progress`, `rebuild_in_progress`, `completed`, `partial` o `failed`, sin iniciar reconstrucciones, generar embeddings, crear colecciones, registrar instancias, escribir archivos ni cambiar alias; si el reporte terminal es ilegible, la configuración de instancia falta o es inválida, o el archivo de lock existe pero no puede leerse, finaliza con salida 2, mensaje comprensible en `stderr` y JSON con `state: null`, `last_terminal: null` y `error` explícito (`status_report_unreadable`, `instance_configuration_invalid`, `lock_unreadable`), sin devolver `not_started`, sin afirmar que no existe una operación activa, sin crear marcador, lock, directorios ni otros archivos y sin borrar, sobrescribir ni reparar información.
+- [x] T027 [US1] Implementar `uv run python scripts/rebuild_qdrant.py --status` como adaptador de la CLI sobre el resolvedor único `retrieval/status.py`: consulta de solo lectura que devuelve `not_started`, `ingestion_in_progress`, `rebuild_in_progress`, `completed`, `partial` o `failed`, sin iniciar reconstrucciones, generar embeddings, crear colecciones, registrar instancias, escribir archivos ni cambiar alias; si el reporte terminal es ilegible, la configuración de instancia falta o es inválida, o el archivo de lock existe pero no puede leerse, finaliza con salida 2, mensaje comprensible en `stderr` y JSON con `state: null`, `last_terminal: null` y `error` explícito (`status_report_unreadable`, `instance_configuration_invalid`, `lock_unreadable`), sin devolver `not_started`, sin afirmar que no existe una operación activa, sin crear marcador, lock, directorios ni otros archivos y sin borrar, sobrescribir ni reparar información.
   - Story: US1
   - Dep: T024, T026
   - Check: las pruebas de T026 pasan; con lock libre y metadatos residuales devuelve el último resultado terminal o `not_started`; con ausencia total de estado devuelve `not_started` y salida 0; reporte ilegible, configuración inválida y lock ilegible devuelven salida 2 con su `error.code` sin inventar estado; el directorio de control queda idéntico (sin marcador, lock ni directorios nuevos).

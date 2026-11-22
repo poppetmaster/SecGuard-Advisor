@@ -596,3 +596,45 @@ el Corte 2 (T010–T042). No se inició T010.
 Iniciar el Corte 2 (T010–T042) en una tarea posterior y con autorización explícita. No se inició T010.
 
 No se modificó SQLite, Chroma ni los datos existentes. No se creó commit remoto ni se publicó nada.
+
+---
+
+## 19. Corte 2 en curso — avance parcial (2026-11-22 10:55)
+
+**Vigente.** Las secciones §10–§18 son históricas.
+
+### Estado
+
+- Rama `004-qdrant-vector-index`.
+- **12 tareas del Corte 2 cerradas**: T010–T017, T023, T024, T026, T027.
+- **21 pendientes**: T018–T022, T025, T028–T042.
+- `make check`: 485 passed. `pre-commit`: todo en verde.
+- No se declara aceptación de 004 ni se retiró Chroma.
+
+### Implementado
+
+- Adaptador Qdrant (`QdrantIndex`), colecciones/alias con namespace, UUIDv5, payload sin texto.
+- Seis códigos de error 503/409 en `web/errors.py`.
+- Fábrica de aplicación con Qdrant y mapeo de fallos de índice a HTTP.
+- Resolvedor único de estado y `uv run python scripts/rebuild_qdrant.py --status`.
+- Turno que se detiene con el código clasificado ante fallo de índice (cambio de coherencia; T041
+  sigue pendiente de sus pruebas).
+
+### Riesgo del estado intermedio
+
+La fábrica ya usa Qdrant, pero `scripts/ingest_corpus.py` y `prepare_demo.py` siguen escribiendo en
+Chroma hasta T018–T020. No usar `make corpus-ingest` como fuente del índice Qdrant hasta completar
+esas tareas. No hay reconstrucción hasta T021/T022.
+
+### Commits de esta pasada
+
+`a532a91` códigos de error · `cc92007` adaptador y colecciones · `86de5c8` fábrica y mapeo ·
+`a41f4fe` parada del turno · `7f2dec7` resolvedor y `--status`.
+
+### Siguiente paso
+
+Continuar en orden: T018–T020 (corpus/demo con lock), T021/T022/T025 (reconstrucción), T028–T033
+(fallos, parciales, huérfanos, target, verificación), T034–T039 (recuperación, servicio, rutas) y
+T040–T042 (turno). No se inició T043.
+
+Evidencia: `docs/evidencia/004-corte-2/README.md`.
