@@ -307,12 +307,20 @@ produce un reporte JSON local con:
       "indexed_chunks": 0,
       "missing_chunks": 0,
       "extra_chunks": 0,
+      "previous_missing_chunks": 0,
+      "previous_extra_chunks": 0,
+      "skipped_chunks": 0,
       "status": "completed|partial|failed",
       "error": null
     }
   ]
 }
 ```
+
+`missing_chunks`, `extra_chunks` y `skipped_chunks` describen la **generación candidata** y deciden
+su publicación. `previous_missing_chunks` y `previous_extra_chunks` describen la generación activa
+anterior y son diagnóstico: un índice anterior desactualizado no impide publicar una candidata válida.
+Los huérfanos se siguen reportando y nunca se resuelven como cita.
 
 El reporte es operativo, no fuente de verdad. No se escribe en SQLite. Se guarda en
 `<SECGUARD_STORAGE_DIR>/qdrant-control/reports/<instance_id>/` con un archivo por ejecución y un

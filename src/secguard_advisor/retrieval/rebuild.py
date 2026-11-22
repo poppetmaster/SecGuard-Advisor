@@ -30,6 +30,8 @@ class ScopeReport:
     indexed_chunks: int
     missing_chunks: int
     extra_chunks: int
+    previous_missing_chunks: int
+    previous_extra_chunks: int
     skipped_chunks: int
     status: str
     error: str | None
@@ -150,8 +152,13 @@ def _rebuild_scope(
             collection = ""
             found = set()
 
+        # La candidata se valida solo contra SQLite. Las discrepancias de la
+        # generación anterior son diagnóstico y no impiden publicar una
+        # candidata completa: el índice anterior puede estar desactualizado.
         missing = expected - found
-        extra = (found - expected) | (previous - expected)
+        extra = found - expected
+        previous_missing = expected - previous
+        previous_extra = previous - expected
         complete = not missing and not extra and skipped == 0
         if complete and collection:
             index.activate_alias(scope, embedder.model, embedder.dimension, collection)
@@ -165,6 +172,8 @@ def _rebuild_scope(
             indexed_chunks=len(found),
             missing_chunks=len(missing),
             extra_chunks=len(extra),
+            previous_missing_chunks=len(previous_missing),
+            previous_extra_chunks=len(previous_extra),
             skipped_chunks=skipped,
             status="completed" if complete else "partial",
             error=None,
@@ -179,6 +188,8 @@ def _rebuild_scope(
             indexed_chunks=0,
             missing_chunks=len(rows),
             extra_chunks=0,
+            previous_missing_chunks=0,
+            previous_extra_chunks=0,
             skipped_chunks=0,
             status="failed",
             error=type(exc).__name__,
@@ -206,17 +217,20 @@ def rebuild(
     instance_id = instance.validate_instance_id(settings.instance_id)
     started = _utc_now()
     scopes: list[ScopeReport] = []
+    # El reporte terminal se construye y publica dentro del lock: una ejecución
+    # anterior no puede sobrescribir latest.json después de otra operación. El
+    # context manager libera el lock incluso si la escritura del reporte falla.
     with instance.acquire_instance_lock(settings.storage_dir, instance_id, "rebuild"):
         for kind, case_id in _collect_scopes(factory):
             scopes.append(_rebuild_scope(factory, kind, case_id, embedder=embedder, index=index))
-    report = {
-        "started_at": started,
-        "finished_at": _utc_now(),
-        "status": status.terminal_status([item.status for item in scopes]),
-        "backend": "qdrant",
-        "embedding_model": embedder.model,
-        "embedding_dim": embedder.dimension,
-        "scopes": [asdict(item) for item in scopes],
-    }
-    _write_report(settings, instance_id, report)
+        report = {
+            "started_at": started,
+            "finished_at": _utc_now(),
+            "status": status.terminal_status([item.status for item in scopes]),
+            "backend": "qdrant",
+            "embedding_model": embedder.model,
+            "embedding_dim": embedder.dimension,
+            "scopes": [asdict(item) for item in scopes],
+        }
+        _write_report(settings, instance_id, report)
     return report

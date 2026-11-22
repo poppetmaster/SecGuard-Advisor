@@ -319,11 +319,13 @@ Comando objetivo: `uv run python scripts/rebuild_qdrant.py` (o target `make qdra
    dimensión.
 3. Regenerar embeddings con `embeddinggemma` local en lotes acotados; no se usan vectores de Chroma.
 4. Crear una colección de generación nueva y subir puntos con IDs deterministas.
-5. Comparar el conjunto de `chunk_id` esperado contra el recuperado desde Qdrant; verificar conteos
-   y muestras de payload.
-6. Si coincide, cambiar el alias activo en una operación controlada; si falla, conservar el alias
-   anterior; conservar la generación anterior.
-7. Si falla o se interrumpe, no cambiar el alias; reportar estado parcial, puntos faltantes y causa.
+5. Comparar el conjunto de `chunk_id` esperado contra la generación candidata; verificar conteos y
+   muestras de payload. La decisión de publicar usa solo la candidata contra SQLite.
+6. Reportar por separado los faltantes y sobrantes de la generación anterior como diagnóstico; un
+   índice anterior desactualizado no bloquea una candidata completa.
+7. Si la candidata coincide, cambiar el alias activo en una operación controlada; si falla, conservar
+   el alias anterior; conservar la generación anterior.
+8. Si falla o se interrumpe, no cambiar el alias; reportar estado parcial, puntos faltantes y causa.
 8. Repetir es seguro: una nueva ejecución crea otra generación y no duplica puntos en la activa.
 
 **Interfaz operativa:** el comando y su reporte local son la interfaz de estado y avance de la

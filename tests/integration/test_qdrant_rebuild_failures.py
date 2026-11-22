@@ -16,6 +16,7 @@ from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import DocumentChunk
 from secguard_advisor.retrieval import instance
+from secguard_advisor.retrieval import rebuild as rebuild_module
 from secguard_advisor.retrieval.collections import public_scope
 from secguard_advisor.retrieval.index import QdrantIndex, point_id
 from secguard_advisor.retrieval.rebuild import rebuild
@@ -97,14 +98,10 @@ def test_skipped_chunk_keeps_previous_alias(environment) -> None:
     assert index.active_collection(public_scope(), MODEL, DIM) == previous
 
 
-def test_orphan_point_is_reported_and_alias_unchanged(environment) -> None:
-    settings, factory, index = environment
-    seed_document(factory, texts=["uno"], source_id="sample")
-    rebuild(factory, settings, embedder=NullEmbedder(), index=index)
-    previous = index.active_collection(public_scope(), MODEL, DIM)
+def _inject_orphan(index: QdrantIndex, collection: str) -> str:
     orphan = "f" * 32
     index.client.upsert(
-        collection_name=previous,
+        collection_name=collection,
         points=[
             PointStruct(
                 id=point_id(orphan),
@@ -113,12 +110,82 @@ def test_orphan_point_is_reported_and_alias_unchanged(environment) -> None:
             )
         ],
     )
+    return orphan
 
+
+def test_previous_orphan_is_diagnosed_and_valid_candidate_activates(environment) -> None:
+    settings, factory, index = environment
+    seeded = seed_document(factory, texts=["uno"], source_id="sample")
+    rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+    previous = index.active_collection(public_scope(), MODEL, DIM)
+    orphan = _inject_orphan(index, previous)
+
+    report = rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+    scope = report["scopes"][0]
+
+    assert report["status"] == "completed"
+    assert scope["previous_extra_chunks"] == 1
+    assert scope["extra_chunks"] == 0
+    assert index.active_collection(public_scope(), MODEL, DIM) != previous
+    hits = index.query(public_scope(), MODEL, DIM, [0.0, 0.0, 0.0, 1.0], top_k=10)
+    assert {hit.chunk_id for hit in hits} == set(seeded.chunk_ids)
+    assert orphan not in {hit.chunk_id for hit in hits}
+
+
+def test_defective_candidate_keeps_previous_alias(environment, monkeypatch) -> None:
+    settings, factory, index = environment
+    seed_document(factory, texts=["uno"], source_id="sample")
+    rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+    previous = index.active_collection(public_scope(), MODEL, DIM)
+
+    original = index.upsert_to
+
+    def upsert_with_extra(collection, chunks):
+        original(collection, chunks)
+        _inject_orphan(index, collection)
+
+    monkeypatch.setattr(index, "upsert_to", upsert_with_extra)
     report = rebuild(factory, settings, embedder=NullEmbedder(), index=index)
 
     assert report["status"] == "partial"
     assert report["scopes"][0]["extra_chunks"] == 1
     assert index.active_collection(public_scope(), MODEL, DIM) == previous
+
+
+def test_superseded_version_is_replaced_by_current(environment) -> None:
+    settings, factory, index = environment
+    first = seed_document(factory, texts=["versión uno"], source_id="sample")
+    rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+
+    second = seed_document(
+        factory,
+        texts=["versión dos"],
+        source_id="sample",
+        new_version=True,
+    )
+    report = rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+
+    assert report["status"] == "completed"
+    hits = index.query(public_scope(), MODEL, DIM, [0.0, 0.0, 0.0, 1.0], top_k=10)
+    ids = {hit.chunk_id for hit in hits}
+    assert ids == set(second.chunk_ids)
+    assert not ids & set(first.chunk_ids)
+
+
+def test_report_is_written_while_the_lock_is_held(environment, monkeypatch) -> None:
+    settings, factory, index = environment
+    seed_document(factory, texts=["uno"], source_id="sample")
+    observed: list[bool] = []
+    original = rebuild_module._write_report
+
+    def write_and_probe(*args, **kwargs):
+        observed.append(instance.inspect_lock(settings.storage_dir, INSTANCE) is not None)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(rebuild_module, "_write_report", write_and_probe)
+    rebuild(factory, settings, embedder=NullEmbedder(), index=index)
+
+    assert observed == [True]
 
 
 def test_stale_lock_metadata_does_not_block(environment) -> None:

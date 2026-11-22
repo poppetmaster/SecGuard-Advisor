@@ -34,9 +34,14 @@ No se exige una pantalla web de administración en 004; la interfaz web solo pre
 5. Regenerar embeddings con el mismo modelo local, por lotes.
 6. Crear una colección de generación nueva por alcance con el namespace de instancia.
 7. Subir puntos con UUIDv5 determinista y payload de procedencia.
-8. Comparar el conjunto de `chunk_id` esperado contra Qdrant; verificar conteos y muestras.
-9. Cambiar el alias activo solo si la validación es completa; si falla, conservar el alias anterior.
-10. Conservar la generación anterior para recuperación.
+8. Comparar el conjunto de `chunk_id` esperado contra la **generación candidata**; verificar
+   conteos y muestras. La validación que decide la publicación es solo candidata contra SQLite.
+9. Reportar por separado las discrepancias de la generación anterior
+   (`previous_missing_chunks`, `previous_extra_chunks`) como diagnóstico. Un índice anterior
+   desactualizado no impide publicar una candidata completa y válida.
+10. Cambiar el alias activo solo si la candidata es completa; si faltan o sobran puntos en la
+    candidata, hay fragmentos incompatibles o falla la escritura, conservar el alias anterior.
+11. Conservar la generación anterior para recuperación; no se borra.
 11. Escribir un reporte JSON bajo `<SECGUARD_STORAGE_DIR>/qdrant-control/reports/<instance_id>/` con
     un archivo por ejecución y un `latest.json` con el último resultado terminal.
 12. Liberar el lock en `finally`.
@@ -94,6 +99,8 @@ disponible.
 - Cada ejecución crea una generación nueva; no duplica puntos en la generación activa.
 - Repetir una reconstrucción correcta no cambia el conjunto lógico de fragmentos.
 - Un `chunk_id` repetido en SQLite no debe duplicarse; la clave es el `chunk_id`.
+- Una candidata completa reemplaza un índice anterior con huérfanos o faltantes: esos huecos son
+  diagnóstico y no bloquean la publicación.
 
 ## Interruption and partial failure
 
