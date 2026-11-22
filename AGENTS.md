@@ -65,8 +65,8 @@ el mismo commit.
 - Python 3.14.6, `uv`, src-layout, `uv_build`.
 - FastAPI, Jinja2, HTMX, Tailwind CSS y Flowbite (gratuito), recursos locales.
 - LangChain, LangGraph, SQLite y LangSmith. Ollama y Qdrant son la implementación actual; Qdrant es
-  el único backend documental (004, aceptación pendiente). Chroma quedó retirado del código. El
-  proveedor API es el objetivo 005 y no está implementado.
+  el único backend documental (004, implementado y aceptado localmente en el Corte 6). Chroma quedó
+  retirado del código. El proveedor API es el objetivo 005 y no está implementado.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
 
 ## Estructura
@@ -102,11 +102,12 @@ SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declara
 ```
 
 `make corpus` y `make corpus-ingest` están implementados y son las vías autorizadas para el corpus.
-`make qdrant-*` opera la infraestructura local de 004. Qdrant es el backend documental; Chroma quedó
-retirado del código y sus archivos se conservan. La aceptación local de 004 está pendiente.
-El target `demo` informa «no implementado» hasta el recorrido de aceptación. `seed-demo` requiere el
-esquema migrado. El esquema se crea y evoluciona solo con Alembic; la aplicación no ejecuta
-`create_all` al arrancar.
+`make qdrant-up|qdrant-health|qdrant-rebuild` y `uv run python scripts/rebuild_qdrant.py --status`
+son la interfaz operativa de Qdrant, el backend documental. Chroma quedó retirado del código y sus
+archivos se conservan. El modo embebido de Qdrant se usa solo en pruebas y no sustituye la aceptación
+contra el servidor. `make demo-prepare` prepara `storage/demo` y `make demo` lo arranca sin tocar
+`storage/`. `seed-demo` requiere el esquema migrado. El esquema se crea y evoluciona solo con Alembic;
+la aplicación no ejecuta `create_all` al arrancar.
 
 ## Reglas duras
 

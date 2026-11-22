@@ -1,3 +1,7 @@
+> **Registro histórico.** Este documento describe el estado del corte en su fecha. Desde el Corte 6,
+> Qdrant es el único backend documental y Chroma quedó retirado del código; los archivos de Chroma
+> se conservan.
+
 # Corte 5 — Aislamiento de instancias y concurrencia
 
 **Fecha**: 2026-11-22 12:30–12:33 (America/Bogota, `-05`)

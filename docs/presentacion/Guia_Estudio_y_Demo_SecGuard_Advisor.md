@@ -311,7 +311,7 @@ flowchart LR
 
     D --> EX[Extracción y fragmentos]
     EX --> EMB[EmbeddingGemma<br/>embeddings]
-    EMB --> CHR[(Chroma<br/>índice derivado)]
+    EMB --> CHR[(Qdrant<br/>índice derivado)]
 
     CH --> G[LangGraph<br/>flujo del turno]
     G --> RET[Recuperación documental]
@@ -333,7 +333,7 @@ flowchart LR
 - **Navegador + HTMX:** la interfaz es multipágina con renderizado del servidor. HTMX actualiza secciones sin convertir la aplicación en una SPA.
 - **FastAPI + Jinja2:** rutas, servicios y plantillas. El alcance del caso se resuelve en el servidor antes de consultar datos.
 - **SQLite:** fuente de verdad para casos, documentos, fragmentos, mensajes, hallazgos, ejecuciones, citas y revisiones. Conserva procedencia.
-- **Chroma:** índice vectorial derivado y reconstruible para búsqueda documental. No es la fuente de verdad.
+- **Qdrant:** índice vectorial derivado y reconstruible para búsqueda documental. No es la fuente de verdad.
 - **LangGraph:** flujo del turno: alcance, memoria, recuperación, decisión de herramienta, herramienta, generación, validación y persistencia.
 - **Ollama:** dos modelos con funciones distintas:
   - `qwen3.5:9b`: genera la respuesta y la decisión estructurada de herramienta.
@@ -349,7 +349,7 @@ Documento PDF/Markdown
   → validación y extracción
   → fragmentos localizables
   → embeddings locales
-  → Chroma
+  → Qdrant
   → recuperación para la pregunta
   → respuesta con citas literales
   → control automático de citas
@@ -371,13 +371,13 @@ CSV Qualys
   → respuesta con procedencia estructurada
 ```
 
-El CSV de Qualys **no** se incorpora al RAG, no se convierte en documento, no se indexa en Chroma y no produce citas documentales. Sus registros se consultan por SQLite y se presentan como evidencia estructurada.
+El CSV de Qualys **no** se incorpora al RAG, no se convierte en documento, no se indexa en Qdrant y no produce citas documentales. Sus registros se consultan por SQLite y se presentan como evidencia estructurada.
 
 ## 5. Datos y evidencia
 
 | Fuente | Qué es | Dónde vive | Qué demuestra | Límite |
 |---|---|---|---|---|
-| Corpus público oficial | NIST CSWP 29, NIST AI 100-1, NIST AI 600-1 y OWASP Top 10 LLM 2025 | `data/corpus`, ingerido en SQLite/Chroma | Recuperación con procedencia pública y citas | No es evidencia del caso |
+| Corpus público oficial | NIST CSWP 29, NIST AI 100-1, NIST AI 600-1 y OWASP Top 10 LLM 2025 | `data/corpus`, ingerido en SQLite/Qdrant | Recuperación con procedencia pública y citas | No es evidencia del caso |
 | Evidencias del caso | Política de acceso remoto y procedimiento de gestión de vulnerabilidades, ficticios | SQLite del caso; índice del caso | Consulta documental con citas del caso | Son ficticios y educativos |
 | CSV ficticio de demo | `hallazgos-demo-ficticios.csv`, 5 filas, 41 columnas | SQLite como instantánea importada | Formulario, validación, confirmación, tabla y `findings_query` | No es un CSV real |
 | CSV real autorizado | CSV filtrado de Qualys de 662 registros | Solo aceptación local separada | Agregados de validación y consulta real | No se versiona ni se muestra por filas |
@@ -430,7 +430,7 @@ Reporte: [`../evidencia/002-corte-5/aceptacion-real.md`](../evidencia/002-corte-
 | Inferencia local por tokens | Ollama local; no hay factura de API por las llamadas de producto | «No hay factura por token en estas consultas; el cómputo local sí tiene costo» |
 | Equipo | Apple M5, macOS 27.0.1, 24 GiB de memoria | Recurso existente; precio de compra no medido |
 | Modelos | `qwen3.5:9b` ≈ 6,55 GB; `embeddinggemma` ≈ 0,62 GB | Almacenamiento local; no es un servicio pago |
-| Instancia de demo | ≈ 7,7 MB | Base SQLite, Chroma y estado local |
+| Instancia de demo | ≈ 7,7 MB | Base SQLite, Qdrant y estado local |
 | Corpus | ≈ 13 MB de originales | Documentos públicos oficiales |
 | Electricidad | No medida | No se presenta como gratuita ni se inventa una tarifa |
 | Amortización del equipo | No medida | No se inventa precio ni vida útil |
@@ -452,8 +452,8 @@ No se presenta una medición individual como p95. La latencia depende del equipo
 
 ## 7. Decisiones para explicar sin leer
 
-**¿Por qué SQLite y Chroma?**  
-SQLite es la fuente de verdad: casos, documentos, hallazgos, mensajes, ejecuciones y procedencia. Chroma es un índice derivado para búsqueda; se puede reconstruir sin perder datos de negocio.
+**¿Por qué SQLite y Qdrant?**  
+SQLite es la fuente de verdad: casos, documentos, hallazgos, mensajes, ejecuciones y procedencia. Qdrant es un índice derivado para búsqueda; se puede reconstruir sin perder datos de negocio.
 
 **¿Por qué un modelo local?**  
 Privacidad y control: los datos no se envían por defecto a una API externa y no hay factura por token. La contrapartida es que la latencia y la calidad dependen del equipo y del modelo instalado. Es un objetivo de privacidad, no una garantía absoluta de seguridad.
@@ -465,7 +465,7 @@ Convierten documentos y preguntas en vectores para recuperar fragmentos relevant
 La respuesta documental debe traer una cita literal de un fragmento recuperado en ese turno. El control automático comprueba existencia y coincidencia; la persona puede abrir el fragmento y revisar el respaldo semántico por separado.
 
 **¿Cómo evitan mezclar casos?**  
-El alcance se impone en el servidor antes de consultar SQLite, Chroma o memoria. `findings_query` recibe el caso por clausura y no acepta `case_id` como argumento. Las colecciones y los checkpoints se separan por caso.
+El alcance se impone en el servidor antes de consultar SQLite, Qdrant o memoria. `findings_query` recibe el caso por clausura y no acepta `case_id` como argumento. Las colecciones y los checkpoints se separan por caso.
 
 **¿Qué aporta frente a consultar un chatbot directamente?**  
 Procedencia, citas abiertas, conteos estructurados en SQLite, separación entre documentos y vulnerabilidades, memoria por caso y evidencia de ejecución. No garantiza la verdad; hace más fácil auditar de dónde sale una respuesta.
@@ -489,7 +489,7 @@ La siguiente distribución es una **sugerencia**; no fue acordada por el equipo.
 | 5:00–6:30 | Vulnerabilidades | Ruben | Formulario, vista previa, confirmación y tabla con filtros |
 | 6:30–7:30 | `findings_query` y evidencia | Ruben | Pregunta de conteo, comparar con SQLite, abrir evidencia de ejecución |
 | 7:30–8:00 | Abstención | Ruben | Pregunta fuera de alcance y explicar el límite |
-| 8:00–9:30 | Arquitectura y decisiones | Edwin / Ruben | Diagrama, SQLite/Chroma, modelo local, embeddings y dos rutas |
+| 8:00–9:30 | Arquitectura y decisiones | Edwin / Ruben | Diagrama, SQLite/Qdrant, modelo local, embeddings y dos rutas |
 | 9:30–11:00 | Repositorio, pruebas y costos | Edwin | README, commits, suite, aceptación real y costo local |
 | 11:00–15:00 | Preguntas y compromisos | Todos | Responder y proponer compromisos para el 20 de noviembre |
 

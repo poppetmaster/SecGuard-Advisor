@@ -840,3 +840,31 @@ reevaluar, ejecutar T079 (ASGI/Playwright), T080, T081 y, solo si cumple, T082.
 - `make check`: 558 passed; `pre-commit`: verde.
 - Pendiente T079–T082 (aceptación ASGI/Playwright, documentación, `make test-integration`, cierre de
   constitución). Avance 78/82. Sin aceptación de 004.
+
+---
+
+## 30. Corte 6: aceptación de interfaz y documentación (2026-11-22)
+
+**Vigente.** §10–§29 son históricas.
+
+- **T079 completada**: `tests/acceptance/test_qdrant_ui.py` (4 pruebas ASGI) y recorrido Playwright
+  MCP contra servidor real. Caso ficticio, documento ficticio, cita válida (`similarity 0.6493`),
+  fragmento resaltado, evidencia de ejecución (17409 ms; recuperación 51 ms), Vulnerabilidades, menú
+  móvil con foco y Escape, sin desbordamiento ni errores de consola. Capturas en
+  `docs/evidencia/004-corte-6/ui-*.png`.
+- **T080 completada**: README/AGENTS/quickstart/contratos/diagramas alineados con Qdrant; comandos
+  `make qdrant-up|qdrant-health|qdrant-rebuild` y `--status`; modo embebido solo para pruebas;
+  evidencias de cortes 1–5 marcadas como históricas.
+- Evaluación final congelada: 6/6, 0 fugas, versiones y cita histórica válidas, Qualys sin cambios.
+  Umbral 0.5033.
+- **T081 completada**: `make check` 562 passed, 36 deselected; `make test-integration` 36 passed,
+  0 failed, 0 skipped (1225 s). Se corrigieron tres defectos de aislamiento de pruebas (namespace
+  compartido, índice embebido vs servidor y evaluador con instancia fija). El umbral, el conjunto y
+  los criterios no cambiaron.
+- Presupuesto de tiempo ampliado solo en `test_answer_real.py` y `test_journey_real.py`
+  (`run_timeout_seconds=600`, `llm_timeout_seconds=300`) para medir funcionalidad bajo carga; los
+  límites de producción (120 s/90 s) conservan sus pruebas en `test_limits.py`, `test_llm_client.py` y
+  `test_chat_routes.py`.
+- **T082 completada**: constitución a «implementado y aceptado localmente»; `CONSTITUTION.md` sigue
+  siendo el enlace simbólico. Chroma intacto (`storage/chroma/chroma.sqlite3`), `storage/` y
+  `storage/demo` sin cambios, sin volúmenes borrados. 82/82 tareas. Sin push.

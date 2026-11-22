@@ -40,8 +40,13 @@ Un fallo de índice nunca se transforma en “no existe evidencia”.
 ## Score and threshold
 
 - Qdrant usa similitud coseno; mayor score es más relevante.
-- La aplicación aplica un umbral calibrado para Qdrant, no el 0.35 de Chroma.
-- El umbral propuesto y el observado se registran por separado.
+- La aplicación aplica el umbral calibrado **0.5033** (Qdrant servidor 1.20.0 + `embeddinggemma`), no
+  el 0.35 de Chroma.
+- Calibración y evaluación usan conjuntos distintos; el umbral se congela antes de la evaluación
+  final. El reporte registra modalidad, versión, modelo, dimensión, métrica, `top_k`, umbral, fecha y
+  hash del conjunto.
+- La evaluación final del Corte 6 pasó con 6/6 recuperaciones, 0 no pertinentes aceptadas, 0 fugas,
+  versión vigente y cita histórica válida.
 - No se exige igualdad exacta de orden con Chroma.
 
 ## Result resolution

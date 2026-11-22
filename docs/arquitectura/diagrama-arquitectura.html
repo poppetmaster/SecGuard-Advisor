@@ -521,14 +521,14 @@
         <h1>Del documento a la evidencia</h1>
         <p class="lead">
           Monolito modular en un solo proceso: interfaz renderizada en servidor, dominio separado por
-          paquetes, SQLite como fuente de verdad y Chroma como índice derivado. La inferencia ocurre
+          paquetes, SQLite como fuente de verdad y Qdrant como índice derivado. La inferencia ocurre
           localmente y cada turno deja una ejecución auditable.
         </p>
         <div class="badges">
           <span class="badge"><b>1</b> proceso</span>
           <span class="badge"><b>1</b> worker</span>
           <span class="badge"><b>SQLite</b> fuente de verdad</span>
-          <span class="badge"><b>Chroma</b> índice reconstruible</span>
+          <span class="badge"><b>Qdrant</b> índice reconstruible</span>
           <span class="badge"><b>Ollama</b> inferencia local</span>
         </div>
       </div>
@@ -636,7 +636,7 @@
 
               <g class="node" style="--accent:#60a5fa" tabindex="0"
                  data-title="Casos y alcance"
-                 data-desc="Persiste el caso, sus activos y sus campos desconocidos. El alcance se impone antes de consultar SQLite, Chroma, memoria o herramientas. Los casos no se mezclan."
+                 data-desc="Persiste el caso, sus activos y sus campos desconocidos. El alcance se impone antes de consultar SQLite, Qdrant, memoria o herramientas. Los casos no se mezclan."
                  data-tech="cases · scope · SQLite">
                 <title>Casos y alcance</title>
                 <rect class="node-bg" x="540" y="130" width="260" height="90" rx="13"/>
@@ -648,7 +648,7 @@
 
               <g class="node" style="--accent:#60a5fa" tabindex="0"
                  data-title="Documentos e ingesta"
-                 data-desc="Valida PDF textual y Markdown, extrae texto, conserva versiones y fragmentos localizables. Los fragmentos se convierten en embeddings locales y se indexan en Chroma."
+                 data-desc="Valida PDF textual y Markdown, extrae texto, conserva versiones y fragmentos localizables. Los fragmentos se convierten en embeddings locales y se indexan en Qdrant."
                  data-tech="PDF · Markdown · chunking · embeddings">
                 <title>Documentos e ingesta</title>
                 <rect class="node-bg" x="540" y="240" width="260" height="100" rx="13"/>
@@ -662,7 +662,7 @@
               <g class="node" style="--accent:#60a5fa" tabindex="0"
                  data-title="Recuperación y citas"
                  data-desc="Busca fragmentos por similitud en el índice del caso y del corpus público. Cada afirmación documental necesita una cita literal; el control automático verifica existencia y coincidencia."
-                 data-tech="Chroma · retrieval · citation check">
+                 data-tech="Qdrant · retrieval · citation check">
                 <title>Recuperación y citas</title>
                 <rect class="node-bg" x="540" y="360" width="260" height="90" rx="13"/>
                 <rect class="node-bar" x="540" y="378" width="4" height="54" rx="2"/>
@@ -802,14 +802,14 @@
               </g>
 
               <g class="node" style="--accent:#34d399" tabindex="0"
-                 data-title="Chroma"
+                 data-title="Qdrant"
                  data-desc="Índice vectorial derivado y reconstruible para búsqueda documental. No es la fuente de verdad. Se separa por caso y por modelo de embeddings."
-                 data-tech="Chroma · colecciones por caso">
-                <title>Chroma</title>
+                 data-tech="Qdrant · colecciones por caso">
+                <title>Qdrant</title>
                 <rect class="node-bg" x="1220" y="260" width="330" height="90" rx="13"/>
                 <rect class="node-bar" x="1220" y="278" width="4" height="54" rx="2"/>
                 <text class="node-kicker" x="1238" y="286">VEC</text>
-                <text class="node-title" x="1238" y="309">Chroma</text>
+                <text class="node-title" x="1238" y="309">Qdrant</text>
                 <text class="node-sub" x="1238" y="329">Índice derivado · reconstruible</text>
               </g>
 
@@ -932,7 +932,7 @@
                 <text class="node-sub" x="238" y="366">Historial + checkpoint</text>
               </g>
 
-              <g class="node" style="--accent:#34d399" tabindex="0" data-title="retrieve" data-desc="Recupera fragmentos del caso y del corpus público desde Chroma. Una recuperación vacía no demuestra ausencia de evidencia." data-tech="Chroma · search_documents">
+              <g class="node" style="--accent:#34d399" tabindex="0" data-title="retrieve" data-desc="Recupera fragmentos del caso y del corpus público desde Qdrant. Una recuperación vacía no demuestra ausencia de evidencia." data-tech="Qdrant · search_documents">
                 <title>retrieve</title>
                 <rect class="node-bg" x="410" y="300" width="150" height="80" rx="13"/>
                 <rect class="node-bar" x="410" y="316" width="4" height="48" rx="2"/>
@@ -1163,7 +1163,7 @@
 
               <rect class="note-box" x="30" y="620" width="960" height="90" rx="14"/>
               <text class="note-title" x="50" y="648">Frontera explícita</text>
-              <text class="note-text" x="50" y="672">No RAG · no Chroma · no citas documentales · Results completo fuera del modelo y de la interfaz.</text>
+              <text class="note-text" x="50" y="672">No RAG · no Qdrant · no citas documentales · Results completo fuera del modelo y de la interfaz.</text>
               <text class="note-text" x="50" y="692">Los registros importados se consultan como evidencia estructurada y conservan su instantánea.</text>
             </g>
           </svg>

@@ -75,9 +75,13 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **417 passed**, 35 deselected.
-- Integraciones: `make test-integration` → **34 passed**, 1 skipped por LangSmith desactivado en esa
-  ejecución de aceptación real.
+- Pruebas rápidas: `make check` → **562 passed**, 36 deselected (Corte 6).
+- Integraciones: `make test-integration` → **36 passed**, 0 failed, 0 skipped (Corte 6), con Qdrant
+  1.20.0 y Ollama locales.
+- Evaluación funcional final: **6/6** recuperaciones, 0 no pertinentes aceptadas, 0 fugas, umbral
+  0.5033 congelado (`docs/evidencia/004-corte-6/evaluation-final.json`).
+- Aceptación de interfaz: 4 pruebas ASGI y recorrido Playwright MCP con servidor real; citas,
+  fragmento, evidencia de ejecución, vulnerabilidades y móvil verificados.
 - Aceptación real 002: CSV autorizado de **662 registros**, flujo formulario → validación → vista
   previa → confirmación → consulta, y tres consultas reales con Ollama contrastadas con SQLite.
 - Navegador: capturas sintéticas y recorrido con Playwright MCP; consola sin errores y recursos
@@ -137,13 +141,12 @@ de traza por API se ejecutó; SC-001 y SC-003 quedan como validaciones recomenda
 Monolito modular en un solo proceso. La interfaz y el dominio se separan por paquetes; SQLite
 conserva el estado y la procedencia, y Qdrant es un índice derivado y reconstruible.
 
-**Estado vigente:** Qdrant y Ollama son la implementación actual; la aceptación local de 004 está pendiente. La constitución 1.3.0 (ratificación
-del responsable registrada; acuerdos del equipo no constan) fija como objetivo Qdrant en servidor
-local persistente para 004, un proveedor API explícito para 005 y una acción externa controlada para
-006. 004 reconstruye el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura
-dual, sin comparación obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran.
-Chroma quedó retirado del código en el Corte 6.
-**Nada de eso está implementado.**
+**Estado vigente:** Qdrant y Ollama son la implementación actual; 004 está implementado y aceptado localmente (Corte 6). La constitución 1.3.0 (ratificación
+del responsable registrada; acuerdos del equipo no constan) fija Qdrant en servidor local persistente
+para 004, un proveedor API explícito para 005 y una acción externa controlada para 006. 004 reconstruye
+el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
+obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
+código en el Corte 6. 005 y 006 siguen sin implementar.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -156,7 +159,7 @@ FastAPI + Jinja2 + HTMX
         ├── evidencia de ejecución
         └── persistencia
                  │
-        SQLite + Chroma + Ollama + LangSmith
+        SQLite + Qdrant + Ollama + LangSmith
 ```
 
 Diagrama interactivo: [`docs/arquitectura/diagrama-arquitectura.html`](docs/arquitectura/diagrama-arquitectura.html).
@@ -174,7 +177,7 @@ La constitución completa las decisiones de arquitectura, seguridad y calidad:
 - Tailwind CSS y Flowbite (gratuito), servidos localmente.
 - LangChain y LangGraph.
 - Ollama para inferencia local (actual; proveedor API objetivo 005).
-- SQLite para estado y procedencia; Chroma para el índice vectorial (actual; Qdrant objetivo 004).
+- SQLite para estado y procedencia; Qdrant para el índice vectorial derivado y reconstruible.
 - LangSmith para trazas y evaluación.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
 
@@ -209,7 +212,9 @@ Copia `.env.example` a `.env` y ajusta los valores. `.env` está ignorado por Gi
 | `OLLAMA_BASE_URL` | Endpoint local de Ollama |
 | `OLLAMA_MODEL` | Modelo generativo |
 | `OLLAMA_EMBEDDING_MODEL` | Modelo de embeddings |
-| `SECGUARD_STORAGE_DIR` | Directorio de SQLite, Chroma y originales |
+| `SECGUARD_STORAGE_DIR` | Directorio de SQLite, originales, control de Qdrant y marcadores de instancia |
+| `SECGUARD_INSTANCE_ID` | Slug estable y opaco del namespace de Qdrant; obligatorio para el índice |
+| `SECGUARD_QDRANT_URL` | Endpoint local de Qdrant; por defecto `http://127.0.0.1:6333` |
 | `SECGUARD_REVIEWER_NAME` | Identidad local declarada para la revisión humana; no es autenticación |
 | `SECGUARD_GENERATION_QUEUE_TIMEOUT_SECONDS` | Espera máxima del turno global de generación, en segundos |
 | `SECGUARD_QUALYS_MAX_BYTES` | Límite de bytes del CSV Qualys; por defecto 10 MiB |
@@ -228,6 +233,9 @@ casos, documentos, conversación y evidencia de ejecución.
 
 ```bash
 make dev             # servidor con casos, documentos y consulta
+make qdrant-up       # levanta Qdrant local (volumen persistente)
+make qdrant-health   # comprueba /readyz y la versión del servidor
+make qdrant-rebuild  # reconstruye el índice desde SQLite
 make corpus          # descarga y verifica el corpus oficial
 make corpus-ingest   # ingesta el corpus verificado en el almacenamiento configurado
 make seed-demo       # carga el dataset sintético en el almacenamiento configurado
@@ -426,6 +434,33 @@ uv run alembic upgrade head
 uv run alembic downgrade base
 ```
 
+### Qdrant: índice documental
+
+SQLite es la fuente de verdad; Qdrant es un índice derivado y reconstruible. Los documentos,
+fragmentos, versiones y citas se resuelven desde SQLite; el índice solo aporta similitud. Los
+embeddings se generan localmente con `embeddinggemma` (768 dimensiones, métrica coseno).
+
+```bash
+make qdrant-up        # docker compose up -d; expone solo loopback y conserva el volumen
+make qdrant-health    # /readyz y versión del servidor
+make qdrant-rebuild   # reconstrucción limpia desde SQLite, dentro del lock de instancia
+uv run python scripts/rebuild_qdrant.py --status   # estado sin reconstruir
+```
+
+- `--status` no escribe, no genera embeddings y no crea colecciones. Devuelve `state`, el propietario
+  del lock si está activo y el último resultado terminal (`not_started`, `completed`, `partial`,
+  `failed`, `ingestion_in_progress` o `rebuild_in_progress`).
+- La reconstrucción valida el servidor, regenera embeddings, crea una generación nueva, comprueba
+  conteos y payloads, y cambia el alias solo si todo coincide. El reporte queda en
+  `qdrant-control/reports/<instance_id>/latest.json`.
+- `SECGUARD_INSTANCE_ID` es un slug estable por instancia; no se genera al arrancar y no se reutiliza
+  entre almacenamiento habitual y pruebas.
+- El modo embebido (`QdrantClient(path=...)`) se usa solo en pruebas unitarias y de aceptación con
+  dobles. No reproduce volumen persistente, aliases entre procesos ni el lock de archivo compartido;
+  no sustituye la aceptación contra el servidor.
+- Un fallo de Qdrant produce un error explícito (`qdrant_unavailable`, `case_index_unavailable` o
+  `public_index_unavailable`), nunca una respuesta vacía ni un fallback a Chroma.
+
 ## Corpus y documentos
 
 - `make corpus` descarga las cuatro fuentes oficiales seleccionadas —CSF 2.0 (CSWP 29), AI RMF 1.0
@@ -442,7 +477,7 @@ uv run alembic downgrade base
 
 ```bash
 make test              # pruebas rápidas, sin integración
-make test-integration  # pruebas reales con Ollama y Chroma
+make test-integration  # pruebas reales con Ollama y Qdrant
 make check             # lint + formato + pruebas
 ```
 

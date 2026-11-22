@@ -1,7 +1,8 @@
 # Quickstart: Qdrant local para 004
 
-**Estado:** comandos de referencia para implementación y aceptación. No se ejecutaron en esta fase
-documental. No migran Chroma, no borran datos y no instalan nada por sí solos.
+**Estado:** Qdrant es el backend documental implementado y aceptado localmente en el Corte 6. Estos
+comandos son los vigentes para arranque, reconstrucción, consulta de estado y evaluación. No migran
+Chroma, no borran datos y no instalan nada por sí solos.
 
 ## Versiones fijadas
 
@@ -212,8 +213,9 @@ Unitarias con Qdrant local en modo embebido:
 uv run pytest tests/unit -q
 ```
 
-El modo embebido se limita a pruebas unitarias: no reproduce volumen persistente, aliases entre
-procesos ni el lock de archivo compartido, y no sustituye la aceptación contra el servidor.
+El modo embebido se limita a pruebas unitarias y de aceptación con dobles: no reproduce volumen
+persistente, aliases entre procesos ni el lock de archivo compartido, y no sustituye la aceptación
+contra el servidor. La calibración y la evaluación funcional se ejecutan con `--backend server`.
 
 Contrato e integración con servidor Qdrant y embeddings locales:
 
@@ -302,3 +304,27 @@ docker compose -f compose.qdrant.yml down
 ```
 
 Conserva el volumen. No borres `storage/qdrant` ni `storage/chroma` sin autorización y copia.
+
+## 13. Calibración y evaluación del umbral
+
+El umbral vigente es **0.5033**, calibrado con servidor Qdrant y `embeddinggemma`, y congelado antes
+de la evaluación final. Los conjuntos de calibración y evaluación son distintos y están fijados en
+`tests/fixtures/qdrant_eval.py`.
+
+```bash
+make qdrant-up
+uv run python scripts/qdrant_threshold.py --mode calibrate --dataset cal2 --backend server \
+  --output docs/evidencia/004-corte-6/calibration-iter2.json
+uv run python scripts/qdrant_threshold.py --mode evaluate --dataset final --backend server \
+  --threshold 0.5033 --output docs/evidencia/004-corte-6/evaluation-final.json
+make qdrant-down
+```
+
+- `--backend server` usa el servidor configurado en `SECGUARD_QDRANT_URL`; `--backend embedded` usa un
+  directorio temporal y se conserva solo para pruebas.
+- `--dataset` selecciona `cal2` (calibración) o `final` (evaluación congelada).
+- El reporte registra modalidad, versión de Qdrant, modelo, dimensión, métrica, `top_k`, umbral, fecha
+  y hash SHA-256 del conjunto.
+- En evaluación, el comando termina con código 1 si `outcome.passed` es falso, conservando el reporte.
+- La prueba `tests/integration/test_qdrant_functional_eval.py` ejecuta la evaluación con el umbral de
+  `config.py` y falla si algún criterio no se cumple.

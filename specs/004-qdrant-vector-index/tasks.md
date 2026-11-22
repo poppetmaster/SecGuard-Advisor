@@ -652,27 +652,27 @@ evitar ese trabajo.
   - Check: la evaluación usa el valor aplicado en T076 y no recalibra; el conjunto es distinto del de calibración; cubre corpus público, documentos del caso, aislamiento, versiones, citas históricas y ausencia de Qualys; no ajusta criterios para aprobar.
   - Evidence: salida de evaluación con el umbral aplicado registrado.
 
-- [ ] T079 Aceptación ASGI de los flujos afectados en `tests/acceptance/test_qdrant_ui.py` y verificación real con Playwright MCP registrada en `docs/evidencia/`; no se añaden dependencias de navegador automatizado.
+- [x] T079 Aceptación ASGI de los flujos afectados en `tests/acceptance/test_qdrant_ui.py` y verificación real con Playwright MCP registrada en `docs/evidencia/`; no se añaden dependencias de navegador automatizado.
   - Story: Polish
   - Dep: T037, T071, T078
   - Verifies: T037, T071
   - Check: los flujos de documentos, vulnerabilidades y chat renderizan en ASGI; la verificación real con Playwright MCP se registra con comandos y resultado observado.
   - Evidence: salida de pruebas y registro en `docs/evidencia/`.
 
-- [ ] T080 Actualizar `README.md`, `AGENTS.md`, `docs/` y los documentos de `specs/004-qdrant-vector-index/`; documentar el papel limitado del modo embebido y la interfaz operativa de reconstrucción (comando, reporte y consulta `--status`).
+- [x] T080 Actualizar `README.md`, `AGENTS.md`, `docs/` y los documentos de `specs/004-qdrant-vector-index/`; documentar el papel limitado del modo embebido y la interfaz operativa de reconstrucción (comando, reporte y consulta `--status`).
   - Story: Polish
   - Dep: T072, T073, T078, T079
   - Check: ningún documento vigente presenta Chroma como backend activo; el modo embebido se describe como recurso de pruebas; las referencias históricas quedan etiquetadas.
   - Evidence: diffs de documentación y verificación de enlaces.
 
-- [ ] T081 Ejecutar la regresión de 001 y 002 más la suite completa de integración y aceptación con Qdrant mediante `make check` y `make test-integration`.
+- [x] T081 Ejecutar la regresión de 001 y 002 más la suite completa de integración y aceptación con Qdrant mediante `make check` y `make test-integration`.
   - Story: Polish
   - Dep: T080
   - Verifies: T072, T075, T076, T078, T079, T080
   - Check: ambas puertas pasan; Qualys permanece sólo en SQLite; no hay fallback a Chroma.
   - Evidence: salida de comandos y reporte de pruebas.
 
-- [ ] T082 Registrar la evidencia de aceptación final y actualizar `.specify/memory/constitution.md` en el mismo commit con «implementado y aceptado localmente», únicamente con la evidencia observada de T081: sin pérdida de datos, Chroma intacto y ninguna capacidad declarada antes de observarla.
+- [x] T082 Registrar la evidencia de aceptación final y actualizar `.specify/memory/constitution.md` en el mismo commit con «implementado y aceptado localmente», únicamente con la evidencia observada de T081: sin pérdida de datos, Chroma intacto y ninguna capacidad declarada antes de observarla.
   - Story: Polish
   - Dep: T081, T076
   - Verifies: T072, T075, T076, T078, T079, T080, T081
