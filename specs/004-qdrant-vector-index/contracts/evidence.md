@@ -14,10 +14,18 @@ El paso `retrieve` de `RunStep.detail_json` puede incluir:
 | `qdrant_version` | string | Versión reportada por el servidor, esperada `1.20.0` |
 | `collection_alias` | string | Alias activo usado por el alcance |
 | `generation` | string | Generación validada detrás del alias |
+| `public_alias` | string (opcional) | Alias público consultado, cuando aplica |
+| `public_generation` | string (opcional) | Generación pública consultada, cuando aplica |
 | `score_metric` | string | `cosine` |
 | `hits` | integer | Fragmentos devueltos |
 | `status` | string | `ok`, `empty` o estado de fallo del paso |
 | `error_code` | string (opcional) | Código clasificado cuando el paso falla: `qdrant_unavailable`, `case_index_unavailable`, `public_index_unavailable` o `instance_namespace_mismatch` |
+
+La identidad (`collection_alias`, `generation`, `public_alias`, `public_generation`) se captura en la
+misma operación que ejecuta cada consulta sobre la colección resuelta. No se vuelve a resolver el alias
+después de la búsqueda: si una reconstrucción publica otra generación mientras tanto, la evidencia
+sigue identificando la generación realmente consultada. Si la identidad no puede obtenerse, el campo
+queda ausente o nulo; no se inventan valores ni se declara una evidencia completa.
 
 No se guardan rutas locales, secretos, texto completo de documentos ni payloads de Qualys. El código
 de error se conserva tal cual; no se sustituye por `internal_error`.

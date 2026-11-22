@@ -482,7 +482,21 @@ class QdrantIndex:
         except Exception as exc:
             raise QdrantUnavailable("No se pudo contar puntos de Qdrant.") from exc
 
-    def query(
+    def _identity(
+        self, scope: CollectionScope, model: str, dimension: int, collection: str
+    ) -> dict:
+        return {
+            "vector_backend": "qdrant",
+            "instance_id": self.instance_id,
+            "qdrant_version": self._version(),
+            "collection_alias": self._alias(scope, model, dimension),
+            "generation": collection.rsplit("__g", 1)[-1],
+            "embedding_model": model,
+            "embedding_dim": dimension,
+            "score_metric": "cosine",
+        }
+
+    def query_with_identity(
         self,
         scope: CollectionScope,
         model: str,
@@ -490,8 +504,23 @@ class QdrantIndex:
         embedding: list[float],
         *,
         top_k: int = 6,
-    ) -> list[QueryHit]:
-        collection = self._resolve(scope, model, dimension)
+    ) -> tuple[list[QueryHit], dict]:
+        """Consulta la colección resuelta y devuelve su identidad con los hits.
+
+        La colección se resuelve una sola vez; la identidad corresponde a la
+        generación realmente consultada, incluso si el alias cambia después.
+        """
+        alias = self._alias(scope, model, dimension)
+        aliases = self._aliases()
+        self._validate_namespace(aliases)
+        collection = None
+        for entry in aliases:
+            if entry.alias_name == alias:
+                collection = entry.collection_name
+                break
+        if collection is None:
+            raise self._unavailable(scope)
+        identity = self._identity(scope, model, dimension, collection)
         try:
             response = self.client.query_points(
                 collection_name=collection,
@@ -503,4 +532,16 @@ class QdrantIndex:
             raise QdrantUnavailable("Qdrant rechazó la consulta.") from exc
         except Exception as exc:
             raise QdrantUnavailable("No se pudo consultar Qdrant.") from exc
-        return [hit_from_point(point) for point in response.points]
+        return ([hit_from_point(point) for point in response.points], identity)
+
+    def query(
+        self,
+        scope: CollectionScope,
+        model: str,
+        dimension: int,
+        embedding: list[float],
+        *,
+        top_k: int = 6,
+    ) -> list[QueryHit]:
+        hits, _identity = self.query_with_identity(scope, model, dimension, embedding, top_k=top_k)
+        return hits

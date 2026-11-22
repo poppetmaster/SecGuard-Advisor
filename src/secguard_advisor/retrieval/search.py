@@ -36,6 +36,8 @@ class RetrievalResult:
 
     hits: tuple[RetrievedChunk, ...]
     status: str
+    public_evidence: dict | None = None
+    case_evidence: dict | None = None
 
     @property
     def is_empty(self) -> bool:
@@ -103,14 +105,30 @@ def search_documents(
     dimension = embedder.dimension
 
     merged: dict[str, RetrievedChunk] = {}
+    public_evidence: dict | None = None
+    case_evidence: dict | None = None
     for collection_scope in (public_scope(), case_scope(scope.case_id)):
-        raw_hits = index.query(
-            collection_scope,
-            model,
-            dimension,
-            embedding.vector,
-            top_k=top_k,
-        )
+        query_with_identity = getattr(index, "query_with_identity", None)
+        if callable(query_with_identity):
+            raw_hits, identity = query_with_identity(
+                collection_scope,
+                model,
+                dimension,
+                embedding.vector,
+                top_k=top_k,
+            )
+            if collection_scope.kind == "public":
+                public_evidence = identity
+            else:
+                case_evidence = identity
+        else:
+            raw_hits = index.query(
+                collection_scope,
+                model,
+                dimension,
+                embedding.vector,
+                top_k=top_k,
+            )
         for raw in raw_hits:
             score = float(raw.score) if raw.score is not None else 1.0 - float(raw.distance)
             if score < min_score:
@@ -133,4 +151,9 @@ def search_documents(
         selected.append(hit)
         spent += hit.token_count
     hits = tuple(selected)
-    return RetrievalResult(hits=hits, status="ok" if hits else "empty")
+    return RetrievalResult(
+        hits=hits,
+        status="ok" if hits else "empty",
+        public_evidence=public_evidence,
+        case_evidence=case_evidence,
+    )

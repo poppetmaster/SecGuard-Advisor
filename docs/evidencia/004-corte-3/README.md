@@ -85,3 +85,28 @@ Los mensajes de error no cambiaron de plantilla; su texto se comprueba en las pr
 - Caso sin documentos privados: `case_index_unavailable` hasta T054–T059.
 - Sin calibración de umbral.
 - Colecciones de smokes propios permanecen en el volumen local de Qdrant.
+
+## Corrección: ventana entre consulta y evidencia (2026-11-22 11:51)
+
+Defecto reproducido: `nodes.retrieve` resolvía los aliases otra vez con `index.describe()` después de
+la búsqueda. Un cambio de alias en esa ventana hacía que la evidencia identificara una generación
+distinta de la consultada (`mismatch=True`).
+
+Solución: `QdrantIndex.query_with_identity()` devuelve los hits y la identidad de la colección
+resuelta; `search_documents` la conserva por alcance en `RetrievalResult` y el paso `retrieve` la usa
+directamente. No hay segunda resolución de alias.
+
+Pruebas deterministas:
+
+- Generación A consultada, alias cambiado a B, evidencia sigue en A (público y caso).
+- Consulta pública con cero coincidencias: conserva la generación consultada aunque el alias cambie.
+- Índice con `describe()` en B y consulta en A: la evidencia registra A.
+
+```text
+uv run pytest test_qdrant_retrieval.py test_qdrant_evidence.py \
+  test_qdrant_citations.py test_qdrant_availability.py → 11 passed
+```
+
+La captura `run-detail.png` sigue siendo válida: el formato de la página no cambió; solo se corrige el
+valor registrado. No se repitió la revisión visual porque no cambió la plantilla ni el conjunto de
+campos.

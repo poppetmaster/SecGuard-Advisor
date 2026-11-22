@@ -30,8 +30,6 @@ from secguard_advisor.conversation.prompts import (
 )
 from secguard_advisor.evidence.tracing import NullTracer
 from secguard_advisor.retrieval.citations import check_citation
-from secguard_advisor.retrieval.collections import case_scope as collection_case_scope
-from secguard_advisor.retrieval.collections import public_scope
 from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
 from secguard_advisor.tools.findings import (
     TOOL_NAME,
@@ -196,17 +194,15 @@ def load_memory(state: dict[str, Any], config) -> dict[str, Any]:
     }
 
 
-def _index_evidence(index, scope, embedder) -> dict[str, Any]:
-    describe = getattr(index, "describe", None)
-    if not callable(describe):
+def _index_evidence(result) -> dict[str, Any]:
+    """Identidad capturada por la consulta; no se re-resuelven aliases."""
+    public = result.public_evidence
+    case = result.case_evidence
+    if public is None and case is None:
         return {}
-    try:
-        public = describe(public_scope(), embedder.model, embedder.dimension)
-        case = describe(collection_case_scope(scope.case_id), embedder.model, embedder.dimension)
-    except Exception:
-        return {}
+    base = case or public or {}
     evidence = {
-        key: public.get(key)
+        key: base.get(key)
         for key in (
             "vector_backend",
             "instance_id",
@@ -216,11 +212,13 @@ def _index_evidence(index, scope, embedder) -> dict[str, Any]:
             "score_metric",
         )
     }
-    evidence["collection_alias"] = case.get("collection_alias") or public.get("collection_alias")
-    evidence["generation"] = case.get("generation") or public.get("generation")
+    evidence["collection_alias"] = (case or {}).get("collection_alias") or (public or {}).get(
+        "collection_alias"
+    )
+    evidence["generation"] = (case or {}).get("generation") or (public or {}).get("generation")
     evidence["error_code"] = None
-    evidence["public_alias"] = public.get("collection_alias")
-    evidence["public_generation"] = public.get("generation")
+    evidence["public_alias"] = (public or {}).get("collection_alias")
+    evidence["public_generation"] = (public or {}).get("generation")
     return evidence
 
 
@@ -243,7 +241,7 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
     origin_counts: dict[str, int] = {}
     for hit in result.hits:
         origin_counts[hit.origin] = origin_counts.get(hit.origin, 0) + 1
-    evidence = _index_evidence(context.deps.index, context.scope, context.deps.embedder)
+    evidence = _index_evidence(result)
     tracer_of(config).operation(
         "retrieve",
         run_type="retriever",

@@ -82,3 +82,31 @@ reinicio y disponibilidad · `0b864ab` correcciones del Corte 2 (previo).
 ## Siguiente paso
 
 Corte 4 (T054–T064): primer documento, alcance vacío, recuperación y parciales. No se inició T054.
+
+## Corrección de trazabilidad de generación (2026-11-22 11:51)
+
+**Causa**: `nodes.retrieve` llamaba a `index.describe()` después de `search_documents`. Si una
+reconstrucción publicaba una generación nueva entre la consulta y `describe()`, la evidencia registraba
+la generación nueva aunque la búsqueda hubiera usado la anterior (`mismatch=True` reproducido).
+
+**Solución**:
+
+- `QdrantIndex.query_with_identity()` resuelve el alias una sola vez, consulta la colección concreta y
+  devuelve los hits junto con la identidad de esa colección, incluso con cero coincidencias.
+- `search_documents` conserva `public_evidence` y `case_evidence` en `RetrievalResult`, por alcance.
+- `nodes._index_evidence(result)` usa esa identidad capturada; no vuelve a resolver aliases.
+- Si la identidad no está disponible, el campo queda ausente o nulo; no se inventan valores.
+
+**Regresión añadida** (`tests/contract/test_qdrant_evidence.py`):
+
+- Consulta generación A, cambia el alias a B antes de construir la evidencia y comprueba que sigue
+  identificando A, para público y caso.
+- Alcance público con cero coincidencias: conserva la generación consultada tras cambiar el alias.
+- `nodes.retrieve` con un índice cuyos `describe` devuelve B y cuya consulta devolvió A: la evidencia
+  registra A.
+
+**Comandos**: recuperación, evidencia, citas y disponibilidad → 11 passed; `make check` y
+`pre-commit` se ejecutan al cierre. Avance: **53/82**, sin marcar tareas posteriores.
+
+Contratos sincronizados: `contracts/evidence.md` y `data-model.md` indican que la identidad se captura
+en la consulta y no se re-resuelve; `public_alias` y `public_generation` quedan documentados.

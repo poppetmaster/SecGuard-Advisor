@@ -77,9 +77,14 @@ El paso `retrieve` puede guardar en `detail_json`:
   "qdrant_version": "1.20.0",
   "collection_alias": "secguard__presentacion-2026__case__<case_id>__embeddinggemma__768__active",
   "generation": "20261111T...Z",
-  "score_metric": "cosine"
+  "score_metric": "cosine",
+  "public_alias": "secguard__presentacion-2026__public__embeddinggemma__768__active",
+  "public_generation": "20261111T...Z"
 }
 ```
+
+La identidad del índice se captura al ejecutar la consulta concreta; no se re-resuelve después. Si la
+identidad no está disponible, no se inventa.
 
 Ante un fallo de índice, el mismo paso registra `status` distinto de `ok` y `error_code` con el código
 clasificado (`qdrant_unavailable`, `case_index_unavailable`, `public_index_unavailable` o

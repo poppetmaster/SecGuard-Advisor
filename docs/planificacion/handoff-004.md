@@ -722,3 +722,18 @@ Siguiente paso: Corte 3 (T043–T053). No se inició T043.
   calibración; Chroma conservado; colecciones de smokes propios en el volumen local.
 
 Siguiente paso: Corte 4 (T054–T064). No se inició T054 ni ninguna tarea posterior.
+
+---
+
+## 23. Corrección de trazabilidad del Corte 3 (2026-11-22 11:51)
+
+**Vigente.** §10–§22 son históricas.
+
+- Corte 3 corregido: la evidencia del paso `retrieve` captura la identidad dentro de la consulta
+  (`query_with_identity`), no con `describe()` posterior. `search_documents` propaga
+  `public_evidence`/`case_evidence` y `nodes` las usa.
+- Regresión: generación A consultada → alias B → evidencia sigue en A; cubre público, caso y consulta
+  sin coincidencias; un índice con `describe()` en B no altera la evidencia de A.
+- Contratos y modelo sincronizados (`contracts/evidence.md`, `data-model.md`).
+- Avance: **53/82**. `make check` y `pre-commit` al cierre.
+- Siguiente paso: Corte 4 (T054–T064). No se inició T054.
