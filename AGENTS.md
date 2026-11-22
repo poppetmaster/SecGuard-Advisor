@@ -49,7 +49,7 @@ desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparació
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
 Ollama; la aceptación local de 004 sigue pendiente y no se presentan API ni Telegram como disponibles.
 
-**005 Entregas 1–3 en cierre (2026-11-22):** `specs/005-generador-configurable/` define la
+**005 Entregas 1–3 completadas (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
 Haiku (`claude-haiku-5-5`). Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
 costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
