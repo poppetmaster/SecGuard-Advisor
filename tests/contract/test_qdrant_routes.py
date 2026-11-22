@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from tests.fixtures.corpus import seed_document
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter
 
 from secguard_advisor.config import Settings
@@ -99,6 +100,10 @@ def test_index_failure_stops_the_turn_without_generation(
     tmp_path: Path, error, status, code, message
 ) -> None:
     settings, engine, factory, case_id = _context(tmp_path)
+    if code == "public_index_unavailable":
+        seed_document(factory, texts=["público"], source_id="sample", embedder=FakeEmbedder())
+    else:
+        seed_document(factory, texts=["privado"], case_id=case_id, embedder=FakeEmbedder())
     app = create_app(
         settings,
         ollama_probe=lambda: True,

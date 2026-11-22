@@ -113,7 +113,8 @@ def test_no_candidates_is_empty_not_failure(context) -> None:
 
     assert result.status == "empty"
     assert result.hits == ()
-    assert index.queried == [("public", None), ("case", case_a)]
+    # Sin fragmentos esperados en SQLite, ambos alcances se omiten (T057).
+    assert index.queried == []
 
 
 def test_superseded_version_is_excluded_but_history_is_kept(context) -> None:

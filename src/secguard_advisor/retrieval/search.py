@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from secguard_advisor.cases.scope import CaseScope
@@ -88,6 +89,27 @@ def _resolve_hit(
     )
 
 
+def expected_chunks(session: Session, scope) -> int:
+    """Fragmentos esperados para un alcance según SQLite (fuente de verdad)."""
+    statement = (
+        select(func.count())
+        .select_from(DocumentChunk)
+        .join(DocumentVersion, DocumentChunk.version_id == DocumentVersion.id)
+        .join(Document, DocumentVersion.document_id == Document.id)
+        .where(
+            DocumentVersion.status == "available",
+            Document.current_version_id == DocumentVersion.id,
+        )
+    )
+    if scope.kind == "public":
+        statement = statement.where(Document.origin == "public_corpus")
+    else:
+        statement = statement.where(
+            Document.origin == "case_evidence", Document.case_id == scope.case_id
+        )
+    return int(session.scalar(statement) or 0)
+
+
 def search_documents(
     session: Session,
     *,
@@ -108,6 +130,8 @@ def search_documents(
     public_evidence: dict | None = None
     case_evidence: dict | None = None
     for collection_scope in (public_scope(), case_scope(scope.case_id)):
+        if expected_chunks(session, collection_scope) == 0:
+            continue
         query_with_identity = getattr(index, "query_with_identity", None)
         if callable(query_with_identity):
             raw_hits, identity = query_with_identity(

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from qdrant_client import QdrantClient
+from tests.fixtures.corpus import seed_document
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter
 
 from secguard_advisor.config import Settings
@@ -81,6 +82,7 @@ def test_route_returns_503_when_qdrant_is_down(tmp_path: Path) -> None:
         session.add(case)
         session.commit()
         case_id = case.id
+    seed_document(factory, texts=["evidencia del caso"], case_id=case_id, embedder=FakeEmbedder())
     index = QdrantIndex(url="http://127.0.0.1:1", instance_id=INSTANCE, timeout=0.5)
     app = create_app(
         settings,
