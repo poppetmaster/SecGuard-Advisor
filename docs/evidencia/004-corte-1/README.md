@@ -1,6 +1,8 @@
 # Corte 1 — Infraestructura Qdrant, instancia y lock
 
 **Fecha**: 2026-11-22 09:30–10:05 (America/Bogota, `-05`)
+**Estado actual**: T001–T009 completadas. Docker Desktop 29.9.3 (aarch64) y Qdrant 1.20.0 verificados
+en ejecución; el servicio de prueba se detuvo y el volumen se conservó.
 **Rama**: `004-qdrant-vector-index`
 **Alcance**: T001–T009 de `specs/004-qdrant-vector-index/tasks.md`. Preparación de infraestructura
 local; Chroma sigue siendo el backend documental y no se modifica SQLite, documentos, casos,
@@ -9,8 +11,9 @@ conversaciones, Qualys ni archivos de Chroma.
 ## Entorno observado
 
 - macOS arm64 (Apple Silicon), Python 3.14.6, `uv 0.13.0`.
-- Docker **no instalado**: `docker` y `docker compose` no existen en el `PATH`. Esto bloquea las
-  comprobaciones que dependen del motor (T002 parcial y T009).
+- Docker Desktop 29.9.3, motor aarch64, contexto `desktop-linux`; `docker compose` 5.8.0.
+- Las secciones «Reintento», «Tercera comprobación» y «Bloqueo histórico» registran intentos previos
+  en los que el motor no estaba disponible. No describen el estado actual.
 
 ## Dependencias (T001) — completado
 
@@ -27,7 +30,7 @@ $ grep -n "qdrant-client" pyproject.toml
 
 `langchain-chroma` y `chromadb` siguen declarados. No se retiró ninguna dependencia.
 
-## Compose (T002) — implementado, verificación bloqueada
+## Compose (T002) — histórico: verificación inicial bloqueada
 
 `compose.qdrant.yml` fija `qdrant/qdrant:v1.20.0`, publica solo `127.0.0.1:6333` y `127.0.0.1:6334`,
 monta `./storage/qdrant:/qdrant/storage` y usa `restart: unless-stopped`.
@@ -38,8 +41,8 @@ Validación disponible sin Docker (PyYAML del entorno, solo como comprobación p
 compose YAML parse OK; image, ports, volume and restart match the plan
 ```
 
-`docker compose -f compose.qdrant.yml config` **no se ejecutó**: Docker no está instalado. La tarea
-permanece abierta hasta ejecutar esa comprobación en un equipo con Docker.
+En esa comprobación inicial `docker compose config` no se ejecutó por ausencia del CLI; la validación
+real se completó después (ver «Tercera comprobación» y «Cuarta comprobación»).
 
 ## Configuración e `.env.example` (T003, T004) — completado
 
@@ -91,9 +94,10 @@ E   ImportError: cannot import name 'instance' from 'secguard_advisor.retrieval'
 loopback, volumen, `.env.example`, targets visibles en `make help`, namespace y que Chroma sigue
 declarado en este corte.
 
-## Verificación arm64 y salud (T009) — bloqueado
+## Verificación arm64 y salud (T009) — histórico: bloqueo por motor
 
-No se pudo ejecutar la comprobación exigida porque Docker no está instalado:
+En esa comprobación inicial no se pudo ejecutar la verificación exigida porque el motor no estaba
+disponible:
 
 ```text
 $ docker manifest inspect qdrant/qdrant:v1.20.0
@@ -104,7 +108,7 @@ $ curl -fsS http://127.0.0.1:6333/readyz
 curl: (7) Failed to connect to 127.0.0.1 port 6333
 ```
 
-Evidencia parcial del registro público (solo lectura, sin Docker): la etiqueta `v1.20.0` existe
+Evidencia parcial de esa comprobación (registro público, solo lectura): la etiqueta `v1.20.0` existe
 (publicada 2026-10-21) y su índice incluye `linux/amd64` y `linux/arm64`. Esto no sustituye
 `docker manifest inspect` ni la comprobación de `/readyz`.
 
@@ -126,23 +130,19 @@ Todas las comprobaciones: Passed
 
 Antes de los cambios, `make check` registró `417 passed, 35 deselected`.
 
-## Servicios y datos
+## Servicios y datos (verificación inicial)
 
-- No se levantó ningún servicio: Docker no está disponible. No hubo nada que detener y no se usó
-  `down -v`.
+- En la verificación inicial no se levantó ningún servicio porque el motor no estaba disponible. No
+  hubo nada que detener y no se usó `down -v`.
 - No se ejecutaron migraciones ni reconstrucciones de índices.
 - No se modificó `storage/`, SQLite, Chroma ni datos del usuario.
 - Las pruebas de instancia y marcador usan directorios temporales (`tmp_path`).
 
-## Bloqueo real
+## Bloqueo histórico (resuelto el 2026-11-22 10:02)
 
-`T002` y `T009` quedan abiertos únicamente por la ausencia de Docker en el equipo. Falta:
-
-1. `docker compose -f compose.qdrant.yml config` (T002).
-2. `docker manifest inspect qdrant/qdrant:v1.20.0`, `make qdrant-up`, `curl /readyz` y detención con
-   `make qdrant-down` conservando el volumen (T009).
-
-No se sustituyó la versión fijada ni se cambió el alcance para evitar el bloqueo.
+Los intentos previos quedaron bloqueados primero por ausencia del CLI y después por ausencia del
+motor. El bloqueo se resolvió al iniciar Docker Desktop; no se cambió la versión fijada ni el alcance.
+La verificación final está en «Cuarta comprobación — T009 completado».
 
 ## Reintento de verificación (2026-11-22 09:32, America/Bogota)
 
@@ -259,3 +259,68 @@ repite aquí su salida para no duplicar la evidencia anterior.
 
 - T002: **completado** con `docker compose config`.
 - T009: **bloqueado** por ausencia de motor; manifiesto arm64 ya verificado con el comando exigido.
+
+## Cuarta comprobación — T009 completado (2026-11-22 10:02, America/Bogota)
+
+Motor activo y arranque real del servicio fijado.
+
+```text
+$ docker info --format 'server={{.ServerVersion}} driver={{.Driver}} arch={{.Architecture}}'
+server=29.9.3 driver=overlayfs arch=aarch64
+$ docker context ls
+desktop-linux *   Docker Desktop   unix:///Users/.../.docker/run/docker.sock
+$ docker ps -a
+(sin contenedores)
+$ lsof -nP -iTCP:6333 -sTCP:LISTEN
+(libre)
+```
+
+```text
+$ make qdrant-up
+Image qdrant/qdrant:v1.20.0 Pulled
+Network secguard-advisor_default Created
+Container secguard-qdrant Started
+$ docker compose -f compose.qdrant.yml ps
+secguard-qdrant   qdrant/qdrant:v1.20.0   Up   Less than a second   127.0.0.1:6333-6334->6333-6334/tcp
+```
+
+```text
+$ make qdrant-health
+all shards are ready
+{"title":"qdrant - vector search engine","version":"1.20.0","commit":"222b2e44..."}
+exit=0
+$ curl -fsS -w "\nhttp=%{http_code}\n" http://127.0.0.1:6333/readyz
+all shards are ready
+http=200
+```
+
+Versión real del servidor: **1.20.0**, coherente con la imagen fijada. Puertos publicados:
+
+```text
+$ docker port secguard-qdrant
+6333/tcp -> 127.0.0.1:6333
+6334/tcp -> 127.0.0.1:6334
+$ docker inspect secguard-qdrant --format '{{json .NetworkSettings.Ports}}'
+{"6333/tcp":[{"HostIp":"127.0.0.1","HostPort":"6333"}],"6334/tcp":[{"HostIp":"127.0.0.1","HostPort":"6334"}]}
+```
+
+Detención controlada, sin `down -v`:
+
+```text
+$ make qdrant-down
+Container secguard-qdrant Stopped
+Container secguard-qdrant Removed
+Network secguard-advisor_default Removed
+$ docker ps -a
+(sin contenedores)
+$ lsof -nP -iTCP:6333 -sTCP:LISTEN
+(libre)
+$ ls storage/qdrant
+aliases  collections  raft_state.json
+```
+
+El volumen se conservó. No se interrumpió ningún otro servicio: no había contenedores ni proyectos
+Compose preexistentes. Las comprobaciones de ID y namespace siguen cubiertas por las 25 pruebas
+unitarias de instancia (`instance_configuration_invalid` e `instance_namespace_mismatch`).
+
+**T009 completado.**

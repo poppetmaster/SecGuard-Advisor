@@ -101,7 +101,7 @@ cambiar todavía el backend de la aplicación.
   - Check: las pruebas pasan y aseguran que Chroma sigue declarado en esta fase.
   - Evidence: salida de pruebas.
 
-- [ ] T009 Verificar disponibilidad de la imagen en arm64 y salud local con `docker manifest inspect qdrant/qdrant:v1.20.0`, `make qdrant-up` y `curl -fsS http://127.0.0.1:6333/readyz`; verificar además los fallos de ID y namespace.
+- [x] T009 Verificar disponibilidad de la imagen en arm64 y salud local con `docker manifest inspect qdrant/qdrant:v1.20.0`, `make qdrant-up` y `curl -fsS http://127.0.0.1:6333/readyz`; verificar además los fallos de ID y namespace.
   - Story: Setup
   - Dep: T002, T005, T006, T007
   - Verifies: T002, T005, T007

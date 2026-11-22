@@ -562,3 +562,37 @@ Estado del corte: **8 completadas (T001–T008), 1 bloqueada (T009)**.
 Siguiente paso: con un motor Docker activo, ejecutar `make qdrant-up`, `make qdrant-health`,
 comprobar `/readyz` y `make qdrant-down` conservando el volumen; solo entonces marcar T009 y comenzar
 el Corte 2 (T010–T042). No se inició T010.
+
+---
+
+## 18. Corte 1 cerrado — T009 verificado en ejecución (2026-11-22 10:05)
+
+**Vigente.** Las secciones §10–§17 son históricas.
+
+### Estado
+
+- **T001–T009: 9 de 9 completadas.**
+- Rama `004-qdrant-vector-index`; sin push.
+- Backend documental: **Chroma** (sin cambios). Qdrant queda como infraestructura local preparada.
+
+### Verificación final de T009
+
+- Motor: Docker Desktop 29.9.3, `arch=aarch64`, contexto `desktop-linux`.
+- Sin contenedores ni proyectos Compose preexistentes; puertos 6333/6334 libres.
+- `make qdrant-up`: imagen `qdrant/qdrant:v1.20.0` descargada y contenedor `secguard-qdrant` iniciado.
+- `make qdrant-health`: `/readyz` = «all shards are ready»; versión real del servidor **1.20.0**.
+- Puertos publicados: `127.0.0.1:6333` y `127.0.0.1:6334` únicamente.
+- `make qdrant-down`: contenedor y red eliminados sin `-v`; volumen `storage/qdrant` conservado
+  (`aliases`, `collections`, `raft_state.json`).
+- ID inválido y namespace incompatible siguen cubiertos por las 25 pruebas de instancia.
+
+### Evidencia
+
+- `docs/evidencia/004-corte-1/README.md` (incluye el historial de bloqueos por CLI y motor ausentes).
+- `docs/planificacion/004-ultimo-resultado.md`.
+
+### Siguiente paso
+
+Iniciar el Corte 2 (T010–T042) en una tarea posterior y con autorización explícita. No se inició T010.
+
+No se modificó SQLite, Chroma ni los datos existentes. No se creó commit remoto ni se publicó nada.
