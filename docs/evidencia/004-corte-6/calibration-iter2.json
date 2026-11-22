@@ -1,0 +1,77 @@
+{
+  "mode": "calibration",
+  "backend": "qdrant",
+  "modality": "server",
+  "qdrant_version": "1.20.0",
+  "embedding_model": "embeddinggemma",
+  "embedding_dim": 768,
+  "metric": "cosine",
+  "top_k": 3,
+  "threshold": 0.5033,
+  "executed_at": "2026-11-22T18:11:46.285955+00:00",
+  "dataset_sha256": "b3689d415b581c7bb5999d5911a14a263020a790ece8a3ec53e7e2f9c4ee116c",
+  "criteria": {
+    "relevant": "el fragmento esperado debe recuperarse con score >= umbral",
+    "non_relevant": "ninguna consulta no pertinente debe superar el umbral",
+    "selection": "mayor umbral válido; si no existe, mejor equilibrio y fallo"
+  },
+  "relevant": [
+    {
+      "scope": "public",
+      "query": "¿Se exige doble factor para el acceso remoto?",
+      "score": 0.53
+    },
+    {
+      "scope": "public",
+      "query": "¿Cómo se protegen las claves de cifrado almacenadas?",
+      "score": 0.5197
+    },
+    {
+      "scope": "public",
+      "query": "¿En qué plazo se instalan las actualizaciones críticas?",
+      "score": 0.629
+    },
+    {
+      "scope": "a",
+      "query": "¿Con qué frecuencia se prueba el respaldo del caso?",
+      "score": 0.5033
+    },
+    {
+      "scope": "a",
+      "query": "¿Qué control existe para el acceso de proveedores?",
+      "score": 0.6184
+    },
+    {
+      "scope": "b",
+      "query": "¿Qué se activa cuando la caída es prolongada?",
+      "score": 0.5411
+    }
+  ],
+  "non_relevant": [
+    {
+      "query": "receta de cocina para una cena",
+      "top_score": 0.0443
+    },
+    {
+      "query": "historia del arte renacentista",
+      "top_score": 0.0737
+    },
+    {
+      "query": "¿Cómo se gestionan los incidentes de seguridad?",
+      "top_score": 0.2785
+    },
+    {
+      "query": "¿Qué herramienta de monitoreo de red se usa?",
+      "top_score": 0.1991
+    }
+  ],
+  "proposed_threshold": 0.5033,
+  "observed": {
+    "threshold": 0.5033,
+    "satisfied": true,
+    "relevant_min": 0.5033,
+    "non_relevant_max": 0.2785,
+    "missed_relevant": 0,
+    "accepted_non_relevant": 0
+  }
+}

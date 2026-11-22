@@ -68,5 +68,7 @@
     "retrieval_ok": 3,
     "retrieval_total": 4,
     "non_relevant_accepted": 0
-  }
+  },
+  "modality": "embedded",
+  "historical_note": "Primera iteración ejecutada con Qdrant embebido y EmbeddingGemma real; no es una ejecución contra servidor."
 }

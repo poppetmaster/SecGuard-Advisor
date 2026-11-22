@@ -813,3 +813,18 @@ Siguiente paso: Corte 6 (T070–T082). No se inició T070 ni se retiró Chroma.
 
 Siguiente paso: repetir calibración con un conjunto más representativo (sin usar la evaluación),
 reevaluar, ejecutar T079 (ASGI/Playwright), T080, T081 y, solo si cumple, T082.
+
+---
+
+## 28. Validación del Corte 6 corregida (2026-11-22 13:12)
+
+**Vigente.** §10–§27 son históricas.
+
+- Evaluador corregido: servidor/embebido explícito, aislamiento real, Qualys medido, criterios y fallo
+  del comando. Reportes de la iteración 1 anotados como embebidos.
+- Calibración iteración 2 (servidor 1.20.0): umbral **0.5033**.
+- Evaluación final nueva (hash `da9b64ef…`, umbral congelado): **passed** — 6/6, 0 no pertinentes,
+  0 fugas, versión vigente, cita histórica válida, Qualys sin cambios.
+- `make check`: 558 passed; `pre-commit`: verde.
+- **Pendiente T079–T082**: aceptación ASGI/Playwright, documentación operativa completa,
+  `make test-integration`, cierre de constitución. Avance 78/82. Sin aceptación de 004.

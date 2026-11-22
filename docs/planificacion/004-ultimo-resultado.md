@@ -67,3 +67,39 @@ antemano, o aceptar el fallo y documentar la limitación. No se modificó el umb
 Cerrar T079–T082: repetir calibración con un conjunto representativo (sin usar la evaluación),
 reevaluar, ejecutar aceptación ASGI/Playwright y regresión completa. Solo entonces actualizar la
 constitución a «implementado y aceptado localmente».
+
+## Corrección de la validación del Corte 6 (2026-11-22 13:12)
+
+**Causa de los hallazgos**: el script usaba `QdrantClient(path=...)` (embebido) aunque la documentación
+lo presentaba como servidor; el aislamiento se calculaba sobre una lista vacía; Qualys se escribía como
+constantes; y la prueba de evaluación no exigía todos los criterios.
+
+**Correcciones**:
+
+- `qdrant_threshold.py` acepta `--backend server|embedded` (servidor por defecto) y registra modalidad,
+  versión, modelo, dimensión, métrica, `top_k`, umbral, fecha y hash del conjunto.
+- Aislamiento calculado comparando documentos recuperados con los prohibidos de cada caso; el público
+  no se cuenta como fuga. Con prueba unitaria que inyecta una fuga y la detecta.
+- Qualys se mide con una importación ficticia y conteos antes/después de documentos, fragmentos, puntos
+  y citas; no hay constantes.
+- `retrieval/evaluation.py` define criterios y resultado global; el comando falla (exit 1) si no se
+  cumplen y conserva el reporte.
+- Pruebas unitarias del evaluador: recuperación incompleta, no pertinente aceptada, fuga, versión
+  superada y cita inválida.
+
+**Ejecución corregida (servidor real)**:
+
+```text
+Calibración iteración 2 (CAL2, server 1.20.0): umbral 0.5033, relevante mínimo 0.5033,
+no pertinente máximo 0.2785, satisfecho=true.
+Evaluación final (conjunto nuevo, hash da9b64ef…): 6/6 recuperadas, 0 no pertinentes aceptadas,
+0 fugas, versión vigente y cita histórica válida, Qualys sin cambios → resultado passed.
+```
+
+Los reportes `calibration.json` y `evaluation.json` se conservan como iteración 1 y se anotan como
+**embebidos**. Los nuevos son `calibration-iter2.json` y `evaluation-final.json`.
+
+**Estado de tareas**: T074–T078 siguen completadas (procedimiento implementado y ejecutado; la
+iteración 1 falló 3/4 y se conserva como historial; la evaluación final corregida pasa). **T079–T082
+siguen pendientes**: aceptación ASGI/Playwright, documentación operativa completa, regresión
+`make test-integration` y cierre de constitución. Avance: **78/82**. No se declara aceptación.

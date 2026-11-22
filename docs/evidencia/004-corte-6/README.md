@@ -79,3 +79,29 @@ make check
 ```
 
 `LANGSMITH_TRACING=false`; servidor y storage temporales.
+
+## Corrección del evaluador y segunda iteración (2026-11-22 13:12)
+
+Hallazgos corregidos: modalidad embebida presentada como servidor; aislamiento calculado sobre una
+lista vacía; Qualys con constantes; prueba sin exigir todos los criterios.
+
+- `scripts/qdrant_threshold.py` admite `--backend server|embedded` (servidor por defecto) y registra
+  modalidad, versión, modelo, dimensión, métrica, `top_k`, umbral, fecha y hash del conjunto.
+- Aislamiento real por caso, con prueba unitaria que inyecta una fuga.
+- Qualys medido con importación ficticia y conteos antes/después; sin constantes.
+- `retrieval/evaluation.py`: criterios explícitos y resultado global; el comando falla si no cumple.
+
+Informes:
+
+| Archivo | Modalidad | Resultado |
+|---|---|---|
+| `calibration.json` | embebida (iteración 1) | umbral 0.4956 |
+| `evaluation.json` | embebida (iteración 1) | 3/4, fallo conservado |
+| `calibration-iter2.json` | servidor 1.20.0 | umbral 0.5033, satisfecho |
+| `evaluation-final.json` | servidor 1.20.0 | **passed**: 6/6, 0 fugas, versiones y cita válidas, Qualys sin cambios |
+
+La evaluación final usa un conjunto nuevo (hash `da9b64ef…`) y el umbral congelado 0.5033. La
+iteración 1 queda como regresión histórica, no como evaluación independiente tras el ajuste.
+
+`make check`: 558 passed; `pre-commit`: verde. Pendiente: T079–T082 (aceptación ASGI/Playwright,
+documentación operativa, `make test-integration` y constitución final).

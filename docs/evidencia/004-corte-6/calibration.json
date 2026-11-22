@@ -48,5 +48,7 @@
     "non_relevant_max": 0.0861,
     "missed_relevant": 0,
     "accepted_non_relevant": 0
-  }
+  },
+  "modality": "embedded",
+  "historical_note": "Primera iteración ejecutada con Qdrant embebido y EmbeddingGemma real; no es una ejecución contra servidor."
 }

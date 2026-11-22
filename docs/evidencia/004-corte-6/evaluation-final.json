@@ -1,0 +1,153 @@
+{
+  "mode": "evaluation",
+  "backend": "qdrant",
+  "modality": "server",
+  "qdrant_version": "1.20.0",
+  "embedding_model": "embeddinggemma",
+  "embedding_dim": 768,
+  "metric": "cosine",
+  "top_k": 3,
+  "threshold": 0.5033,
+  "executed_at": "2026-11-22T18:11:58.776696+00:00",
+  "dataset_sha256": "da9b64efe877c63c89e66970e1ee111ff467ce8b50a34d99edfa86ac584700fc",
+  "criteria": {
+    "retrieval": "todas las consultas pertinentes recuperan su fragmento con el umbral",
+    "non_relevant": "ninguna consulta no pertinente supera el umbral",
+    "isolation": "ningún documento privado cruza de caso",
+    "versions": "la versión superada no reaparece; su cita histórica resuelve",
+    "qualys": "la importación no altera documentos, fragmentos, puntos ni citas"
+  },
+  "results": [
+    {
+      "scenario": "public-0",
+      "query": "¿Cómo se protegen las contraseñas y cada cuánto cambian?",
+      "hit": true,
+      "score": 0.6024
+    },
+    {
+      "scenario": "public-1",
+      "query": "¿Cuánto tiempo se guardan los eventos de acceso?",
+      "hit": true,
+      "score": 0.6357
+    },
+    {
+      "scenario": "public-2",
+      "query": "¿Cómo se separan los servidores críticos?",
+      "hit": true,
+      "score": 0.601
+    },
+    {
+      "scenario": "a-0",
+      "query": "¿Cuándo se eliminan los registros del caso?",
+      "hit": true,
+      "score": 0.6318
+    },
+    {
+      "scenario": "a-1",
+      "query": "¿Qué ocurre con el acceso del proveedor al terminar el contrato?",
+      "hit": true,
+      "score": 0.7026
+    },
+    {
+      "scenario": "b-0",
+      "query": "¿Qué se revisa antes de contratar a un tercero?",
+      "hit": true,
+      "score": 0.6693
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "mejores playas para vacacionar",
+      "hit": false,
+      "score": 0.0519
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "resultados del torneo de fútbol",
+      "hit": false,
+      "score": 0.0844
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "¿Cómo se gestionan los incidentes de seguridad?",
+      "hit": false,
+      "score": 0.1933
+    },
+    {
+      "scenario": "non-relevant",
+      "query": "¿Qué herramienta de monitoreo de red se usa?",
+      "hit": false,
+      "score": 0.3288
+    }
+  ],
+  "isolation": {
+    "retrieved": {
+      "a": [
+        "b0c956c44e6d405b83b62c8babaa5a0d"
+      ],
+      "b": [
+        "af0a47548e4943e2a1e4a4977b918a85"
+      ]
+    },
+    "violations": 0
+  },
+  "versions": {
+    "current_only": true,
+    "superseded_leaked": false,
+    "historical_citation": "valid"
+  },
+  "qualys": {
+    "before": {
+      "documents": 4,
+      "chunks": 8,
+      "citations": 0,
+      "points": 7
+    },
+    "after": {
+      "documents": 4,
+      "chunks": 8,
+      "citations": 0,
+      "points": 7
+    },
+    "unchanged": true
+  },
+  "metrics": {
+    "retrieval_ok": 6,
+    "retrieval_total": 6,
+    "non_relevant_accepted": 0
+  },
+  "outcome": {
+    "passed": true,
+    "criteria": [
+      {
+        "name": "retrieval",
+        "passed": true,
+        "detail": "6/6 consultas pertinentes recuperadas"
+      },
+      {
+        "name": "non_relevant",
+        "passed": true,
+        "detail": "0 consultas no pertinentes aceptadas"
+      },
+      {
+        "name": "isolation",
+        "passed": true,
+        "detail": "0 documentos privados cruzados"
+      },
+      {
+        "name": "versions",
+        "passed": true,
+        "detail": "vigente=True; superada_filtrada=True"
+      },
+      {
+        "name": "historical_citation",
+        "passed": true,
+        "detail": "estado=valid"
+      },
+      {
+        "name": "qualys",
+        "passed": true,
+        "detail": "sin cambios=True"
+      }
+    ]
+  }
+}
