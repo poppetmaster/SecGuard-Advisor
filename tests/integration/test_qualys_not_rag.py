@@ -9,6 +9,7 @@ from tests.fixtures.conversation import build_env
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
 
 from secguard_advisor.cases.scope import CaseScope
+from secguard_advisor.config import Settings
 from secguard_advisor.conversation.llm import AnswerPayload, Claim, ToolDecision
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.models import (
@@ -119,3 +120,66 @@ def test_import_does_not_enter_rag_and_documentary_turn_still_works(tmp_path: Pa
         assert (citations or 0) >= 1
     assert (documents_after, chunks_after) == (documents_before, chunks_before)
     assert _vector_count(env.index, env.case_id) == vectors_before
+
+
+def test_qualys_import_does_not_touch_qdrant(tmp_path: Path) -> None:
+    from qdrant_client import QdrantClient
+    from tests.fixtures.corpus import NullEmbedder, create_case, seed_document
+
+    from secguard_advisor.db.base import Base
+    from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
+    from secguard_advisor.retrieval.collections import case_scope as qdrant_case_scope
+    from secguard_advisor.retrieval.collections import public_scope as qdrant_public_scope
+    from secguard_advisor.retrieval.index import QdrantIndex
+
+    settings = Settings(
+        _env_file=None,
+        storage_dir=tmp_path / "qdrant-storage",
+        instance_id="test-local",
+        embedding_dim=NullEmbedder.dimension,
+    )
+    settings.ensure_directories()
+    engine = create_engine_for_url(settings.database_url)
+    Base.metadata.create_all(engine)
+    factory = create_session_factory(engine)
+    client = QdrantClient(path=str(tmp_path / "qdrant"))
+    index = QdrantIndex(url="http://127.0.0.1:6333", instance_id="test-local", client=client)
+    embedder = NullEmbedder()
+    try:
+        with factory() as session:
+            case_id = create_case(session, "Caso Qualys Qdrant")
+            session.commit()
+        seed_document(
+            factory,
+            texts=["control público"],
+            source_id="sample",
+            index=index,
+            embedder=embedder,
+        )
+        seed_document(
+            factory,
+            texts=["evidencia del caso"],
+            case_id=case_id,
+            index=index,
+            embedder=embedder,
+        )
+        before = index.count(
+            qdrant_public_scope(), embedder.model, embedder.dimension
+        ) + index.count(qdrant_case_scope(case_id), embedder.model, embedder.dimension)
+        service = QualysImportService(factory, settings)
+        staged = service.stage_import(
+            case_id,
+            "valid.csv",
+            (FIXTURES / "qualys_synthetic_valid.csv").read_bytes(),
+        )
+        service.confirm_import(case_id, staged.import_record.id)
+
+        after = index.count(
+            qdrant_public_scope(), embedder.model, embedder.dimension
+        ) + index.count(qdrant_case_scope(case_id), embedder.model, embedder.dimension)
+        assert before > 0
+        assert after == before
+        assert len(client.get_collections().collections) == 2
+    finally:
+        index.close()
+        engine.dispose()
