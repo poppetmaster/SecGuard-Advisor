@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from secguard_advisor.config import Settings
 from secguard_advisor.documents.service import IngestionOutcome, ingest_document
 from secguard_advisor.documents.validation import validate_bytes
+from secguard_advisor.retrieval import instance
 
 
 def load_manifest(settings: Settings) -> list[dict]:
@@ -95,3 +96,19 @@ def ingest_public_corpus(
         )
 
     return outcomes
+
+
+def ingest_public_corpus_locked(
+    factory: sessionmaker[Session],
+    settings: Settings,
+    *,
+    embedder,
+    index,
+) -> list[IngestionOutcome]:
+    """Ingesta el corpus público con el lock de instancia por documento.
+
+    La escritura del índice adquiere el lock en `documents.service`; así una
+    reconstrucción activa rechaza la ingesta desde el primer documento.
+    """
+    instance.validate_instance_id(settings.instance_id)
+    return ingest_public_corpus(factory, settings, embedder=embedder, index=index)

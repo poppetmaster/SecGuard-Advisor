@@ -12,7 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import OperationalError
 
 from secguard_advisor.config import get_settings
-from secguard_advisor.corpus.ingest import ingest_public_corpus
+from secguard_advisor.corpus.ingest import ingest_public_corpus_locked
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.models import (
     Case,
@@ -22,7 +22,12 @@ from secguard_advisor.db.models import (
     SyntheticDataset,
 )
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
-from secguard_advisor.retrieval.index import ChromaIndex
+from secguard_advisor.retrieval.index import QdrantIndex
+from secguard_advisor.retrieval.instance import (
+    InstanceConfigurationError,
+    InstanceLockBusy,
+    lock_conflict_code,
+)
 from secguard_advisor.seed.demo import seed_demo
 
 
@@ -46,17 +51,33 @@ def main() -> int:
         dimension=settings.embedding_dim,
         context_tokens=settings.embedding_context_tokens,
     )
-    index = ChromaIndex(settings.chroma_dir)
+    index = QdrantIndex(
+        url=settings.qdrant_url,
+        instance_id=settings.instance_id,
+        timeout=settings.qdrant_timeout_seconds,
+    )
     try:
         with factory() as session:
             report = seed_demo(session)
             session.commit()
-        outcomes = ingest_public_corpus(
+        outcomes = ingest_public_corpus_locked(
             factory,
             settings,
             embedder=embedder,
             index=index,
         )
+    except InstanceConfigurationError:
+        print(
+            "instance_configuration_invalid: definí SECGUARD_INSTANCE_ID antes de ingestar.",
+            file=sys.stderr,
+        )
+        return 2
+    except InstanceLockBusy as exc:
+        print(
+            f"{lock_conflict_code(exc.owner)}: otra operación mantiene el lock de instancia.",
+            file=sys.stderr,
+        )
+        return 3
     except OperationalError:
         print(
             "la base de demostración no tiene esquema; ejecutá `make demo-prepare`.",
@@ -65,6 +86,7 @@ def main() -> int:
         return 2
     finally:
         embedder.close()
+        index.close()
         engine.dispose()
 
     failed = [outcome for outcome in outcomes if outcome.status == "failed"]
