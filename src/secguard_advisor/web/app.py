@@ -20,7 +20,8 @@ from secguard_advisor.conversation.tokenizer import LazyPromptCounter
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
-from secguard_advisor.retrieval.index import ChromaIndex
+from secguard_advisor.retrieval.errors import IndexError as IndexFailure
+from secguard_advisor.retrieval.index import QdrantIndex
 from secguard_advisor.web.errors import AppError, error_response
 from secguard_advisor.web.routes import cases, chat, documents, review, runs, vulnerabilities
 
@@ -66,7 +67,11 @@ def create_app(
         )
 
     def default_index():
-        return ChromaIndex(resolved.chroma_dir)
+        return QdrantIndex(
+            url=resolved.qdrant_url,
+            instance_id=resolved.instance_id,
+            timeout=resolved.qdrant_timeout_seconds,
+        )
 
     def default_llm():
         generator = OllamaGenerator(
@@ -152,6 +157,10 @@ def create_app(
             status_code=200 if database_ok else 503,
             content=payload,
         )
+
+    @app.exception_handler(IndexFailure)
+    async def index_error_handler(_request: Request, exc: IndexFailure):
+        return error_response(exc.code, str(exc))
 
     @app.exception_handler(AppError)
     async def app_error_handler(_request: Request, exc: AppError):
