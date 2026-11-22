@@ -1,0 +1,711 @@
+{
+  "provider": "anthropic",
+  "model": "claude-haiku-5-5",
+  "transport": "mock",
+  "retrieval": "fake-embeddings",
+  "executed_at": "2026-11-22T22:37:59.091515+00:00",
+  "dataset": {
+    "version": "005-comparison-v1",
+    "frozen_at": "2026-11-22",
+    "sha256": "92778d5cdffca49c065354a4c5e816d8af678c30ae795d5fd506ffe8db5c5129",
+    "questions": 10
+  },
+  "settings": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "max_output_tokens": 512,
+    "timeout_seconds": 90.0,
+    "context_window": 128000,
+    "external_budget_usd": "1",
+    "tariff_version": "2026-11-22"
+  },
+  "results": [
+    {
+      "id": "q01",
+      "question": "¿Cada cuánto se prueba la restauración del respaldo?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 15,
+      "wall_ms": 22,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 2348,
+          "estimated_tokens": 1931,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 0,
+          "sources": 2,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 5
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q02",
+      "question": "¿Con qué frecuencia se realizan las copias de seguridad?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 8,
+      "wall_ms": 11,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 2707,
+          "estimated_tokens": 2235,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 2,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 2
+          },
+          {
+            "name": "agent",
+            "duration_ms": 2
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q03",
+      "question": "¿Dónde se almacenan las copias de seguridad?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 11,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 2843,
+          "estimated_tokens": 2351,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 4,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q04",
+      "question": "¿Qué autenticación exige el acceso remoto?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 2979,
+          "estimated_tokens": 2466,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 6,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q05",
+      "question": "¿Cada cuánto se revisan los permisos?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3112,
+          "estimated_tokens": 2579,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q06",
+      "question": "¿Qué requisitos tiene el acceso de proveedores?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3109,
+          "estimated_tokens": 2577,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 2
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q07",
+      "question": "¿En qué plazo se aplican las actualizaciones críticas?",
+      "expected_title": "Gestión de parches",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3108,
+          "estimated_tokens": 2576,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 2
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q08",
+      "question": "¿Qué identifica el inventario de activos?",
+      "expected_title": "Gestión de parches",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3107,
+          "estimated_tokens": 2575,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q09",
+      "question": "¿Cuál es la capital de Francia?",
+      "expected_title": null,
+      "must_cite": false,
+      "expect_abstention": true,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 10,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3101,
+          "estimated_tokens": 2570,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q10",
+      "question": "¿Qué receta de cocina recomienda el documento?",
+      "expected_title": null,
+      "must_cite": false,
+      "expect_abstention": true,
+      "status": "succeeded",
+      "outcome": "abstained_invalid_citations",
+      "error_code": null,
+      "duration_ms": 7,
+      "wall_ms": 9,
+      "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "admitted_tokens": 3106,
+          "estimated_tokens": 2574,
+          "limit": 127168,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 3,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "estimated",
+            "chars_per_token": 2.0,
+            "overhead_tokens": 64
+          },
+          "observed_prompt_tokens": null
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1
+          },
+          {
+            "name": "agent",
+            "duration_ms": 1
+          },
+          {
+            "name": "repair",
+            "duration_ms": 1
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 60,
+        "cached_tokens": 0,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "calculated",
+        "usd": "0.000060",
+        "tariff_version": "2026-11-22"
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "abstained_invalid_citations",
+        "http_status": 200,
+        "error_code": null
+      }
+    }
+  ],
+  "metrics": {
+    "turns": 10,
+    "answered": 0,
+    "citations_total": 0,
+    "expected_citations_hit": 0,
+    "expected_citations_total": 8,
+    "abstentions_expected": 2,
+    "abstentions_observed": 2,
+    "avg_duration_ms": 7,
+    "total_cost_usd": "0.000600",
+    "cost_unknown_turns": 0,
+    "semantic_evaluation": "not_performed"
+  },
+  "limitations": [
+    "Evaluación semántica no realizada.",
+    "El corpus es ficticio y no representa al usuario."
+  ]
+}

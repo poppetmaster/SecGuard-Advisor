@@ -357,6 +357,8 @@ def agent(state: dict[str, Any], config) -> dict[str, Any]:
             started,
             {
                 "claims": len(payload.claims),
+                "recommendations": len(payload.recommendations),
+                "missing_info": len(payload.missing_info),
                 **plan.detail(),
                 "observed_prompt_tokens": usage.get("prompt_tokens"),
             },
@@ -874,6 +876,8 @@ def repair(state: dict[str, Any], config) -> dict[str, Any]:
             started,
             {
                 "claims": len(payload.claims),
+                "recommendations": len(payload.recommendations),
+                "missing_info": len(payload.missing_info),
                 **plan.detail(),
                 "observed_prompt_tokens": usage.get("prompt_tokens"),
             },

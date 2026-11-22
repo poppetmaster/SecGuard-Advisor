@@ -1,0 +1,741 @@
+{
+  "provider": "ollama",
+  "model": "qwen3.5:9b",
+  "transport": "real",
+  "retrieval": "ollama-embeddinggemma",
+  "executed_at": "2026-11-22T23:24:07.436763+00:00",
+  "dataset": {
+    "version": "005-comparison-v1",
+    "frozen_at": "2026-11-22",
+    "sha256": "92778d5cdffca49c065354a4c5e816d8af678c30ae795d5fd506ffe8db5c5129",
+    "questions": 10
+  },
+  "settings": {
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "max_output_tokens": 512,
+    "timeout_seconds": 90.0,
+    "context_window": 8192,
+    "external_budget_usd": "0",
+    "tariff_version": "2026-11-22"
+  },
+  "results": [
+    {
+      "id": "q01",
+      "question": "¿Cada cuánto se prueba la restauración del respaldo?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 6929,
+      "wall_ms": 6944,
+      "answer": "La organización prueba la restauración del respaldo trimestralmente.",
+      "citations": [
+        {
+          "document_title": "Política de respaldo",
+          "quote": "y prueba la restauración trimestralmente",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1134,
+          "estimated_tokens": 1787,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 0,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1117
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1417
+          },
+          {
+            "name": "agent",
+            "duration_ms": 5485
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1822,
+        "output_tokens": 104,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q02",
+      "question": "¿Con qué frecuencia se realizan las copias de seguridad?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 7738,
+      "wall_ms": 7746,
+      "answer": "La organización realiza copias de seguridad cifradas cada 24 horas.",
+      "citations": [
+        {
+          "document_title": "Política de respaldo",
+          "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1186,
+          "estimated_tokens": 1887,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 2,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1168
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1323
+          },
+          {
+            "name": "agent",
+            "duration_ms": 6395
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1893,
+        "output_tokens": 127,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q03",
+      "question": "¿Dónde se almacenan las copias de seguridad?",
+      "expected_title": "Política de respaldo",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 6816,
+      "wall_ms": 6823,
+      "answer": "Las copias de seguridad se almacenan fuera del sitio.",
+      "citations": [
+        {
+          "document_title": "Política de respaldo",
+          "quote": "Las copias se almacenan fuera del sitio.",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1220,
+          "estimated_tokens": 1943,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 4,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1202
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1328
+          },
+          {
+            "name": "agent",
+            "duration_ms": 5467
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1927,
+        "output_tokens": 106,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q04",
+      "question": "¿Qué autenticación exige el acceso remoto?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 8008,
+      "wall_ms": 8016,
+      "answer": "El acceso remoto exige autenticación multifactor.",
+      "citations": [
+        {
+          "document_title": "Gestión de accesos",
+          "quote": "El acceso remoto exige autenticación multifactor.",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1255,
+          "estimated_tokens": 1995,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 6,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1237
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1339
+          },
+          {
+            "name": "agent",
+            "duration_ms": 6649
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1960,
+        "output_tokens": 131,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q05",
+      "question": "¿Cada cuánto se revisan los permisos?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 8114,
+      "wall_ms": 8122,
+      "answer": "Los permisos se revisan cada trimestre.",
+      "citations": [
+        {
+          "document_title": "Gestión de accesos",
+          "quote": "Los permisos se revisan cada trimestre",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1283,
+          "estimated_tokens": 2041,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1265
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1349
+          },
+          {
+            "name": "agent",
+            "duration_ms": 6746
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1987,
+        "output_tokens": 128,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q06",
+      "question": "¿Qué requisitos tiene el acceso de proveedores?",
+      "expected_title": "Gestión de accesos",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 9666,
+      "wall_ms": 9676,
+      "answer": "El acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+      "citations": [
+        {
+          "document_title": "Gestión de accesos",
+          "quote": "el acceso de proveedores requiere aprobación del responsable y registro de sesión",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1277,
+          "estimated_tokens": 2026,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1259
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1578
+          },
+          {
+            "name": "agent",
+            "duration_ms": 8063
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1980,
+        "output_tokens": 140,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q07",
+      "question": "¿En qué plazo se aplican las actualizaciones críticas?",
+      "expected_title": "Gestión de parches",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 10216,
+      "wall_ms": 10226,
+      "answer": "Las actualizaciones críticas se aplican en un plazo máximo de siete días.",
+      "citations": [
+        {
+          "document_title": "Gestión de parches",
+          "quote": "Las actualizaciones críticas se aplican en un plazo máximo de siete días.",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1267,
+          "estimated_tokens": 2030,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1249
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 1732
+          },
+          {
+            "name": "agent",
+            "duration_ms": 8460
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1972,
+        "output_tokens": 122,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q08",
+      "question": "¿Qué identifica el inventario de activos?",
+      "expected_title": "Gestión de parches",
+      "must_cite": true,
+      "expect_abstention": false,
+      "status": "succeeded",
+      "outcome": "answered",
+      "error_code": null,
+      "duration_ms": 16992,
+      "wall_ms": 17003,
+      "answer": "El inventario de activos identifica el propietario y la criticidad de cada servicio.",
+      "citations": [
+        {
+          "document_title": "Gestión de parches",
+          "quote": "El inventario de activos identifica propietario y criticidad de cada servicio.",
+          "check_status": "valid"
+        }
+      ],
+      "citation_hit": true,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 1,
+          "recommendations": 0,
+          "missing_info": 0,
+          "admitted_tokens": 1268,
+          "estimated_tokens": 2038,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 1,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1250
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 2088
+          },
+          {
+            "name": "agent",
+            "duration_ms": 14874
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1973,
+        "output_tokens": 145,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "answered",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q09",
+      "question": "¿Cuál es la capital de Francia?",
+      "expected_title": null,
+      "must_cite": false,
+      "expect_abstention": true,
+      "status": "succeeded",
+      "outcome": "insufficient_evidence",
+      "error_code": null,
+      "duration_ms": 25881,
+      "wall_ms": 25907,
+      "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "recommendations": 0,
+          "missing_info": 1,
+          "admitted_tokens": 1187,
+          "estimated_tokens": 1928,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 0,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1171
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 3964
+          },
+          {
+            "name": "agent",
+            "duration_ms": 21861
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1889,
+        "output_tokens": 107,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "insufficient_evidence",
+        "http_status": 200,
+        "error_code": null
+      }
+    },
+    {
+      "id": "q10",
+      "question": "¿Qué receta de cocina recomienda el documento?",
+      "expected_title": null,
+      "must_cite": false,
+      "expect_abstention": true,
+      "status": "succeeded",
+      "outcome": "insufficient_evidence",
+      "error_code": null,
+      "duration_ms": 39123,
+      "wall_ms": 39141,
+      "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto.",
+      "citations": [],
+      "citation_hit": false,
+      "tools": [],
+      "structure": {
+        "detail": {
+          "claims": 0,
+          "recommendations": 1,
+          "missing_info": 1,
+          "admitted_tokens": 1224,
+          "estimated_tokens": 2025,
+          "limit": 7360,
+          "output_reserve": 512,
+          "safety_margin": 320,
+          "history_messages": 8,
+          "sources": 0,
+          "dropped_history_messages": 0,
+          "dropped_sources": 0,
+          "counter": {
+            "method": "tokenizer",
+            "model": "qwen3.5:9b",
+            "template": "qwen35-chat"
+          },
+          "observed_prompt_tokens": 1208
+        },
+        "model_steps": [
+          {
+            "name": "decide",
+            "duration_ms": 6322
+          },
+          {
+            "name": "agent",
+            "duration_ms": 32683
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 1926,
+        "output_tokens": 153,
+        "cached_tokens": null,
+        "source": "observed"
+      },
+      "cost": {
+        "status": "not_applicable",
+        "usd": null,
+        "tariff_version": null
+      },
+      "turn_result": {
+        "status": "succeeded",
+        "outcome": "insufficient_evidence",
+        "http_status": 200,
+        "error_code": null
+      }
+    }
+  ],
+  "metrics": {
+    "turns": 10,
+    "answered": 8,
+    "citations_total": 8,
+    "expected_citations_hit": 8,
+    "expected_citations_total": 8,
+    "abstentions_expected": 2,
+    "abstentions_observed": 2,
+    "avg_duration_ms": 13948,
+    "recommendations_total": 1,
+    "missing_info_total": 2,
+    "total_cost_usd": null,
+    "cost_unknown_turns": 0,
+    "semantic_evaluation": "not_performed"
+  },
+  "limitations": [
+    "Evaluación semántica no realizada.",
+    "El corpus es ficticio y no representa al usuario."
+  ]
+}

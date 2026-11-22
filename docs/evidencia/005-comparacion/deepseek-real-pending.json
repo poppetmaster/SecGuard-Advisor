@@ -1,0 +1,6 @@
+{
+  "provider": "deepseek",
+  "transport": "real",
+  "skipped": "Sin presupuesto externo aprobado (external_budget_usd=0).",
+  "executed_at": "2026-11-22T22:38:02.842643+00:00"
+}
