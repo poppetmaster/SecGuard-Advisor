@@ -775,3 +775,23 @@ Siguiente paso: Corte 5 (T065–T069). No se inició T065.
 - Contratos y modelo sincronizados. Avance: **64/82**. Sin tareas posteriores.
 
 Siguiente paso: Corte 5 (T065–T069). No se inició T065.
+
+---
+
+## 26. Corte 5 completado (2026-11-22 12:33)
+
+**Vigente.** §10–§25 son históricas.
+
+- Corte 5: T065–T069 completadas. **Acumulado T001–T069 = 69/82.**
+- Aislamiento: dos instancias con el mismo `case_id`, colecciones/alias/público/resultados/evidencia
+  separados; copia de storage falla con `instance_namespace_mismatch` sin escribir.
+- Procesos: exclusión mutua ingesta/reconstrucción, liberación normal y tras SIGKILL, registro
+  residual ignorado, alias conservado.
+- Escritores verificados: servicio (lock hasta confirmar disponibilidad), reconstrucción (reporte bajo
+  lock) e ingesta de corpus vía servicio. Sin primitiva duplicada.
+- Sin tablas ni migraciones; control en `qdrant-control/`, separado de `storage/qdrant`.
+- `make check`: 543 passed; `pre-commit`: verde. Servidor real: aislamiento y copia incompatible
+  verificados; servicio detenido.
+- Sin cambios de interfaz: no se repitió Playwright.
+
+Siguiente paso: Corte 6 (T070–T082). No se inició T070 ni se retiró Chroma.

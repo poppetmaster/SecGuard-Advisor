@@ -548,35 +548,35 @@ que el reintento deja el alcance válido.
 **Objetivo**: aislar instancias y coordinar procesos, reutilizando el namespace y el lock ya
 implementados en T007/T012.
 
-- [ ] T065 [P] [US7] Añadir prueba de integración en rojo de dos instancias con el mismo `case_id` y documentos distintos en `tests/integration/test_qdrant_instances.py`.
+- [x] T065 [P] [US7] Añadir prueba de integración en rojo de dos instancias con el mismo `case_id` y documentos distintos en `tests/integration/test_qdrant_instances.py`.
   - Story: US7
   - Dep: T013, T022
   - Verifies: T068
   - Check: falla antes de la verificación de aislamiento.
   - Evidence: salida RED.
 
-- [ ] T066 [P] [US7] Añadir la prueba de integración entre dos procesos reales en `tests/integration/test_qdrant_lock_processes.py` sobre los escritores ya integrados: rechazo mutuo entre ingesta y reconstrucción, liberación tras terminar el proceso, terminación abrupta (SIGKILL) y registro de propietario obsoleto tras la muerte.
+- [x] T066 [P] [US7] Añadir la prueba de integración entre dos procesos reales en `tests/integration/test_qdrant_lock_processes.py` sobre los escritores ya integrados: rechazo mutuo entre ingesta y reconstrucción, liberación tras terminar el proceso, terminación abrupta (SIGKILL) y registro de propietario obsoleto tras la muerte.
   - Story: US7
   - Dep: T019, T022, T036
   - Verifies: T019, T022, T036
   - Check: la prueba pasa con los escritores ya integrados; tras matar uno, el lock se libera, el registro residual se ignora y el alias no cambia; es verificación de integración, no prueba RED, porque el uso del lock ya existe en T019/T022/T036.
   - Evidence: salida de integración, registros de proceso y contenido del registro de propietario.
 
-- [ ] T067 [US7] Verificar la integración residual del lock en los tres escritores (`scripts/ingest_corpus.py`, `scripts/rebuild_qdrant.py`, `documents/service.py`): confirmar operación e intento, liberación en `finally` y ausencia de duplicación de la primitiva; corregir solo una omisión de integración.
+- [x] T067 [US7] Verificar la integración residual del lock en los tres escritores (`scripts/ingest_corpus.py`, `scripts/rebuild_qdrant.py`, `documents/service.py`): confirmar operación e intento, liberación en `finally` y ausencia de duplicación de la primitiva; corregir solo una omisión de integración.
   - Story: US7
   - Dep: T019, T022, T036, T066
   - Verifies: T007, T019, T022, T036
   - Check: T066 pasa; ningún escritor escribe el índice sin el lock; el registro de propietario solo cuenta mientras el lock está tomado por un proceso vivo; no se reimplementa la primitiva.
   - Evidence: salida GREEN, diff de integración y registros de proceso.
 
-- [ ] T068 [US7] Verificar aislamiento de instancias, namespace incompatible y lock con `uv run pytest tests/integration/test_qdrant_instances.py tests/integration/test_qdrant_lock_processes.py`.
+- [x] T068 [US7] Verificar aislamiento de instancias, namespace incompatible y lock con `uv run pytest tests/integration/test_qdrant_instances.py tests/integration/test_qdrant_lock_processes.py`.
   - Story: US7
   - Dep: T065, T067
   - Verifies: T065, T067
   - Check: dos instancias con el mismo caso no comparten contenido; el namespace incompatible falla cerrado; una copia del almacenamiento en otra ruta falla cerrado; el lock rechaza y se libera.
   - Evidence: salida de integración.
 
-- [ ] T069 [US7] Verificar que no se introdujo tabla ni migración para namespace o lock con `git diff --stat -- alembic/` y `uv run pytest tests/integration/test_case_persistence.py`.
+- [x] T069 [US7] Verificar que no se introdujo tabla ni migración para namespace o lock con `git diff --stat -- alembic/` y `uv run pytest tests/integration/test_case_persistence.py`.
   - Story: US7
   - Dep: T065, T067
   - Verifies: T065, T067
