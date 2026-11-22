@@ -340,7 +340,7 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Estilo e interfaz | Tailwind CSS + Flowbite gratuito, local | Fijado |
 | Documentos, embeddings, recuperación | LangChain | Fijado |
 | Conversación, memoria, herramientas | LangGraph | Fijado |
-| Inferencia | Generador local Ollama o proveedor API explícito | Objetivo 005; Ollama en transición; sin selección |
+| Inferencia | Generador local Ollama o proveedor API explícito | 005 en preparación; Ollama disponible junto a DeepSeek/Anthropic; selección explícita sin fallback; sin proveedor seleccionado ni presupuesto aprobado |
 | Proveedor API | Claude Haiku / DeepSeek como candidatos | En evaluación 005; no seleccionado |
 | Estado y procedencia | SQLite | Permanente |
 | Índice vectorial | Qdrant local persistente, derivado | Implementado y aceptado localmente en 004 (Corte 6); único backend documental; Chroma histórico fuera del producto |
@@ -362,7 +362,7 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Modelo generativo inicial | `qwen3.5:9b` (digest `56671c2ab938`, ctx 262144, Q4_K_M) | Instalado; *thinking* activo por defecto |
 | Modelo de comparación | `gemma4:latest`, 7.5B Q4_K_M | Instalado; no es 12B |
 | Modelo de embeddings | `embeddinggemma:latest`, EmbeddingGemma 1, 768 dims, 2048 tokens | Instalado; v2 no está instalada; sin cambio en 004 |
-| Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama en transición |
+| Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama se mantiene disponible junto a los externos |
 | Índice | Qdrant local persistente (004) | Implementado y aceptado localmente en 004 (Corte 6); Chroma histórico, archivos conservados; servidor local con Docker Compose 1.20.0 |
 | Transición de índice | Reconstrucción limpia sin exportación, escritura dual, comparación obligatoria ni retorno | Confirmado; recuperación ante fallos de Qdrant sí se conserva |
 | Acción externa | Telegram para evaluación (006) | No implementada; correo y mesa de ayuda posteriores |
@@ -570,6 +570,7 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-11 | Enmienda 1.3.0 ratificada por el responsable: Qdrant único backend documental; reconstrucción limpia sin exportación, escritura dual, selección permanente, comparación obligatoria ni retorno a Chroma | Permanente | III, V, VII, XII | Ratificación comunicada por Edwin Perez L.; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica; no se inventan |
 | 2026-11-11 | 004 simplificado: índice Qdrant nuevo desde fragmentos persistidos; embeddings regenerados con el mismo modelo local; datos de negocio, citas históricas y evidencia conservados; archivos Chroma no se borran en 004 | Permanente | III, V, XII | Confirmado por el responsable; elimina exportación de vectores, dual-write, comparación obligatoria y rollback; conserva recuperación ante fallos de Qdrant |
 | 2026-11-22 | 004 Qdrant **implementado y aceptado localmente**: servidor 1.20.0, umbral calibrado 0.5033, evaluación final aprobada (6/6), aceptación ASGI/Playwright y regresión completa | Estado de implementación | III, V, VII, VIII, XII | Evidencia en `docs/evidencia/004-corte-6/`; `make check` 562 passed; `make test-integration` 36 passed; Chroma intacto y datos del usuario sin cambios; no es una enmienda de principios ni implica aprobación académica |
+| 2026-11-22 | 005: Ollama local se mantiene disponible junto con adaptadores DeepSeek y Anthropic; selección explícita por configuración local, sin fallback automático ni cambio durante un turno | Decisión de alcance | IV, XI, XIII | Decisión autorizada por el responsable en la preparación de 005; no se selecciona proveedor, no se aprueba presupuesto y no se ejecutan llamadas pagadas; DeepSeek/Anthropic siguen en evaluación |
 | Pendiente | Evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal para la enmienda 1.3.0 | Pendiente | Gobernanza | La ratificación del responsable está registrada; no se inventan acuerdos del equipo |
 | Pendiente | Presupuesto API para Claude Haiku / DeepSeek | Pendiente | IV, XI | No se activan llamadas pagadas ni se crean cuentas |
 | Pendiente | Selección del proveedor API y del canal definitivo de acción | Pendiente | IV, XIV | Requiere evidencia de 005/006; no se declara ganador |
