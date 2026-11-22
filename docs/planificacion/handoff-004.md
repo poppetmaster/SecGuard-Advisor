@@ -638,3 +638,43 @@ Continuar en orden: T018–T020 (corpus/demo con lock), T021/T022/T025 (reconstr
 T040–T042 (turno). No se inició T043.
 
 Evidencia: `docs/evidencia/004-corte-2/README.md`.
+
+---
+
+## 20. Corte 2 completado (2026-11-22 11:35)
+
+**Vigente.** Las secciones §10–§19 son históricas.
+
+### Estado
+
+- Rama `004-qdrant-vector-index`. **T001–T042 completadas**; 0 abiertas en esos rangos.
+- `make check`: 502 passed. `pre-commit`: verde.
+- Qdrant es el índice de la aplicación; Chroma se conserva (código, datos y dependencias) hasta el
+  Corte 6. SQLite sigue siendo la fuente de verdad.
+- No se declara aceptación de 004.
+
+### Implementado
+
+- Adaptador Qdrant, colecciones/alias por instancia y alcance, UUIDv5, payload sin texto.
+- Ingesta del corpus y demo con Qdrant y lock por documento; targets sin Chroma.
+- Reconstrucción desde SQLite con generación nueva, validación, alias, reporte y estados.
+- `--status` de solo lectura con configuración/lock/reporte ilegible (salida 2).
+- Recuperación público/caso con score coseno y aislamiento.
+- Lock de escritura en el servicio y mapeo 409/503 en rutas.
+- Turno detenido con código clasificado, sin generador ni abstención.
+
+### Evidencia
+
+- `docs/evidencia/004-corte-2/README.md` (incluye el smoke real con servidor y EmbeddingGemma).
+- `docs/planificacion/004-ultimo-resultado.md`.
+
+### Limitaciones
+
+- Caso sin documentos privados: `case_index_unavailable` hasta T053 (alcance esperado, Corte 4).
+- Sin calibración de umbral.
+- El volumen local de Qdrant conserva colecciones del smoke `cut2-smoke`.
+
+### Siguiente paso
+
+Corte 3 (T043–T053): citas/evidencia y reinicio/disponibilidad. No se inició T043 ni ninguna tarea
+posterior.

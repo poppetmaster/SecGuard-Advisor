@@ -1,101 +1,83 @@
-# 004 — Último resultado (Corte 2, avance parcial)
+# 004 — Último resultado (Corte 2 completado)
 
-**Fecha**: 2026-11-22 10:10–10:55 (America/Bogota, `-05`)
+**Fecha**: 2026-11-22 10:10–11:35 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
-**Alcance intentado**: Corte 2, T010–T042. **No se completó**: 12 tareas cerradas, 21 pendientes.
-**Backend**: la fábrica de aplicación ya construye Qdrant por defecto, pero la ingesta del corpus y la
-reconstrucción todavía no están migradas. Es un estado intermedio de rama de funcionalidad, no una
-aceptación.
+**Alcance**: Corte 2, T010–T042. **42 de 42 tareas completadas.**
+**Backend**: Qdrant es el índice documental de la aplicación; Chroma se conserva (código, datos y
+dependencias) hasta el Corte 6. SQLite sigue siendo la fuente de verdad.
 
-## Tareas completadas (12)
+## Tareas y evidencia
 
-| Tarea | Evidencia |
-|---|---|
-| T010 pruebas del adaptador | RED capturado (`ImportError` al restaurar el código previo); 12 pruebas unitarias en verde. |
-| T011 contrato de colecciones/alias | RED capturado; 5 pruebas de contrato en verde. |
-| T012 colecciones con namespace | `instance_collection_name`, `instance_alias_name`, `new_generation_id`, validación. |
-| T013 `QdrantIndex` | UUIDv5, payload sin texto, upsert/count/query/delete, alias y errores clasificados. |
-| T014 fábrica Qdrant | `app.py` construye `QdrantIndex` desde settings; sin conexión al construir. |
-| T015 contrato de fábrica | 3 pruebas: construcción, ID ausente, ID inválido en configuración. |
-| T016 pruebas de códigos | RED observado (2 fallos) antes de registrar. |
-| T017 códigos de error | Seis códigos con 503/409 y mensajes en español; no se degradan a `internal_error`. |
-| T023 pruebas del resolvedor | RED observado (`ModuleNotFoundError`); 10 pruebas en verde. |
-| T024 resolvedor único | `retrieval/status.py`: lock, propietario, reporte terminal, errores tipados. |
-| T026 pruebas de `--status` | RED observado (5 fallos sin el script); 5 pruebas de integración en verde, sin escrituras. |
-| T027 `--status` | Salida JSON, salida 0/2, errores `instance_configuration_invalid`, `lock_unreadable`, `status_report_unreadable`. |
+- **T010–T017**: adaptador Qdrant, colecciones/alias con namespace, UUIDv5, payload sin texto, seis
+  códigos 503/409 y fábrica de aplicación.
+- **T018–T020**: ingesta del corpus público y demo con Qdrant y lock por documento; targets sin rutas
+  de Chroma.
+- **T021–T025**: reconstrucción desde SQLite con generación nueva, validación, cambio de alias,
+  retención de la anterior, reporte JSON y estados terminales.
+- **T023/T024/T026/T027**: resolvedor único y `--status` de solo lectura con los tres errores.
+- **T028–T033**: fallos, parciales, metadatos obsoletos, fragmentos incompatibles, puntos huérfanos,
+  target `qdrant-rebuild` y verificación conjunta.
+- **T034–T039**: recuperación público/caso con score coseno, aislamiento entre casos, lock de
+  escritura en el servicio y errores clasificados en rutas.
+- **T040–T042**: el turno se detiene con el código clasificado; sin generación, sin abstención y con
+  la ejecución registrada.
 
-## Tareas pendientes (21)
-
-T018–T022, T025, T028–T042. No hay bloqueo técnico registrado: es trabajo no ejecutado en esta
-sesión. Consecuencias concretas del estado intermedio:
-
-- **T018–T020**: `scripts/ingest_corpus.py` y `prepare_demo.py` siguen usando Chroma. Con la fábrica
-  ya en Qdrant, `make corpus-ingest` no alimenta el índice que consulta la aplicación.
-- **T021/T022/T025/T028–T033**: no existe reconstrucción desde SQLite, ni validación de generación,
-  ni reporte de reconstrucción, ni manejo de parciales, ni `qdrant-rebuild`.
-- **T034–T039**: la recuperación usa `score` de Qdrant y los errores clasificados ya llegan a las
-  rutas, pero faltan las pruebas de recuperación, aislamiento y mapeo de rutas.
-- **T040–T042**: el turno detiene la respuesta con el código clasificado (cambio aplicado), pero
-  faltan las pruebas de los tres escenarios de fallo.
-
-## Cambios de coherencia sin tarea cerrada
-
-Se adaptaron para que el backend por defecto no quede inoperante:
-
-- `retrieval/search.py` usa `score` cuando existe y conserva `1 - distance` para Chroma.
-- `web/app.py` mapea `retrieval.errors.IndexError` a la taxonomía HTTP.
-- `conversation/turn.py` detiene el turno con el código del fallo de índice.
-
-Estos cambios pertenecen a T035/T038/T041 y **no** se marcan como completados sin sus pruebas.
-
-## Archivos modificados o creados
-
-- `src/secguard_advisor/retrieval/collections.py` (nombres/alias de Qdrant; Chroma intacto).
-- `src/secguard_advisor/retrieval/index.py` (`QdrantIndex`, `QueryHit.score`, payload sin texto).
-- `src/secguard_advisor/retrieval/errors.py`, `src/secguard_advisor/retrieval/status.py`.
-- `src/secguard_advisor/web/errors.py`, `web/app.py`, `retrieval/search.py`,
-  `conversation/turn.py`.
-- `scripts/rebuild_qdrant.py` (solo `--status`).
-- `tests/unit/test_qdrant_index.py`, `test_qdrant_state.py`, `test_error_messages.py`;
-  `tests/contract/test_qdrant_index_contract.py`, `test_qdrant_app.py`;
-  `tests/integration/test_qdrant_status.py`.
-- `specs/004-qdrant-vector-index/tasks.md` (12 marcas).
+RED observados directamente en T010/T011/T016/T023/T026 (imports/códigos/script ausentes). El resto
+se validó con GREEN y pruebas de integración; no se fabricaron fallos.
 
 ## Comandos y resultados observados
 
 ```text
-uv run pytest tests/unit/test_qdrant_index.py tests/contract/test_qdrant_index_contract.py → 13 passed
-uv run pytest tests/unit/test_error_messages.py → 5 passed
-uv run pytest tests/contract/test_qdrant_app.py → 3 passed
-uv run pytest tests/unit/test_qdrant_state.py → 10 passed
-uv run pytest tests/integration/test_qdrant_status.py → 5 passed
-make check → 485 passed, 35 deselected
-uv run pre-commit run --all-files → todas las comprobaciones Passed
+uv run pytest (13 archivos del corte) → 53 passed
+uv run pytest test_qdrant_rebuild.py test_qdrant_rebuild_failures.py test_qdrant_status.py → 12 passed
+uv run pytest test_qdrant_retrieval.py test_qdrant_routes.py → 5 passed
+uv run pytest test_qdrant_corpus_targets.py → 2 passed
+make check → 502 passed, 35 deselected
+uv run pre-commit run --all-files → Passed
+make -n qdrant-rebuild → uv run python scripts/rebuild_qdrant.py
+make help → qdrant-rebuild listado
 ```
 
-RED capturados: imports ausentes del adaptador, códigos sin registrar y script `--status` ausente.
-Las pruebas del adaptador y del resolvedor usan Qdrant en modo embebido; el servidor Qdrant estaba
-disponible pero no se usó para ingesta real en este avance.
+### Integración real (servidor Qdrant + EmbeddingGemma)
+
+Con `SECGUARD_INSTANCE_ID=cut2-smoke`, storage y corpus temporales, `sample.pdf` ficticio y
+`embeddinggemma` (768):
+
+```text
+ingest público: created, 1 chunk; count = 1
+ingest de caso: created, 1 chunk
+rebuild: partial — public 1/1/0/1/0; case 1/1/0/0/0
+search: ok, 2 hits, orígenes case_evidence + public_corpus, top score 0.1389
+```
+
+El alcance público quedó `partial` porque el volumen del servidor conservaba una generación de un
+smoke anterior con otros `chunk_id`: el punto sobrante se reportó como huérfano y el alias anterior se
+conservó, justo el comportamiento exigido. El caso se validó y publicó su alias. El servicio se
+detuvo con `make qdrant-down` (sin `-v`); el volumen se conservó.
+
+## Archivos principales
+
+- `retrieval/index.py` (QdrantIndex), `collections.py`, `errors.py`, `status.py`, `rebuild.py`.
+- `corpus/ingest.py`, `documents/service.py`, `web/app.py`, `web/errors.py`, `search.py`, `turn.py`.
+- `scripts/ingest_corpus.py`, `scripts/prepare_demo.py`, `scripts/rebuild_qdrant.py`, `Makefile`.
+- Pruebas: 13 archivos nuevos entre unit, contract e integration.
+- `specs/004-qdrant-vector-index/tasks.md`: T001–T042 marcadas.
 
 ## Limitaciones vigentes
 
-- La aplicación usa Qdrant por defecto mientras la ingesta del corpus sigue en Chroma.
-- No hay reconstrucción del índice ni generación/alias validada desde SQLite.
-- La ausencia de alias produce `public_index_unavailable`/`case_index_unavailable` sin la lógica de
-  alcance esperado (pertenece al Corte 4).
-- No se ejecutaron pruebas contra el servidor Qdrant para ingesta/recuperación, ni calibración.
-- No se retiraron dependencias ni archivos de Chroma.
+- Un caso sin documentos privados todavía produce `case_index_unavailable` al consultar; la
+  distinción de alcance esperado pertenece a T053 (Corte 4).
+- No hay calibración del umbral: se usa el valor por defecto existente y no se declara calibrado.
+- No se retiraron dependencias ni datos de Chroma.
+- En el volumen local de Qdrant quedan colecciones del smoke con instancia `cut2-smoke`; no afectan a
+  las pruebas, que usan almacenamiento temporal o modo embebido.
+- No se declara aceptación de 004.
 
 ## Commits de esta pasada
 
-`a532a91 feat(web): register qdrant index error codes` ·
-`cc92007 feat(retrieval): add qdrant collections and index adapter` ·
-`86de5c8 feat(app): build qdrant index and classify index failures` ·
-`a41f4fe feat(conversation): stop turns on classified index failures` ·
-`7f2dec7 feat(retrieval): add rebuild status resolver and status command`
+`12d6e51` corpus con lock · `5be439b` reconstrucción · `83f2fc4` lock y mapeo de conflictos ·
+`373b136` pruebas de recuperación y fallo de turno · `270bf26` avance parcial previo.
 
 ## Siguiente paso
 
-Continuar el Corte 2 en este orden: T018–T020 (corpus y demo con lock), T021/T022/T025 (reconstrucción
-y reporte), T028–T033 (fallos, parciales, huérfanos, target y verificación), T034–T039 (recuperación,
-servicio, rutas) y T040–T042 (fallo de índice en el turno). No se inició T043.
+Corte 3 (T043–T053): citas/evidencia y reinicio/disponibilidad. No se inició T043.

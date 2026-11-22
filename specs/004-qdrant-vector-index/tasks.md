@@ -171,20 +171,20 @@ historias.
   - Check: T016 pasa; `AppError("case_index_unavailable").code` devuelve `case_index_unavailable` y no `internal_error`.
   - Evidence: diff de `web/errors.py` y salida GREEN.
 
-- [ ] T018 Añadir prueba de integración en rojo de la ingesta del corpus público en Qdrant en `tests/integration/test_qdrant_corpus_ingest.py`.
+- [x] T018 Añadir prueba de integración en rojo de la ingesta del corpus público en Qdrant en `tests/integration/test_qdrant_corpus_ingest.py`.
   - Story: Foundational
   - Dep: T013
   - Verifies: T019
   - Check: falla porque la ingesta sigue usando Chroma.
   - Evidence: salida RED.
 
-- [ ] T019 Migrar `scripts/ingest_corpus.py` y `scripts/prepare_demo.py` a Qdrant, integrando la adquisición y liberación del lock de instancia con la operación `ingestion`, sin tocar `storage/chroma` ni la instancia del usuario.
+- [x] T019 Migrar `scripts/ingest_corpus.py` y `scripts/prepare_demo.py` a Qdrant, integrando la adquisición y liberación del lock de instancia con la operación `ingestion`, sin tocar `storage/chroma` ni la instancia del usuario.
   - Story: Foundational
   - Dep: T018
   - Check: la ingesta de prueba crea puntos en el alcance público con procedencia, sin registros Qualys y sin rutas de Chroma; el lock se toma antes de escribir y se libera en `finally`; con el lock tomado por una reconstrucción, la ingesta falla con `reconstruction_in_progress`.
   - Evidence: diff de los scripts y salida GREEN.
 
-- [ ] T020 Actualizar los targets `corpus-ingest` y `demo-prepare` del `Makefile` con comentarios `##` y añadir la prueba de contrato que verifica que usan Qdrant y ninguna ruta de Chroma.
+- [x] T020 Actualizar los targets `corpus-ingest` y `demo-prepare` del `Makefile` con comentarios `##` y añadir la prueba de contrato que verifica que usan Qdrant y ninguna ruta de Chroma.
   - Story: Foundational
   - Dep: T019
   - Verifies: T019
@@ -205,14 +205,14 @@ observables.
 **Independent Test**: indexar un caso ficticio desde SQLite, verificar IDs, conteos, payload y alias;
 repetir sin duplicados.
 
-- [ ] T021 [P] [US1] Añadir prueba de integración en rojo de la reconstrucción inicial desde SQLite en `tests/integration/test_qdrant_rebuild.py`.
+- [x] T021 [P] [US1] Añadir prueba de integración en rojo de la reconstrucción inicial desde SQLite en `tests/integration/test_qdrant_rebuild.py`.
   - Story: US1
   - Dep: T012, T013
   - Verifies: T022, T025
   - Check: falla antes de que exista el comando de reconstrucción.
   - Evidence: salida RED.
 
-- [ ] T022 [US1] Implementar el núcleo de `scripts/rebuild_qdrant.py`: adquirir el lock de instancia con la operación `rebuild` y liberarlo en `finally`, leer SQLite, seleccionar versiones vigentes disponibles, regenerar embeddings locales y crear una colección de generación.
+- [x] T022 [US1] Implementar el núcleo de `scripts/rebuild_qdrant.py`: adquirir el lock de instancia con la operación `rebuild` y liberarlo en `finally`, leer SQLite, seleccionar versiones vigentes disponibles, regenerar embeddings locales y crear una colección de generación.
   - Story: US1
   - Dep: T021
   - Check: T021 avanza hasta la generación esperada sin usar Chroma; el lock se toma antes de leer o escribir y se libera incluso si la reconstrucción falla; con una ingesta activa, el comando falla con `ingestion_in_progress`.
@@ -231,7 +231,7 @@ repetir sin duplicados.
   - Check: las pruebas de T023 pasan; no existe otra implementación del sondeo, del propietario ni de la interpretación del reporte; un reporte ilegible devuelve error con `last_terminal: null`.
   - Evidence: módulo y salida GREEN.
 
-- [ ] T025 [US1] Implementar la validación de UUID, conteos y payload, el cambio de alias, la retención de la generación anterior y el reporte JSON con el estado terminal por alcance y global (`completed`, `partial` o `failed`); los cinco estados de reconstrucción los expone el resolvedor. El estado global del reporte se obtiene del resolvedor único `retrieval/status.py` (`terminal_status`); no se reimplementan el sondeo del lock, la lectura del propietario ni la interpretación del reporte terminal.
+- [x] T025 [US1] Implementar la validación de UUID, conteos y payload, el cambio de alias, la retención de la generación anterior y el reporte JSON con el estado terminal por alcance y global (`completed`, `partial` o `failed`); los cinco estados de reconstrucción los expone el resolvedor. El estado global del reporte se obtiene del resolvedor único `retrieval/status.py` (`terminal_status`); no se reimplementan el sondeo del lock, la lectura del propietario ni la interpretación del reporte terminal.
   - Story: US1
   - Dep: T022, T024
   - Check: T021 pasa; una validación parcial no cambia el alias; un lock con operación `rebuild` no se reporta como éxito; una ingesta activa no se reporta como reconstrucción en curso; un registro residual con el lock libre no demuestra actividad; la ausencia de reporte no se reporta como fallo.
@@ -250,39 +250,39 @@ repetir sin duplicados.
   - Check: las pruebas de T026 pasan; con lock libre y metadatos residuales devuelve el último resultado terminal o `not_started`; con ausencia total de estado devuelve `not_started` y salida 0; reporte ilegible, configuración inválida y lock ilegible devuelven salida 2 con su `error.code` sin inventar estado; el directorio de control queda idéntico (sin marcador, lock ni directorios nuevos).
   - Evidence: salida GREEN, JSON de estado, JSON de error y comparación de archivos.
 
-- [ ] T028 [US1] Añadir pruebas de integración en rojo de interrupción, reconstrucción parcial, reintento seguro, ingesta activa y metadatos obsoletos del lock en `tests/integration/test_qdrant_rebuild_failures.py`.
+- [x] T028 [US1] Añadir pruebas de integración en rojo de interrupción, reconstrucción parcial, reintento seguro, ingesta activa y metadatos obsoletos del lock en `tests/integration/test_qdrant_rebuild_failures.py`.
   - Story: US1
   - Dep: T022
   - Verifies: T029
   - Check: fallan antes del manejo de fallos y de la resolución de estado por propietario.
   - Evidence: salida RED.
 
-- [ ] T029 [US1] Implementar el reporte de interrupción y parcial, la conservación del alias y la limpieza segura del reintento.
+- [x] T029 [US1] Implementar el reporte de interrupción y parcial, la conservación del alias y la limpieza segura del reintento.
   - Story: US1
   - Dep: T028
   - Check: T028 pasa; una generación parcial nunca queda activa.
   - Evidence: salida GREEN y reporte.
 
-- [ ] T030 [P] [US1] Añadir pruebas en rojo de fragmentos no indexables (sin texto, metadatos inválidos, dimensión o modelo incompatible) y de puntos huérfanos sin `chunk_id` en SQLite.
+- [x] T030 [P] [US1] Añadir pruebas en rojo de fragmentos no indexables (sin texto, metadatos inválidos, dimensión o modelo incompatible) y de puntos huérfanos sin `chunk_id` en SQLite.
   - Story: US1
   - Dep: T022
   - Verifies: T031
   - Check: fallan antes del reporte de discrepancias.
   - Evidence: salida RED.
 
-- [ ] T031 [US1] Implementar la exclusión y el reporte de fragmentos no indexables y el conteo de puntos huérfanos como `extra_chunks`, sin resolverlos como cita.
+- [x] T031 [US1] Implementar la exclusión y el reporte de fragmentos no indexables y el conteo de puntos huérfanos como `extra_chunks`, sin resolverlos como cita.
   - Story: US1
   - Dep: T030
   - Check: T030 pasa; un punto huérfano se reporta y no se devuelve como resultado.
   - Evidence: salida GREEN y reporte.
 
-- [ ] T032 [US1] Añadir el target `qdrant-rebuild` al `Makefile`, con comentario `##` para `make help`, usando la configuración de instancia y almacenamiento.
+- [x] T032 [US1] Añadir el target `qdrant-rebuild` al `Makefile`, con comentario `##` para `make help`, usando la configuración de instancia y almacenamiento.
   - Story: US1
   - Dep: T022
   - Check: `make -n qdrant-rebuild` usa el script y ninguna ruta de Chroma; `make help` lo lista.
   - Evidence: diff del `Makefile` y salida de `make -n`.
 
-- [ ] T033 [US1] Verificar idempotencia, parcial, reintento, reporte, consulta de estado y ausencia de efectos de escritura con `uv run pytest tests/integration/test_qdrant_rebuild.py tests/integration/test_qdrant_rebuild_failures.py tests/integration/test_qdrant_status.py`.
+- [x] T033 [US1] Verificar idempotencia, parcial, reintento, reporte, consulta de estado y ausencia de efectos de escritura con `uv run pytest tests/integration/test_qdrant_rebuild.py tests/integration/test_qdrant_rebuild_failures.py tests/integration/test_qdrant_status.py`.
   - Story: US1
   - Dep: T024, T025, T027, T029, T031
   - Verifies: T022, T024, T025, T027, T029, T031
@@ -301,59 +301,59 @@ explícito.
 **Independent Test**: consultar dos casos ficticios y el corpus público; verificar resultados,
 procedencia, ausencia de cruces y que un fallo de índice no produce abstención.
 
-- [ ] T034 [P] [US2] Añadir prueba de integración en rojo de recuperación público/caso y resolución de citas en `tests/integration/test_qdrant_retrieval.py`.
+- [x] T034 [P] [US2] Añadir prueba de integración en rojo de recuperación público/caso y resolución de citas en `tests/integration/test_qdrant_retrieval.py`.
   - Story: US2
   - Dep: T012, T013
   - Verifies: T035, T036, T037
   - Check: falla antes de la integración de búsqueda.
   - Evidence: salida RED.
 
-- [ ] T035 [US2] Adaptar `src/secguard_advisor/retrieval/search.py`: resolución de alias, similitud coseno, umbral calibrado y errores clasificados de índice.
+- [x] T035 [US2] Adaptar `src/secguard_advisor/retrieval/search.py`: resolución de alias, similitud coseno, umbral calibrado y errores clasificados de índice.
   - Story: US2
   - Dep: T034
   - Check: T034 usa resultados de Qdrant y no asume `1 - distance`; un fallo de índice eleva un error clasificado.
   - Evidence: diff y salida de pruebas.
 
-- [ ] T036 [US2] Adaptar `src/secguard_advisor/documents/service.py` al adaptador Qdrant sin cambiar el protocolo de dominio, integrando la adquisición y liberación del lock de instancia con la operación `ingestion` alrededor de la escritura del índice.
+- [x] T036 [US2] Adaptar `src/secguard_advisor/documents/service.py` al adaptador Qdrant sin cambiar el protocolo de dominio, integrando la adquisición y liberación del lock de instancia con la operación `ingestion` alrededor de la escritura del índice.
   - Story: US2
   - Dep: T035
   - Check: la ingesta y la recuperación de integración pasan con Qdrant; el lock se toma solo para escribir el índice y se libera en `finally`; con una reconstrucción activa, la ingesta falla con `reconstruction_in_progress`.
   - Evidence: diff y salida de pruebas.
 
-- [ ] T037 [P] [US2] Añadir pruebas de contrato en rojo del mapeo de errores en rutas en `tests/contract/test_qdrant_routes.py`: cada código conserva su código y estado, con mensaje comprensible y sin degradarse a `internal_error`.
+- [x] T037 [P] [US2] Añadir pruebas de contrato en rojo del mapeo de errores en rutas en `tests/contract/test_qdrant_routes.py`: cada código conserva su código y estado, con mensaje comprensible y sin degradarse a `internal_error`.
   - Story: US2
   - Dep: T017, T035
   - Verifies: T038
   - Check: fallan antes de adaptar la fábrica y las rutas.
   - Evidence: salida RED.
 
-- [ ] T038 [US2] Adaptar `src/secguard_advisor/web/app.py` y las rutas afectadas: readiness de Qdrant, resultados vacíos y errores clasificados que conservan su código.
+- [x] T038 [US2] Adaptar `src/secguard_advisor/web/app.py` y las rutas afectadas: readiness de Qdrant, resultados vacíos y errores clasificados que conservan su código.
   - Story: US2
   - Dep: T036, T037
   - Check: T037 pasa; las rutas devuelven 503/409 con el código correcto para Qdrant no disponible y no declaran «sin evidencia» ante un fallo de índice.
   - Evidence: diff de rutas y salida GREEN.
 
-- [ ] T039 [US2] Verificar recuperación público/caso, aislamiento y errores de ruta con `uv run pytest tests/integration/test_qdrant_retrieval.py tests/contract/test_qdrant_routes.py`.
+- [x] T039 [US2] Verificar recuperación público/caso, aislamiento y errores de ruta con `uv run pytest tests/integration/test_qdrant_retrieval.py tests/contract/test_qdrant_routes.py`.
   - Story: US2
   - Dep: T035, T036, T037, T038
   - Verifies: T035, T036, T038
   - Check: el corpus público y el caso actual se recuperan; los documentos privados no cruzan casos; los códigos de error se conservan.
   - Evidence: salida de integración y contrato.
 
-- [ ] T040 [P] [US2] Añadir pruebas en rojo de la integración del turno ante fallo de índice en `tests/integration/test_qdrant_index_failure_turn.py`: Qdrant caído, alias público ausente y alias privado esperado ausente; el turno no produce abstención, no ejecuta la generación y registra paso y ejecución con el código.
+- [x] T040 [P] [US2] Añadir pruebas en rojo de la integración del turno ante fallo de índice en `tests/integration/test_qdrant_index_failure_turn.py`: Qdrant caído, alias público ausente y alias privado esperado ausente; el turno no produce abstención, no ejecuta la generación y registra paso y ejecución con el código.
   - Story: US2
   - Dep: T035, T038
   - Verifies: T041
   - Check: fallan antes de la propagación del fallo.
   - Evidence: salida RED.
 
-- [ ] T041 [US2] Implementar la propagación del fallo de índice: `retrieval/search.py` eleva el error clasificado, `conversation/nodes.py` registra el paso con su estado real, y `conversation/graph.py` y `conversation/turn.py` detienen la respuesta y registran la ejecución.
+- [x] T041 [US2] Implementar la propagación del fallo de índice: `retrieval/search.py` eleva el error clasificado, `conversation/nodes.py` registra el paso con su estado real, y `conversation/graph.py` y `conversation/turn.py` detienen la respuesta y registran la ejecución.
   - Story: US2
   - Dep: T040
   - Check: T040 pasa; el nodo de generación no se ejecuta; la evidencia conserva el código clasificado.
   - Evidence: diff de los cuatro módulos y salida GREEN.
 
-- [ ] T042 [US2] Verificar que un fallo de índice nunca produce abstención ni generación documental con `uv run pytest tests/integration/test_qdrant_index_failure_turn.py`.
+- [x] T042 [US2] Verificar que un fallo de índice nunca produce abstención ni generación documental con `uv run pytest tests/integration/test_qdrant_index_failure_turn.py`.
   - Story: US2
   - Dep: T041
   - Verifies: T041

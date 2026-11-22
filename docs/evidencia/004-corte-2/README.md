@@ -1,96 +1,82 @@
-# Corte 2 — Avance parcial (T010–T017, T023, T024, T026, T027)
+# Corte 2 — Evidencia de integración con Qdrant
 
-**Fecha**: 2026-11-22 10:10–10:55 (America/Bogota, `-05`)
+**Fecha**: 2026-11-22 10:10–11:35 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
-**Estado**: 12 de 33 tareas cerradas. Corte **no** completado. No se declara aceptación de 004.
+**Estado**: T010–T042 completadas (42/42). No se declara aceptación de 004 ni se retira Chroma.
 
-## Qué se implementó
-
-### Adaptador y colecciones (T010–T013)
-
-- `retrieval/collections.py`: nombres físicos `secguard__<instancia>__<alcance>__<modelo>__<dim>__g<UTC>`
-  y alias `...__active`; las funciones de Chroma se conservan.
-- `retrieval/index.py`: `QdrantIndex` con cliente inyectable (servidor o modo embebido), UUIDv5
-  determinista del `chunk_id`, payload sin texto, upsert/count/query/delete, resolución de alias y
-  creación de generación/alias en el primer upsert.
-- `retrieval/errors.py`: `qdrant_unavailable`, `case_index_unavailable`,
-  `public_index_unavailable`, `instance_namespace_mismatch`.
-
-### Errores y fábrica (T014–T017)
-
-- `web/errors.py`: los seis códigos con 503/409 y mensajes en español; no se degradan a
-  `internal_error`.
-- `web/app.py`: la fábrica construye `QdrantIndex` desde `SECGUARD_QDRANT_URL`,
-  `SECGUARD_INSTANCE_ID` y el timeout; no conecta al construir.
-
-### Estado (T023, T024, T026, T027)
-
-- `retrieval/status.py`: resolvedor único con `resolve_operation_state` y `terminal_status`.
-- `scripts/rebuild_qdrant.py --status`: JSON con `state`, `lock_owner`, `last_terminal` y `error`;
-  salida 0 para estados normales y 2 para configuración inválida, lock ilegible o reporte ilegible.
-  No crea archivos, marcadores, colecciones ni embeddings.
-
-## Evidencia observada
-
-### RED capturados
+## Pruebas automatizadas
 
 ```text
-# antés del adaptador (código previo restaurado temporalmente)
-ERROR tests/unit/test_qdrant_index.py
-ERROR tests/contract/test_qdrant_index_contract.py
-E   ImportError / símbolos nuevos ausentes
+$ uv run pytest tests/unit/test_qdrant_index.py tests/unit/test_qdrant_state.py \
+  tests/unit/test_error_messages.py tests/contract/test_qdrant_index_contract.py \
+  tests/contract/test_qdrant_app.py tests/contract/test_qdrant_routes.py \
+  tests/contract/test_qdrant_corpus_targets.py tests/integration/test_qdrant_corpus_ingest.py \
+  tests/integration/test_qdrant_rebuild.py tests/integration/test_qdrant_rebuild_failures.py \
+  tests/integration/test_qdrant_status.py tests/integration/test_qdrant_retrieval.py \
+  tests/integration/test_qdrant_service_lock.py
+53 passed
 
-# códigos sin registrar
-FAILED test_qdrant_codes_keep_their_own_code_and_status
-FAILED test_qdrant_codes_are_not_demoted_to_internal_error
+$ make check
+502 passed, 35 deselected
 
-# resolvedor ausente
-ERROR tests/unit/test_qdrant_state.py
-
-# script --status ausente
-FAILED tests/integration/test_qdrant_status.py (5 failed)
+$ uv run pre-commit run --all-files
+Todas las comprobaciones: Passed
 ```
 
-### GREEN
+RED observados directamente:
+
+- Adaptador ausente: `ERROR tests/unit/test_qdrant_index.py` e `ImportError` de símbolos nuevos.
+- Códigos sin registrar: 2 fallos en `test_error_messages.py`.
+- Resolvedor ausente: `ModuleNotFoundError` en `test_qdrant_state.py`.
+- `--status` ausente: 5 fallos en `test_qdrant_status.py`.
+
+No se fabricaron fallos; las tareas restantes se validaron con GREEN e integración.
+
+## Integración real (servidor + EmbeddingGemma)
+
+Entorno: Docker Desktop 29.9.3, contenedor `secguard-qdrant` (imagen `v1.20.0`), Ollama
+`embeddinggemma` (768), storage y corpus temporales, `SECGUARD_INSTANCE_ID=cut2-smoke`.
 
 ```text
-uv run pytest tests/unit/test_qdrant_index.py tests/contract/test_qdrant_index_contract.py → 13 passed
-uv run pytest tests/unit/test_error_messages.py → 5 passed
-uv run pytest tests/contract/test_qdrant_app.py → 3 passed
-uv run pytest tests/unit/test_qdrant_state.py → 10 passed
-uv run pytest tests/integration/test_qdrant_status.py → 5 passed
-make check → 485 passed, 35 deselected
-uv run pre-commit run --all-files → Passed
+ingest público (sample.pdf ficticio): created, 1 chunk
+count público tras ingesta: 1
+ingest de caso: created, 1 chunk
+rebuild: partial
+  public: expected=1 indexed=1 missing=0 extra=1 skipped=0
+  case:   expected=1 indexed=1 missing=0 extra=0 skipped=0
+search: ok, 2 hits, orígenes case_evidence + public_corpus, top score 0.1389
 ```
 
-### Comportamiento verificado
+El `extra=1` público es un punto de una generación anterior del mismo servidor (smoke previo con otros
+`chunk_id`): se contó como discrepancia y el alias anterior se conservó. Es la detección de huérfanos
+exigida, no un fallo de la reconstrucción.
 
-- `point_id` es estable por `chunk_id`; el payload no contiene texto.
-- Dos upserts del mismo `chunk_id` dejan un solo punto.
-- `delete_version` y `delete_ids` reducen el conteo esperado.
-- Alias ausente → `public_index_unavailable` o `case_index_unavailable`.
-- `--status` sin estado devuelve `not_started` y no crea archivos; el lock activo distingue
-  `ingestion_in_progress` de `rebuild_in_progress`; los metadatos residuales con lock libre se
-  ignoran; el reporte ilegible devuelve salida 2 sin repararlo.
+Detención: `make qdrant-down` sin `-v`; contenedor y red eliminados, volumen conservado. No se
+interrumpió ningún servicio ajeno.
 
-Ejemplo de salida:
+## Comportamientos verificados
 
-```json
-{"state": "not_started", "lock_owner": null, "last_terminal": null, "error": null}
-```
-
-## Pendiente (21 tareas)
-
-T018–T022, T025, T028–T042. En particular:
-
-- Ingesta del corpus y demo siguen en Chroma; falta el lock de escritura en esos scripts.
-- No existe reconstrucción desde SQLite ni reporte de generación/alias.
-- Faltan pruebas de recuperación, aislamiento, rutas, parciales, huérfanos y fallo de turno.
-- La aplicación usa Qdrant por defecto, pero el corpus aún no se ingesta en Qdrant: **no usar
-  `make corpus-ingest` como fuente del índice hasta completar T018–T020**.
+- Ingesta y recuperación del corpus público y del documento de caso.
+- Aislamiento: los documentos privados de un caso no aparecen en otro; el público sí.
+- Reconstrucción repetida: nueva generación, mismo conteo, sin duplicados.
+- Interrupción/fallo de embeddings: estado `failed`, sin alias nuevo.
+- Fragmento con dimensión incompatible: `partial`, alias anterior conservado.
+- Punto huérfano: `extra_chunks`, alias anterior conservado, nunca resuelto como cita.
+- Metadatos de lock obsoletos con lock libre: no bloquean.
+- `--status`: `not_started`, ingesta activa, reconstrucción activa, terminales y errores de
+  configuración/lock/reporte con salida 2; sin crear ni modificar archivos.
+- Errores HTTP 503 en rutas y turno detenido sin llamada al generador ni abstención.
+- Lock ocupado: ingesta rechazada con `reconstruction_in_progress`; reconstrucción rechazada con
+  `ingestion_in_progress`.
 
 ## Datos y servicios
 
-No se modificó `storage/` del usuario, SQLite, Chroma ni documentos existentes. Las pruebas usan
-Qdrant en modo embebido sobre directorios temporales. El servidor Qdrant estaba disponible pero no se
-usó para ingesta real en este avance. No se ejecutaron migraciones ni reconstrucciones.
+No se modificó `storage/` del usuario, SQLite, Chroma, documentos, casos ni Qualys. Las pruebas
+automatizadas usan Qdrant embebido y directorios temporales. El volumen local de Qdrant conserva
+colecciones del smoke `cut2-smoke`, sin efecto en las pruebas.
+
+## Pendiente del corte siguiente
+
+Citaciones/versiones y evidencia (T043–T048), reinicio/disponibilidad (T049–T053), primer documento y
+alcance vacío (T054–T059), recuperación/parciales (T060–T064), instancias/lock entre procesos
+(T065–T069), retiro de Chroma, calibración y aceptación (T070–T082).
