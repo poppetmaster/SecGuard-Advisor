@@ -1,6 +1,6 @@
 # 004 — Último resultado (Corte 1)
 
-**Fecha**: 2026-11-22 09:30–10:05 (America/Bogota, `-05`)
+**Fecha**: 2026-11-22 09:30–09:35 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
 **Alcance ejecutado**: Corte 1, T001–T009. No se inició T010 ni ninguna tarea posterior.
 **Backend documental**: Chroma sigue siendo el backend activo. Qdrant queda preparado como
@@ -77,6 +77,23 @@ Línea base previa a los cambios: `make check` = `417 passed, 35 deselected`.
 - No se ejecutaron migraciones ni reconstrucciones; no se tocó almacenamiento del usuario.
 - Las pruebas de instancia y lock usan directorios temporales.
 - No se sustituyó la versión fijada para evitar el bloqueo.
+
+## Reintento de verificación (2026-11-22 09:32)
+
+Se volvió a comprobar Docker antes de ejecutar T002/T009:
+
+- `which -a docker docker-compose`: no encontrados; el `PATH` ya incluye `/usr/local/bin` y
+  `/opt/homebrew/bin`.
+- Sin aplicaciones Docker, OrbStack, Rancher Desktop ni Podman en `/Applications`; sin procesos ni
+  entradas de `launchctl`.
+- `docker compose config`, `docker manifest inspect`, `make qdrant-up` y `make qdrant-health` fallan
+  porque el comando `docker` no existe. No es un problema de PATH.
+- Comprobaciones estáticas repetidas: compose fijado en `v1.20.0`, puertos solo loopback, volumen
+  `./storage/qdrant`; el registro de la imagen confirma `linux/amd64` y `linux/arm64`; 40 pruebas
+  pasan.
+
+No se instaló Docker ni se modificó la configuración global. T002 y T009 siguen abiertas. No se
+arrancó ningún servicio y no se tocó el volumen.
 
 ## Siguiente paso
 

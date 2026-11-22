@@ -143,3 +143,50 @@ Antes de los cambios, `make check` registró `417 passed, 35 deselected`.
    `make qdrant-down` conservando el volumen (T009).
 
 No se sustituyó la versión fijada ni se cambió el alcance para evitar el bloqueo.
+
+## Reintento de verificación (2026-11-22 09:32, America/Bogota)
+
+Se repitió la comprobación de disponibilidad de Docker antes de ejecutar T002/T009.
+
+Búsqueda realizada, sin modificar configuración global:
+
+```text
+PATH incluye /usr/local/bin y /opt/homebrew/bin
+which -a docker docker-compose        → no encontrados
+/Applications                          → sin Docker, OrbStack, Rancher Desktop ni Podman
+/usr/local/bin/docker                  → no existe
+/opt/homebrew/bin/docker               → no existe
+~/.docker/bin, ~/.orbstack/bin, ~/.rd/bin → no existen
+procesos docker/orbstack/colima        → ninguno
+launchctl                              → ninguna entrada
+```
+
+Ejecución de las comprobaciones exigidas:
+
+```text
+$ docker compose -f compose.qdrant.yml config
+zsh: command not found: docker
+$ docker manifest inspect qdrant/qdrant:v1.20.0
+zsh: command not found: docker
+$ make qdrant-up
+make: docker: No such file or directory
+$ make qdrant-health
+curl: (7) Failed to connect to 127.0.0.1 port 6333
+```
+
+No es un problema de PATH: no hay motor ni CLI instalados. No se instaló Docker ni se modificó la
+configuración del sistema.
+
+Comprobaciones estáticas repetidas:
+
+```text
+compose: qdrant/qdrant:v1.20.0
+puertos: 127.0.0.1:6333:6333, 127.0.0.1:6334:6334
+volumen: ./storage/qdrant:/qdrant/storage
+restart: unless-stopped
+registro de imagen: linux/amd64 y linux/arm64
+pruebas: 40 passed (instancia, configuración y contrato de despliegue)
+```
+
+Resultado: T002 y T009 continúan abiertas. No se arrancó ningún servicio, no hubo nada que detener y
+no se tocó el volumen. No se cambió la versión fijada.

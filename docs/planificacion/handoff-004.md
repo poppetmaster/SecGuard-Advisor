@@ -517,3 +517,24 @@ No se levantaron servicios, no se ejecutaron migraciones ni reconstrucciones y n
 
 No constan acuerdos de Cristian Quebrada ni Ruben Dario Sabogal; no se inventan. La ratificación del
 responsable está registrada. No se creó commit remoto ni se publicó nada.
+
+---
+
+## 16. Reintento de verificación del Corte 1 (2026-11-22 09:32)
+
+**Vigente para el estado del Corte 1.** Se repitió la comprobación de Docker sin cambios en el
+sistema.
+
+- `docker` y `docker compose` no existen; el `PATH` ya incluye `/usr/local/bin` y `/opt/homebrew/bin`.
+- No hay Docker Desktop, OrbStack, Rancher Desktop, Podman ni Colima instalados, ni procesos o
+  entradas de `launchctl` relacionadas.
+- Fallan `docker compose config`, `docker manifest inspect`, `make qdrant-up` y `make qdrant-health`
+  con «command not found» o conexión rechazada en 6333.
+- Evidencia estática repetida: imagen `qdrant/qdrant:v1.20.0`, puertos solo loopback, volumen
+  `./storage/qdrant`; registro con `linux/amd64` y `linux/arm64`; 40 pruebas en verde.
+
+Estado: **T002 y T009 siguen abiertas**. T001, T003–T008 completadas. No se instaló Docker, no se
+arrancó ningún servicio y no se modificó el volumen, SQLite, Chroma ni los datos.
+
+Siguiente paso: repetir las cuatro comprobaciones en un equipo con Docker y, solo entonces, marcar
+T002/T009 y comenzar el Corte 2 (T010–T042). No se inició T010.
