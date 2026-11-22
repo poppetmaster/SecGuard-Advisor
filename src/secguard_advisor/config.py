@@ -1,12 +1,17 @@
 """Configuración de la aplicación."""
 
+import re
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from secguard_advisor import __version__
+
+# Slug de instancia: estable, opaco y sin rutas. Compartido con retrieval.instance.
+INSTANCE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{2,39}$")
 
 
 class Settings(BaseSettings):
@@ -26,6 +31,14 @@ class Settings(BaseSettings):
 
     storage_dir: Path = Field(default=Path("./storage"), validation_alias="SECGUARD_STORAGE_DIR")
     corpus_dir: Path = Field(default=Path("data/corpus"), validation_alias="SECGUARD_CORPUS_DIR")
+
+    # Identidad de instancia para el namespace de Qdrant. Opcional mientras Chroma
+    # siga siendo el backend documental; obligatoria para usar Qdrant.
+    instance_id: str | None = Field(default=None, validation_alias="SECGUARD_INSTANCE_ID")
+    qdrant_url: str = Field(default="http://127.0.0.1:6333", validation_alias="SECGUARD_QDRANT_URL")
+    qdrant_timeout_seconds: float = Field(
+        default=5.0, validation_alias="SECGUARD_QDRANT_TIMEOUT_SECONDS"
+    )
 
     ollama_base_url: str = Field(
         default="http://127.0.0.1:11434", validation_alias="OLLAMA_BASE_URL"
@@ -89,12 +102,30 @@ class Settings(BaseSettings):
         default="secguard-advisor-dev", validation_alias="LANGSMITH_PROJECT"
     )
 
-    @field_validator("reviewer_name", "langsmith_api_key", mode="before")
+    @field_validator("reviewer_name", "langsmith_api_key", "instance_id", mode="before")
     @classmethod
     def _empty_string_is_none(cls, value: object) -> object:
         if isinstance(value, str):
             value = value.strip()
             return value or None
+        return value
+
+    @field_validator("instance_id")
+    @classmethod
+    def _validate_instance_id(cls, value: str | None) -> str | None:
+        if value is not None and not INSTANCE_ID_PATTERN.fullmatch(value):
+            raise ValueError(
+                "SECGUARD_INSTANCE_ID debe ser un slug de 3 a 40 caracteres "
+                "en minusculas, digitos o guiones."
+            )
+        return value
+
+    @field_validator("qdrant_url")
+    @classmethod
+    def _validate_qdrant_url(cls, value: str) -> str:
+        parts = urlsplit(value)
+        if parts.scheme not in {"http", "https"} or not parts.hostname:
+            raise ValueError("SECGUARD_QDRANT_URL debe ser una URL http(s) con host.")
         return value
 
     @property

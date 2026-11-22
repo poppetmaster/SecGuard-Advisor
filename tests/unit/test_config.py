@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from secguard_advisor.config import Settings
 
 
@@ -54,3 +57,43 @@ def test_ensure_directories(tmp_path: Path) -> None:
     assert settings.storage_dir.is_dir()
     assert settings.chroma_dir.is_dir()
     assert settings.originals_dir.is_dir()
+
+
+def test_qdrant_settings_default_to_local_loopback() -> None:
+    settings = Settings(_env_file=None)
+
+    assert settings.instance_id is None
+    assert settings.qdrant_url == "http://127.0.0.1:6333"
+    assert settings.qdrant_timeout_seconds == 5.0
+
+
+def test_instance_id_and_qdrant_url_from_environment(monkeypatch) -> None:
+    monkeypatch.setenv("SECGUARD_INSTANCE_ID", "local-dev")
+    monkeypatch.setenv("SECGUARD_QDRANT_URL", "http://127.0.0.1:6334")
+    monkeypatch.setenv("SECGUARD_QDRANT_TIMEOUT_SECONDS", "2.5")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.instance_id == "local-dev"
+    assert settings.qdrant_url == "http://127.0.0.1:6334"
+    assert settings.qdrant_timeout_seconds == 2.5
+
+
+def test_blank_instance_id_is_none(monkeypatch) -> None:
+    monkeypatch.setenv("SECGUARD_INSTANCE_ID", "   ")
+
+    assert Settings(_env_file=None).instance_id is None
+
+
+def test_invalid_instance_id_is_rejected(monkeypatch) -> None:
+    monkeypatch.setenv("SECGUARD_INSTANCE_ID", "Local Dev")
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
+
+
+def test_invalid_qdrant_url_is_rejected(monkeypatch) -> None:
+    monkeypatch.setenv("SECGUARD_QDRANT_URL", "localhost:6333")
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
