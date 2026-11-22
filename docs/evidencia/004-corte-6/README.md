@@ -105,3 +105,18 @@ iteración 1 queda como regresión histórica, no como evaluación independiente
 
 `make check`: 558 passed; `pre-commit`: verde. Pendiente: T079–T082 (aceptación ASGI/Playwright,
 documentación operativa, `make test-integration` y constitución final).
+
+## Prueba de integración corregida (2026-11-22 13:20)
+
+`tests/integration/test_qdrant_functional_eval.py` se alinea con el contrato actual: `--dataset final
+--backend server`, instancia `cut6-test-final`, umbral 0.5033 y campos vigentes del reporte. Falla si
+el outcome o cualquier criterio no se cumple.
+
+```text
+uv run pytest tests/integration/test_qdrant_functional_eval.py → 1 passed
+make check → 558 passed, 36 deselected
+pre-commit → Passed
+```
+
+Pendiente T079–T082: aceptación ASGI/Playwright, documentación completa, `make test-integration` y
+constitución final.

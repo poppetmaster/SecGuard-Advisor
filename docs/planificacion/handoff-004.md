@@ -828,3 +828,15 @@ reevaluar, ejecutar T079 (ASGI/Playwright), T080, T081 y, solo si cumple, T082.
 - `make check`: 558 passed; `pre-commit`: verde.
 - **Pendiente T079–T082**: aceptación ASGI/Playwright, documentación operativa completa,
   `make test-integration`, cierre de constitución. Avance 78/82. Sin aceptación de 004.
+
+---
+
+## 29. Prueba del evaluador corregida (2026-11-22 13:20)
+
+**Vigente.** §10–§28 son históricas.
+
+- `test_qdrant_functional_eval.py` usa `--dataset final --backend server`, instancia aislada y el
+  umbral congelado 0.5033; exige todos los criterios. Pasa contra servidor real.
+- `make check`: 558 passed; `pre-commit`: verde.
+- Pendiente T079–T082 (aceptación ASGI/Playwright, documentación, `make test-integration`, cierre de
+  constitución). Avance 78/82. Sin aceptación de 004.

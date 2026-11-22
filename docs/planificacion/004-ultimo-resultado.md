@@ -103,3 +103,19 @@ Los reportes `calibration.json` y `evaluation.json` se conservan como iteración
 iteración 1 falló 3/4 y se conserva como historial; la evaluación final corregida pasa). **T079–T082
 siguen pendientes**: aceptación ASGI/Playwright, documentación operativa completa, regresión
 `make test-integration` y cierre de constitución. Avance: **78/82**. No se declara aceptación.
+
+## Prueba de integración del evaluador corregida (2026-11-22 13:20)
+
+`tests/integration/test_qdrant_functional_eval.py` usa ahora `--dataset final --backend server`,
+instancia aislada `cut6-test-final`, umbral configurado (leído del modelo, 0.5033) y los campos
+actuales del reporte. Exige `outcome.passed`, todos los criterios, 6/6 recuperaciones, 0 no
+pertinentes, 0 cruces, versión vigente, cita histórica válida y Qualys sin cambios.
+
+```text
+uv run pytest tests/integration/test_qdrant_functional_eval.py → 1 passed
+make check → 558 passed, 36 deselected
+pre-commit → Passed
+```
+
+**T079–T082 siguen pendientes**: aceptación ASGI/Playwright, documentación operativa completa,
+`make test-integration` y cierre de constitución. No se declara aceptación; avance **78/82**.
