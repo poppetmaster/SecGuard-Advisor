@@ -14,8 +14,8 @@ from sqlalchemy import text
 
 from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
-from secguard_advisor.conversation.llm import GenerationConfig, OllamaGenerator
 from secguard_advisor.conversation.memory import open_memory
+from secguard_advisor.conversation.providers import ProviderRegistry
 from secguard_advisor.conversation.tokenizer import LazyPromptCounter
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
@@ -96,20 +96,10 @@ def create_app(
             storage_dir=resolved.storage_dir,
         )
 
+    registry = ProviderRegistry(resolved)
+
     def default_llm():
-        generator = OllamaGenerator(
-            GenerationConfig(
-                base_url=resolved.ollama_base_url,
-                model=resolved.ollama_model,
-                num_ctx=resolved.generator_num_ctx,
-                num_predict=resolved.generator_num_predict,
-                temperature=resolved.generator_temperature,
-                seed=resolved.generator_seed,
-                timeout_seconds=resolved.llm_timeout_seconds,
-            )
-        )
-        generator.digest = generator.resolve_digest()
-        return generator
+        return registry.create()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -134,6 +124,7 @@ def create_app(
         version=resolved.app_version,
         lifespan=lifespan,
     )
+    app.state.provider_registry = registry
     app.state.ollama_probe = probe
     app.state.qdrant_probe = qdrant_probe or _default_qdrant_probe(resolved)
     app.state.embedder_factory = embedder_factory or default_embedder

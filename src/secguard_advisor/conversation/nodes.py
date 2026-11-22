@@ -452,14 +452,18 @@ def decide(state: dict[str, Any], config) -> dict[str, Any]:
         },
         outputs={
             "use_findings": decision.use_findings,
-            "argument_keys": sorted(decision.arguments),
-            "argument_count": len(decision.arguments),
+            "argument_keys": sorted(
+                decision.arguments.model_dump(exclude_unset=True, exclude_none=True)
+            ),
+            "argument_count": len(
+                decision.arguments.model_dump(exclude_unset=True, exclude_none=True)
+            ),
         },
         duration_ms=elapsed_ms(started),
     )
     _check_turn_deadline(context)
     return {
-        "decision": decision.model_dump(),
+        "decision": decision.model_dump(exclude_unset=True),
         "step_count": step_count,
         "steps": record_step(
             state,

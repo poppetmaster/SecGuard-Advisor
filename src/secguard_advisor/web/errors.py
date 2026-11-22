@@ -27,6 +27,11 @@ ERRORS: dict[str, ErrorSpec] = {
         "unsupported_media_type", 415, "El tipo de archivo no está permitido."
     ),
     "model_unavailable": ErrorSpec("model_unavailable", 503, "El modelo local no responde."),
+    "provider_not_implemented": ErrorSpec(
+        "provider_not_implemented",
+        501,
+        "El proveedor configurado todavía no está implementado; usá Ollama.",
+    ),
     "timeout": ErrorSpec("timeout", 504, "La consulta excedió el tiempo de espera."),
     "run_timeout": ErrorSpec(
         "run_timeout", 504, "La consulta excedió el tiempo de espera del turno."

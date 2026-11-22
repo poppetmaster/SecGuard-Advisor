@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import select
 from tests.fixtures.conversation import build_env
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
@@ -128,20 +129,11 @@ def test_invalid_arguments_are_returned_for_correction(env) -> None:
 
 
 def test_case_id_in_arguments_is_rejected(env) -> None:
-    generator = ScriptedGenerator(
-        payloads=[_answer("No pude consultar.")],
-        decisions=[_use({"case_id": "a" * 32}), _no_tool()],
-    )
+    with pytest.raises(ValidationError, match="case_id"):
+        _use({"case_id": "a" * 32})
 
-    context, result = _ask(env, generator)
-
-    assert generator.decision_calls == 2
-    assert "invalid_arguments" in generator.decision_prompts[1]
     with env.factory() as session:
-        call = session.scalar(select(RunToolCall).where(RunToolCall.run_id == context.run_id))
-        assert call.status == "invalid_arguments"
-        assert call.error_code == "invalid_arguments"
-    assert result.outcome == "insufficient_evidence"
+        assert session.scalar(select(RunToolCall)) is None
 
 
 def test_tool_call_limit_is_enforced(env) -> None:

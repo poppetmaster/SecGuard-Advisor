@@ -14,6 +14,7 @@ from secguard_advisor.cases.scope import (
     resolve_case_scope,
 )
 from secguard_advisor.conversation.concurrency import find_active_run
+from secguard_advisor.conversation.providers import ProviderNotImplemented
 from secguard_advisor.conversation.retry import (
     RetryNotAllowed,
     RunNotFound,
@@ -136,7 +137,10 @@ def _run_generation(request: Request, scope: CaseScope, starter):
     try:
         embedder = request.app.state.embedder_factory()
         index = request.app.state.index_factory()
-        generator = request.app.state.llm_factory()
+        try:
+            generator = request.app.state.llm_factory()
+        except ProviderNotImplemented as exc:
+            return 501, {"notice": str(exc), "failure": None}
         try:
             context = starter(generator, embedder, index)
         except ActiveRunConflict:

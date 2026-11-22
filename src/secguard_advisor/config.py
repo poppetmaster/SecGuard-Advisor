@@ -1,11 +1,13 @@
 """Configuración de la aplicación."""
 
 import re
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from secguard_advisor import __version__
@@ -49,6 +51,36 @@ class Settings(BaseSettings):
     )
     embedding_dim: int = 768
     embedding_context_tokens: int = 2048
+
+    # Selección explícita del generador (005). Compatibilidad: para Ollama, los
+    # nombres nuevos tienen precedencia sobre los anteriores:
+    #   SECGUARD_GENERATION_MODEL > OLLAMA_MODEL
+    #   SECGUARD_GENERATION_MAX_OUTPUT_TOKENS > generator_num_predict
+    #   SECGUARD_GENERATION_TIMEOUT_SECONDS > llm_timeout_seconds
+    generation_provider: Literal["ollama", "deepseek", "anthropic"] = Field(
+        default="ollama", validation_alias="SECGUARD_GENERATION_PROVIDER"
+    )
+    generation_model: str | None = Field(default=None, validation_alias="SECGUARD_GENERATION_MODEL")
+    generation_max_output_tokens: int | None = Field(
+        default=None, validation_alias="SECGUARD_GENERATION_MAX_OUTPUT_TOKENS"
+    )
+    generation_timeout_seconds: float | None = Field(
+        default=None, validation_alias="SECGUARD_GENERATION_TIMEOUT_SECONDS"
+    )
+    generation_reasoning: Literal["off", "low", "high"] = Field(
+        default="off", validation_alias="SECGUARD_GENERATION_REASONING"
+    )
+    deepseek_api_key: SecretStr | None = Field(default=None, validation_alias="DEEPSEEK_API_KEY")
+    anthropic_api_key: SecretStr | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
+    external_budget_usd: Decimal = Field(
+        default=Decimal("0"), validation_alias="SECGUARD_EXTERNAL_BUDGET_USD"
+    )
+    external_run_budget_usd: Decimal = Field(
+        default=Decimal("0"), validation_alias="SECGUARD_EXTERNAL_RUN_BUDGET_USD"
+    )
+    external_tariff_version: str = Field(
+        default="2026-11-22", validation_alias="SECGUARD_EXTERNAL_TARIFF_VERSION"
+    )
 
     generator_num_ctx: int = 8192
     generator_num_predict: int = 1200
@@ -103,7 +135,15 @@ class Settings(BaseSettings):
         default="secguard-advisor-dev", validation_alias="LANGSMITH_PROJECT"
     )
 
-    @field_validator("reviewer_name", "langsmith_api_key", "instance_id", mode="before")
+    @field_validator(
+        "reviewer_name",
+        "langsmith_api_key",
+        "instance_id",
+        "generation_model",
+        "deepseek_api_key",
+        "anthropic_api_key",
+        mode="before",
+    )
     @classmethod
     def _empty_string_is_none(cls, value: object) -> object:
         if isinstance(value, str):
@@ -121,6 +161,39 @@ class Settings(BaseSettings):
             )
         return value
 
+    @field_validator("generation_max_output_tokens")
+    @classmethod
+    def _validate_generation_max_output(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("SECGUARD_GENERATION_MAX_OUTPUT_TOKENS debe ser mayor que cero.")
+        return value
+
+    @field_validator("generation_timeout_seconds")
+    @classmethod
+    def _validate_generation_timeout(cls, value: float | None) -> float | None:
+        if value is not None and value <= 0:
+            raise ValueError("SECGUARD_GENERATION_TIMEOUT_SECONDS debe ser mayor que cero.")
+        return value
+
+    @field_validator("external_budget_usd", "external_run_budget_usd")
+    @classmethod
+    def _validate_budget(cls, value: Decimal) -> Decimal:
+        if value < 0:
+            raise ValueError("El presupuesto externo no puede ser negativo.")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_provider_credentials(self) -> Settings:
+        if self.generation_provider == "deepseek" and self.deepseek_api_key is None:
+            raise ValueError(
+                "DEEPSEEK_API_KEY es obligatoria cuando SECGUARD_GENERATION_PROVIDER=deepseek."
+            )
+        if self.generation_provider == "anthropic" and self.anthropic_api_key is None:
+            raise ValueError(
+                "ANTHROPIC_API_KEY es obligatoria cuando SECGUARD_GENERATION_PROVIDER=anthropic."
+            )
+        return self
+
     @field_validator("qdrant_url")
     @classmethod
     def _validate_qdrant_url(cls, value: str) -> str:
@@ -128,6 +201,31 @@ class Settings(BaseSettings):
         if parts.scheme not in {"http", "https"} or not parts.hostname:
             raise ValueError("SECGUARD_QDRANT_URL debe ser una URL http(s) con host.")
         return value
+
+    @property
+    def provider_model(self) -> str:
+        """Modelo efectivo del proveedor activo, con compatibilidad Ollama."""
+        if self.generation_model:
+            return self.generation_model
+        if self.generation_provider == "ollama":
+            return self.ollama_model
+        return {"deepseek": "deepseek-flash", "anthropic": "claude-haiku-5-5"}[
+            self.generation_provider
+        ]
+
+    @property
+    def provider_max_output_tokens(self) -> int:
+        """Límite de salida efectivo del proveedor activo."""
+        if self.generation_max_output_tokens is not None:
+            return self.generation_max_output_tokens
+        return self.generator_num_predict
+
+    @property
+    def provider_timeout_seconds(self) -> float:
+        """Timeout efectivo por llamada del proveedor activo."""
+        if self.generation_timeout_seconds is not None:
+            return self.generation_timeout_seconds
+        return self.llm_timeout_seconds
 
     @property
     def database_url(self) -> str:

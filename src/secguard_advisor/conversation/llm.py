@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 from langchain_ollama import ChatOllama
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelUnavailable(Exception):
@@ -47,13 +47,42 @@ class Claim(BaseModel):
     )
 
 
+class ToolArguments(BaseModel):
+    """Argumentos estructurados y acotados de findings_query.
+
+    Las claves son estrictas (sin ``case_id`` ni campos extra). La validación de
+    valores y rangos se delega a ``FindingsArguments`` para conservar la
+    corrección de argumentos inválidos por el modelo.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    origin: str | None = Field(default=None, description="Espacio de hallazgos")
+    snapshot_id: str | None = Field(default=None, description="Instantánea importada")
+    asset: str | None = Field(default=None, description="Activo del caso")
+    severity: str | None = Field(default=None, description="Severidad de la escala")
+    severity_level: int | None = Field(default=None, description="Nivel de severidad 1-5")
+    status_group: str | None = Field(default=None, description="Grupo de estado")
+    priority: bool | None = Field(default=None, description="Indicador de prioridad")
+    exploitability: str | None = Field(default=None, description="Explotabilidad")
+    malware: str | None = Field(default=None, description="Malware")
+    qid: str | None = Field(default=None, description="QID de Qualys")
+    cve: str | None = Field(default=None, description="CVE")
+    group_by: str | None = Field(default=None, description="Agrupación")
+    detail: bool | None = Field(default=None, description="Incluir detalle")
+    limit: int | None = Field(default=None, description="Límite del detalle")
+
+
 class ToolDecision(BaseModel):
     """Decisión estructurada del modelo sobre usar findings_query."""
 
     use_findings: bool = Field(
         description="Verdadero si la pregunta necesita datos de hallazgos del caso"
     )
-    arguments: dict = Field(default_factory=dict, description="Argumentos de findings_query")
+    arguments: ToolArguments = Field(
+        default_factory=ToolArguments,
+        description="Argumentos estructurados y acotados de findings_query",
+    )
 
 
 class AnswerPayload(BaseModel):
@@ -88,11 +117,21 @@ class OllamaGenerator:
 
     config: GenerationConfig
     model: str = field(init=False)
+    provider: str = field(init=False, default="ollama")
     digest: str | None = None
     last_usage: dict | None = None
 
     def __post_init__(self) -> None:
         self.model = self.config.model
+
+    @property
+    def identity(self) -> str | None:
+        """Digest local observado; no se inventa cuando falta."""
+        return self.digest
+
+    def close(self) -> None:
+        """Ollama local no mantiene un cliente persistente que cerrar."""
+        return None
 
     def resolve_digest(self) -> str | None:
         """Consulta el digest instalado; si no está disponible, no inventa uno."""
