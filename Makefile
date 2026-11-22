@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
-.PHONY: help install assets dev demo demo-prepare corpus seed-demo lint format format-check test test-integration check clean
+.PHONY: help install assets dev demo demo-prepare corpus seed-demo qdrant-up qdrant-down qdrant-health lint format format-check test test-integration check clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -41,6 +41,16 @@ corpus-ingest: ## Ingesta el corpus verificado en SQLite y Chroma
 
 seed-demo: ## Carga los datos sintéticos de demostración
 	uv run python scripts/seed_demo.py
+
+qdrant-up: ## Levanta el servidor Qdrant local con el compose fijado
+	docker compose -f compose.qdrant.yml up -d
+
+qdrant-down: ## Detiene el servidor Qdrant conservando el volumen
+	docker compose -f compose.qdrant.yml down
+
+qdrant-health: ## Comprueba /readyz y muestra la versión del servidor Qdrant
+	@curl -fsS http://127.0.0.1:6333/readyz
+	@curl -fsS http://127.0.0.1:6333/
 
 lint: ## Ejecuta Ruff (lint)
 	uv run ruff check .
