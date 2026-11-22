@@ -57,7 +57,7 @@ cambiar todavía el backend de la aplicación.
   - Check: `uv lock --check` y `uv sync --locked` resuelven; `grep qdrant-client pyproject.toml` devuelve la versión fijada.
   - Evidence: diff de `pyproject.toml` y `uv.lock`, salida de los comandos.
 
-- [ ] T002 [P] Crear `compose.qdrant.yml` con `qdrant/qdrant:v1.20.0`, puertos loopback `127.0.0.1:6333` y `127.0.0.1:6334`, volumen persistente `./storage/qdrant` y política de reinicio.
+- [x] T002 [P] Crear `compose.qdrant.yml` con `qdrant/qdrant:v1.20.0`, puertos loopback `127.0.0.1:6333` y `127.0.0.1:6334`, volumen persistente `./storage/qdrant` y política de reinicio.
   - Story: Setup
   - Dep: none
   - Check: `docker compose -f compose.qdrant.yml config` valida; imagen, puertos y volumen coinciden con el plan.

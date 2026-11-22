@@ -190,3 +190,72 @@ pruebas: 40 passed (instancia, configuración y contrato de despliegue)
 
 Resultado: T002 y T009 continúan abiertas. No se arrancó ningún servicio, no hubo nada que detener y
 no se tocó el volumen. No se cambió la versión fijada.
+
+## Tercera comprobación (2026-11-22 09:47, America/Bogota)
+
+El CLI de Docker ya está instalado mediante Homebrew:
+
+```text
+$ docker --version
+Docker version 29.10.0, build fdd4b8e5da
+$ docker compose version
+Docker Compose version 5.8.0
+```
+
+El motor no está disponible: no existe `/var/run/docker.sock`, `docker info` falla con «no such file
+or directory» y no hay Docker Desktop, Colima, Lima, OrbStack ni Rancher Desktop instalados. El
+contexto `default` apunta al socket local. No se instaló ni se arrancó un motor, y no se modificó la
+configuración global.
+
+### T002 — completado
+
+```text
+$ docker compose -f compose.qdrant.yml config
+name: secguard-advisor
+services:
+  qdrant:
+    restart: unless-stopped
+    container_name: secguard-qdrant
+    image: qdrant/qdrant:v1.20.0
+    volumes:
+      - type: bind
+        target: /qdrant/storage
+    ports:
+      - host_ip: 127.0.0.1, target: 6333, published: "6333", protocol: tcp
+      - host_ip: 127.0.0.1, target: 6334, published: "6334", protocol: tcp
+```
+
+Salida 0. Imagen fijada, ambos puertos con `host_ip: 127.0.0.1` y volumen persistente
+`./storage/qdrant` montado en `/qdrant/storage`.
+
+### T009 — imagen verificada; arranque y salud bloqueados
+
+```text
+$ docker manifest inspect qdrant/qdrant:v1.20.0
+mediaType: application/vnd.oci.image.index.v1+json
+platforms: linux/amd64, linux/arm64
+exit=0
+```
+
+```text
+$ make qdrant-up
+failed to connect to the docker API at unix:///var/run/docker.sock
+make: *** [qdrant-up] Error 1
+$ make qdrant-health
+curl: (7) Failed to connect to 127.0.0.1 port 6333
+make: *** [qdrant-health] Error 7
+```
+
+La imagen soporta arm64 y el compose es válido, pero sin motor no se puede arrancar el servicio ni
+comprobar `/readyz`. No se inició ningún servicio, no hubo nada que detener y el volumen no se tocó.
+
+### Comprobaciones de ID y namespace (T009)
+
+Siguen cubiertas y en verde: ID inválido produce `instance_configuration_invalid` y el marcador
+copiado a otra ruta produce `instance_namespace_mismatch` (25 pruebas unitarias de instancia). No se
+repite aquí su salida para no duplicar la evidencia anterior.
+
+### Estado
+
+- T002: **completado** con `docker compose config`.
+- T009: **bloqueado** por ausencia de motor; manifiesto arm64 ya verificado con el comando exigido.

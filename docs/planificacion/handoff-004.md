@@ -538,3 +538,27 @@ arrancó ningún servicio y no se modificó el volumen, SQLite, Chroma ni los da
 
 Siguiente paso: repetir las cuatro comprobaciones en un equipo con Docker y, solo entonces, marcar
 T002/T009 y comenzar el Corte 2 (T010–T042). No se inició T010.
+
+---
+
+## 17. T002 completado y motor Docker ausente (2026-11-22 09:47)
+
+**Vigente para el estado del Corte 1.** El CLI de Docker ya está instalado por Homebrew:
+`docker 29.10.0` y `docker compose 5.8.0`. El motor no está disponible: no existe
+`/var/run/docker.sock`, `docker info` falla y no hay Docker Desktop, Colima, Lima, OrbStack ni
+Rancher Desktop.
+
+- **T002 completado**: `docker compose -f compose.qdrant.yml config` valida la imagen
+  `qdrant/qdrant:v1.20.0`, `host_ip: 127.0.0.1` en 6333/6334, volumen `./storage/qdrant` y
+  `restart: unless-stopped`.
+- **T009 sigue bloqueado**: `docker manifest inspect` confirma `linux/amd64` y `linux/arm64`, pero
+  `make qdrant-up` falla por falta de motor y `make qdrant-health` no conecta a 6333.
+- Las comprobaciones de ID y namespace siguen en verde (25 pruebas de instancia).
+- No se instaló ni arrancó un motor, no se inició ningún servicio y no se tocó el volumen, SQLite,
+  Chroma ni los datos.
+
+Estado del corte: **8 completadas (T001–T008), 1 bloqueada (T009)**.
+
+Siguiente paso: con un motor Docker activo, ejecutar `make qdrant-up`, `make qdrant-health`,
+comprobar `/readyz` y `make qdrant-down` conservando el volumen; solo entonces marcar T009 y comenzar
+el Corte 2 (T010–T042). No se inició T010.

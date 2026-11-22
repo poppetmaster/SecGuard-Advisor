@@ -1,6 +1,6 @@
 # 004 — Último resultado (Corte 1)
 
-**Fecha**: 2026-11-22 09:30–09:35 (America/Bogota, `-05`)
+**Fecha**: 2026-11-22 09:30–09:50 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
 **Alcance ejecutado**: Corte 1, T001–T009. No se inició T010 ni ninguna tarea posterior.
 **Backend documental**: Chroma sigue siendo el backend activo. Qdrant queda preparado como
@@ -24,16 +24,16 @@ Sin push ni publicación.
 | Tarea | Estado | Evidencia |
 |---|---|---|
 | T001 dependencia fijada | **Completada** | `qdrant-client==1.20.0`; `uv lock --check` resuelve 139 paquetes; `uv sync --locked` instala; Chroma conservado. |
-| T002 compose | **Abierta (implementada, verificación bloqueada)** | `compose.qdrant.yml` creado y YAML válido; falta `docker compose config` porque Docker no está instalado. |
+| T002 compose | **Completada** | `docker compose -f compose.qdrant.yml config` valida: imagen `v1.20.0`, `host_ip: 127.0.0.1` en 6333/6334, volumen persistente y reinicio. |
 | T003 configuración | **Completada** | Campos y validación en `config.py`; 10 pruebas de configuración en verde. |
 | T004 `.env.example` | **Completada** | Variables documentadas, sin credenciales ni rutas privadas. |
 | T005 targets Makefile | **Completada** | `make -n` reproducible y `make help` lista los tres targets. |
 | T006 pruebas de instancia (RED) | **Completada** | RED observado: `ImportError: cannot import name 'instance'`. |
 | T007 instancia, namespace, marcador y lock | **Completada** | 25 pruebas de instancia en verde; fingerprint estable ante cambios de contenido; sondeo sin escrituras. |
 | T008 contrato de despliegue | **Completada** | 5 pruebas de contrato en verde. |
-| T009 arm64 y `/readyz` | **Bloqueada** | Docker ausente: `docker manifest inspect` no disponible, `make qdrant-up` falla y `/readyz` no responde. Evidencia parcial: la etiqueta `v1.20.0` existe y su índice incluye `linux/arm64`. |
+| T009 arm64 y `/readyz` | **Bloqueada** | `docker manifest inspect` confirma `linux/arm64`; `make qdrant-up` falla por ausencia de motor (sin `/var/run/docker.sock`) y `/readyz` no responde. |
 
-Resumen: **7 completadas, 1 implementada sin verificación (T002), 1 bloqueada (T009)**.
+Resumen: **8 completadas, 1 bloqueada (T009)**.
 
 ## Archivos modificados o creados
 
@@ -95,11 +95,22 @@ Se volvió a comprobar Docker antes de ejecutar T002/T009:
 No se instaló Docker ni se modificó la configuración global. T002 y T009 siguen abiertas. No se
 arrancó ningún servicio y no se tocó el volumen.
 
+## Tercera comprobación (2026-11-22 09:47)
+
+El CLI de Docker quedó disponible por Homebrew (`docker 29.10.0`, `docker compose 5.8.0`), pero el
+motor no está instalado: no existe `/var/run/docker.sock`, `docker info` falla y no hay Docker
+Desktop, Colima, Lima, OrbStack ni Rancher Desktop.
+
+- **T002 completado**: `docker compose config` valida imagen, loopback y volumen.
+- **T009 parcial**: `docker manifest inspect qdrant/qdrant:v1.20.0` confirma `linux/amd64` y
+  `linux/arm64`. `make qdrant-up` falla por falta de motor y `make qdrant-health` no conecta a 6333.
+- No se instaló ni arrancó un motor, no se inició ningún servicio y no se tocó el volumen.
+
 ## Siguiente paso
 
-1. En un equipo con Docker: ejecutar `docker compose -f compose.qdrant.yml config` (T002) y la
-   verificación de T009 (`docker manifest inspect`, `make qdrant-up`, `/readyz`, `make qdrant-down`
-   conservando el volumen). Marcar T002 y T009 solo con esa evidencia.
+1. Arrancar un motor Docker local (Docker Desktop, Colima u otro) en un equipo que lo tenga. Con el
+   motor activo: `make qdrant-up`, `make qdrant-health`, comprobar `/readyz` y `make qdrant-down`
+   conservando el volumen. Marcar T009 solo con esa evidencia.
 2. Con el Corte 1 cerrado, iniciar el Corte 2 (T010–T042) en una tarea posterior. No se inició aquí.
 
 No se ejecutó `/speckit.implement` ni se declaró Qdrant como backend implementado o aceptado.
