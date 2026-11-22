@@ -2,7 +2,8 @@
 
 **Fecha**: 2026-11-22 10:10–11:35 (America/Bogota, `-05`)
 **Rama**: `004-qdrant-vector-index`
-**Estado**: T010–T042 completadas (42/42). No se declara aceptación de 004 ni se retira Chroma.
+**Estado**: Corte 2 = T010–T042 (**33 tareas**); acumulado T001–T042 = **42 tareas**. No se declara
+aceptación de 004 ni se retira Chroma.
 
 ## Pruebas automatizadas
 
@@ -17,7 +18,7 @@ $ uv run pytest tests/unit/test_qdrant_index.py tests/unit/test_qdrant_state.py 
 53 passed
 
 $ make check
-502 passed, 35 deselected
+505 passed, 35 deselected
 
 $ uv run pre-commit run --all-files
 Todas las comprobaciones: Passed
@@ -38,18 +39,15 @@ Entorno: Docker Desktop 29.9.3, contenedor `secguard-qdrant` (imagen `v1.20.0`),
 `embeddinggemma` (768), storage y corpus temporales, `SECGUARD_INSTANCE_ID=cut2-smoke`.
 
 ```text
-ingest público (sample.pdf ficticio): created, 1 chunk
-count público tras ingesta: 1
-ingest de caso: created, 1 chunk
-rebuild: partial
-  public: expected=1 indexed=1 missing=0 extra=1 skipped=0
-  case:   expected=1 indexed=1 missing=0 extra=0 skipped=0
-search: ok, 2 hits, orígenes case_evidence + public_corpus, top score 0.1389
+rebuild 1: completed  public(extra=0, prev_extra=0, skipped=0) case(0,0,0)
+rebuild 2: completed  public(0,0) case(0,0)
+huérfano inyectado en la generación pública activa
+rebuild 3: completed  public(extra=0, prev_extra=1) case(0,0)
+search: ok, 2 hits, orígenes case_evidence + public_corpus, huérfano ausente
 ```
 
-El `extra=1` público es un punto de una generación anterior del mismo servidor (smoke previo con otros
-`chunk_id`): se contó como discrepancia y el alias anterior se conservó. Es la detección de huérfanos
-exigida, no un fallo de la reconstrucción.
+La tercera reconstrucción diagnostica el índice anterior desactualizado y publica una candidata
+válida. No se presenta un `partial` como aceptación.
 
 Detención: `make qdrant-down` sin `-v`; contenedor y red eliminados, volumen conservado. No se
 interrumpió ningún servicio ajeno.
@@ -61,7 +59,10 @@ interrumpió ningún servicio ajeno.
 - Reconstrucción repetida: nueva generación, mismo conteo, sin duplicados.
 - Interrupción/fallo de embeddings: estado `failed`, sin alias nuevo.
 - Fragmento con dimensión incompatible: `partial`, alias anterior conservado.
-- Punto huérfano: `extra_chunks`, alias anterior conservado, nunca resuelto como cita.
+- Punto huérfano en la generación **anterior**: `previous_extra_chunks` como diagnóstico; una
+  candidata válida se publica y el huérfano no se resuelve como cita.
+- Punto sobrante en la **candidata** o fragmento incompatible: `partial`, alias anterior conservado.
+- Reporte terminal escrito mientras el lock sigue adquirido.
 - Metadatos de lock obsoletos con lock libre: no bloquean.
 - `--status`: `not_started`, ingesta activa, reconstrucción activa, terminales y errores de
   configuración/lock/reporte con salida 2; sin crear ni modificar archivos.
@@ -80,3 +81,13 @@ colecciones del smoke `cut2-smoke`, sin efecto en las pruebas.
 Citaciones/versiones y evidencia (T043–T048), reinicio/disponibilidad (T049–T053), primer documento y
 alcance vacío (T054–T059), recuperación/parciales (T060–T064), instancias/lock entre procesos
 (T065–T069), retiro de Chroma, calibración y aceptación (T070–T082).
+
+
+## Corrección posterior (2026-11-22 11:40)
+
+- La validación de publicación usa solo la generación candidata; los faltantes/sobrantes de la
+  generación anterior se reportan como diagnóstico.
+- El reporte terminal se escribe dentro del lock.
+- Regresiones añadidas: huérfano anterior con candidata válida, versión vigente sustituida, candidata
+  defectuosa sin cambio de alias y reporte bajo lock.
+- `make check`: 505 passed.

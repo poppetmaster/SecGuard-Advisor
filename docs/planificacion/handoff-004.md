@@ -678,3 +678,25 @@ Evidencia: `docs/evidencia/004-corte-2/README.md`.
 
 Corte 3 (T043–T053): citas/evidencia y reinicio/disponibilidad. No se inició T043 ni ninguna tarea
 posterior.
+
+---
+
+## 21. Corte 2 corregido (2026-11-22 11:40)
+
+**Vigente.** §10–§20 son históricas.
+
+- Corte 2 = T010–T042 (**33 tareas**); acumulado T001–T042 = **42**.
+- Corrección: la publicación del alias depende solo de la candidata; los faltantes/sobrantes de la
+  generación anterior se reportan como `previous_missing_chunks`/`previous_extra_chunks` y no
+  bloquean. La generación anterior se conserva.
+- Corrección: el reporte terminal se construye y publica dentro del lock; se libera incluso si la
+  escritura falla.
+- Regresiones: huérfano anterior + candidata válida, versión vigente sustituida, candidata defectuosa
+  con alias anterior conservado, reporte bajo lock.
+- `make check`: 505 passed; `pre-commit`: verde.
+- Smoke real con Qdrant servidor y EmbeddingGemma, instancia `cut2-fix-smoke`: tres reconstrucciones
+  `completed` (la tercera con `previous_extra_chunks=1`) y recuperación de ambos orígenes.
+- Limitaciones: caso sin documentos privados → `case_index_unavailable` hasta T053; sin calibración;
+  Chroma conservado; sin aceptación de 004.
+
+Siguiente paso: Corte 3 (T043–T053). No se inició T043.
