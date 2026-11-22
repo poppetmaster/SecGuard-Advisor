@@ -46,9 +46,30 @@ def _origin_is_allowed(request: Request) -> bool:
     return host in _ALLOWED_HOSTS
 
 
+def _default_qdrant_probe(settings: Settings) -> Callable[[], bool]:
+    def probe() -> bool:
+        index = None
+        try:
+            index = QdrantIndex(
+                url=settings.qdrant_url,
+                instance_id=settings.instance_id,
+                timeout=min(settings.qdrant_timeout_seconds, 1.5),
+                storage_dir=settings.storage_dir,
+            )
+            return index.ping()
+        except Exception:
+            return False
+        finally:
+            if index is not None:
+                index.close()
+
+    return probe
+
+
 def create_app(
     settings: Settings | None = None,
     ollama_probe: Callable[[], bool] | None = None,
+    qdrant_probe: Callable[[], bool] | None = None,
     embedder_factory: Callable[[], object] | None = None,
     index_factory: Callable[[], object] | None = None,
     llm_factory: Callable[[], object] | None = None,
@@ -72,6 +93,7 @@ def create_app(
             url=resolved.qdrant_url,
             instance_id=resolved.instance_id,
             timeout=resolved.qdrant_timeout_seconds,
+            storage_dir=resolved.storage_dir,
         )
 
     def default_llm():
@@ -113,6 +135,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.ollama_probe = probe
+    app.state.qdrant_probe = qdrant_probe or _default_qdrant_probe(resolved)
     app.state.embedder_factory = embedder_factory or default_embedder
     app.state.index_factory = index_factory or default_index
     app.state.llm_factory = llm_factory or default_llm
@@ -149,10 +172,15 @@ def create_app(
             database_ok = False
 
         ollama_ok = bool(request.app.state.ollama_probe())
+        if request.app.state.settings.instance_id is None:
+            qdrant_state = "not_configured"
+        else:
+            qdrant_state = "ok" if request.app.state.qdrant_probe() else "unavailable"
         payload = {
             "status": "ok" if database_ok else "degraded",
             "database": "ok" if database_ok else "error",
             "ollama": "ok" if ollama_ok else "unavailable",
+            "qdrant": qdrant_state,
         }
         return JSONResponse(
             status_code=200 if database_ok else 503,

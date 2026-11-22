@@ -26,6 +26,7 @@ from qdrant_client.models import (
     VectorParams,
 )
 
+from secguard_advisor.retrieval import instance as instance_mod
 from secguard_advisor.retrieval.collections import (
     CollectionScope,
     collection_name,
@@ -233,6 +234,7 @@ class QdrantIndex:
         instance_id: str | None,
         timeout: float = 5.0,
         client: QdrantClient | None = None,
+        storage_dir: Path | None = None,
     ) -> None:
         try:
             self.instance_id = validate_instance_id(instance_id)
@@ -245,6 +247,9 @@ class QdrantIndex:
         self._url = url
         self._timeout = timeout
         self._client = client
+        self._storage_dir = storage_dir
+        self._namespace_checked = False
+        self._server_version: str | None = None
 
     @property
     def client(self) -> QdrantClient:
@@ -265,16 +270,68 @@ class QdrantIndex:
     def _alias(self, scope: CollectionScope, model: str, dimension: int) -> str:
         return instance_alias_name(self.instance_id, scope, model, dimension)
 
-    def _resolve(self, scope: CollectionScope, model: str, dimension: int) -> str:
-        alias = self._alias(scope, model, dimension)
+    def _aliases(self):
         try:
-            aliases = self.client.get_aliases().aliases
+            return self.client.get_aliases().aliases
         except Exception as exc:
             raise QdrantUnavailable("No se pudo consultar el índice de Qdrant.") from exc
+
+    def _validate_namespace(self, aliases) -> None:
+        if self._storage_dir is None or self._namespace_checked:
+            return
+        prefix = f"secguard__{self.instance_id}__"
+        present = any(entry.alias_name.startswith(prefix) for entry in aliases)
+        try:
+            instance_mod.ensure_marker(
+                self._storage_dir, self.instance_id, namespace_present=present
+            )
+        except instance_mod.InstanceNamespaceMismatch as exc:
+            raise IndexConfigurationError(
+                "El marcador de instancia no coincide con el almacenamiento actual."
+            ) from exc
+        self._namespace_checked = True
+
+    def _resolve(self, scope: CollectionScope, model: str, dimension: int) -> str:
+        alias = self._alias(scope, model, dimension)
+        aliases = self._aliases()
+        self._validate_namespace(aliases)
         for entry in aliases:
             if entry.alias_name == alias:
                 return entry.collection_name
         raise self._unavailable(scope)
+
+    def describe(self, scope: CollectionScope, model: str, dimension: int) -> dict:
+        """Identidad del índice para la evidencia; no escribe ni valida el marcador."""
+        alias = self._alias(scope, model, dimension)
+        collection = None
+        for entry in self._aliases():
+            if entry.alias_name == alias:
+                collection = entry.collection_name
+                break
+        generation = collection.rsplit("__g", 1)[-1] if collection else None
+        return {
+            "vector_backend": "qdrant",
+            "instance_id": self.instance_id,
+            "qdrant_version": self._version(),
+            "collection_alias": alias if collection else None,
+            "generation": generation,
+            "embedding_model": model,
+            "embedding_dim": dimension,
+            "score_metric": "cosine",
+        }
+
+    def _version(self) -> str | None:
+        if self._server_version is None:
+            with suppress(Exception):
+                self._server_version = str(self.client.info().version)
+        return self._server_version
+
+    def ping(self) -> bool:
+        try:
+            self.client.get_collections()
+            return True
+        except Exception:
+            return False
 
     def active_collection(self, scope: CollectionScope, model: str, dimension: int) -> str | None:
         try:

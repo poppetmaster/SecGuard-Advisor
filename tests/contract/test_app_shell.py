@@ -39,6 +39,7 @@ def test_health_reports_database_and_ollama(client) -> None:
         "status": "ok",
         "database": "ok",
         "ollama": "ok",
+        "qdrant": "not_configured",
     }
 
 
@@ -51,6 +52,22 @@ def test_health_reports_ollama_unavailable(settings: Settings) -> None:
 
     assert response.status_code == 200
     assert response.json()["ollama"] == "unavailable"
+
+
+def test_health_reports_qdrant_unavailable(tmp_path: Path) -> None:
+    configured = Settings(
+        _env_file=None,
+        storage_dir=tmp_path / "qdrant-health",
+        instance_id="test-local",
+    )
+    _prepare_database(configured)
+    app = create_app(configured, ollama_probe=lambda: True, qdrant_probe=lambda: False)
+
+    with TestClient(app) as qdrant_down_client:
+        response = qdrant_down_client.get("/healthz")
+
+    assert response.status_code == 200
+    assert response.json()["qdrant"] == "unavailable"
 
 
 def test_unknown_route_returns_not_found(client) -> None:
