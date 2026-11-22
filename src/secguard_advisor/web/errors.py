@@ -58,6 +58,26 @@ ERRORS: dict[str, ErrorSpec] = {
         500,
         "El modelo devolvió una respuesta que no se pudo interpretar.",
     ),
+    "qdrant_unavailable": ErrorSpec(
+        "qdrant_unavailable", 503, "El índice documental no está disponible."
+    ),
+    "case_index_unavailable": ErrorSpec(
+        "case_index_unavailable", 503, "El índice del caso no está disponible."
+    ),
+    "public_index_unavailable": ErrorSpec(
+        "public_index_unavailable", 503, "El índice público no está disponible."
+    ),
+    "instance_namespace_mismatch": ErrorSpec(
+        "instance_namespace_mismatch",
+        503,
+        "La configuración de instancia no coincide con el almacenamiento.",
+    ),
+    "reconstruction_in_progress": ErrorSpec(
+        "reconstruction_in_progress", 409, "Hay una reconstrucción del índice en curso."
+    ),
+    "ingestion_in_progress": ErrorSpec(
+        "ingestion_in_progress", 409, "Hay una ingesta de documentos en curso."
+    ),
     "internal_error": ErrorSpec("internal_error", 500, "Ocurrió un error interno."),
 }
 

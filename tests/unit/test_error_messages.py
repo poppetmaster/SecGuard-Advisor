@@ -29,3 +29,29 @@ def test_error_response_is_json_and_has_no_traceback() -> None:
     assert response.status_code == 429
     assert payload["error"]["code"] == "busy"
     assert "Traceback" not in response.body.decode()
+
+
+QDRANT_ERRORS = {
+    "qdrant_unavailable": 503,
+    "case_index_unavailable": 503,
+    "public_index_unavailable": 503,
+    "instance_namespace_mismatch": 503,
+    "reconstruction_in_progress": 409,
+    "ingestion_in_progress": 409,
+}
+
+
+def test_qdrant_codes_keep_their_own_code_and_status() -> None:
+    for code, status in QDRANT_ERRORS.items():
+        spec = ERRORS[code]
+        assert spec.code == code
+        assert spec.status == status
+        assert spec.message
+        assert AppError(code).code == code
+        assert AppError(code).status == status
+
+
+def test_qdrant_codes_are_not_demoted_to_internal_error() -> None:
+    for code in QDRANT_ERRORS:
+        assert AppError(code).code != "internal_error"
+        assert message_for(code) != message_for("internal_error")
