@@ -1,7 +1,7 @@
 """Orquestación de ingesta de documentos."""
 
 import json
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -35,6 +35,7 @@ from secguard_advisor.documents.extraction import (
 )
 from secguard_advisor.documents.storage import read_original, store_original
 from secguard_advisor.documents.validation import UploadedContent, sha256_bytes
+from secguard_advisor.retrieval import instance
 from secguard_advisor.retrieval.collections import case_scope, public_scope
 from secguard_advisor.retrieval.index import IndexedChunk
 
@@ -305,27 +306,34 @@ def _process_version(
         return _finish_failed(factory, version_id, job_id, "embedding_failed", str(exc))
 
     scope = _scope_for(case_id, source_id)
-    with suppress(Exception):
-        index.delete_version(scope, embedder.model, embedder.dimension, version_id)
+    lock = (
+        instance.acquire_instance_lock(settings.storage_dir, settings.instance_id, "ingestion")
+        if settings.instance_id
+        else nullcontext()
+    )
 
-    try:
-        payload = _persist_chunks(
-            factory,
-            version_id,
-            embedder,
-            embedded,
-            origin=origin,
-            source_id=source_id,
-        )
-        index.upsert(scope, embedder.model, embedder.dimension, payload)
-    except Exception:
-        return _finish_failed(
-            factory,
-            version_id,
-            job_id,
-            "index_failed",
-            "No se pudo indexar el documento.",
-        )
+    with lock:
+        with suppress(Exception):
+            index.delete_version(scope, embedder.model, embedder.dimension, version_id)
+
+        try:
+            payload = _persist_chunks(
+                factory,
+                version_id,
+                embedder,
+                embedded,
+                origin=origin,
+                source_id=source_id,
+            )
+            index.upsert(scope, embedder.model, embedder.dimension, payload)
+        except Exception:
+            return _finish_failed(
+                factory,
+                version_id,
+                job_id,
+                "index_failed",
+                "No se pudo indexar el documento.",
+            )
 
     now = utc_now_iso()
     with factory() as session:

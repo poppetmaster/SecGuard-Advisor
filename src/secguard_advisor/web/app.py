@@ -22,7 +22,8 @@ from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
 from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.retrieval.index import QdrantIndex
-from secguard_advisor.web.errors import AppError, error_response
+from secguard_advisor.retrieval.instance import InstanceLockBusy, lock_conflict_code
+from secguard_advisor.web.errors import AppError, error_response, message_for
 from secguard_advisor.web.routes import cases, chat, documents, review, runs, vulnerabilities
 
 _WEB_DIR = Path(__file__).parent
@@ -157,6 +158,11 @@ def create_app(
             status_code=200 if database_ok else 503,
             content=payload,
         )
+
+    @app.exception_handler(InstanceLockBusy)
+    async def lock_busy_handler(_request: Request, exc: InstanceLockBusy):
+        code = lock_conflict_code(exc.owner)
+        return error_response(code, message_for(code))
 
     @app.exception_handler(IndexFailure)
     async def index_error_handler(_request: Request, exc: IndexFailure):
