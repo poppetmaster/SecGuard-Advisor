@@ -32,7 +32,14 @@ QUESTION = "¿Cuáles son las seis funciones centrales del NIST Cybersecurity Fr
 
 
 def test_real_answer_cites_a_locatable_fragment(tmp_path: Path) -> None:
-    settings = Settings(_env_file=None, storage_dir=tmp_path / "storage")
+    settings = Settings(
+        _env_file=None,
+        storage_dir=tmp_path / "storage",
+        # El modelo local puede superar el presupuesto de 120 s bajo carga; este
+        # test mide la cita, no el límite de tiempo, que tiene su propia prueba.
+        run_timeout_seconds=600.0,
+        llm_timeout_seconds=300.0,
+    )
     settings.ensure_directories()
     engine = create_engine_for_url(settings.database_url)
     Base.metadata.create_all(engine)

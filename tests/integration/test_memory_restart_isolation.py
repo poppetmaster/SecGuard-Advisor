@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from tests.fixtures.conversation import CASE_TEXT, build_env
 from tests.fixtures.corpus import create_case, seed_document
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerator
-from tests.fixtures.qdrant import server_index
+from tests.fixtures.qdrant import embedded_index
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.conversation.llm import AnswerPayload, Claim
@@ -76,13 +76,14 @@ def test_restart_keeps_history_and_context(tmp_path: Path) -> None:
         assert first.outcome == "answered"
         assert _counts(env.factory, env.case_id) == (2, 1)
 
-        # Reinicio: se cierran la memoria y el motor, y se abren de nuevo sobre el
+        # Reinicio: se cierran memoria, motor e índice, y se abren de nuevo sobre el
         # mismo almacenamiento. El historial confirmado vive en la base de negocio.
+        index.close()
         store.close()
         new_engine = create_engine_for_url(env.settings.database_url)
         new_factory = create_session_factory(new_engine)
         new_store = open_memory(env.settings.checkpoints_path)
-        new_index = server_index(env.settings)
+        new_index = embedded_index(tmp_path)
         try:
             generator = ScriptedGenerator(
                 [_payload(public, "seis funciones centrales", "Acabamos de profundizar GOVERN.")]

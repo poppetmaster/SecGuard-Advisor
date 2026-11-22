@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -32,7 +33,7 @@ def test_final_evaluation_passes_every_criterion(tmp_path: Path) -> None:
             "--backend",
             "server",
             "--instance",
-            "cut6-test-final",
+            f"cut6-eval-{uuid.uuid4().hex[:10]}",
             "--threshold",
             str(configured),
             "--output",

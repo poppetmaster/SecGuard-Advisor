@@ -187,6 +187,11 @@ def test_real_acceptance_journey(tmp_path: Path) -> None:
         storage_dir=base / "storage",
         corpus_dir=Path("data/corpus").resolve(),
         reviewer_name="Aceptación de prueba",
+        # La aceptación real encadena varios turnos con el modelo local. Bajo
+        # carga, un turno puede superar los 120 s de producción; el límite tiene
+        # su propia prueba. Este recorrido mide citas, memoria y herramientas.
+        run_timeout_seconds=600.0,
+        llm_timeout_seconds=300.0,
     )
     settings.ensure_directories()
     engine = create_engine_for_url(settings.database_url)
