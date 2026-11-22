@@ -19,8 +19,9 @@ from tests.fixtures.real_corpus import real_embedder
 
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.llm import GenerationConfig, ModelUnavailable, OllamaGenerator
+from secguard_advisor.conversation.llm import ModelUnavailable
 from secguard_advisor.conversation.memory import open_memory
+from secguard_advisor.conversation.providers import GeneratorProtocol, ProviderRegistry
 from secguard_advisor.conversation.retry import start_retry_turn
 from secguard_advisor.conversation.tokenizer import load_prompt_counter
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
@@ -71,20 +72,8 @@ class FailingGenerator:
         raise ModelUnavailable("fallo inducido para el reintento")
 
 
-def _generator(settings: Settings) -> OllamaGenerator:
-    generator = OllamaGenerator(
-        GenerationConfig(
-            base_url=settings.ollama_base_url,
-            model=settings.ollama_model,
-            num_ctx=settings.generator_num_ctx,
-            num_predict=settings.generator_num_predict,
-            temperature=settings.generator_temperature,
-            seed=settings.generator_seed,
-            timeout_seconds=settings.llm_timeout_seconds,
-        )
-    )
-    generator.digest = generator.resolve_digest()
-    return generator
+def _generator(settings: Settings) -> GeneratorProtocol:
+    return ProviderRegistry(settings).create()
 
 
 def _ask(factory, settings, *, case_id: str, question: str, generator, embedder, index, memory):
@@ -352,7 +341,14 @@ def test_real_acceptance_journey(tmp_path: Path) -> None:
                     .group_by(Asset.name)
                 ).all()
             )
-        tool_summary = facts4["tools"][0]["summary"]
+        matching_tools = [
+            tool
+            for tool in facts4["tools"]
+            if tool["arguments"].get("severity") == "High"
+            and tool["arguments"].get("group_by") == "asset"
+        ]
+        assert matching_tools, facts4["tools"]
+        tool_summary = matching_tools[0]["summary"]
         assert tool_summary["total"] == expected_total
         assert {group["key"]: group["count"] for group in tool_summary["groups"]} == expected_groups
         summary["findings"] = {"total": expected_total, "groups": expected_groups}

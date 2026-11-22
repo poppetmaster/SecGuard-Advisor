@@ -1,6 +1,7 @@
 """Modelo relacional de SecGuard Advisor."""
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -10,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -309,7 +311,16 @@ class Run(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
     outcome: Mapped[str | None] = mapped_column(String(40))
     generator_model: Mapped[str] = mapped_column(String(100), nullable=False)
+    generator_provider: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="ollama", server_default="ollama"
+    )
+    generator_identity: Mapped[str | None] = mapped_column(String(200))
     generator_digest: Mapped[str | None] = mapped_column(String(100))
+    cost_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="not_applicable", server_default="not_applicable"
+    )
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    cost_tariff_version: Mapped[str | None] = mapped_column(String(40))
     generator_num_ctx: Mapped[int] = mapped_column(Integer, nullable=False)
     generator_temperature: Mapped[float] = mapped_column(Float, nullable=False)
     generator_seed: Mapped[int | None] = mapped_column(Integer)
@@ -340,6 +351,18 @@ class Run(Base):
         ),
         UniqueConstraint("question_message_id", "attempt_no", name="uq_runs_question_attempt"),
         _status_check("kind", ("chat",), "kind_valid"),
+        _status_check("generator_provider", ("ollama", "deepseek", "anthropic"), "provider_valid"),
+        _status_check(
+            "cost_status", ("calculated", "unknown", "not_applicable"), "cost_status_valid"
+        ),
+        CheckConstraint(
+            "cost_status != 'calculated' OR cost_usd IS NOT NULL",
+            name="cost_calculated_has_amount",
+        ),
+        CheckConstraint(
+            "cost_status != 'unknown' OR cost_usd IS NULL",
+            name="cost_unknown_has_no_amount",
+        ),
         _status_check(
             "status",
             ("running", "succeeded", "failed", "timeout", "interrupted"),

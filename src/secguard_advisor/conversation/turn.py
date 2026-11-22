@@ -70,7 +70,9 @@ def start_question_turn(
                 case_id=scope.case_id,
                 conversation_id=conversation.id,
                 question_message_id=message.id,
-                generator_model=getattr(generator, "model", settings.ollama_model),
+                generator_model=getattr(generator, "model", settings.provider_model),
+                generator_provider=getattr(generator, "provider", settings.generation_provider),
+                generator_identity=getattr(generator, "identity", None),
                 generator_digest=getattr(generator, "digest", None),
                 generator_num_ctx=settings.generator_num_ctx,
                 generator_temperature=settings.generator_temperature,
@@ -118,7 +120,10 @@ def execute_turn(context: TurnContext, *, memory=None) -> TurnResult:
         question_length=len(context.question),
         metadata={
             "conversation_id": context.conversation_id,
-            "generator_model": getattr(context.deps.generator, "model", settings.ollama_model),
+            "generator_model": getattr(context.deps.generator, "model", settings.provider_model),
+            "generator_provider": getattr(
+                context.deps.generator, "provider", settings.generation_provider
+            ),
             "generator_digest": getattr(context.deps.generator, "digest", None),
             "embedding_model": getattr(
                 context.deps.embedder, "model", settings.ollama_embedding_model

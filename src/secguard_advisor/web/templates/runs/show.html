@@ -56,8 +56,11 @@
 <section class="mt-6">
   <h2 class="text-lg font-semibold">Modelo y configuración</h2>
   <dl class="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+    <div class="min-w-0"><dt class="text-slate-500">Proveedor</dt><dd class="break-words">{{ run.generator_provider }}</dd></div>
     <div class="min-w-0"><dt class="text-slate-500">Generador</dt><dd class="break-words">{{ run.generator_model }}</dd></div>
+    <div class="min-w-0"><dt class="text-slate-500">Identidad</dt><dd class="break-all">{{ run.generator_identity or "no disponible" }}</dd></div>
     <div class="min-w-0"><dt class="text-slate-500">Digest</dt><dd class="break-all">{{ run.generator_digest or "no disponible" }}</dd></div>
+    <div class="min-w-0"><dt class="text-slate-500">Costo de API</dt><dd>{{ run.cost_status_label }}{% if run.cost_usd %} · USD {{ "%.6f"|format(run.cost_usd) }}{% endif %}</dd></div>
     <div><dt class="text-slate-500">Contexto</dt><dd>{{ run.generator_num_ctx }} tokens</dd></div>
     <div><dt class="text-slate-500">Temperatura / semilla</dt><dd>{{ run.generator_temperature }} / {{ run.generator_seed }}</dd></div>
     <div><dt class="text-slate-500">Embeddings</dt><dd>{{ run.embedding_model }} ({{ run.embedding_dim }} dimensiones)</dd></div>
@@ -65,6 +68,9 @@
     <div><dt class="text-slate-500">Inicio</dt><dd>{{ run.started_at }}</dd></div>
     <div><dt class="text-slate-500">Fin</dt><dd>{{ run.finished_at or "no disponible" }}</dd></div>
   </dl>
+  <p class="mt-2 text-xs text-slate-600">
+    El costo de API no aplicable no mide el costo operativo local ni declara un costo total cero.
+  </p>
 </section>
 
 <section class="mt-6">

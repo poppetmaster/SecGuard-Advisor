@@ -178,6 +178,12 @@ def latest_failed_run(session: Session, scope: CaseScope) -> Run | None:
     )
 
 
+COST_STATUS_LABELS = {
+    "calculated": "Calculado",
+    "unknown": "Desconocido",
+    "not_applicable": "No aplicable (API)",
+}
+
 TRACE_STATUS_LABELS = {
     "disabled": "No configurada",
     "submitted": "Enviada (no verificada)",
@@ -280,7 +286,13 @@ def run_view(session: Session, scope: CaseScope, run_id: str, *, factory=None) -
         "finished_at": run.finished_at,
         "duration_ms": run.duration_ms,
         "generator_model": run.generator_model,
+        "generator_provider": run.generator_provider,
+        "generator_identity": run.generator_identity,
         "generator_digest": run.generator_digest,
+        "cost_status": run.cost_status,
+        "cost_status_label": COST_STATUS_LABELS.get(run.cost_status, run.cost_status),
+        "cost_usd": run.cost_usd,
+        "cost_tariff_version": run.cost_tariff_version,
         "generator_num_ctx": run.generator_num_ctx,
         "generator_temperature": run.generator_temperature,
         "generator_seed": run.generator_seed,
