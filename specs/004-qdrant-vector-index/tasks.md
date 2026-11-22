@@ -459,40 +459,40 @@ recuperación sin atomicidad.
 **Independent Test**: cargar el primer documento de un caso sin índice y consultarlo; consultar un
 caso sin documentos privados; provocar un fallo de commit en SQLite después de publicar el alias.
 
-- [ ] T054 [P] [US6] Añadir pruebas unitarias en rojo del ciclo del primer documento en `tests/unit/test_qdrant_first_document.py`, incluido el fallo de commit en SQLite posterior a la escritura de puntos o a la publicación del alias.
+- [x] T054 [P] [US6] Añadir pruebas unitarias en rojo del ciclo del primer documento en `tests/unit/test_qdrant_first_document.py`, incluido el fallo de commit en SQLite posterior a la escritura de puntos o a la publicación del alias.
   - Story: US6
   - Dep: T012, T013
   - Verifies: T055
   - Check: fallan antes del manejo del primer documento.
   - Evidence: salida RED.
 
-- [ ] T055 [US6] Implementar en `src/secguard_advisor/documents/service.py` la generación y publicación del alias del primer documento, el fallo y reintento, y la convergencia sin atomicidad: SQLite decide la disponibilidad y el reintento no duplica.
+- [x] T055 [US6] Implementar en `src/secguard_advisor/documents/service.py` la generación y publicación del alias del primer documento, el fallo y reintento, y la convergencia sin atomicidad: SQLite decide la disponibilidad y el reintento no duplica.
   - Story: US6
   - Dep: T054
   - Check: T054 pasa; una versión fallida nunca resuelve; no se exige reconstrucción manual por caso; el reintento converge tras un commit fallido.
   - Evidence: salida GREEN.
 
-- [ ] T056 [P] [US6] Añadir pruebas de contrato en rojo de alcance vacío frente a índice ausente en `tests/contract/test_qdrant_scope_errors.py`.
+- [x] T056 [P] [US6] Añadir pruebas de contrato en rojo de alcance vacío frente a índice ausente en `tests/contract/test_qdrant_scope_errors.py`.
   - Story: US6
   - Dep: T035
   - Verifies: T057
   - Check: fallan antes de la distinción de errores.
   - Evidence: salida RED.
 
-- [ ] T057 [US6] Implementar en `src/secguard_advisor/retrieval/search.py` el cálculo del alcance esperado desde SQLite y los errores clasificados de índice.
+- [x] T057 [US6] Implementar en `src/secguard_advisor/retrieval/search.py` el cálculo del alcance esperado desde SQLite y los errores clasificados de índice.
   - Story: US6
   - Dep: T056
   - Check: T056 pasa; alcance vacío consulta el público y un alias ausente con datos esperados devuelve error.
   - Evidence: salida GREEN.
 
-- [ ] T058 [P] [US6] Añadir la prueba de integración del primer documento, alcance vacío y ventana de fallo entre Qdrant y SQLite en `tests/integration/test_qdrant_first_document.py`, sobre la implementación de T055/T057.
+- [x] T058 [P] [US6] Añadir la prueba de integración del primer documento, alcance vacío y ventana de fallo entre Qdrant y SQLite en `tests/integration/test_qdrant_first_document.py`, sobre la implementación de T055/T057.
   - Story: US6
   - Dep: T055, T057
   - Verifies: T055, T057
   - Check: el primer documento publica alias solo tras validar; un caso vacío consulta el público; es verificación de integración, no prueba RED, porque T055/T057 ya implementan el comportamiento.
   - Evidence: salida de integración.
 
-- [ ] T059 [US6] Verificar primer documento, alcance vacío y recuperación convergente con `uv run pytest` sobre las tres suites de la historia.
+- [x] T059 [US6] Verificar primer documento, alcance vacío y recuperación convergente con `uv run pytest` sobre las tres suites de la historia.
   - Story: US6
   - Dep: T055, T057, T058
   - Verifies: T055, T057
@@ -508,33 +508,33 @@ caso sin documentos privados; provocar un fallo de commit en SQLite después de 
 **Independent Test**: interrumpir una reconstrucción, verificar que el alias anterior se conserva y
 que el reintento deja el alcance válido.
 
-- [ ] T060 [P] [US5] Añadir prueba de integración en rojo de recuperación tras reconstrucción fallida o parcial en `tests/integration/test_qdrant_recovery.py`.
+- [x] T060 [P] [US5] Añadir prueba de integración en rojo de recuperación tras reconstrucción fallida o parcial en `tests/integration/test_qdrant_recovery.py`.
   - Story: US5
   - Dep: T029
   - Verifies: T061
   - Check: falla antes del manejo de recuperación.
   - Evidence: salida RED.
 
-- [ ] T061 [US5] Implementar recuperación, limpieza y reintento de generaciones fallidas en `scripts/rebuild_qdrant.py`, conservando el alias anterior.
+- [x] T061 [US5] Implementar recuperación, limpieza y reintento de generaciones fallidas en `scripts/rebuild_qdrant.py`, conservando el alias anterior.
   - Story: US5
   - Dep: T060
   - Check: T060 pasa; el alias anterior permanece hasta que exista una generación válida.
   - Evidence: salida GREEN y reporte.
 
-- [ ] T062 [P] [US5] Añadir pruebas en rojo de estado por alcance y no finalización global en `tests/integration/test_qdrant_partial_scopes.py`.
+- [x] T062 [P] [US5] Añadir pruebas en rojo de estado por alcance y no finalización global en `tests/integration/test_qdrant_partial_scopes.py`.
   - Story: US5
   - Dep: T029
   - Verifies: T063
   - Check: fallan antes del reporte por alcance.
   - Evidence: salida RED.
 
-- [ ] T063 [US5] Implementar el estado por alcance y la semántica global parcial o fallida en `scripts/rebuild_qdrant.py`.
+- [x] T063 [US5] Implementar el estado por alcance y la semántica global parcial o fallida en `scripts/rebuild_qdrant.py`.
   - Story: US5
   - Dep: T062
   - Check: T062 pasa; un alcance fallido impide un reporte global `completed` sin impedir el alias del alcance validado.
   - Evidence: salida GREEN y reporte JSON.
 
-- [ ] T064 [US5] Verificar recuperación y alcances parciales con `uv run pytest tests/integration/test_qdrant_recovery.py tests/integration/test_qdrant_partial_scopes.py`.
+- [x] T064 [US5] Verificar recuperación y alcances parciales con `uv run pytest tests/integration/test_qdrant_recovery.py tests/integration/test_qdrant_partial_scopes.py`.
   - Story: US5
   - Dep: T061, T063
   - Verifies: T061, T063

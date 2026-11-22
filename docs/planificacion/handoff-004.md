@@ -737,3 +737,25 @@ Siguiente paso: Corte 4 (T054–T064). No se inició T054 ni ninguna tarea poste
 - Contratos y modelo sincronizados (`contracts/evidence.md`, `data-model.md`).
 - Avance: **53/82**. `make check` y `pre-commit` al cierre.
 - Siguiente paso: Corte 4 (T054–T064). No se inició T054.
+
+---
+
+## 24. Corte 4 completado (2026-11-22 12:15)
+
+**Vigente.** §10–§23 son históricas.
+
+- Corte 4: T054–T064 completadas. **Acumulado T001–T064 = 64/82.**
+- Primer documento: generación validada antes de publicar alias; fallo de commit SQLite deja versión
+  `failed` y el reintento converge sin duplicados.
+- Alcance esperado desde SQLite: caso vacío consulta público; datos sin alias dan
+  `case_index_unavailable`/`public_index_unavailable`; público vacío se omite; alias sin hits es
+  `empty`; Qdrant caído es `qdrant_unavailable` sin abstención.
+- Recuperación y parciales: alias anterior conservado, alcances válidos publicados y global `partial`.
+- `make check`: 535 passed; `pre-commit`: verde. Registro del Corte 3: `make check` 517 passed y
+  `pre-commit` verde el 2026-11-22 11:51.
+- Flujo real con Playwright MCP (Qdrant 1.20.0 + EmbeddingGemma + qwen): crear caso, subir primer
+  documento, disponible, consulta con cita válida y control automático «válida». Captura:
+  `docs/evidencia/004-corte-4/chat-citation.png`.
+- Limitaciones: sin calibración; Chroma conservado; sin aceptación de 004.
+
+Siguiente paso: Corte 5 (T065–T069). No se inició T065.
