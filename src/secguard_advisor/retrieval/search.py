@@ -112,7 +112,7 @@ def search_documents(
             top_k=top_k,
         )
         for raw in raw_hits:
-            score = 1.0 - float(raw.distance)
+            score = float(raw.score) if raw.score is not None else 1.0 - float(raw.distance)
             if score < min_score:
                 continue
             resolved = _resolve_hit(session, scope, raw.chunk_id, score)

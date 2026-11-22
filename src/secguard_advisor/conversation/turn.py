@@ -33,6 +33,7 @@ from secguard_advisor.conversation.prompts import PROMPT_VERSION
 from secguard_advisor.db.models import utc_now_iso
 from secguard_advisor.evidence.runs import ActiveRunConflict, create_run, record_trace
 from secguard_advisor.evidence.tracing import build_tracer
+from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.tools.findings import ToolExecutionError, ToolTimeout
 
 
@@ -201,6 +202,15 @@ def _execute_turn(context: TurnContext, memory, tracer) -> TurnResult:
             message="Se agotó el tiempo de espera del modelo.",
         )
         return TurnResult("timeout", "error", 504, "model_timeout")
+    except IndexFailure as exc:
+        _fail(
+            context,
+            status="failed",
+            code=exc.code,
+            message=str(exc),
+            step_name="retrieve",
+        )
+        return TurnResult("failed", "error", 503, exc.code)
     except ModelUnavailable:
         _fail(
             context,
