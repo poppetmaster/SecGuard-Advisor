@@ -16,9 +16,9 @@
         <td class="px-3 py-2">{{ event.contact_alias }}<br><span class="text-xs text-slate-500">{{ event.masked_chat }}</span></td>
         <td class="px-3 py-2">{{ event.mode_label }}</td>
         <td class="px-3 py-2 font-medium">{{ event.status_label }}</td>
-        <td class="px-3 py-2">{{ event.components.summary.status_label }}{% if event.components.summary.provider_message_id %}<br><span class="text-xs text-slate-500">id {{ event.components.summary.provider_message_id }}</span>{% endif %}</td>
-        <td class="px-3 py-2">{{ event.components.document.status_label }}{% if event.components.document.provider_message_id %}<br><span class="text-xs text-slate-500">id {{ event.components.document.provider_message_id }}</span>{% endif %}</td>
-        <td class="px-3 py-2">{% if event.status in ["failed", "partial"] %}<form method="post" action="/cases/{{ case_id }}/notifications/{{ event.id }}/retry"><button type="submit" class="rounded-lg border border-slate-300 px-2 py-1 text-xs">Reintentar componentes no aceptados</button></form>{% else %}<span class="text-xs text-slate-500">—</span>{% endif %}</td>
+        <td class="px-3 py-2">{{ event.components.summary.status_label }}{% if event.components.summary.provider_message_id %}<br><span class="text-xs text-slate-500">id {{ event.components.summary.provider_message_id }}</span>{% endif %}{% if event.components.summary.error_label %}<br><span class="text-xs text-red-700">{{ event.components.summary.error_label }}</span>{% endif %}</td>
+        <td class="px-3 py-2">{{ event.components.document.status_label }}{% if event.components.document.provider_message_id %}<br><span class="text-xs text-slate-500">id {{ event.components.document.provider_message_id }}</span>{% endif %}{% if event.components.document.error_label %}<br><span class="text-xs text-red-700">{{ event.components.document.error_label }}</span>{% endif %}</td>
+        <td class="px-3 py-2">{% if event.retryable %}<form method="post" action="/cases/{{ case_id }}/notifications/{{ event.id }}/retry"><button type="submit" class="rounded-lg border border-slate-300 px-2 py-1 text-xs">Reintentar componentes no aceptados</button></form>{% elif event.components.summary.status == "uncertain" or event.components.document.status == "uncertain" %}<span class="text-xs text-amber-700">Revisión requerida; no se reintenta automáticamente</span>{% else %}<span class="text-xs text-slate-500">—</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

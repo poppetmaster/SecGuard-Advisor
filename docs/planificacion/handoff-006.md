@@ -24,6 +24,7 @@ implementadas.
 | `src/secguard_advisor/web/routes/notifications.py` | Preview, confirmación, envío, historial y reintento |
 | `src/secguard_advisor/web/templates/contacts/`, `notifications/`, `reports/_notifications.html` | Interfaz del corte |
 | `alembic/versions/f3a4b5c6d7e8_add_notifications_manual.py` | Contactos, desafíos, confirmaciones, eventos, componentes, intentos |
+| `alembic/versions/a7b8c9d0e1f2_add_event_confirmation.py` | `notification_events.confirmation_id` (FK SET NULL) |
 | `tests/fixtures/notifications.py` | Helpers con transporte doble y PDF ficticio |
 | `tests/unit/test_contacts.py`, `test_contact_verification.py`, `test_telegram_transport.py`, `test_report_manifest.py`, `test_confirmations.py`, `test_manual_send.py`, `test_delivery_*.py`, `test_notifications_manual_migration.py` | Pruebas unitarias del corte |
 | `tests/contract/test_contact_verification_routes.py`, `test_manual_delivery.py`, `test_notification_history.py` | Contratos de rutas |
@@ -55,10 +56,11 @@ El Corte A conserva sus artefactos en `src/secguard_advisor/reports/`, `scripts/
 
 | Comprobación | Resultado |
 |---|---|
-| `make check` | **822 passed, 41 deselected** |
-| Pruebas focalizadas del Corte B | **37 passed** |
-| Navegador de contactos/envío + PDF del Corte A | **3 passed** |
-| Migración temporal B | upgrade/downgrade OK |
+| `make check` | **842 passed, 43 deselected** |
+| Pruebas focalizadas del Corte B | **56 passed** |
+| Navegador del Corte B (contactos, integridad, incierto) | **3 passed** |
+| Navegador A + navegador B + PDF | **5 passed** |
+| Migraciones B | upgrade/downgrade OK |
 | `pre-commit run --all-files` | Todos los hooks en verde |
 
 ## 5. Evidencia
@@ -68,6 +70,7 @@ El Corte A conserva sus artefactos en `src/secguard_advisor/reports/`, `scripts/
 - `docs/evidencia/006-corte-b/contacts-mobile.png`
 - `docs/evidencia/006-corte-b/manual-preview-desktop.png`
 - `docs/evidencia/006-corte-b/manual-history-desktop.png`
+- `docs/evidencia/006-correcciones-corte-b/README.md` (integridad del PDF y revisión de inciertos)
 - Corte A: `docs/evidencia/006-corte-a/` y `docs/evidencia/006-correcciones-corte-a/`
 
 ## 6. Cómo probarlo
@@ -85,6 +88,22 @@ El Corte A conserva sus artefactos en `src/secguard_advisor/reports/`, `scripts/
 Sin `SECGUARD_TELEGRAM_TRANSPORT=real` y sin token, la aplicación usa el transporte doble; no se envían
 mensajes reales.
 
+## 6.1 Correcciones del Corte B (2026-11-23)
+
+Cuatro fallos funcionales corregidos; detalle y comandos en
+`docs/evidencia/006-correcciones-corte-b/README.md`.
+
+- **Manifiesto por alcance**: la confirmación conserva el conjunto exacto; el evento guarda un
+  manifiesto derivado con `approved_recipients_sha256`; se comparan alcances equivalentes y la
+  revocación de un destinatario no bloquea a otro.
+- **Ejecución**: crear el evento no autoriza ejecutarlo; `prepared → requested` es atómico; un POST
+  repetido no reenvía `requested`, `uncertain` ni `accepted`; `retry_event` rechaza con
+  `uncertain_requires_review` y no toca componentes inciertos.
+- **Verificación**: intentos, bloqueo y expiración se confirman aunque la respuesta sea `422`; las
+  solicitudes fallidas cuentan para el límite; el envío no mantiene escritura abierta.
+- **PDF**: validación del hash antes de iniciar y entrega de los mismos bytes leídos una sola vez;
+  `document_render_failed` / `pdf_integrity_mismatch` bloquean sin enviar el resumen.
+
 ## 7. Decisiones técnicas vigentes
 
 - `notification_events.idempotency_key = SHA-256(case_id:report_version_id:contact_id)`; el modo no
@@ -94,11 +113,16 @@ mensajes reales.
 - `report_versions.status` sigue `generating|ready|failed`.
 - El token del bot vive solo en `.env`; nunca en SQLite, HTML, capturas, logs ni Git.
 - El transporte real tiene timeouts (10 s conexión / 30 s lectura) y no reintenta internamente.
+- Cada evento se enlaza a su confirmación y guarda un manifiesto de un destinatario derivado del
+  conjunto aprobado; el hash confirmado del PDF nunca se actualiza automáticamente.
+- `uncertain` no se reintenta por la ruta ordinaria; la conciliación explícita no está implementada en
+  el Corte B.
 
 ## 8. Límites y pendientes reales
 
 - No se verificó el envío real: no se usó token ni destino reales.
 - No se implementaron T057–T081: reglas automáticas, envío automático ni recuperación automática.
+- La conciliación explícita de un resultado incierto queda pendiente.
 - No hubo llamadas pagadas ni evaluación externa.
 - La aceptación visual es local (Chrome); no cubre otros navegadores.
 - La evaluación semántica humana y el rendimiento formal siguen pendientes.
@@ -106,4 +130,4 @@ mensajes reales.
 
 ## 9. Siguiente paso
 
-Revisar la evidencia del Corte B y decidir si se autoriza T057. No ejecutar `/speckit.implement`.
+Revisar la evidencia de las correcciones del Corte B y decidir si se autoriza T057. No ejecutar `/speckit.implement`.

@@ -384,6 +384,23 @@ evitar duplicados.
 
 **Checkpoint B**: contacto verificado y envío manual completo, con eventos y recuperación, sin depender de reglas.
 
+## Correcciones posteriores del Corte B (2026-11-23)
+
+Estas correcciones pertenecen a T035–T056 y no habilitan T057.
+
+- [X] C07 Separar el manifiesto confirmado del conjunto y el manifiesto derivado por evento; revalidar
+      alcances equivalentes; cubrir dos destinatarios y revocación aislada.
+- [X] C08 Separar creación idempotente de permiso de ejecución; reclamar cada componente con una
+      transición atómica; impedir el reenvío de `requested`, `uncertain` y `accepted`; rechazar el
+      reintento ordinario con componentes inciertos; cubrir timeout, concurrencia y reintento del PDF.
+- [X] C09 Persistir intentos, bloqueo y expiración de verificación aunque la respuesta sea un error;
+      contar solicitudes fallidas; no mantener escritura abierta durante el envío del código; cubrir
+      por HTTP.
+- [X] C10 Verificar el PDF contra el manifiesto antes de iniciar y enviar los mismos bytes validados;
+      bloquear archivo ausente o alterado sin enviar el resumen; cubrir alteración previa y durante.
+- [X] C11 Ejecutar pruebas focalizadas, `make check`, `pre-commit`, navegador y documentar en
+      `docs/evidencia/006-correcciones-corte-b/`.
+
 ---
 
 ## Phase 5: Corte C — Reglas automáticas y aceptación integrada (US3, P3; US4)

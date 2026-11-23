@@ -97,6 +97,13 @@ confirmaciones, eventos, componentes e intentos.
 Sin `SECGUARD_TELEGRAM_TRANSPORT=real` y sin token, la aplicación usa el transporte doble. No se
 envían mensajes reales en esta aceptación.
 
+## 5.1 Correcciones posteriores (2026-11-23)
+
+Cuatro fallos funcionales de este corte se corrigieron después: manifiesto por alcance para varios
+destinatarios, ejecución atómica e idempotente de componentes, persistencia de intentos de verificación
+e integridad del PDF. Los resultados de la tabla anterior corresponden al corte original; la evidencia
+vigente está en `docs/evidencia/006-correcciones-corte-b/`.
+
 ## 6. Límites
 
 - No se verificó el envío real: no se usó un token real ni un destino acordado.

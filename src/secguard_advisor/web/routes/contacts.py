@@ -36,6 +36,14 @@ def _transport(request: Request):
     return request.app.state.telegram_transport
 
 
+def _fail(session, exc: Exception) -> None:
+    """Persist security-relevant state (attempts, lock, expiry) even on an error response."""
+    if getattr(exc, "persist_state", False):
+        session.commit()
+    else:
+        session.rollback()
+
+
 def _contacts_view(
     session,
     request: Request,
@@ -136,7 +144,7 @@ def contacts_start_verification(request: Request, contact_id: str):
             start_verification(session, contact_id=contact_id, transport=_transport(request))
             session.commit()
         except (NotificationError, TelegramError) as exc:
-            session.rollback()
+            _fail(session, exc)
             return _contacts_view(session, request, error=exc.message, status=422)
         return _contacts_view(
             session, request, message="Código enviado. Pedí el código a quien controla el destino."
@@ -155,7 +163,7 @@ def contacts_confirm_verification(
             confirm_verification(session, contact_id=contact_id, code=code, verified_by=verified_by)
             session.commit()
         except NotificationError as exc:
-            session.rollback()
+            _fail(session, exc)
             return _contacts_view(session, request, error=exc.message, status=422)
         return _contacts_view(session, request, message="Contacto verificado.")
 

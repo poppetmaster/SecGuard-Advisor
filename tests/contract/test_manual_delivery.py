@@ -89,3 +89,115 @@ def test_invalid_contact_returns_422(report_context) -> None:
             follow_redirects=False,
         )
         assert response.status_code == 422
+
+
+def _confirmation_id(response) -> str:
+    return response.headers["location"].split("confirmation_id=")[-1]
+
+
+def _pdf_path(report_context, version_id: str):
+    from sqlalchemy import select
+
+    from secguard_advisor.db.models import ReportArtifact
+
+    with report_context.session_factory() as session:
+        artifact = session.scalar(
+            select(ReportArtifact).where(
+                ReportArtifact.report_version_id == version_id,
+                ReportArtifact.kind == "pdf",
+            )
+        )
+        return report_context.settings.reports_dir / artifact.relative_path
+
+
+def test_manual_delivery_to_two_recipients(report_context) -> None:
+    result = create_ready_report(report_context)
+    first, _ = make_eligible_contact(report_context, alias="Operaciones", chat_id="111111111")
+    second, _ = make_eligible_contact(report_context, alias="Dirección", chat_id="222222222")
+    transport = StubTelegramTransport()
+    with TestClient(create_app(report_context.settings, ollama_probe=lambda: False)) as client:
+        client.app.state.telegram_transport = transport
+        url = f"/cases/{report_context.case_id}/reports/{result.report_id}/versions/1"
+        confirmed = client.post(
+            url + "/confirmations",
+            data={"contact_ids": [first.id, second.id], "created_by": "Tester"},
+            headers={"Origin": "http://testserver"},
+            follow_redirects=False,
+        )
+        assert confirmed.status_code == 303
+        sent = client.post(
+            url + "/notifications",
+            data={"confirmation_id": _confirmation_id(confirmed)},
+            headers={"Origin": "http://testserver"},
+            follow_redirects=False,
+        )
+        assert sent.status_code == 303
+        history = client.get(f"/cases/{report_context.case_id}/notifications")
+        assert history.text.count("Aceptado por Telegram") >= 2
+
+    messages = [call for call in transport.calls if call.method == "send_message"]
+    documents = [call for call in transport.calls if call.method == "send_document"]
+    assert {call.chat_id for call in messages} == {"111111111", "222222222"}
+    assert {call.chat_id for call in documents} == {"111111111", "222222222"}
+
+
+def test_tampered_pdf_blocks_the_route_send(report_context) -> None:
+    result = create_ready_report(report_context)
+    contact, _ = make_eligible_contact(report_context)
+    transport = StubTelegramTransport()
+    path = _pdf_path(report_context, result.version_id)
+    original = path.read_bytes()
+    path.write_bytes(original + b"tampered")
+    try:
+        with TestClient(create_app(report_context.settings, ollama_probe=lambda: False)) as client:
+            client.app.state.telegram_transport = transport
+            url = f"/cases/{report_context.case_id}/reports/{result.report_id}/versions/1"
+            confirmed = client.post(
+                url + "/confirmations",
+                data={"contact_ids": [contact.id], "created_by": "Tester"},
+                headers={"Origin": "http://testserver"},
+                follow_redirects=False,
+            )
+            sent = client.post(
+                url + "/notifications",
+                data={"confirmation_id": _confirmation_id(confirmed)},
+                headers={"Origin": "http://testserver"},
+                follow_redirects=False,
+            )
+            assert sent.status_code == 303
+            assert transport.calls == []
+            history = client.get(f"/cases/{report_context.case_id}/notifications")
+            assert "El PDF no coincide con el aprobado" in history.text
+            assert "Fallido" in history.text
+    finally:
+        path.write_bytes(original)
+
+
+def test_repeated_post_after_tamper_does_not_resend(report_context) -> None:
+    result = create_ready_report(report_context)
+    contact, _ = make_eligible_contact(report_context)
+    transport = StubTelegramTransport()
+    path = _pdf_path(report_context, result.version_id)
+    original = path.read_bytes()
+    path.write_bytes(original + b"tampered")
+    try:
+        with TestClient(create_app(report_context.settings, ollama_probe=lambda: False)) as client:
+            client.app.state.telegram_transport = transport
+            url = f"/cases/{report_context.case_id}/reports/{result.report_id}/versions/1"
+            confirmed = client.post(
+                url + "/confirmations",
+                data={"contact_ids": [contact.id], "created_by": "Tester"},
+                headers={"Origin": "http://testserver"},
+                follow_redirects=False,
+            )
+            confirmation_id = _confirmation_id(confirmed)
+            for _ in range(2):
+                client.post(
+                    url + "/notifications",
+                    data={"confirmation_id": confirmation_id},
+                    headers={"Origin": "http://testserver"},
+                    follow_redirects=False,
+                )
+            assert transport.calls == []
+    finally:
+        path.write_bytes(original)

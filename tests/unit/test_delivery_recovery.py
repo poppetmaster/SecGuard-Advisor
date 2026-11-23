@@ -6,10 +6,11 @@ from tests.fixtures.notifications import create_ready_report, make_eligible_cont
 
 from secguard_advisor.db.models import NotificationComponent, ReportVersion
 from secguard_advisor.notifications.channels.telegram import StubTelegramTransport
+from secguard_advisor.notifications.confirmations import create_confirmation
 from secguard_advisor.notifications.contacts import set_consent
 from secguard_advisor.notifications.delivery import components, ensure_event
 from secguard_advisor.notifications.executor import execute_event, recover_interrupted, retry_event
-from secguard_advisor.notifications.manifest import build_manifest
+from secguard_advisor.reports.canonical import parse_json
 
 
 def _event(report_context, transport: StubTelegramTransport | None = None):
@@ -17,10 +18,22 @@ def _event(report_context, transport: StubTelegramTransport | None = None):
     contact, _verify_transport = make_eligible_contact(report_context)
     transport = transport or StubTelegramTransport()
     with report_context.session_factory() as session:
-        version = session.get(ReportVersion, result.version_id)
-        manifest = build_manifest(session, version, [contact.id])
+        confirmation = create_confirmation(
+            session,
+            case_id=report_context.case_id,
+            report_id=result.report_id,
+            version_number=result.version_number,
+            contact_ids=[contact.id],
+            created_by="Prueba",
+        )
+        manifest = parse_json(confirmation.manifest_json)
         event, _ = ensure_event(
-            session, version=version, contact=contact, manifest=manifest, mode="manual"
+            session,
+            version=session.get(ReportVersion, result.version_id),
+            contact=contact,
+            manifest=manifest,
+            mode="manual",
+            confirmation_id=confirmation.id,
         )
         session.commit()
         return event.id, contact.id, transport
@@ -80,7 +93,7 @@ def test_revocation_between_components_keeps_accepted_summary(report_context) ->
         values = components(session, event_id)
         assert values["summary"].status == "accepted"
         assert values["document"].status == "skipped"
-        assert values["document"].error_code == "component_revalidation_failed"
+        assert values["document"].error_code == "consent_missing"
 
 
 def test_restart_marks_in_flight_as_uncertain(report_context) -> None:

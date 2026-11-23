@@ -88,10 +88,15 @@ get_me() -> TelegramBot
 }
 ```
 
-- La confirmación manual guarda el manifiesto; la regla automática lo construye al generar el
-  informe.
-- Antes de enviar, el ejecutor recalcula el manifiesto y compara `manifest_sha256`. Si difiere, no
-  llama a Telegram y devuelve `manifest_mismatch`.
+- La confirmación manual guarda el manifiesto del **conjunto exacto de destinatarios**; la regla
+  automática lo construye al generar el informe.
+- Cada `notification_event` es de un destinatario. Guarda un manifiesto derivado del confirmado con
+  los mismos campos de contenido, `recipients` de un solo elemento y
+  `approved_recipients_sha256 = SHA-256(conjunto confirmado)`. `manifest_sha256` es el hash de ese
+  manifiesto individual.
+- El ejecutor compara alcances equivalentes: conjunto contra confirmación y evento individual contra
+  manifiesto derivado. Nunca compara un evento individual contra el manifiesto del conjunto. Si
+  difiere, no llama a Telegram y devuelve `manifest_mismatch`.
 - Editar el texto, el PDF, la política o los destinatarios invalida la confirmación manual o exige
   reactivar la regla.
 - El manifiesto no contiene token, `chat_id` completo ni contenido privado adicional.
@@ -100,10 +105,11 @@ get_me() -> TelegramBot
 
 El ejecutor compartido, manual y automático, revalida **inmediatamente antes de cada llamada**:
 
-1. destinatario `verified`, `active` y con consentimiento `granted`;
-2. vínculo `contact_case_links.authorized=true` para el caso;
-3. manifiesto recalculado con `manifest_sha256` coincidente;
-4. regla `active`, versión vigente y destinatario incluido, cuando el envío sea automático.
+1. conjunto confirmado vigente y destinatario incluido en ese conjunto;
+2. destinatario `verified`, `active` y con consentimiento `granted`;
+3. vínculo `contact_case_links.authorized=true` para el caso;
+4. manifiesto del destinatario recalculado con `manifest_sha256` coincidente;
+5. regla `active`, versión vigente y destinatario incluido, cuando el envío sea automático.
 
 Antes del resumen y de nuevo antes del PDF. Si la revalidación falla entre componentes:
 
@@ -111,7 +117,9 @@ Antes del resumen y de nuevo antes del PDF. Si la revalidación falla entre comp
 - los componentes restantes pasan a `skipped` con `contact_unverified`, `consent_missing`,
   `case_not_authorized`, `manifest_mismatch` o `rule_inactive`;
 - el evento queda `partial` si había un componente aceptado, o `skipped` si no había ninguno;
-- no se revierte la importación ni se borra la evidencia.
+- no se revierte la importación ni se borra la evidencia;
+- la revocación de un destinatario afecta solo a ese evento; otro destinatario que conserva sus
+  permisos sigue recibiendo el informe.
 
 ## Contenido del mensaje
 
@@ -131,6 +139,11 @@ idempotency_key = SHA-256(case_id + ":" + report_version_id + ":" + contact_id)
 ```
 
 - Índice único en `notification_events`. El modo (`manual`/`automatic`) no participa.
+- Crear o reutilizar el evento no autoriza a ejecutarlo. Cada componente se reclama con una
+  transición atómica persistida `prepared → requested` antes de llamar al transporte; dos solicitudes
+  concurrentes no ejecutan el mismo componente.
+- Una repetición del POST devuelve el estado existente sin reenviar componentes `requested`,
+  `uncertain` o `accepted`. Un evento incierto requiere conciliación explícita.
 - Manual y automático compiten por la misma clave: el segundo reutiliza el evento y no reenvía
   componentes aceptados.
 - Evaluación de regla: `Unique(rule_id, import_id)` en `notification_rule_evaluations`.
@@ -166,6 +179,9 @@ Componente: `prepared`, `requested`, `accepted`, `failed`, `uncertain`, `skipped
 - Prohibido el reintento automático de un timeout incierto.
 - Un fallo definitivo (`4xx` no recuperable, chat inválido, token ausente) puede reintentarse solo por
   acción humana desde la ruta de reintento, y solo para componentes no aceptados.
+- Un componente `uncertain` nunca vuelve a `prepared` mediante el reintento ordinario: la ruta
+  responde `uncertain_requires_review` mientras exista un componente incierto o en vuelo. La
+  conciliación explícita no está implementada en el Corte B.
 - Un `5xx` o error de red produce `uncertain`, no `failed`; exige revisión.
 - Cada reintento crea un `notification_attempt` nuevo; nunca un evento nuevo.
 
@@ -197,7 +213,10 @@ Componente: `prepared`, `requested`, `accepted`, `failed`, `uncertain`, `skipped
 | `timeout` | Sin respuesta | `uncertain` |
 | `interrupted` | Reinicio durante el envío | `uncertain` |
 | `document_render_failed` | PDF no disponible | `failed` |
+| `pdf_integrity_mismatch` | Los bytes del PDF no coinciden con el hash aprobado | `failed` |
+| `uncertain_requires_review` | El reintento ordinario intentó tocar un componente incierto o en vuelo | sin cambio |
 | `manifest_mismatch` | El manifiesto recalculado no coincide con el aprobado | `skipped` |
+| `verification_send_failed` | El transporte no pudo enviar el código | desafío `locked`; la solicitud cuenta |
 | `code_invalid` | Código de verificación incorrecto | desafío sigue `pending` |
 | `code_expired` | Desafío expirado | desafío `expired` |
 | `code_consumed` | Desafío ya consumido | sin cambio |
@@ -206,6 +225,23 @@ Componente: `prepared`, `requested`, `accepted`, `failed`, `uncertain`, `skipped
 
 Nunca se registran token, cabeceras, cuerpo del PDF, texto completo del mensaje ni `chat_id` completo
 en logs. La evidencia usa `chat_fingerprint` y `provider_message_id`.
+
+## Integridad del PDF enviado
+
+Antes de iniciar la entrega, el ejecutor lee el PDF una sola vez y verifica que su SHA-256 coincide
+con `pdf_sha256` del manifiesto confirmado. Si el archivo falta, ambos componentes pendientes quedan
+`failed` con `document_render_failed`; si difiere, con `pdf_integrity_mismatch`. En ambos casos no se
+envía el resumen que anuncia ese documento ni el PDF. El documento se entrega con los mismos bytes
+validados, sin una segunda lectura, y un archivo alterado después de la verificación no cambia el
+contenido entregado. El hash confirmado nunca se actualiza automáticamente.
+
+## Persistencia de la verificación
+
+`confirm_verification` confirma los cambios de seguridad —intento incrementado, bloqueo o
+expiración— aunque la respuesta HTTP sea `422`; solo los fallos sin cambio de estado hacen rollback.
+Una solicitud fallida de envío de código conserva el desafío bloqueado y cuenta para el límite por
+ventana. Ninguna transacción de escritura permanece abierta durante `sendMessage`, `getMe`, `getChat`
+ni `getChatMember`.
 
 ## Evidencia por destinatario
 

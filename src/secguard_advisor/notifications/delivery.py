@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from secguard_advisor.db.models import (
@@ -18,6 +18,7 @@ from secguard_advisor.db.models import (
 )
 from secguard_advisor.notifications.contacts import mask_chat_id
 from secguard_advisor.notifications.errors import NotificationError
+from secguard_advisor.notifications.manifest import build_recipient_manifest
 from secguard_advisor.reports.canonical import canonical_json, canonical_sha256
 
 COMPONENT_KINDS = ("summary", "document")
@@ -52,6 +53,22 @@ COMPONENT_LABELS = {
     "uncertain": "Incierto",
     "skipped": "Omitido",
 }
+ERROR_LABELS = {
+    "contact_unverified": "Destinatario sin verificar o inactivo",
+    "consent_missing": "Sin consentimiento vigente",
+    "case_not_authorized": "Sin autorización para el caso",
+    "manifest_mismatch": "El contenido o los destinatarios cambiaron",
+    "pdf_integrity_mismatch": "El PDF no coincide con el aprobado",
+    "document_render_failed": "PDF no disponible",
+    "summary_failed": "El resumen no se envió",
+    "component_revalidation_failed": "Destinatario o contenido inválido",
+    "interrupted": "Interrumpido; requiere revisión",
+    "timeout": "Sin respuesta; requiere revisión",
+    "invalid_request": "Telegram rechazó la solicitud",
+    "forbidden": "Telegram rechazó el destino",
+    "rate_limited": "Límite de Telegram",
+    "provider_error": "Error del proveedor; requiere revisión",
+}
 
 
 def idempotency_key(case_id: str, version_id: str, contact_id: str) -> str:
@@ -77,15 +94,42 @@ def ensure_event(
     mode: str,
     confirmed_by: str | None = None,
     confirmed_at: str | None = None,
+    confirmation_id: str | None = None,
     rule_id: str | None = None,
     rule_version: int | None = None,
 ) -> tuple[NotificationEvent, bool]:
+    """Create the per-recipient event idempotently from the approved set manifest.
+
+    Creation never grants permission to execute: execution claims each component separately.
+    """
     key = idempotency_key(version.case_id, version.id, contact.id)
     existing = session.scalar(
         select(NotificationEvent).where(NotificationEvent.idempotency_key == key)
     )
     if existing is not None:
+        if mode == "manual" and confirmation_id and existing.confirmation_id != confirmation_id:
+            states = components(session, existing.id)
+            if all(row.status in {"prepared", "failed", "skipped"} for row in states.values()):
+                recipient_manifest = build_recipient_manifest(
+                    session,
+                    version,
+                    contact.id,
+                    approved_recipients_sha256=manifest["recipients_sha256"],
+                )
+                existing.confirmation_id = confirmation_id
+                existing.manifest_json = canonical_json(recipient_manifest)
+                existing.manifest_sha256 = recipient_manifest["manifest_sha256"]
+                existing.content_policy_json = canonical_json(recipient_manifest["content_policy"])
+                existing.content_sha256 = content_hash(recipient_manifest)
+                existing.status = "prepared"
+                session.flush()
         return existing, False
+    recipient_manifest = build_recipient_manifest(
+        session,
+        version,
+        contact.id,
+        approved_recipients_sha256=manifest["recipients_sha256"],
+    )
     event = NotificationEvent(
         case_id=version.case_id,
         report_version_id=version.id,
@@ -93,11 +137,12 @@ def ensure_event(
         mode=mode,
         rule_id=rule_id,
         rule_version=rule_version,
+        confirmation_id=confirmation_id,
         idempotency_key=key,
-        manifest_json=canonical_json(manifest),
-        manifest_sha256=manifest["manifest_sha256"],
-        content_policy_json=canonical_json(manifest["content_policy"]),
-        content_sha256=content_hash(manifest),
+        manifest_json=canonical_json(recipient_manifest),
+        manifest_sha256=recipient_manifest["manifest_sha256"],
+        content_policy_json=canonical_json(recipient_manifest["content_policy"]),
+        content_sha256=content_hash(recipient_manifest),
         confirmed_by=confirmed_by,
         confirmed_at=confirmed_at,
         status="prepared",
@@ -122,6 +167,33 @@ def components(session: Session, event_id: str) -> dict[str, NotificationCompone
         select(NotificationComponent).where(NotificationComponent.event_id == event_id)
     )
     return {row.kind: row for row in rows}
+
+
+def claim_component(
+    session: Session, *, event: NotificationEvent, kind: str
+) -> NotificationAttempt | None:
+    """Atomically move one component ``prepared → requested`` before any network call.
+
+    Returns ``None`` when another request already claimed or resolved the component. The caller
+    owns the transaction and must commit before calling the transport.
+    """
+    component = components(session, event.id).get(kind)
+    if component is None:
+        return None
+    result = session.execute(
+        update(NotificationComponent)
+        .where(
+            NotificationComponent.id == component.id,
+            NotificationComponent.status == "prepared",
+        )
+        .values(status="requested", error_code=None, updated_at=utc_now_iso())
+        .execution_options(synchronize_session="fetch")
+    )
+    if result.rowcount != 1:
+        return None
+    attempt = create_attempt(session, event=event, kind=kind, status="requested")
+    refresh_event_status(session, event)
+    return attempt
 
 
 def refresh_event_status(session: Session, event: NotificationEvent) -> str:
@@ -164,6 +236,11 @@ def set_component(
     component = components(session, event.id)[kind]
     if component.status == "accepted" and status != "accepted":
         raise NotificationError("accepted_component", "Un componente aceptado no se reenvía.")
+    if component.status == "uncertain" and status != "uncertain":
+        raise NotificationError(
+            "uncertain_requires_review",
+            "Un componente incierto exige conciliación explícita; no se reenvía.",
+        )
     component.status = status
     if provider_message_id:
         component.provider_message_id = provider_message_id
@@ -252,6 +329,10 @@ def get_event(session: Session, case_id: str, event_id: str) -> NotificationEven
 def event_view(session: Session, event: NotificationEvent) -> dict[str, Any]:
     contact = session.get(ContactChannel, event.contact_id)
     values = components(session, event.id)
+    statuses = {kind: values[kind].status for kind in COMPONENT_KINDS}
+    retryable = event.status in {"failed", "partial"} and not any(
+        status in {"uncertain", "requested"} for status in statuses.values()
+    )
     return {
         "id": event.id,
         "mode": event.mode,
@@ -263,12 +344,14 @@ def event_view(session: Session, event: NotificationEvent) -> dict[str, Any]:
         "masked_chat": mask_chat_id(contact.chat_id) if contact else "••••",
         "version_id": event.report_version_id,
         "manifest_sha256": event.manifest_sha256,
+        "retryable": retryable,
         "components": {
             kind: {
                 "status": values[kind].status,
                 "status_label": COMPONENT_LABELS.get(values[kind].status, values[kind].status),
                 "provider_message_id": values[kind].provider_message_id,
                 "error_code": values[kind].error_code,
+                "error_label": ERROR_LABELS.get(values[kind].error_code or "", ""),
                 "attempt_count": values[kind].attempt_count,
             }
             for kind in COMPONENT_KINDS

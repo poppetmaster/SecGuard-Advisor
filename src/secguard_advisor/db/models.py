@@ -1245,6 +1245,9 @@ class NotificationEvent(Base):
     mode: Mapped[str] = mapped_column(String(20), nullable=False)
     rule_id: Mapped[str | None] = mapped_column(String(32))
     rule_version: Mapped[int | None] = mapped_column(Integer)
+    confirmation_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("report_confirmations.id", ondelete="SET NULL")
+    )
     idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     manifest_json: Mapped[str] = mapped_column(Text, nullable=False)
     manifest_sha256: Mapped[str] = mapped_column(String(64), nullable=False)

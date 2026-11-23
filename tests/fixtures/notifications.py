@@ -4,15 +4,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from secguard_advisor.db.models import ContactChannel
+from secguard_advisor.db.models import ContactChannel, ReportVersion
 from secguard_advisor.notifications.channels.telegram import StubTelegramTransport
+from secguard_advisor.notifications.confirmations import create_confirmation
 from secguard_advisor.notifications.contacts import (
     authorize_case,
     create_contact,
     set_active,
     set_consent,
 )
+from secguard_advisor.notifications.delivery import ensure_event
 from secguard_advisor.notifications.verification import confirm_verification, start_verification
+from secguard_advisor.reports.canonical import parse_json
 from secguard_advisor.reports.service import ReportVersionResult, create_report_version
 from tests.fixtures.report_fixtures import ReportContext
 
@@ -48,6 +51,56 @@ def code_from_stub(transport: StubTelegramTransport) -> str:
         if call.method == "send_message" and call.text and "Código" in call.text:
             return call.text.split(": ", 1)[1].split(".", 1)[0]
     raise AssertionError("No se encontró el código en el transporte doble")
+
+
+def make_confirmation(
+    context: ReportContext,
+    report: ReportVersionResult,
+    contact_ids: list[str],
+    *,
+    created_by: str = "Prueba",
+):
+    """Create the approved set manifest exactly as the web route does."""
+    with context.session_factory() as session:
+        confirmation = create_confirmation(
+            session,
+            case_id=context.case_id,
+            report_id=report.report_id,
+            version_number=report.version_number,
+            contact_ids=contact_ids,
+            created_by=created_by,
+        )
+        session.commit()
+        session.expunge(confirmation)
+        return confirmation
+
+
+def make_prepared_event(
+    context: ReportContext, contact: ContactChannel, confirmation
+) -> tuple[str, dict]:
+    """Create the per-recipient event without executing it."""
+    with context.session_factory() as session:
+        version = session.get(ReportVersion, confirmation.report_version_id)
+        manifest = parse_json(confirmation.manifest_json)
+        event, _created = ensure_event(
+            session,
+            version=version,
+            contact=session.get(ContactChannel, contact.id),
+            manifest=manifest,
+            mode="manual",
+            confirmed_by=confirmation.created_by,
+            confirmed_at=confirmation.created_at,
+            confirmation_id=confirmation.id,
+        )
+        session.commit()
+        return event.id, parse_json(event.manifest_json)
+
+
+def session_components(factory, event_id: str) -> dict[str, str]:
+    from secguard_advisor.notifications.delivery import components
+
+    with factory() as session:
+        return {kind: row.status for kind, row in components(session, event_id).items()}
 
 
 def make_eligible_contact(

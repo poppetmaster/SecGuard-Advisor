@@ -32,7 +32,7 @@ def test_notifications_manual_migration_upgrade_and_downgrade(tmp_path: Path, mo
     event_columns = {
         column["name"] for column in inspect(engine).get_columns("notification_events")
     }
-    assert {"idempotency_key", "manifest_sha256", "status"} <= event_columns
+    assert {"idempotency_key", "manifest_sha256", "status", "confirmation_id"} <= event_columns
     engine.dispose()
 
     command.downgrade(config, "e2f3a4b5c6d7")

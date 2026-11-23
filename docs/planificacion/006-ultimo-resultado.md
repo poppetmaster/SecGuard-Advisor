@@ -1,7 +1,8 @@
 # 006 — Último resultado
 
 **Fecha**: 2026-11-23  
-**Estado**: Cortes A y B implementados y validados localmente. T001–T056 completadas; T057–T081
+**Estado**: Cortes A y B implementados y validados localmente, con las correcciones del Corte B
+(2026-11-23). T001–T056 completadas; T057–T081
 pendientes. Envío real de Telegram no verificado; reglas automáticas y recuperación automática no
 implementadas.
 
@@ -45,11 +46,33 @@ Migraciones vigentes: `d8e9f0a1b2c3` (A), `e2f3a4b5c6d7` (estado/procedencia) y 
 
 | Comprobación | Resultado |
 |---|---|
-| `make check` | **822 passed, 41 deselected** |
-| Pruebas focalizadas del Corte B | **37 passed** |
-| Navegador de contactos/envío + PDF del Corte A | **3 passed** |
-| Migración temporal B (upgrade/downgrade) | OK |
+| `make check` | **842 passed, 43 deselected** |
+| Pruebas focalizadas del Corte B | **56 passed** |
+| Navegador del Corte B (contactos, integridad, incierto) | **3 passed** |
+| Navegador A + navegador B + PDF | **5 passed** |
+| Migraciones B (`a7b8c9d0e1f2`) upgrade/downgrade | OK |
 | `pre-commit run --all-files` | Todos los hooks en verde |
+
+## 4.1 Correcciones del Corte B (2026-11-23)
+
+Cuatro fallos funcionales corregidos sin iniciar el Corte C. Detalle en
+`docs/evidencia/006-correcciones-corte-b/`.
+
+1. **Manifiesto y varios destinatarios.** La confirmación conserva el conjunto exacto; cada evento
+   guarda un manifiesto derivado de un destinatario con `approved_recipients_sha256`; el ejecutor
+   compara alcances equivalentes y la revocación de un destinatario no bloquea a otro.
+2. **Estados inciertos e idempotencia.** Crear el evento no autoriza ejecutarlo; cada componente se
+   reclama con `prepared → requested` atómico; un POST repetido no reenvía `requested`, `uncertain` ni
+   `accepted`; el reintento rechaza componentes inciertos con `uncertain_requires_review`.
+3. **Persistencia de verificación.** Los intentos, el bloqueo y la expiración se confirman aunque la
+   respuesta sea `422`; las solicitudes fallidas cuentan para el límite; no hay escritura abierta
+   durante el envío del código.
+4. **Integridad del PDF.** Se lee una sola vez y se verifica contra el manifiesto antes de iniciar; si
+   falta o difiere, no se envía el resumen ni el PDF (`document_render_failed` /
+   `pdf_integrity_mismatch`); se entregan los mismos bytes validados y el hash confirmado no se
+   actualiza.
+
+Migración nueva: `alembic/versions/a7b8c9d0e1f2_add_event_confirmation.py` (`notification_events.confirmation_id`).
 
 ## 5. Evidencia
 
@@ -58,11 +81,12 @@ Migraciones vigentes: `d8e9f0a1b2c3` (A), `e2f3a4b5c6d7` (estado/procedencia) y 
 - `docs/evidencia/006-corte-b/contacts-mobile.png`
 - `docs/evidencia/006-corte-b/manual-preview-desktop.png`
 - `docs/evidencia/006-corte-b/manual-history-desktop.png`
+- `docs/evidencia/006-correcciones-corte-b/README.md` y capturas de integridad/revisión
 - Corte A: `docs/evidencia/006-corte-a/` y `docs/evidencia/006-correcciones-corte-a/`
 
 ## 6. Defectos y verificaciones no ejecutadas
 
-**Defectos abiertos de los Cortes A y B**: ninguno observado tras las pruebas del corte.
+**Defectos abiertos de los Cortes A y B**: ninguno observado tras las correcciones del Corte B.
 
 **Verificaciones no ejecutadas**:
 
@@ -78,11 +102,13 @@ No son defectos del corte ni aprobaciones.
 ## 7. Límites
 
 - No se enviaron códigos ni informes reales: toda la aceptación del Corte B usa el transporte doble.
+- La conciliación explícita de un resultado incierto no está implementada; el reintento ordinario la
+  rechaza.
 - «Aceptado por Telegram» significa aceptación del proveedor; no prueba entrega ni lectura.
 - Las reglas automáticas, la recuperación automática y el correo no están implementados.
 - No se modificaron `storage/` ni `storage/demo`.
 
 ## 8. Siguiente paso
 
-Revisar la evidencia del Corte B y decidir si se autoriza el Corte C (T057–T081). No ejecutar
+Revisar la evidencia de las correcciones del Corte B y decidir si se autoriza el Corte C (T057–T081). No ejecutar
 `/speckit.implement`.

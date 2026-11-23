@@ -11,11 +11,13 @@ from secguard_advisor.config import Settings
 from secguard_advisor.db.models import ContactChannel, ReportVersion
 from secguard_advisor.notifications.channels.base import TelegramTransport
 from secguard_advisor.notifications.confirmations import get_confirmation, validate_confirmation
-from secguard_advisor.notifications.contacts import eligible_contacts, get_contact, is_eligible
+from secguard_advisor.notifications.contacts import eligible_contacts, is_eligible
 from secguard_advisor.notifications.delivery import ensure_event, list_events
 from secguard_advisor.notifications.errors import NotificationError
 from secguard_advisor.notifications.executor import execute_event
 from secguard_advisor.notifications.manifest import build_manifest
+
+EXECUTABLE = ("prepared", "queued")
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,14 +59,19 @@ def send_manual(
     case_id: str,
     confirmation_id: str,
 ) -> list[str]:
+    """Create or reuse one event per confirmed recipient, then execute only executable ones.
+
+    A recipient that lost eligibility after the confirmation is not allowed to block the others:
+    the executor skips only that recipient with a safe error code.
+    """
+    plan: list[tuple[str, str]] = []
     with factory() as session:
         confirmation = get_confirmation(session, case_id, confirmation_id)
         version, manifest, contact_ids = validate_confirmation(session, confirmation)
-        events = []
         for contact_id in contact_ids:
-            contact = get_contact(session, contact_id)
-            if not is_eligible(session, contact=contact, case_id=case_id):
-                raise NotificationError("contact_not_eligible", "Un contacto no es elegible.")
+            contact = session.get(ContactChannel, contact_id)
+            if contact is None:
+                continue
             event, _created = ensure_event(
                 session,
                 version=version,
@@ -73,13 +80,16 @@ def send_manual(
                 mode="manual",
                 confirmed_by=confirmation.created_by,
                 confirmed_at=confirmation.created_at,
+                confirmation_id=confirmation.id,
             )
-            events.append(event.id)
+            plan.append((event.id, event.status))
         session.commit()
-    for event_id in events:
-        execute_event(factory, settings, transport, event_id)
+    for event_id, status in plan:
+        if status in EXECUTABLE:
+            execute_event(factory, settings, transport, event_id)
+    planned = {event_id for event_id, _status in plan}
     with factory() as session:
-        return [event.id for event in list_events(session, case_id) if event.id in set(events)]
+        return [event.id for event in list_events(session, case_id) if event.id in planned]
 
 
 def retry_manual(

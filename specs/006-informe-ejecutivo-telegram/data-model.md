@@ -345,9 +345,10 @@ adoptar una versión huérfana.
 | `mode` | String(20) | `manual`, `automatic` (metadato) |
 | `rule_id` | FK SET NULL | nulo en manual |
 | `rule_version` | Integer | copia |
+| `confirmation_id` | FK SET NULL | confirmación manual que aprobó el evento; nula en automático |
 | `idempotency_key` | String(64) | **UNIQUE**; SHA-256(case/version/contact) |
-| `manifest_json` | Text | manifiesto aprobado `report-manifest-v1` |
-| `manifest_sha256` | String(64) | hash del manifiesto ejecutado |
+| `manifest_json` | Text | manifiesto del destinatario derivado del conjunto aprobado |
+| `manifest_sha256` | String(64) | hash del manifiesto del destinatario ejecutado |
 | `content_policy_json` | Text | política aplicada (copia del manifiesto) |
 | `content_sha256` | String(64) | texto saliente + PDF (copia del manifiesto) |
 | `confirmed_by` | String(120) | obligatorio en manual |
@@ -446,12 +447,29 @@ prepared ─▶ requested ─▶ accepted | failed | uncertain
 11. El envío del código de verificación no exige verificación, consentimiento ni vínculo al caso; el
     envío de un informe sí exige los tres.
 12. Un desafío de verificación nunca persiste el código en claro ni el token.
-13. La ejecución de un informe compara `manifest_sha256` con el manifiesto aprobado; una discrepancia
-    bloquea el envío.
+13. La confirmación guarda el manifiesto del **conjunto exacto de destinatarios**. Cada evento guarda
+    un manifiesto derivado de ese conjunto con un solo destinatario y
+    `approved_recipients_sha256 = SHA-256(conjunto confirmado)`; la ejecución compara alcances
+    equivalentes y nunca un evento individual contra el conjunto completo. Una discrepancia bloquea el
+    envío.
 14. Una evaluación automática conserva `report_version_id` y reutiliza los eventos existentes en
     reintentos o reinicios; no crea una versión nueva para eludir la idempotencia.
 15. `report_versions.generation_key` es único cuando no es nulo; la creación o recuperación usa
     `INSERT ... ON CONFLICT DO NOTHING` y una lectura posterior.
-16. Antes de cada componente (resumen y PDF), el ejecutor revalida destinatario, consentimiento,
-    vínculo, manifiesto y regla si aplica. Un componente aceptado se conserva; los restantes quedan
-    `skipped` con motivo.
+16. Antes de cada componente (resumen y PDF), el ejecutor revalida el conjunto confirmado, el
+    destinatario, el consentimiento, el vínculo, el manifiesto de su alcance y la regla si aplica. Un
+    componente aceptado se conserva; los restantes quedan `skipped` con el motivo específico
+    (`contact_unverified`, `consent_missing`, `case_not_authorized`, `manifest_mismatch`). La
+    revocación de un destinatario no bloquea a otro que conserva sus permisos.
+17. La creación idempotente del evento no autoriza su ejecución. Cada componente se reclama con una
+    transición atómica `prepared → requested` antes de llamar al transporte; dos solicitudes
+    concurrentes no ejecutan el mismo componente. Una repetición del POST devuelve el estado existente
+    sin reenviar componentes `requested`, `uncertain` o `accepted`. Un componente `uncertain` no vuelve
+    a `prepared` por el reintento ordinario y exige conciliación explícita.
+18. Antes de iniciar la entrega se lee el PDF una sola vez y se verifica su SHA-256 contra el
+    manifiesto confirmado; si falta o difiere, ambos componentes quedan bloqueados con
+    `document_render_failed` o `pdf_integrity_mismatch` sin enviar el resumen. El documento se envía
+    con los mismos bytes validados, sin una segunda lectura, y el hash confirmado nunca se actualiza
+    de forma automática.
+19. Los intentos fallidos de verificación, el bloqueo y la expiración se confirman aunque la respuesta
+    HTTP sea un error; una solicitud fallida de código cuenta para el límite por ventana.

@@ -41,8 +41,14 @@ def start_verification(
     contact_id: str,
     transport: TelegramTransport,
 ) -> ContactVerificationChallenge:
-    """Send a code; this technical send is independent from report eligibility."""
+    """Send a code; this technical send is independent from report eligibility.
+
+    The request is counted and persisted before the network call, and no write transaction stays
+    open while the transport runs.
+    """
     contact = get_contact(session, contact_id)
+    chat_id = contact.chat_id
+    chat_type = contact.chat_type
     now = datetime.now(UTC)
     window_start = now - REQUEST_WINDOW
     recent = (
@@ -58,20 +64,20 @@ def start_verification(
     )
     if recent >= MAX_REQUESTS:
         raise NotificationError("rate_limited", "Se superó el límite de solicitudes de código.")
+    session.commit()
+
+    bot = transport.get_me()
+    chat = transport.get_chat(chat_id)
+    if chat_type in {"group", "supergroup", "channel"}:
+        transport.get_chat_member(chat_id, bot.bot_id)
 
     previous = _pending_challenge(session, contact_id)
     if previous is not None:
         previous.status = "locked"
 
-    bot = transport.get_me()
-    chat = transport.get_chat(contact.chat_id)
-    if contact.chat_type in {"group", "supergroup", "channel"}:
-        transport.get_chat_member(contact.chat_id, bot.bot_id)
     contact.chat_type = chat.chat_type
     contact.display_name = chat.title or contact.display_name
-    contact.chat_fingerprint = hashlib.sha256(
-        f"{bot.bot_id}:{contact.chat_id}".encode()
-    ).hexdigest()
+    contact.chat_fingerprint = hashlib.sha256(f"{bot.bot_id}:{chat_id}".encode()).hexdigest()
 
     code = f"{secrets.randbelow(1_000_000):06d}"
     challenge = ContactVerificationChallenge(
@@ -89,18 +95,18 @@ def start_verification(
         window_started_at=window_start.isoformat(),
     )
     session.add(challenge)
-    session.flush()
+    session.commit()
+
     try:
         transport.send_message(
-            contact.chat_id,
+            chat_id,
             "Código de verificación de SecGuard Advisor: "
             f"{code}. Vence en 10 minutos. No lo compartas.",
         )
     except TelegramError as exc:
         challenge.status = "locked"
-        session.flush()
-        raise NotificationError("verification_send_failed", str(exc)) from exc
-    session.flush()
+        session.commit()
+        raise NotificationError("verification_send_failed", str(exc), persist_state=True) from exc
     return challenge
 
 
@@ -119,17 +125,19 @@ def confirm_verification(
     if datetime.fromisoformat(challenge.expires_at) <= now:
         challenge.status = "expired"
         session.flush()
-        raise NotificationError("code_expired", "El código expiró.")
+        raise NotificationError("code_expired", "El código expiró.", persist_state=True)
     if challenge.attempts >= challenge.max_attempts:
         challenge.status = "locked"
         session.flush()
-        raise NotificationError("verification_locked", "El desafío está bloqueado.")
+        raise NotificationError(
+            "verification_locked", "El desafío está bloqueado.", persist_state=True
+        )
     challenge.attempts += 1
     if _hash_code((code or "").strip()) != challenge.code_sha256:
         if challenge.attempts >= challenge.max_attempts:
             challenge.status = "locked"
         session.flush()
-        raise NotificationError("code_invalid", "El código no es correcto.")
+        raise NotificationError("code_invalid", "El código no es correcto.", persist_state=True)
     challenge.status = "consumed"
     challenge.consumed_at = now.isoformat()
     contact.status = "verified"

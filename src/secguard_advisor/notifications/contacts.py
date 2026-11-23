@@ -144,15 +144,22 @@ def case_link(session: Session, contact_id: str, case_id: str) -> ContactCaseLin
     return session.get(ContactCaseLink, (contact_id, case_id))
 
 
-def is_eligible(session: Session, *, contact: ContactChannel, case_id: str) -> bool:
+def eligibility_error(session: Session, *, contact: ContactChannel, case_id: str) -> str | None:
+    """Return the safe reason why a contact cannot receive a report, or ``None``."""
+    if contact.status != "verified":
+        return "contact_unverified"
+    if contact.consent_status != "granted":
+        return "consent_missing"
+    if not contact.active:
+        return "contact_unverified"
     link = case_link(session, contact.id, case_id)
-    return bool(
-        contact.status == "verified"
-        and contact.active
-        and contact.consent_status == "granted"
-        and link is not None
-        and link.authorized
-    )
+    if link is None or not link.authorized:
+        return "case_not_authorized"
+    return None
+
+
+def is_eligible(session: Session, *, contact: ContactChannel, case_id: str) -> bool:
+    return eligibility_error(session, contact=contact, case_id=case_id) is None
 
 
 def eligible_contacts(session: Session, case_id: str) -> list[ContactChannel]:

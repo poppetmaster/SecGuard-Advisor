@@ -13,6 +13,19 @@ from secguard_advisor.notifications.errors import NotificationError
 from secguard_advisor.reports.canonical import canonical_json, canonical_sha256, parse_json
 from secguard_advisor.reports.errors import report_error
 
+CONTENT_FIELDS = (
+    "schema_version",
+    "case_id",
+    "report_id",
+    "report_version_id",
+    "report_version_number",
+    "dataset_sha256",
+    "outbound_text",
+    "outbound_text_sha256",
+    "pdf_sha256",
+    "content_policy",
+)
+
 
 def _pdf_artifact(session: Session, version: ReportVersion) -> ReportArtifact:
     artifact = session.scalar(
@@ -43,15 +56,7 @@ def build_outbound_text(dataset: dict[str, Any], version: ReportVersion) -> str:
     )
 
 
-def build_manifest(
-    session: Session,
-    version: ReportVersion,
-    contact_ids: list[str],
-) -> dict[str, Any]:
-    if version.status != "ready":
-        raise report_error("version_not_found")
-    dataset = parse_json(version.dataset_json)
-    pdf = _pdf_artifact(session, version)
+def _recipients(session: Session, contact_ids: list[str]) -> list[dict[str, Any]]:
     recipients = []
     for contact_id in contact_ids:
         contact = session.get(ContactChannel, contact_id)
@@ -65,8 +70,17 @@ def build_manifest(
                 "chat_fingerprint": contact.chat_fingerprint,
             }
         )
+    return recipients
+
+
+def _payload(session: Session, version: ReportVersion, contact_ids: list[str]) -> dict[str, Any]:
+    if version.status != "ready":
+        raise report_error("version_not_found")
+    dataset = parse_json(version.dataset_json)
+    pdf = _pdf_artifact(session, version)
+    recipients = _recipients(session, contact_ids)
     outbound_text = build_outbound_text(dataset, version)
-    payload = {
+    return {
         "schema_version": "report-manifest-v1",
         "case_id": version.case_id,
         "report_id": version.report_id,
@@ -80,6 +94,33 @@ def build_manifest(
         "recipients": recipients,
         "recipients_sha256": canonical_sha256(recipients),
     }
+
+
+def build_manifest(
+    session: Session,
+    version: ReportVersion,
+    contact_ids: list[str],
+) -> dict[str, Any]:
+    """Approved set manifest: content plus the exact confirmed recipient set."""
+    payload = _payload(session, version, contact_ids)
+    payload["manifest_sha256"] = canonical_sha256(payload)
+    return payload
+
+
+def build_recipient_manifest(
+    session: Session,
+    version: ReportVersion,
+    contact_id: str,
+    *,
+    approved_recipients_sha256: str,
+) -> dict[str, Any]:
+    """Per-recipient manifest derived from the approved set manifest.
+
+    It keeps the approved content and this recipient's own entry, and records the hash of the
+    confirmed recipient set so an individual event cannot be compared against a different scope.
+    """
+    payload = _payload(session, version, [contact_id])
+    payload["approved_recipients_sha256"] = approved_recipients_sha256
     payload["manifest_sha256"] = canonical_sha256(payload)
     return payload
 

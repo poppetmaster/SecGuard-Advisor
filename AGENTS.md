@@ -95,8 +95,10 @@ son preparado, solicitado, aceptado, fallido, incierto, parcial y omitido, y «a
 entregado ni leído. Un timeout incierto no se reintenta automáticamente y el reinicio marca las
 solicitudes en vuelo como inciertas conservando los componentes aceptados. El transporte real está
 implementado con timeouts y sin reintentos internos, pero toda la aceptación del corte usa el doble
-`StubTelegramTransport`: no se enviaron códigos ni informes reales. Evidencia:
-`docs/evidencia/006-corte-b/`.
+`StubTelegramTransport`: no se enviaron códigos ni informes reales. Las correcciones del 2026-11-23
+fijan el manifiesto por alcance, la ejecución atómica e idempotente, la persistencia de la
+verificación y la integridad del PDF. Evidencia: `docs/evidencia/006-corte-b/` y
+`docs/evidencia/006-correcciones-corte-b/`.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -269,6 +271,19 @@ la aplicación no ejecuta `create_all` al arrancar.
   depende del modo manual/automático. «Aceptado» no equivale a entregado ni leído.
 - Un timeout incierto no se reintenta automáticamente y el reinicio conserva los componentes
   aceptados. Ninguna llamada HTTP se ejecuta con una transacción SQLite de escritura abierta.
+- La confirmación manual conserva el manifiesto del conjunto exacto de destinatarios. Cada evento
+  guarda un manifiesto derivado de un destinatario (`approved_recipients_sha256`) y la revalidación
+  compara alcances equivalentes; nunca un evento individual contra el conjunto. La revocación de un
+  destinatario no bloquea a otro que conserva sus permisos.
+- Crear o reutilizar el evento no autoriza la ejecución. Cada componente se reclama con una transición
+  atómica `prepared → requested`; una repetición del POST no reenvía componentes `requested`,
+  `uncertain` ni `accepted`. El reintento ordinario rechaza un componente incierto con
+  `uncertain_requires_review`; la conciliación explícita no está implementada en el Corte B.
+- Los intentos fallidos de verificación, el bloqueo y la expiración se confirman aunque la respuesta
+  HTTP sea un error; una solicitud fallida de código cuenta para el límite por ventana.
+- Antes de iniciar la entrega se verifica el SHA-256 del PDF contra el manifiesto confirmado. Si falta
+  o difiere, no se envía el resumen ni el PDF; se entregan los mismos bytes validados, sin una segunda
+  lectura, y el hash aprobado nunca se actualiza automáticamente.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit

@@ -77,11 +77,14 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **822 passed**, 41 deselected (Cortes A y B de 006).
+- Pruebas rápidas: `make check` → **842 passed**, 43 deselected (Cortes A y B de 006).
 - Integraciones de notificaciones:
   `uv run pytest tests/acceptance/test_report_browser.py tests/acceptance/test_manual_notification_browser.py tests/integration/test_report_pdf.py`
-  → **3 passed**; contactos, envío manual y PDF real con Chrome local.
-- Pruebas focalizadas del Corte B: **37 passed** con `StubTelegramTransport`; sin red ni token real.
+  → **5 passed**; contactos, envío manual, integridad del PDF, estado incierto y PDF real con Chrome
+  local.
+- Pruebas focalizadas del Corte B: **56 passed** con `StubTelegramTransport`; sin red ni token real.
+- Correcciones del Corte B: manifiesto por alcance, ejecución atómica, persistencia de verificación e
+  integridad del PDF (`docs/evidencia/006-correcciones-corte-b/`).
 - Evaluación funcional final: **6/6** recuperaciones, 0 no pertinentes aceptadas, 0 fugas, umbral
   0.5033 congelado (`docs/evidencia/004-corte-6/evaluation-final.json`).
 - Aceptación de interfaz: 4 pruebas ASGI y recorrido Playwright MCP con servidor real; citas,
@@ -314,9 +317,15 @@ fragmento correspondiente (del caso o del corpus público) y, cuando vienen de u
    manifiesto (versión, resumen, hash del PDF, política y destinatarios enmascarados).
 5. Generá la confirmación y pulsá **Confirmar y enviar**. El resumen y el PDF se revalidan por
    separado; si cambia el contenido o los destinatarios, la confirmación se invalida.
-6. **Informes y notificaciones** muestra el estado por destinatario, componente e intento.
-   «Aceptado por Telegram» significa que el proveedor aceptó el envío; no prueba entrega ni lectura.
-7. El transporte predeterminado es el doble (`SECGUARD_TELEGRAM_TRANSPORT=stub`), que no usa red. El
+6. **Informes y notificaciones** muestra el estado por destinatario, componente e intento, con el
+   motivo seguro cuando un componente falla u omite. «Aceptado por Telegram» significa que el
+   proveedor aceptó el envío; no prueba entrega ni lectura.
+7. Cada evento guarda el manifiesto de su destinatario derivado del conjunto confirmado; la
+   revalidación es por destinatario y la revocación de uno no bloquea a otro. Un componente incierto
+   no se reintenta automáticamente: el historial pide revisión y oculta el reintento.
+8. Antes de enviar se verifica el SHA-256 del PDF contra el manifiesto. Si el archivo falta o cambió,
+   no se envía el resumen ni el PDF y el historial muestra el motivo.
+9. El transporte predeterminado es el doble (`SECGUARD_TELEGRAM_TRANSPORT=stub`), que no usa red. El
    transporte real existe, pero no se verificó con un token ni un destino reales.
 
 ### Consulta y revisión humana
@@ -548,7 +557,7 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 822 pruebas rápidas
+make check            # lint, formato y 842 pruebas rápidas
 make test-integration # integraciones existentes; pueden requerir Ollama/Qdrant
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000

@@ -79,3 +79,131 @@ def test_contacts_and_manual_send_browser(report_context) -> None:
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+def _pdf_path(report_context, version_id: str) -> Path:
+    from sqlalchemy import select
+
+    from secguard_advisor.db.models import ReportArtifact
+
+    with report_context.session_factory() as session:
+        artifact = session.scalar(
+            select(ReportArtifact).where(
+                ReportArtifact.report_version_id == version_id,
+                ReportArtifact.kind == "pdf",
+            )
+        )
+        return report_context.settings.reports_dir / artifact.relative_path
+
+
+def _serve(app):
+    port = _free_port()
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 15
+    while not server.started and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert server.started
+    return server, thread, f"http://127.0.0.1:{port}"
+
+
+def test_history_shows_pdf_integrity_failure(report_context) -> None:
+    CORRECTIONS = Path("docs/evidencia/006-correcciones-corte-b")
+    CORRECTIONS.mkdir(parents=True, exist_ok=True)
+    result = create_ready_report(report_context)
+    contact, _ = make_eligible_contact(report_context, alias="Integridad", chat_id="333333333")
+    transport = StubTelegramTransport()
+    path = _pdf_path(report_context, result.version_id)
+    original = path.read_bytes()
+    path.write_bytes(original + b"tampered")
+    app = create_app(report_context.settings, ollama_probe=lambda: False)
+    app.state.telegram_transport = transport
+    server, thread, base = _serve(app)
+    send_url = (
+        f"/cases/{report_context.case_id}/reports/{result.report_id}/versions/1/notifications"
+    )
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(channel="chrome", headless=True)
+            page = browser.new_page(viewport={"width": 1440, "height": 1000})
+            page.goto(f"{base}{send_url}", wait_until="networkidle")
+            page.fill("input[name='created_by']", "Guardia")
+            page.check(f"input[name='contact_ids'][value='{contact.id}']")
+            page.click("button:has-text('Generar confirmación')")
+            page.wait_for_url("**confirmation_id=**", timeout=30000)
+            with page.expect_navigation(wait_until="networkidle"):
+                page.click("button:has-text('Confirmar y enviar')")
+            body = page.text_content("body")
+            assert "El PDF no coincide con el aprobado" in body
+            assert "Fallido" in body
+            assert transport.calls == []
+            page.screenshot(
+                path=str(CORRECTIONS / "manual-history-integrity-desktop.png"), full_page=True
+            )
+
+            path.write_bytes(original)
+            with page.expect_navigation(wait_until="networkidle"):
+                page.click("tr:has-text('Integridad') button:has-text('Reintentar')")
+            assert "Aceptado por Telegram" in page.text_content("body")
+            browser.close()
+    finally:
+        path.write_bytes(original)
+        server.should_exit = True
+        thread.join(timeout=5)
+
+
+def test_history_shows_uncertain_requires_review(report_context) -> None:
+    from secguard_advisor.db.models import ReportVersion
+    from secguard_advisor.notifications.confirmations import create_confirmation
+
+    CORRECTIONS = Path("docs/evidencia/006-correcciones-corte-b")
+    CORRECTIONS.mkdir(parents=True, exist_ok=True)
+    result = create_ready_report(report_context)
+    contact, _ = make_eligible_contact(report_context, alias="Incierto", chat_id="444444444")
+    with report_context.session_factory() as session:
+        version = session.get(ReportVersion, result.version_id)
+        confirmation = create_confirmation(
+            session,
+            case_id=report_context.case_id,
+            report_id=result.report_id,
+            version_number=version.version_number,
+            contact_ids=[contact.id],
+            created_by="Guardia",
+        )
+        session.commit()
+        confirmation_id = confirmation.id
+    transport = StubTelegramTransport()
+    transport.uncertain_on.add("send_document")
+    app = create_app(report_context.settings, ollama_probe=lambda: False)
+    app.state.telegram_transport = transport
+    server, thread, base = _serve(app)
+    send_url = (
+        f"/cases/{report_context.case_id}/reports/{result.report_id}/versions/1/notifications"
+    )
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(channel="chrome", headless=True)
+            page = browser.new_page(viewport={"width": 1440, "height": 1000})
+            page.goto(
+                f"{base}{send_url}?confirmation_id={confirmation_id}", wait_until="networkidle"
+            )
+            with page.expect_navigation(wait_until="networkidle"):
+                page.click("button:has-text('Confirmar y enviar')")
+            body = page.text_content("body")
+            assert "Revisión requerida" in body
+            assert "Parcial" in body
+            row = page.locator("tr:has-text('Incierto')")
+            assert row.locator("button:has-text('Reintentar')").count() == 0
+            page.screenshot(
+                path=str(CORRECTIONS / "manual-history-review-desktop.png"), full_page=True
+            )
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.reload(wait_until="networkidle")
+            page.screenshot(
+                path=str(CORRECTIONS / "manual-history-review-mobile.png"), full_page=True
+            )
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
