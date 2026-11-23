@@ -76,7 +76,7 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **772 passed**, 40 deselected (Corte A de 006).
+- Pruebas rápidas: `make check` → **786 passed**, 40 deselected (Corte A de 006).
 - Integraciones del Corte A: `uv run pytest tests/integration/test_report_pdf.py tests/acceptance/test_report_browser.py` → **2 passed**; PDF real de 3 páginas y navegador de escritorio/móvil, con Chrome local.
 - Evaluación funcional final: **6/6** recuperaciones, 0 no pertinentes aceptadas, 0 fugas, umbral
   0.5033 congelado (`docs/evidencia/004-corte-6/evaluation-final.json`).
@@ -290,7 +290,8 @@ fragmento correspondiente (del caso o del corpus público) y, cuando vienen de u
    entrega el artefacto persistido y **Vista de impresión** abre la composición de impresión.
 5. Cada regeneración crea una versión nueva; el historial conserva las anteriores.
 6. La generación no envía mensajes. La síntesis de IA es opcional y cae a un informe factual si no
-   está autorizada o falla.
+   está autorizada o falla. La síntesis externa solo se habilita con procedencia `synthetic_public`,
+   autorización `fictional_case`, presupuesto disponible y contexto admitido; Qualys privado no sale.
 
 ### Consulta y revisión humana
 

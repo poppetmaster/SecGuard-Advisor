@@ -641,6 +641,9 @@ class QualysImport(Base):
         String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False)
+    provenance: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="private_qualys", server_default="private_qualys"
+    )
     original_filename: Mapped[str] = mapped_column(Text, nullable=False)
     csv_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     csv_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -694,6 +697,7 @@ class QualysImport(Base):
             ("validating", "staged", "rejected", "confirmed", "cancelled", "expired", "failed"),
             "status_valid",
         ),
+        _status_check("provenance", ("private_qualys", "synthetic_public"), "provenance_valid"),
         _status_check(
             "manifest_status",
             ("absent", "matched", "mismatch", "invalid"),
@@ -1030,6 +1034,9 @@ class ReportVersion(Base):
         String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
     )
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="ready", server_default="ready"
+    )
     generation_key: Mapped[str | None] = mapped_column(String(64))
     snapshot_import_id: Mapped[str] = mapped_column(
         String(32), ForeignKey("qualys_imports.id"), nullable=False
@@ -1061,6 +1068,7 @@ class ReportVersion(Base):
         Index("ix_report_versions_case_created", "case_id", "created_at"),
         Index("ix_report_versions_snapshot", "snapshot_import_id"),
         CheckConstraint("version_number >= 1", name="version_positive"),
+        _status_check("status", ("generating", "ready", "failed"), "version_status_valid"),
         _status_check(
             "synthesis_status",
             ("not_requested", "completed", "unavailable", "failed"),

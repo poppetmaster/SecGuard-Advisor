@@ -27,9 +27,8 @@ Se implementó el informe ejecutivo dentro del caso:
 **Pendientes**: T035–T081 (contactos, envío manual, reglas automáticas, recuperación y aceptación
 integrada). No se inició T035.
 
-La migración del Corte A es `alembic/versions/d8e9f0a1b2c3_add_reports_and_report_runs.py`; crea
-`reports`, `report_versions`, `report_artifacts` y extiende `runs` para `kind='report'`.
-`generation_key` queda preparado para el Corte C.
+Las migraciones del Corte A son `d8e9f0a1b2c3` (tablas de informe y `runs`) y `e2f3a4b5c6d7`
+(`report_versions.status` y `qualys_imports.provenance`). `generation_key` queda preparado para C.
 
 ## 3. Verificación observada
 
@@ -39,9 +38,10 @@ La migración del Corte A es `alembic/versions/d8e9f0a1b2c3_add_reports_and_repo
 | `uv run python scripts/check_pdf_runtime.py` | `PDF runtime OK (chrome, 9130 bytes)` |
 | `node scripts/render_report_charts.mjs --check` | `ECharts SSR OK (2790 bytes)` |
 | `make assets` | Tailwind y recursos recompilados |
-| `make check` | **772 passed, 40 deselected** |
+| `make check` | **786 passed, 40 deselected** |
 | PDF real + navegador | **2 passed** (`test_report_pdf.py`, `test_report_browser.py`) |
 | `pre-commit run --all-files` | Todos los hooks en verde |
+| Correcciones focalizadas de síntesis/servicio/migración | **21 passed** |
 
 La prueba de PDF usa pypdf para páginas, texto y estructura. La inspección visual se hizo sobre las
 páginas renderizadas como imágenes; no se atribuye a pypdf.
@@ -54,6 +54,7 @@ páginas renderizadas como imágenes; no se atribuye a pypdf.
 - `docs/evidencia/006-corte-a/browser-desktop.png`
 - `docs/evidencia/006-corte-a/browser-mobile.png`
 - `docs/evidencia/006-corte-a/browser-mobile-nav.png`
+- `docs/evidencia/006-correcciones-corte-a/README.md` y artefactos de la revisión
 
 ## 5. Hallazgos del análisis
 
@@ -64,7 +65,11 @@ detalle está en `docs/planificacion/006-analisis.md`.
 
 ## 6. Defectos actuales y verificaciones no ejecutadas
 
-**Defectos abiertos del Corte A**: ninguno observado en las pruebas y la inspección visual local.
+**Defectos abiertos del Corte A**: ninguno observado tras las correcciones de la revisión.
+
+Se corrigieron tres defectos reportados: controles de síntesis, validación de afirmaciones/contenido y
+transacciones/recuperación de artefactos. La evidencia y las pruebas están en
+`docs/evidencia/006-correcciones-corte-a/`.
 
 **Verificaciones futuras no ejecutadas**:
 

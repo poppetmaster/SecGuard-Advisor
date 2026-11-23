@@ -159,7 +159,8 @@ envío de informes para el código (bloqueo circular).
 - Componentes `summary` y `document` con estado propio y restricción única por evento+tipo.
 
 **Razón**: una sola definición de «aprobado» evita que la UI confirme algo distinto de lo que se
-envía. El cruce manual/automático reutiliza el evento y no reenvía lo aceptado.
+envía. El cruce manual/automático reutiliza el evento y no reenvía lo aceptado. La síntesis no se
+presenta como hecho: resumen y focos son deterministas y la prosa libre es propuesta.
 
 **Alternativas**: confirmar solo el texto (no cubre PDF ni destinatarios), hash por modo (permite
 duplicar), comparar contenido en memoria (se pierde al reiniciar).
@@ -264,3 +265,14 @@ tiene su propia migración aditiva y su verificación de cierre.
 
 **Razón**: permite implementar y aceptar A y B sin esperar C, y evita que una tabla futura bloquee la
 verificación de un corte anterior.
+
+## R16. Controles y recuperación del informe
+
+**Decisión**: la síntesis reutiliza autorización por alcance, procedencia (`private_qualys` /
+`synthetic_public`), presupuesto con reserva, contexto del proveedor y concurrencia de 005. Qualys
+privado no se envía a externos. La generación usa `report_versions.status`, área temporal y
+publicación solo de versiones `ready`; un fallo limpia solo su propia versión y la misma
+`generation_key` puede reutilizarse sin sobrescribir versiones válidas.
+
+**Razón**: una autorización genérica o una transacción larga no acreditan saldo, contenido permitido
+ni recuperación segura.

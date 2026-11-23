@@ -22,12 +22,17 @@ Convenciones: identificadores `String(32)` hexadecimales con `new_id()`; fechas 
 
 ### `report_versions`
 
+La versión se crea en `generating`, se completa en `ready` y solo entonces se lista o publica. Una
+versión `failed` se limpia y puede reutilizarse con la misma `generation_key`; nunca se sobrescribe
+una versión `ready` anterior.
+
 | Campo | Tipo | Regla |
 |---|---|---|
 | `id` | String(32) PK | |
 | `report_id` | FK `reports.id` CASCADE | obligatorio |
 | `case_id` | FK `cases.id` CASCADE | copia para aislamiento e índice |
 | `version_number` | Integer | ≥1; único por `report_id` |
+| `status` | String(20) | `generating`, `ready`, `failed`; solo `ready` se publica |
 | `generation_key` | String(64) | nullable; único cuando no es nulo. Automático: `auto:<evaluation_id>`; manual: nulo |
 | `snapshot_import_id` | FK `qualys_imports.id` RESTRICT | debe estar `confirmed` y del mismo caso |
 | `snapshot_sequence` | Integer | copia de `confirmed_sequence` |
@@ -45,7 +50,8 @@ Convenciones: identificadores `String(32)` hexadecimales con `new_id()`; fechas 
 | `created_at` | String(40) | UTC |
 
 Restricciones: `Unique(report_id, version_number)`, `Check(version_number >= 1)`,
-`Check(synthesis_status IN (...))`, índice único parcial `(generation_key) WHERE generation_key IS NOT NULL`.
+`Check(synthesis_status IN (...))`, `Check(status IN ('generating','ready','failed'))` e índice único
+parcial `(generation_key) WHERE generation_key IS NOT NULL`.
 El Corte A no referencia tablas de C: `generation_key` es un texto opaco que el servicio recibe.
 
 #### Creación o recuperación por `generation_key` (DEL-01)
@@ -103,7 +109,7 @@ mostrar el costo real.
   "case": {"id": "...", "title": "...", "scope": "...", "is_synthetic": true, "synthetic_notice": "..."},
   "snapshot": {"import_id": "...", "sequence": 3, "confirmed_at": "...", "csv_sha256": "...",
                "row_count": 100, "valid_rows": 100, "invalid_rows": 0, "warning_rows": 0,
-               "manifest_status": "matched", "origin": "imported"},
+               "manifest_status": "matched", "origin": "imported", "provenance": "private_qualys"},
   "filters": {"status_group": null, "severity_level": null, "asset": null, "qid": null,
               "cve": null, "exploitability": null, "malware": null, "priority": null},
   "base": {"total_rows": 100, "pending_known": 70, "fixed": 20, "manual_review": 10,
@@ -210,8 +216,9 @@ actuales.
 }
 ```
 
-El mismo manifiesto se usa para la confirmación manual, la activación/evaluación de una regla y la
-ejecución. Antes de llamar a Telegram, el ejecutor recalcula y compara `manifest_sha256`; una
+La procedencia `private_qualys` impide enviar agregados a un proveedor externo; solo
+`synthetic_public` con autorización `fictional_case` puede habilitar la síntesis externa. El mismo
+manifiesto se usa para la confirmación manual, la activación/evaluación de una regla y la ejecución. Antes de llamar a Telegram, el ejecutor recalcula y compara `manifest_sha256`; una
 discrepancia bloquea el envío. El manifiesto no contiene token, `chat_id` completo ni contenido
 privado adicional.
 

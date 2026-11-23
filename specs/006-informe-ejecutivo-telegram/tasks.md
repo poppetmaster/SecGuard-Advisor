@@ -233,6 +233,24 @@ SQLite, abrir la vista web, descargar el PDF y verificar misma instantánea, fil
   - Comprobación: incluye comandos, resultados, capturas, limitaciones (Node/Playwright), top 5, factual/síntesis y pendientes.
   - Evidencia: documento revisado y enlaces a PDF/capturas.
 
+## Correcciones posteriores a la revisión del Corte A (2026-11-23)
+
+Estas correcciones pertenecen a T001–T034 y no habilitan T035.
+
+- [X] C01 Integrar la síntesis con autorización por alcance, procedencia real (`private_qualys` /
+      `synthetic_public`), presupuesto con reserva/liquidación, contexto y concurrencia de 005.
+- [X] C02 Validar todos los textos, rechazar contradicciones de ausencia, cifras libres, IP/nombres
+      internos y citas inexistentes; resumen y focos deterministas.
+- [X] C03 Separar generación en transacciones cortas, usar `report_versions.status`, área temporal,
+      publicación solo de versiones `ready` y limpieza acotada.
+- [X] C04 Mantener `generation_key` idempotente y ligado al caso; cubrir concurrencia y reintento.
+- [X] C05 Añadir regresiones de autorización, presupuesto, consumo, contexto, inicialización,
+      contradicción, limitaciones, citas, fallo parcial de archivos y concurrencia.
+- [X] C06 Ejecutar `make check`, PDF/navegador y documentar la evidencia en
+      `docs/evidencia/006-correcciones-corte-a/`.
+
+**Verificado**: `pre-commit` final en verde. Las integraciones no ejecutadas se limitan a envío real y proveedores pagados, fuera del Corte A.
+
 **Checkpoint A**: informe web/PDF verificable, inmutable y sin envíos.
 
 ---

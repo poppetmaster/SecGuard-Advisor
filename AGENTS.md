@@ -74,8 +74,10 @@ en SQLite, se persiste en `report_versions` y alimenta la vista web y el PDF; el
 Playwright/Chrome y gráficas ECharts renderizadas localmente con Node (SSR a SVG). Se mantienen top 5
 de activos por defecto, alias de activos, exclusión del título sensible (`include_case_title=false`),
 indicadores independientes, `Fixed` separado y ausencia de P1–P4. La síntesis de IA es opcional y cae
-a un informe factual si falla o no está autorizada. La recuperación automática futura usa
-`generation_key`; C no se implementó. Evidencia: `docs/evidencia/006-corte-a/`.
+a un informe factual si falla o no está autorizada. La síntesis externa exige procedencia
+`synthetic_public`, autorización `fictional_case`, presupuesto con reserva y los controles de contexto y
+concurrencia de 005; Qualys privado no sale. La recuperación automática futura usa `generation_key`; C
+no se implementó. Evidencia: `docs/evidencia/006-corte-a/`.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,

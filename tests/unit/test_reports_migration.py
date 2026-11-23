@@ -19,9 +19,12 @@ def test_reports_migration_upgrade_and_downgrade(tmp_path: Path, monkeypatch) ->
     assert {"reports", "report_versions", "report_artifacts"} <= tables
     columns = {column["name"] for column in inspect(engine).get_columns("report_versions")}
     assert "generation_key" in columns
+    assert "status" in columns
+    qualys_columns = {column["name"] for column in inspect(engine).get_columns("qualys_imports")}
+    assert "provenance" in qualys_columns
     engine.dispose()
 
-    command.downgrade(config, "-1")
+    command.downgrade(config, "c1d2e3f4a5b6")
     engine = create_engine(f"sqlite:///{tmp_path / 'storage' / 'secguard.sqlite3'}")
     tables = set(inspect(engine).get_table_names())
     assert "reports" not in tables

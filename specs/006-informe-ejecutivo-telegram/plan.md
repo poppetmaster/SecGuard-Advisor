@@ -249,7 +249,14 @@ reinicio y timeout incierto no duplican, no reenvían componentes aceptados y no
 14. **Revalidación por componente**: el ejecutor compartido revalida destinatario, consentimiento,
     vínculo, manifiesto y regla antes del resumen y del PDF, en manual y automático.
 15. **Síntesis canónica**: `report-synthesis-v1` usa `claim_refs` estructurados y citas verificadas;
-    la validación literal no garantiza respaldo semántico.
+    la validación literal no garantiza respaldo semántico. Resumen y focos son plantillas
+    deterministas; el modelo solo propone recomendaciones.
+16. **Controles 005**: autorización por alcance, procedencia `synthetic_public`, presupuesto,
+    reserva/liquidación, contexto y concurrencia. Qualys privado nunca sale a un proveedor externo.
+17. **Generación recuperable**: `report_versions.status` (`generating`/`ready`/`failed`), artefactos
+    temporales, publicación atómica lógica y limpieza acotada; sin transacción durante modelo o PDF.
+18. **Validación estricta**: todos los textos se validan; contradicciones de ausencia, cifras libres,
+    IP/nombres internos y citas inexistentes producen fallback factual.
 
 ## Non-Functional Targets
 

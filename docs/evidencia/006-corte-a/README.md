@@ -36,7 +36,7 @@ uv run pre-commit run --all-files
 | `scripts/check_pdf_runtime.py` | `PDF runtime OK (chrome, 9130 bytes)` |
 | `render_report_charts.mjs --check` | `ECharts SSR OK (2790 bytes)` |
 | `make assets` | Tailwind y recursos vendorizados recompilados |
-| `make check` | **772 passed, 40 deselected** |
+| `make check` | **786 passed, 40 deselected** |
 | PDF + navegador (integración) | **2 passed**; PDF real de 3 páginas y recorrido de escritorio/móvil |
 | `pre-commit run --all-files` | Todos los hooks en verde |
 

@@ -193,6 +193,8 @@ def reports_create(
                 filters=filters,
                 author=author.strip() or "Responsable no declarado",
                 synthesize=synthesize == "on",
+                session_factory=request.app.state.session_factory,
+                generation_slot=request.app.state.generation_slot,
             )
             session.commit()
     except ReportError as exc:

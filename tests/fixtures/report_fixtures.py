@@ -14,6 +14,9 @@ from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import (
     Case,
+    Document,
+    DocumentChunk,
+    DocumentVersion,
     QualysImport,
     QualysVulnerability,
     QualysVulnerabilityCve,
@@ -126,7 +129,12 @@ def default_rows() -> list[dict[str, Any]]:
     ]
 
 
-def build_report_context(tmp_path: Path, rows: list[dict[str, Any]] | None = None) -> ReportContext:
+def build_report_context(
+    tmp_path: Path,
+    rows: list[dict[str, Any]] | None = None,
+    *,
+    provenance: str = "private_qualys",
+) -> ReportContext:
     settings = Settings(_env_file=None, storage_dir=tmp_path / "storage")
     settings.ensure_directories()
     engine = create_engine_for_url(settings.database_url)
@@ -137,12 +145,18 @@ def build_report_context(tmp_path: Path, rows: list[dict[str, Any]] | None = Non
         case = Case(title="Caso ficticio 006", synthetic_notice="Escenario educativo sintético")
         session.add(case)
         session.flush()
-        snapshot = _snapshot(session, case.id, data)
+        snapshot = _snapshot(session, case.id, data, provenance=provenance)
         session.commit()
         return ReportContext(settings, factory, case.id, snapshot.id)
 
 
-def _snapshot(session: Session, case_id: str, rows: list[dict[str, Any]]) -> QualysImport:
+def _snapshot(
+    session: Session,
+    case_id: str,
+    rows: list[dict[str, Any]],
+    *,
+    provenance: str = "private_qualys",
+) -> QualysImport:
     status_counts: dict[str, int] = {}
     severity_counts: dict[str, int] = {}
     exploitability_counts: dict[str, int] = {}
@@ -164,6 +178,7 @@ def _snapshot(session: Session, case_id: str, rows: list[dict[str, Any]]) -> Qua
     snapshot = QualysImport(
         case_id=case_id,
         status="confirmed",
+        provenance=provenance,
         original_filename="fictional_006.csv",
         csv_sha256="a" * 64,
         csv_bytes=1234,
@@ -232,3 +247,48 @@ def _snapshot(session: Session, case_id: str, rows: list[dict[str, Any]]) -> Qua
         for cve in row.get("cves", []):
             session.add(QualysVulnerabilityCve(vulnerability_id=vulnerability.id, cve=cve))
     return snapshot
+
+
+def add_evidence_chunk(factory: sessionmaker[Session], case_id: str) -> str:
+    """Create one real case-evidence chunk for documentary reference tests."""
+    with factory() as session:
+        document = Document(
+            scope_key=f"case:{case_id}",
+            case_id=case_id,
+            origin="case_evidence",
+            title="Evidencia de prueba",
+        )
+        session.add(document)
+        session.flush()
+        version = DocumentVersion(
+            document_id=document.id,
+            scope_key=document.scope_key,
+            version_number=1,
+            original_filename="evidencia.md",
+            content_type="text/markdown",
+            size_bytes=20,
+            sha256="c" * 64,
+            status="available",
+            extraction_version="test",
+            normalization_version="test",
+            chunking_version="test",
+        )
+        session.add(version)
+        session.flush()
+        chunk = DocumentChunk(
+            version_id=version.id,
+            chunk_index=0,
+            char_start=0,
+            char_end=10,
+            text="Evidencia de prueba",
+            text_sha256="d" * 64,
+            token_count=3,
+            token_count_source="test",
+            embedding_model="test",
+            embedding_dim=768,
+            index_status="indexed",
+            locator="p:1",
+        )
+        session.add(chunk)
+        session.commit()
+        return chunk.id

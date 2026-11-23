@@ -46,6 +46,7 @@ def build_dataset(
             "warning_rows": snapshot.warning_rows,
             "manifest_status": snapshot.manifest_status,
             "origin": "imported",
+            "provenance": snapshot.provenance,
         },
         "content_policy": dict(DEFAULT_CONTENT_POLICY),
         "filters": active.as_dict(),

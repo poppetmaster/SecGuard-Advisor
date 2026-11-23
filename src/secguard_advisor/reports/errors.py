@@ -24,8 +24,10 @@ REPORT_ERROR_CODES = {
     "charts_render_failed": "No se pudieron generar las gráficas del PDF.",
     "synthesis_invalid": "La síntesis no cumple el contrato del informe.",
     "generation_key_conflict": "La clave de generación ya está asociada a otra versión.",
+    "generation_busy": "Ya hay una generación de informe en curso.",
+    "generation_conflict": "No se pudo reservar una versión del informe; reintentá.",
 }
 
 
-def report_error(code: str) -> ReportError:
-    return ReportError(code, REPORT_ERROR_CODES[code])
+def report_error(code: str, status: int = 422) -> ReportError:
+    return ReportError(code, REPORT_ERROR_CODES[code], status)

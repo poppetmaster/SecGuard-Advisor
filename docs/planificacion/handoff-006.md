@@ -15,6 +15,7 @@ Sin contactos, envíos, reglas automáticas ni Telegram. Sin llamadas pagadas ni
 | `src/secguard_advisor/web/templates/reports/` | `index`, `new`, `view`, `print`, `_cards`, `_charts`, `_history` |
 | `src/secguard_advisor/web/static/js/report-charts.js` | Gráficas ECharts interactivas y tablas alternativas |
 | `alembic/versions/d8e9f0a1b2c3_add_reports_and_report_runs.py` | Tablas de informe y extensión de `runs` |
+| `alembic/versions/e2f3a4b5c6d7_add_report_status_and_qualys_provenance.py` | Estado de versión y procedencia Qualys |
 | `scripts/render_report_charts.mjs` | ECharts SSR a SVG para PDF |
 | `scripts/check_pdf_runtime.py` | Gate de Playwright/Chrome |
 | `tests/.../test_report_*` | Métricas, dataset, servicio, artefactos, síntesis, rutas, concordancia, PDF, navegador y recorrido |
@@ -41,12 +42,13 @@ Sin contactos, envíos, reglas automáticas ni Telegram. Sin llamadas pagadas ni
 
 | Comprobación | Resultado |
 |---|---|
-| `make check` | **772 passed, 40 deselected** |
+| `make check` | **786 passed, 40 deselected** |
 | PDF real + navegador | **2 passed** |
 | `scripts/check_pdf_runtime.py` | PDF runtime OK con Chrome local |
 | `render_report_charts.mjs --check` | ECharts SSR OK |
 | `make assets` | Recursos recompilados |
 | `pre-commit run --all-files` | Todos los hooks en verde |
+| Correcciones focalizadas | **21 passed** |
 
 La inspección visual del PDF se realizó sobre páginas renderizadas como imágenes. pypdf solo se usó
 para páginas, texto y estructura.
@@ -59,6 +61,7 @@ para páginas, texto y estructura.
 - `docs/evidencia/006-corte-a/browser-desktop.png`
 - `docs/evidencia/006-corte-a/browser-mobile.png`
 - `docs/evidencia/006-corte-a/browser-mobile-nav.png`
+- `docs/evidencia/006-correcciones-corte-a/README.md` y artefactos de la revisión
 
 ## 6. Cómo probarlo
 
@@ -69,6 +72,16 @@ para páginas, texto y estructura.
 4. Abrir **Informe ejecutivo** → **Generar informe** → elegir instantánea → generar.
 5. Revisar tarjetas, gráficas, tablas y descargar el PDF.
 6. Regenerar para comprobar que se crea otra versión y el historial conserva la anterior.
+
+## 6.1 Correcciones de la revisión
+
+- La síntesis externa exige autorización por alcance, procedencia `synthetic_public`, presupuesto con
+  reserva/liquidación, contexto y concurrencia; Qualys privado no sale.
+- Resumen y focos son deterministas; la prosa del modelo es propuesta. Se rechazan contradicciones,
+  cifras libres, IP/nombres internos y citas inexistentes.
+- La generación usa `report_versions.status`, transacciones cortas, área temporal y publicación solo de
+  versiones `ready`; un fallo limpia únicamente su versión y el reintento reutiliza `generation_key`.
+- Evidencia: `docs/evidencia/006-correcciones-corte-a/`.
 
 ## 7. Decisiones técnicas vigentes
 
