@@ -15,7 +15,6 @@ from sqlalchemy import text
 from secguard_advisor.config import Settings, get_settings
 from secguard_advisor.conversation.concurrency import GenerationSlot
 from secguard_advisor.conversation.memory import open_memory
-from secguard_advisor.conversation.providers import ProviderRegistry
 from secguard_advisor.conversation.providers.context import build_prompt_counter
 from secguard_advisor.db.engine import create_engine_for_settings, create_session_factory
 from secguard_advisor.db.recovery import reconcile_startup
@@ -25,7 +24,15 @@ from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.retrieval.index import QdrantIndex
 from secguard_advisor.retrieval.instance import InstanceLockBusy, lock_conflict_code
 from secguard_advisor.web.errors import AppError, error_response, message_for
-from secguard_advisor.web.routes import cases, chat, documents, review, runs, vulnerabilities
+from secguard_advisor.web.routes import (
+    ai_settings,
+    cases,
+    chat,
+    documents,
+    review,
+    runs,
+    vulnerabilities,
+)
 
 _WEB_DIR = Path(__file__).parent
 _ALLOWED_HOSTS = {"127.0.0.1", "localhost", "testserver"}
@@ -97,11 +104,6 @@ def create_app(
             storage_dir=resolved.storage_dir,
         )
 
-    registry = ProviderRegistry(resolved)
-
-    def default_llm():
-        return registry.create()
-
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         resolved.ensure_directories()
@@ -127,18 +129,20 @@ def create_app(
         version=resolved.app_version,
         lifespan=lifespan,
     )
-    app.state.provider_registry = registry
     app.state.ollama_probe = probe
     app.state.qdrant_probe = qdrant_probe or _default_qdrant_probe(resolved)
     app.state.embedder_factory = embedder_factory or default_embedder
     app.state.index_factory = index_factory or default_index
-    app.state.llm_factory = llm_factory or default_llm
+    app.state.llm_factory = llm_factory
+    app.state.llm_factory_override = llm_factory
     app.state.generation_slot = generation_slot or GenerationSlot(
         resolved.generation_queue_timeout_seconds
     )
     app.state.token_counter = token_counter or build_prompt_counter(resolved)
+    app.state.token_counter_override = token_counter
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
+    app.include_router(ai_settings.router)
     app.include_router(cases.router)
     app.include_router(documents.router)
     app.include_router(vulnerabilities.router)

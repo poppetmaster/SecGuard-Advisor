@@ -472,6 +472,37 @@ class ProviderBudgetLedger(Base):
     )
 
 
+class AIConfiguration(Base):
+    __tablename__ = "ai_configuration"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    active_provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    updated_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        CheckConstraint("id = 1", name="ai_configuration_singleton"),
+        _status_check(
+            "active_provider", ("ollama", "deepseek", "anthropic"), "ai_active_provider_valid"
+        ),
+    )
+
+
+class AIProviderProfile(Base):
+    __tablename__ = "ai_provider_profiles"
+
+    provider: Mapped[str] = mapped_column(String(20), primary_key=True)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    max_output_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    timeout_seconds: Mapped[float] = mapped_column(Float, nullable=False)
+    updated_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        _status_check("provider", ("ollama", "deepseek", "anthropic"), "ai_profile_provider_valid"),
+        CheckConstraint("max_output_tokens > 0", name="ai_profile_max_output_positive"),
+        CheckConstraint("timeout_seconds > 0", name="ai_profile_timeout_positive"),
+    )
+
+
 class RunStep(Base):
     __tablename__ = "run_steps"
 

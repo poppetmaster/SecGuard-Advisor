@@ -46,6 +46,8 @@ EXPECTED_TABLES = {
     "external_processing_authorizations",
     "provider_usage",
     "provider_budget_ledger",
+    "ai_configuration",
+    "ai_provider_profiles",
 }
 
 

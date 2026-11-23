@@ -1,0 +1,115 @@
+{% from "components/pending.html" import pending %}
+{% set selected_provider = form.provider or view.active_provider %}
+{% set profile = profiles[selected_provider] %}
+<section id="ai-settings" class="mt-6">
+  {% if notice %}
+  <p class="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900" role="status">
+    {{ notice }}
+  </p>
+  {% endif %}
+  {% if errors.form %}
+  <p class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">
+    {{ errors.form }}
+  </p>
+  {% endif %}
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <form
+      class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+      method="post"
+      action="/settings/ai"
+      hx-post="/settings/ai"
+      hx-target="#ai-settings"
+      hx-swap="outerHTML"
+      data-form-key="ai-settings"
+    >
+      <h2 class="text-lg font-semibold text-slate-900">Perfil activo</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        La configuración guardada aquí es la activa. Si todavía no existe, se usan los valores de
+        <code>.env</code>. Las consultas nuevas toman una instantánea al iniciar; una consulta en
+        curso conserva su perfil.
+      </p>
+
+      <div class="mt-4">
+        <label class="block text-sm font-semibold text-slate-800" for="provider">Proveedor</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+          id="provider"
+          name="provider"
+          hx-get="/settings/ai/profile"
+          hx-target="#profile-fields"
+          hx-swap="innerHTML"
+          hx-include="this"
+          hx-trigger="change"
+        >
+          {% for item in providers %}
+          <option value="{{ item.id }}" {% if item.id == selected_provider %}selected{% endif %}>{{ item.label }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.provider %}<p class="mt-1 text-sm text-red-700" role="alert">{{ errors.provider }}</p>{% endif %}
+      </div>
+
+      <div id="profile-fields" class="mt-4">
+        {% include "ai_settings/_fields.html" %}
+      </div>
+
+      <div class="mt-5 flex items-center gap-3">
+        <button
+          class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-900"
+          type="submit"
+        >
+          Guardar configuración
+        </button>
+        {{ pending("Guardando configuración…") }}
+      </div>
+    </form>
+
+    <aside class="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+      <h2 class="text-lg font-semibold text-slate-900">Configuración activa</h2>
+      <dl class="mt-3 space-y-2 text-sm">
+        <div><dt class="text-slate-500">Proveedor</dt><dd class="font-medium text-slate-900">{{ profiles[view.active_provider].provider }}</dd></div>
+        <div><dt class="text-slate-500">Modelo</dt><dd class="break-words font-mono text-xs text-slate-900">{{ view.active_profile.model }}</dd></div>
+        <div><dt class="text-slate-500">Origen</dt><dd>{% if view.active_profile.source == "saved" %}Guardada en la aplicación{% elif view.active_profile.source == "environment" %}Valores de .env{% else %}Modelo predeterminado del proveedor{% endif %}</dd></div>
+        <div><dt class="text-slate-500">Máximo de salida</dt><dd>{{ view.active_profile.max_output_tokens }} tokens</dd></div>
+        <div><dt class="text-slate-500">Tiempo por llamada</dt><dd>{{ view.active_profile.timeout_seconds }} s</dd></div>
+        <div><dt class="text-slate-500">Presupuesto global</dt><dd>{{ view.global_budget_usd }} {{ view.currency }}</dd></div>
+        <div><dt class="text-slate-500">Presupuesto por turno</dt><dd>{{ view.run_budget_usd }} {{ view.currency }}</dd></div>
+        <div><dt class="text-slate-500">Conexión</dt><dd>No verificada</dd></div>
+      </dl>
+
+      {% if view.external_blocked %}
+      <p class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+        Configurado; consultas externas bloqueadas hasta autorizar presupuesto.
+      </p>
+      {% endif %}
+
+      <h3 class="mt-5 text-sm font-semibold text-slate-900">Credenciales</h3>
+      <ul class="mt-2 space-y-1 text-sm">
+        {% for item in providers %}
+        {% set status = profiles[item.id].credential_status %}
+        <li class="flex items-center justify-between gap-2">
+          <span>{{ item.label }}</span>
+          <span class="{% if status == 'configured' %}text-green-800{% elif status == 'missing' %}text-amber-800{% else %}text-slate-600{% endif %}">
+            {% if status == "configured" %}Clave configurada{% elif status == "missing" %}Clave pendiente{% else %}No requiere{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="mt-3 text-xs text-slate-600">
+        Las claves se administran en <code>.env</code>; no se editan, muestran ni envían desde este
+        formulario. Guardar no verifica la conexión ni autoriza gasto.
+      </p>
+      {% if view.active_profile.model_status == "unconfirmed" %}
+      <p class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900" role="status">
+        Identificador no confirmado. Guardá un identificador compatible explícito; no se declara
+        conexión aprobada.
+      </p>
+      {% else %}
+      <p class="mt-3 text-xs text-slate-600">
+        Identificador confirmado el {{ view.active_profile.model_date }}:
+        {{ view.active_profile.model_source }}.
+      </p>
+      {% endif %}
+    </aside>
+  </div>
+</section>

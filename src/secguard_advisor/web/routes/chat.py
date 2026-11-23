@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 
+from secguard_advisor.ai_config.service import resolve_turn_settings
 from secguard_advisor.cases.external import ExternalProcessingBlocked, ensure_external_allowed
 from secguard_advisor.cases.scope import (
     CaseNotFoundError,
@@ -15,7 +16,8 @@ from secguard_advisor.cases.scope import (
     resolve_case_scope,
 )
 from secguard_advisor.conversation.concurrency import find_active_run
-from secguard_advisor.conversation.providers import ProviderNotImplemented
+from secguard_advisor.conversation.providers import ProviderNotImplemented, ProviderRegistry
+from secguard_advisor.conversation.providers.context import build_prompt_counter
 from secguard_advisor.conversation.retry import (
     RetryNotAllowed,
     RunNotFound,
@@ -23,6 +25,7 @@ from secguard_advisor.conversation.retry import (
 )
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.conversation.views import conversation_view, latest_failed_run
+from secguard_advisor.evidence.budget import BudgetExceeded, ensure_budget_available
 from secguard_advisor.evidence.runs import ActiveRunConflict
 from secguard_advisor.web.errors import message_for
 from secguard_advisor.web.navigation import Crumb, case_crumbs, page
@@ -136,21 +139,32 @@ def _run_generation(request: Request, scope: CaseScope, starter):
 
     embedder = None
     try:
-        provider = request.app.state.settings.generation_provider
+        with request.app.state.session_factory() as session:
+            turn_settings = resolve_turn_settings(session, request.app.state.settings)
+        provider = turn_settings.generation_provider
         if provider != "ollama":
             try:
                 with request.app.state.session_factory() as session:
                     ensure_external_allowed(session, case_id=scope.case_id, provider=provider)
+                    ensure_budget_available(session, turn_settings)
             except ExternalProcessingBlocked as exc:
                 return 403, {"notice": str(exc), "failure": None}
+            except BudgetExceeded as exc:
+                return 402, {"notice": str(exc), "failure": None}
         embedder = request.app.state.embedder_factory()
         index = request.app.state.index_factory()
         try:
-            generator = request.app.state.llm_factory()
+            override = request.app.state.llm_factory_override
+            generator = (
+                override() if override is not None else ProviderRegistry(turn_settings).create()
+            )
+            token_counter = request.app.state.token_counter_override or build_prompt_counter(
+                turn_settings
+            )
         except ProviderNotImplemented as exc:
             return 501, {"notice": str(exc), "failure": None}
         try:
-            context = starter(generator, embedder, index)
+            context = starter(generator, embedder, index, turn_settings, token_counter)
         except ActiveRunConflict:
             return (
                 409,
@@ -225,16 +239,16 @@ def ask_view(
                 notice="El caso ya tiene una consulta en curso.",
             )
 
-    def starter(generator, embedder, index):
+    def starter(generator, embedder, index, turn_settings, token_counter):
         return start_question_turn(
             request.app.state.session_factory,
-            request.app.state.settings,
+            turn_settings,
             scope=scope,
             question=cleaned,
             generator=generator,
             embedder=embedder,
             index=index,
-            token_counter=request.app.state.token_counter,
+            token_counter=token_counter,
         )
 
     status_code, extras = _run_generation(request, scope, starter)
@@ -248,16 +262,16 @@ def retry_view(request: Request, case_id: str, run_id: str):
     except CaseNotFoundError:
         return _not_found(request)
 
-    def starter(generator, embedder, index):
+    def starter(generator, embedder, index, turn_settings, token_counter):
         return start_retry_turn(
             request.app.state.session_factory,
-            request.app.state.settings,
+            turn_settings,
             scope=scope,
             run_id=run_id,
             generator=generator,
             embedder=embedder,
             index=index,
-            token_counter=request.app.state.token_counter,
+            token_counter=token_counter,
         )
 
     with request.app.state.session_factory() as session:
