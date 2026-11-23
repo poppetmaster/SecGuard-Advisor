@@ -145,6 +145,15 @@ errores, dependencias, razonamiento y comparación.
 6. [quickstart.md](./quickstart.md): arranque local, configuración ficticia y comparación.
 7. [tasks.md](./tasks.md): tres entregas funcionales.
 
+## Additional scope — Configuración de IA UI
+
+- Página `/settings/ai` con FastAPI/Jinja2/HTMX; fuera del contexto de caso.
+- Tablas `ai_configuration` y `ai_provider_profiles`; perfiles independientes.
+- `resolve_turn_settings` toma una instantánea por turno; `_run_generation` construye generador,
+  contador, budget y timeout desde esa instantánea.
+- La UI no modifica `.env`, no llama proveedores ni cuenta tokens remotos.
+- Autorización por caso, Qualys, presupuestos, LangSmith, Qdrant y embeddings no cambian.
+
 ## Phase 2 — Tasks
 
 Tres entregas, cada una con implementación, pruebas y documentación:

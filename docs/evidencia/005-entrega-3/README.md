@@ -121,7 +121,8 @@ Actualizados `README.md`, `AGENTS.md`, la constitución, `tasks.md`, `005-ultimo
 **Aceptación local parcial**: Ollama real, comparación local, correcciones R1–R3, `make check` y
 `make test-integration` verdes. **Los proveedores externos no están aceptados**: solo hay contratos
 simulados y no hay medición real ni presupuesto. T039 real permanece pendiente. T042 queda completada
-como registro de aceptación parcial, no como aceptación integral de 005.
+como registro de aceptación parcial, no como aceptación integral de 005. La página
+`/settings/ai` y su evidencia se documentan en `docs/evidencia/005-configuracion-ui/`.
 
 ## Limitaciones
 

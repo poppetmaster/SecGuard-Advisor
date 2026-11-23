@@ -146,8 +146,8 @@ del responsable registrada; acuerdos del equipo no constan) fija Qdrant en servi
 para 004, un proveedor API explícito para 005 y una acción externa controlada para 006. 004 reconstruye
 el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
 obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
-código en el Corte 6. 005 tiene las Entregas 1–2 implementadas y la comparación local de la Entrega 3
-ejecutada con Ollama; DeepSeek/Anthropic solo se probaron con transporte simulado y no se declaran
+código en el Corte 6. 005 tiene las Entregas 1–3 implementadas, la comparación local ejecutada con Ollama y una página
+«Configuración de IA» (`/settings/ai`) que persiste el proveedor y parámetros no secretos; DeepSeek/Anthropic solo se probaron con transporte simulado y no se declaran
 aceptados en uso real. 006 sigue sin implementar.
 
 ```text
@@ -255,6 +255,7 @@ propia, accesible por URL y con su ruta de navegación visible:
 |---|---|
 | `/cases` | Casos |
 | `/cases/new` | Nuevo caso |
+| `/settings/ai` | Configuración de IA (proveedor, modelo, límites) |
 | `/cases/{case_id}` | Resumen del caso (contexto y activos) |
 | `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
 | `/cases/{case_id}/vulnerabilities` | Vulnerabilidades: formulario, preview, confirmación y snapshot |

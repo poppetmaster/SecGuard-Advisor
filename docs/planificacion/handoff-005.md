@@ -1,7 +1,7 @@
 # Handoff — 005 Generador configurable (Entregas 1–3)
 
 **Fecha**: 2026-11-22
-**Estado**: R1–R3 corregidos; T001–T038 y T040–T042 completadas; T039 real pendiente; 005 con aceptación local parcial.
+**Estado**: R1–R3 corregidos; T001–T038, T040–T042 y T043–T048 completadas; T039 real pendiente; 005 con aceptación local parcial.
 **Rama**: `005-generador-configurable`.
 
 ## 1. Correcciones R1–R3
@@ -39,6 +39,18 @@
     2 `missing_info`, costo API no aplicable, evaluación semántica no realizada.
 - DeepSeek/Anthropic mock: `deepseek-mock.*`, `anthropic-mock.*`, costos simulados 0.000810/0.000600
   USD. No son mediciones reales.
+
+
+## 2.1 Configuración de IA en la interfaz (T043–T048)
+
+- Página `/settings/ai` en el menú General.
+- Tablas `ai_configuration`/`ai_provider_profiles`; migración `f7a8b9c0d1e2`.
+- Precedencia: guardado > `Settings`/`.env`; `.env` no se modifica.
+- Perfiles independientes; instantánea por turno y reintento.
+- Presupuestos informativos; claves solo como «Clave configurada»/«Clave pendiente».
+- Cero llamadas externas al abrir/guardar; sin conteo remoto.
+- Evidencia y capturas: `docs/evidencia/005-configuracion-ui/`.
+- `make check`: 670 passed.
 
 ## 3. T039 — Pendiente real
 

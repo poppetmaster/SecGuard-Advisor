@@ -8,9 +8,10 @@ checklists/requirements.md
 **Tests**: incluidas porque la constitución aplica test-first cuando existe una prueba determinista y
 un resultado esperado claro.
 
-**Estado**: T001–T038 y T040–T042 completadas. T039 real permanece pendiente por ausencia de
-presupuesto y credenciales; su versión simulada está ejecutada. 005 tiene aceptación local parcial;
-no se declara aceptación de proveedores externos ni se realizaron llamadas externas pagadas.
+**Estado**: T001–T038, T040–T042 y T043–T048 completadas. T039 real permanece pendiente por
+ausencia de presupuesto y credenciales; su versión simulada está ejecutada. 005 tiene aceptación
+local parcial; no se declara aceptación de proveedores externos ni se realizaron llamadas externas
+pagadas.
 
 ## Formato
 
@@ -376,6 +377,52 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Evidence: informe de aceptación y diff de constitución.
 
 ---
+
+
+## Entrega adicional — Configuración de IA desde la interfaz
+
+- [x] T043 Persistir la selección y los perfiles no secretos en SQLite con migración aditiva y
+  precedencia guardada > `Settings`/`.env`.
+  - Story: UI
+  - Dep: T034
+  - Check: la configuración guardada se recarga tras reinicio; `.env` no se modifica.
+  - Evidence: `ai_configuration`, `ai_provider_profiles`, migración `f7a8b9c0d1e2`.
+
+- [x] T044 Añadir la página `/settings/ai`, navegación general, formulario y resumen con credenciales
+  y presupuestos informativos, sin secretos.
+  - Story: UI
+  - Dep: T043
+  - Check: GET/POST renderizan con FastAPI/Jinja2/HTMX; no se muestran claves.
+  - Evidence: `web/routes/ai_settings.py`, `templates/ai_settings/`.
+
+- [x] T045 Aplicar una instantánea del perfil activo por turno y reintento; una consulta en curso no
+  cambia al guardar otra selección.
+  - Story: UI
+  - Dep: T044
+  - Check: `resolve_turn_settings` se usa en `_run_generation`; el registro conserva proveedor,
+    modelo, límites, timeout y autorización.
+  - Evidence: `tests/unit/test_ai_config_turn.py`.
+
+- [x] T046 Probar primera carga, guardado, reinicio, cambio entre perfiles, valores inválidos,
+  credencial ausente, presupuesto cero, cero llamadas externas, secretos y regresión R1–R3.
+  - Story: UI
+  - Dep: T045
+  - Check: `make check` verde; pruebas de servicio y contrato.
+  - Evidence: `tests/unit/test_ai_config_service.py`, `tests/contract/test_ai_settings_routes.py`.
+
+- [x] T047 Validar con Playwright escritorio y móvil: navegación, selección, guardado, mensajes,
+  teclado, indicador de carga, consola y ausencia de desbordamiento; capturas sin claves.
+  - Story: UI
+  - Dep: T046
+  - Check: recorrido real registrado; sin errores de consola ni overflow.
+  - Evidence: `docs/evidencia/005-configuracion-ui/`.
+
+- [x] T048 Actualizar README, AGENTS, constitución, 005-último-resultado y handoff con ruta,
+  precedencia, variables y estado real.
+  - Story: UI
+  - Dep: T047
+  - Check: documentación vigente sin secretos; T039 sigue pendiente.
+  - Evidence: diffs y `docs/evidencia/005-configuracion-ui/README.md`.
 
 ## Dependencias y orden
 

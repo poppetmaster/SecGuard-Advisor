@@ -1,8 +1,8 @@
-# 005 — Último resultado (R1–R3 corregidos; Entrega 3 en cierre)
+# 005 — Último resultado (aceptación local parcial; T039 pendiente)
 
 **Fecha**: 2026-11-22 (America/Bogota, `-05`)
 **Rama**: `005-generador-configurable`
-**Estado**: T001–T038 y T040–T042 completadas; R1–R3 corregidos; T039 real pendiente.
+**Estado**: T001–T038, T040–T042 y T043–T048 completadas; R1–R3 corregidos; T039 real pendiente.
 **005 no tiene aceptación de proveedores externos.**
 
 ## Dictamen
@@ -102,12 +102,39 @@ completa quedó verde. No se relajaron criterios ni se ampliaron tiempos.
 `make test-integration` verdes. **Proveedores externos no aceptados**: solo contratos simulados;
 T039 real pendiente. T042 registra aceptación parcial, no integral.
 
+
+
+## Configuración de IA desde la interfaz (T043–T048)
+
+- Ruta `/settings/ai`, en el menú General, fuera de un caso.
+- Selección de proveedor, modelo, máximo de salida y timeout; guardado en SQLite mediante
+  `ai_configuration` y `ai_provider_profiles` (migración `f7a8b9c0d1e2`).
+- Precedencia: configuración guardada > `Settings`/`.env`; `.env` conserva claves, endpoints y
+  presupuestos y no se modifica. `SECGUARD_GENERATION_MODEL` vacío usa el modelo predeterminado.
+- Perfiles independientes por proveedor; cambiar de proveedor no arrastra modelos ni sobrescribe
+  parámetros de otro.
+- Cada turno usa una instantánea; una consulta en curso conserva su perfil. Los reintentos usan la
+  autorización vigente y registran los parámetros efectivos.
+- El formulario muestra presupuestos global/por turno, moneda y «Clave configurada»/«Clave
+  pendiente»; nunca valores, fragmentos ni máscaras. Conexión: «No verificada».
+- Un externo con presupuesto cero muestra «Configurado; consultas externas bloqueadas hasta
+  autorizar presupuesto». Guardar no autoriza gasto ni envía datos.
+- No hay llamadas externas ni conteo remoto al abrir o guardar.
+
+Pruebas nuevas: `tests/unit/test_ai_config_service.py` (7), `tests/contract/test_ai_settings_routes.py`
+(10) y `tests/unit/test_ai_config_turn.py` (4). Playwright validó escritorio y móvil, guardado,
+cambio de perfiles, mensajes, foco, Escape, ausencia de overflow y consola sin errores. Capturas en
+`docs/evidencia/005-configuracion-ui/`.
+
+`make check`: **670 passed**, 37 deselected.
+
 ## Limitaciones
 
 - Evaluación semántica no realizada; solo comprobaciones automáticas.
 - Corpus de comparación ficticio; no representa datos del usuario.
 - Ollama: costo de API no aplicable; no se declara costo operativo total cero.
 - Sin llamadas reales a DeepSeek/Anthropic.
+- La configuración guardada no verifica la conexión; solo declara credencial presente.
 - No se enviaron Qualys, derivados ni datos privados.
 - `storage/`, `storage/demo`, Chroma y Qdrant sin cambios.
 - `LANGSMITH_TRACING=false`.

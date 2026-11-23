@@ -47,11 +47,14 @@ fija como arquitectura objetivo Qdrant en servidor local persistente para 004, u
 explícito para 005 y una acción externa controlada para 006. 004 reconstruye el índice desde cero
 desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación obligatoria y sin
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
-Ollama; la aceptación local de 004 sigue pendiente y no se presentan API ni Telegram como disponibles.
+Ollama; 004 está implementado y aceptado localmente; 005 tiene adaptadores API implementados con
+aceptación externa real pendiente; Telegram no está implementado.
 
 **005 Entregas 1–3 completadas (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
-Haiku (`claude-haiku-5-5`). Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
+Haiku (`claude-haiku-5-5`). La página `/settings/ai` permite seleccionar proveedor, modelo y límites
+no secretos, persistidos en SQLite con precedencia sobre `Settings`/`.env`; cada turno toma una
+instantánea y `.env` conserva claves, endpoints y presupuestos. Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
 costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
 de uso, probados **solo contra transporte HTTP simulado**; la comparación local con Ollama real está
 ejecutada y la comparación externa real sigue pendiente por falta de presupuesto. No hay fallback ni cambio de proveedor en
@@ -77,7 +80,8 @@ el mismo commit.
 - FastAPI, Jinja2, HTMX, Tailwind CSS y Flowbite (gratuito), recursos locales.
 - LangChain, LangGraph, SQLite y LangSmith. Ollama y Qdrant son la implementación actual; Qdrant es
   el único backend documental (004, implementado y aceptado localmente en el Corte 6). Chroma quedó
-  retirado del código. El proveedor API es el objetivo 005 y no está implementado.
+  retirado del código. Los adaptadores API de 005 existen, pero no tienen aceptación externa real y
+  no hay proveedor seleccionado.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
 
 ## Estructura

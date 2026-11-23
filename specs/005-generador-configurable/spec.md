@@ -316,3 +316,39 @@ ejecución sin credencial se omite con motivo.
 - No se construye una pantalla de administración en esta funcionalidad.
 - La comparación de proveedores es una evaluación pequeña y reproducible, no un benchmark
   estadístico.
+
+## Alcance adicional — Configuración de IA desde la interfaz
+
+La selección de proveedor y sus parámetros no secretos se administran desde una página integrada,
+sin editar código ni reiniciar el servidor. Las claves y presupuestos siguen en `.env`.
+
+- **FR-034**: La aplicación MUST ofrecer una página «Configuración de IA» fuera del contexto de un
+  caso, accesible desde el menú general.
+- **FR-035**: La página MUST permitir seleccionar proveedor (`ollama`, `deepseek`, `anthropic`),
+  modelo, máximo de tokens de salida y tiempo máximo por llamada, con acción de guardado.
+- **FR-036**: La página MUST mostrar la configuración activa, los presupuestos global y por turno en
+  su moneda, y la disponibilidad de credenciales como «Clave configurada» o «Clave pendiente», sin
+  valores, fragmentos ni versiones enmascaradas.
+- **FR-037**: La selección y los parámetros no secretos MUST persistir en SQLite; la configuración
+  guardada es la activa y, si no existe, se usan los valores iniciales de `Settings`/`.env`. La
+  interfaz MUST NOT modificar `.env` ni endpoints.
+- **FR-038**: Cada proveedor MUST conservar un perfil independiente; cambiar de proveedor MUST NOT
+  arrastrar un modelo incompatible ni sobrescribir los parámetros guardados de otro.
+- **FR-039**: Cada turno nuevo MUST tomar una instantánea coherente del perfil activo para generador,
+  contador de contexto, presupuesto, timeout y evidencia; una consulta en curso MUST conservar su
+  perfil aunque cambie la selección. Los reintentos MUST aplicar la misma autorización y registrar la
+  procedencia.
+- **FR-040**: La página MUST validar tipos, límites y compatibilidad de modelo antes de guardar, y
+  MUST explicar una credencial ausente sin exponer el valor.
+- **FR-041**: Un proveedor externo con presupuesto cero MUST mostrarse como «Configurado; consultas
+  externas bloqueadas hasta autorizar presupuesto»; guardar MUST NOT autorizar gasto ni enviar datos.
+- **FR-042**: Abrir o guardar la configuración MUST NOT realizar llamadas externas ni conteo remoto
+  de tokens; no se ofrecen botones de prueba automática.
+- **FR-043**: La interfaz MUST distinguir «configuración guardada», «credencial presente» y
+  «conexión verificada»; guardar no verifica la conexión.
+- **FR-044**: La configuración de IA MUST conservar la autorización externa por caso, el bloqueo de
+  Qualys y datos privados, los presupuestos y reservas, LangSmith independiente, embeddings locales,
+  Qdrant y la ausencia de fallback.
+
+- **SC-007**: La configuración guardada se aplica a la consulta siguiente, una consulta en curso
+  conserva su perfil y los secretos no aparecen en HTML, logs ni evidencia.
