@@ -13,9 +13,10 @@
     "render:report-charts": "node scripts/render_report_charts.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "4.3.5",
     "echarts": "5.6.0",
-    "flowbite": "2.5.2",
-    "htmx.org": "2.0.4",
-    "tailwindcss": "3.4.17"
+    "flowbite": "4.0.2",
+    "htmx.org": "2.0.11",
+    "tailwindcss": "4.3.5"
   }
 }

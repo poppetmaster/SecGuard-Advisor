@@ -628,11 +628,11 @@ no está definido. No se declara un estado de CI que no haya ocurrido.
 
 ## Limitaciones conocidas
 
-- **Cuatro vulnerabilidades bajas de npm** en la cadena de construcción de Flowbite:
-  `flowbite` → `flowbite-datepicker` → `@rollup/plugin-node-resolve` → `deepmerge`. Son
-  dependencias de desarrollo, no del servidor. `npm audit fix` no ofrece una corrección compatible;
-  la única sugerida degrada Flowbite a 2.3.0 y se considera un cambio mayor. Se mantiene como
-  pendiente explícito y no se usa `npm audit fix --force`.
+- **Una vulnerabilidad moderada de npm** en Apache ECharts 5.6.0 (XSS,
+  `GHSA-fgmj-fm8m-jvvx`). ECharts solo renderiza gráficas locales con datos del propio informe;
+  la corrección sugerida es un salto mayor a ECharts 6.1.0 y no se aplicó. Las cuatro
+  vulnerabilidades bajas de la cadena de Flowbite 2.5.2 desaparecieron con Flowbite 4.0.2.
+  No se usa `npm audit fix --force`.
 - La aplicación implementa US1–US6 y T088–T095. SC-001 (recorrido cronometrado por una persona) y
   SC-003 (diez afirmaciones normativas revisadas) son validaciones recomendadas y no bloqueantes;
   sus resultados reales no se ejecutaron. La revisión en navegadores distintos de Chrome/Chromium

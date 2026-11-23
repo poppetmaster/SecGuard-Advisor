@@ -172,6 +172,9 @@ la aplicación no ejecuta `create_all` al arrancar.
 - Toda gestión de dependencias pasa por `uv`. Prohibido `pip` y `requirements.txt`.
 - `uv.lock` se versiona. `uv sync --locked` debe reproducir el entorno.
 - Ruff para lint y formato; pre-commit instalado; `make check` en verde antes de integrar.
+- Tailwind 4 se compila con `@tailwindcss/cli` desde `src/.../static/css/input.css`
+  (`@import "tailwindcss"` y `@plugin "flowbite/plugin"`); no hay `tailwind.config.js`. `make assets`
+  regenera CSS y recursos vendorizados, y la CI exige que el resultado sea idéntico al versionado.
 - pytest con patrón AAA. Las pruebas de integración usan Ollama y recuperación reales; los mocks
   solo en pruebas unitarias identificadas.
 - Documentación e interfaz en español. Código, identificadores, tablas y comentarios en inglés.
