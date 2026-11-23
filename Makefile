@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 
 .DEFAULT_GOAL := help
-.PHONY: help install assets dev demo demo-prepare corpus seed-demo qdrant-up qdrant-down qdrant-health qdrant-rebuild import-evaluation lint format format-check test test-integration check clean
+.PHONY: help install assets dev demo demo-prepare corpus seed-demo qdrant-up qdrant-down qdrant-health qdrant-rebuild import-evaluation lint format format-check test test-integration test-external check clean
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -67,11 +67,14 @@ format: ## Formatea el código con Ruff
 format-check: ## Verifica el formato sin modificarlo
 	uv run ruff format --check .
 
-test: ## Ejecuta las pruebas rápidas (sin integración)
-	uv run pytest -m "not integration"
+test: ## Ejecuta las pruebas rápidas (sin integración ni externas)
+	uv run pytest -m "not integration and not external"
 
 test-integration: ## Ejecuta las pruebas de integración reales
 	uv run pytest -m integration
+
+test-external: ## Ejecuta solo las pruebas externas autorizadas (sin claves se omiten)
+	uv run pytest -m external
 
 check: lint format-check test ## Verificación completa (lint + formato + pruebas)
 

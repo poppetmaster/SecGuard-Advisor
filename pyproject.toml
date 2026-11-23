@@ -63,6 +63,7 @@ addopts = "-ra"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "integration: pruebas que requieren Ollama, embeddings y recuperación reales",
+    "external: pruebas externas que requieren autorización explícita y presupuesto",
 ]
 
 [tool.coverage.run]
