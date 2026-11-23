@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
@@ -815,9 +816,11 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
         },
         duration_ms=elapsed_ms(started),
     )
+    rejected_history = tuple(state.get("rejected_history", ())) + tuple(rejected)
     return {
         "citations": tuple(citations),
         "rejected": tuple(rejected),
+        "rejected_history": rejected_history,
         "steps": record_step(
             state,
             "validate",
@@ -831,6 +834,64 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
             },
         ),
     }
+
+
+def _tool_result_for_fallback(state: dict[str, Any]) -> dict | None:
+    """Último resultado estructurado válido, sin usar texto del modelo."""
+    for item in reversed(state.get("tool_results", ())):
+        result = item.get("result")
+        if item.get("status") == "ok" and isinstance(result, dict) and result:
+            return item
+    return None
+
+
+def _format_tool_result_answer(state: dict[str, Any], item: dict) -> str:
+    """Resumen determinista y explícito de un resultado de herramienta."""
+    result = item.get("result") or {}
+    arguments = item.get("arguments") or {}
+    lines = ["Resultado de herramienta; síntesis del modelo no disponible."]
+    lines.append(
+        "Filtros: "
+        + (
+            json.dumps(arguments, ensure_ascii=False, sort_keys=True)
+            if arguments
+            else "sin filtros"
+        )
+    )
+    if result.get("origin") is not None:
+        lines.append(f"Origen: {result['origin']}.")
+    if result.get("total") is not None:
+        lines.append(f"Total: {result['total']}.")
+    groups = result.get("groups") or ()
+    if groups:
+        rendered = ", ".join(
+            f"{group.get('key')}"
+            + (f" ({group.get('label')})" if group.get("label") else "")
+            + f": {group.get('count')}"
+            for group in groups
+        )
+        lines.append(f"Grupos: {rendered}.")
+    else:
+        lines.append("Grupos: sin grupos.")
+    snapshot = result.get("snapshot") or {}
+    if snapshot:
+        sequence = snapshot.get("sequence")
+        snapshot_id = snapshot.get("id")
+        lines.append(
+            "Instantánea: "
+            + (f"secuencia {sequence}" if sequence is not None else "disponible")
+            + (f" ({snapshot_id})" if snapshot_id else "")
+            + "."
+        )
+    if result.get("truncated"):
+        lines.append("El detalle de filas está truncado; los totales no se reducen.")
+    rejected = state.get("rejected_history", state.get("rejected", ()))
+    if rejected:
+        lines.append(
+            f"La parte documental quedó sin resolver: {len(rejected)} cita(s) rechazada(s)."
+        )
+    lines.append("No es una respuesta documental verificada ni una generación exitosa del modelo.")
+    return "\n".join(lines)
 
 
 def _has_tool_evidence(state: dict[str, Any]) -> bool:
@@ -848,8 +909,14 @@ def route_after_validate(state: dict[str, Any]) -> str:
     tool_evidence = _has_tool_evidence(state)
     if state.get("citations") and not rejected:
         return "persist"
-    if tool_evidence and not claims and payload is not None and payload.answer.strip():
-        # Solo una respuesta exclusivamente basada en herramienta prescinde de citas.
+    if (
+        tool_evidence
+        and not claims
+        and payload is not None
+        and (payload.answer.strip() or _tool_result_for_fallback(state))
+    ):
+        # Una respuesta exclusivamente de herramienta puede ser sintetizada por el
+        # modelo o por el resumen determinista, sin citas documentales.
         return "persist"
     if (state.get("hits") or claims or rejected) and not state.get("repaired"):
         return "repair"
@@ -995,12 +1062,24 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
-    rejected = state.get("rejected", ())
+    rejected_history = state.get("rejected_history")
+    rejected = (
+        tuple(rejected_history)
+        if rejected_history is not None
+        else tuple(state.get("rejected", ()))
+    )
     claims = payload.claims if payload is not None else []
     tool_evidence = _has_tool_evidence(state)
+    tool_item = _tool_result_for_fallback(state) if tool_evidence else None
+    fallback_used = False
+    if not answer_text and tool_item is not None:
+        answer_text = _format_tool_result_answer(state, tool_item)
+        fallback_used = True
     if state.get("outcome"):
         outcome = state["outcome"]
-    elif (citations and not rejected) or (tool_evidence and not claims and answer_text):
+    elif (citations and not rejected) or (
+        tool_evidence and not claims and answer_text and not fallback_used
+    ):
         outcome = "answered"
     else:
         outcome = "insufficient_evidence"
@@ -1031,7 +1110,7 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
         run_id=context.run_id,
         answer_text=answer_text,
         citations=citations,
-        rejected=state.get("rejected", ()),
+        rejected=rejected,
         tool_calls=state.get("tool_records", ()),
         hits=state.get("hits", ()),
         steps=record_step(state, "persist", "deterministic", "ok", started),

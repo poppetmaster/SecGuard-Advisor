@@ -19,7 +19,12 @@ from secguard_advisor.conversation.llm import (
     StepLimit,
     ToolDecision,
 )
-from secguard_advisor.conversation.nodes import _model_timeout, persist, route_after_validate
+from secguard_advisor.conversation.nodes import (
+    _format_tool_result_answer,
+    _model_timeout,
+    persist,
+    route_after_validate,
+)
 from secguard_advisor.conversation.persistence import CitationDraft
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 
@@ -383,6 +388,104 @@ def test_persist_does_not_mark_answered_when_a_citation_is_rejected(
         run = session.get(Run, context.run_id)
         assert run is not None
         assert run.outcome == "insufficient_evidence"
+
+
+def test_tool_fallback_summary_is_deterministic_and_marks_scope() -> None:
+    result = {
+        "origin": "imported",
+        "total": 3,
+        "groups": [{"key": "a", "label": "Alta", "count": 2}],
+        "snapshot": {"id": "snapshot-1", "sequence": 2},
+        "status_group": "pending_known",
+    }
+    state = {
+        "tool_results": (
+            {
+                "status": "ok",
+                "arguments": {"origin": "imported", "severity_level": 4},
+                "result": result,
+            },
+        ),
+        "rejected": ("cita rechazada",),
+    }
+
+    text = _format_tool_result_answer(state, state["tool_results"][0])
+
+    assert text.startswith("Resultado de herramienta; síntesis del modelo no disponible.")
+    assert '"origin": "imported"' in text
+    assert "Total: 3." in text
+    assert "a (Alta): 2" in text
+    assert "secuencia 2" in text
+    assert "cita(s) rechazada(s)" in text
+    assert "No es una respuesta documental verificada" in text
+    assert "case_id" not in text
+
+
+def test_tool_fallback_handles_zero_result_and_historical_snapshot() -> None:
+    state = {
+        "tool_results": (
+            {
+                "status": "ok",
+                "arguments": {},
+                "result": {
+                    "origin": "synthetic",
+                    "total": 0,
+                    "groups": [],
+                    "snapshot": {"id": "old-snapshot", "sequence": 7},
+                },
+            },
+        )
+    }
+
+    text = _format_tool_result_answer(state, state["tool_results"][0])
+
+    assert "Total: 0." in text
+    assert "Grupos: sin grupos." in text
+    assert "secuencia 7" in text
+
+
+def test_persist_uses_tool_fallback_when_model_has_no_answer(tmp_path: Path) -> None:
+    env = build_env(tmp_path, min_score=-1.0)
+    context = start_question_turn(
+        env.factory,
+        env.settings,
+        scope=CaseScope(case_id=env.case_id),
+        question="¿Cuántos hallazgos High hay por activo?",
+        generator=RecordingGenerator(),
+        embedder=FakeEmbedder(),
+        index=env.index,
+        token_counter=FakeTokenCounter(),
+    )
+    result = {
+        "origin": "synthetic",
+        "total": 3,
+        "groups": [{"key": "api-gateway", "count": 2}],
+        "snapshot": {"id": "snap-1", "sequence": 1},
+    }
+    state = {
+        "payload": AnswerPayload(answer="", claims=[]),
+        "citations": (),
+        "rejected": (),
+        "hits": (),
+        "tool_results": ({"status": "ok", "arguments": {"origin": "synthetic"}, "result": result},),
+        "tool_records": (),
+        "steps": (),
+    }
+
+    persist(state, {"configurable": {"runtime": context, "memory": None}})
+
+    with env.factory() as session:
+        from secguard_advisor.db.models import Message, Run
+
+        run = session.get(Run, context.run_id)
+        assert run is not None
+        message = session.get(Message, run.answer_message_id)
+    assert message is not None
+    assert message.content.startswith(
+        "Resultado de herramienta; síntesis del modelo no disponible."
+    )
+    assert "Total: 3." in message.content
+    assert run.outcome == "insufficient_evidence"
 
 
 def test_partial_citation_rejection_repairs_once_then_abstains() -> None:

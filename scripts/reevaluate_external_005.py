@@ -58,10 +58,22 @@ from secguard_advisor.db.models import (
 MAX_EXTRA_USD = Decimal("0.10")
 MAX_CALLS_PER_SCENARIO = 4
 ESTIMATED_INPUT_TOKENS = 4000
-PLAN = {
+AUTHORIZED_PLAN = {
     "deepseek": ("S03", "S04"),
     "anthropic": ("S02", "S03", "S04", "S07", "S10"),
 }
+PLAN = AUTHORIZED_PLAN
+
+
+def validate_authorized_plan(plan: dict) -> None:
+    """Rechaza cualquier pareja fuera de la autorización antes de llamar."""
+    if set(plan) != set(AUTHORIZED_PLAN):
+        raise ValueError("El plan contiene proveedores no autorizados.")
+    for provider, scenarios in AUTHORIZED_PLAN.items():
+        if tuple(plan[provider]) != scenarios:
+            raise ValueError(f"El plan de {provider} contiene escenarios no autorizados.")
+
+
 SCENARIO_BY_ID = {scenario["id"]: scenario for scenario in SCENARIOS}
 
 
@@ -201,6 +213,11 @@ def main() -> int:
         print(
             "Detenido: falta SECGUARD_EXTERNAL_TESTS_AUTHORIZED=1. No se envió ninguna solicitud."
         )
+        return 2
+    try:
+        validate_authorized_plan(PLAN)
+    except ValueError as exc:
+        print(f"Detenido antes de llamar: {exc}")
         return 2
     base = _base_settings()
     if base.deepseek_api_key is None or base.anthropic_api_key is None:
