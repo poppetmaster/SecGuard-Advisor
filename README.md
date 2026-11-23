@@ -69,6 +69,7 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 | Hallazgos sintéticos | Consultar el dataset educativo con `findings_query` y conteos calculados en SQLite | Disponible localmente |
 | Vulnerabilidades Qualys | Importar CSV validado, revisar una vista previa, confirmar instantáneas, filtrar y consultar registros | Disponible localmente |
 | Informe ejecutivo | Generar una versión inmutable desde una instantánea confirmada, revisar tarjetas y gráficas, descargar PDF e historial | Disponible localmente (Corte A) |
+| Contactos y envío manual | Registrar contactos, verificar con código, registrar consentimiento, vincular por caso, revisar un manifiesto y enviar resumen y PDF con historial e idempotencia | Disponible localmente con transporte doble (Corte B); envío real de Telegram no verificado |
 | Evidencia de ejecución | Consultar modelo, configuración, pasos, fuentes, herramientas, duración, presupuesto y citas | Disponible localmente |
 | Trazabilidad externa | Enviar trazas acotadas a LangSmith y confirmarlas por lectura externa | Disponible; LangSmith es opcional |
 | Revisión humana de citas | Registrar respaldo semántico por cita con identidad declarada | Disponible; SC-003 pendiente |
@@ -76,8 +77,11 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **786 passed**, 40 deselected (Corte A de 006).
-- Integraciones del Corte A: `uv run pytest tests/integration/test_report_pdf.py tests/acceptance/test_report_browser.py` → **2 passed**; PDF real de 3 páginas y navegador de escritorio/móvil, con Chrome local.
+- Pruebas rápidas: `make check` → **822 passed**, 41 deselected (Cortes A y B de 006).
+- Integraciones de notificaciones:
+  `uv run pytest tests/acceptance/test_report_browser.py tests/acceptance/test_manual_notification_browser.py tests/integration/test_report_pdf.py`
+  → **3 passed**; contactos, envío manual y PDF real con Chrome local.
+- Pruebas focalizadas del Corte B: **37 passed** con `StubTelegramTransport`; sin red ni token real.
 - Evaluación funcional final: **6/6** recuperaciones, 0 no pertinentes aceptadas, 0 fugas, umbral
   0.5033 congelado (`docs/evidencia/004-corte-6/evaluation-final.json`).
 - Aceptación de interfaz: 4 pruebas ASGI y recorrido Playwright MCP con servidor real; citas,
@@ -153,8 +157,10 @@ evaluaciones, y una evaluación real del 2026-11-23 con 10 escenarios congelados
 DeepSeek 6/9 y Anthropic 4/9; S08 bloqueado en externos). La evidencia está en
 `docs/evidencia/005-evaluacion-proveedores/`; DeepSeek/Anthropic no se declaran aceptados en uso real.
 006 Corte A está implementado localmente: informe ejecutivo desde una instantánea Qualys confirmada,
-vista web, PDF de 2–3 páginas e historial inmutable. Contactos, envío manual, reglas automáticas y
-Telegram no están implementados; no se declaran disponibles.
+vista web, PDF de 2–3 páginas e historial inmutable. 006 Corte B está implementado localmente:
+contactos, verificación por código, consentimiento, vínculo por caso, manifiesto, confirmación y envío
+manual con historial e idempotencia. El envío real de Telegram no está verificado; las reglas
+automáticas (Corte C) no están implementadas y no se declaran disponibles.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -265,6 +271,8 @@ propia, accesible por URL y con su ruta de navegación visible:
 | `/cases` | Casos |
 | `/cases/new` | Nuevo caso |
 | `/settings/ai` | Configuración de IA (proveedor, modelo, límites), dentro del grupo **Administración** |
+| `/settings/ai/usage` | Uso y comparativos de IA, dentro del grupo **Administración** |
+| `/settings/contacts` | Contactos y canales (alta, verificación, consentimiento, activación y vínculos), dentro del grupo **Administración** |
 | `/cases/{case_id}` | Resumen del caso (contexto y activos) |
 | `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
 | `/cases/{case_id}/vulnerabilities` | Vulnerabilidades: formulario, preview, confirmación y snapshot |
@@ -292,6 +300,24 @@ fragmento correspondiente (del caso o del corpus público) y, cuando vienen de u
 6. La generación no envía mensajes. La síntesis de IA es opcional y cae a un informe factual si no
    está autorizada o falla. La síntesis externa solo se habilita con procedencia `synthetic_public`,
    autorización `fictional_case`, presupuesto disponible y contexto admitido; Qualys privado no sale.
+
+### Contactos y envío manual
+
+1. Abrí **Administración → Contactos y canales**, registrá un alias y el identificador numérico del
+   chat. No se piden teléfono ni correo. El contacto queda `unverified`, con consentimiento pendiente e
+   inactivo.
+2. Pedí el código de verificación: se envía por el transporte configurado, se guarda solo su hash,
+   expira en 10 minutos y admite 3 intentos y 3 solicitudes por ventana.
+3. Confirmá el código, registrá el consentimiento y activá el contacto; después autorizá el contacto
+   para el caso.
+4. Desde una versión **ready** de **Informe ejecutivo**, usá **Preparar envío manual** para revisar el
+   manifiesto (versión, resumen, hash del PDF, política y destinatarios enmascarados).
+5. Generá la confirmación y pulsá **Confirmar y enviar**. El resumen y el PDF se revalidan por
+   separado; si cambia el contenido o los destinatarios, la confirmación se invalida.
+6. **Informes y notificaciones** muestra el estado por destinatario, componente e intento.
+   «Aceptado por Telegram» significa que el proveedor aceptó el envío; no prueba entrega ni lectura.
+7. El transporte predeterminado es el doble (`SECGUARD_TELEGRAM_TRANSPORT=stub`), que no usa red. El
+   transporte real existe, pero no se verificó con un token ni un destino reales.
 
 ### Consulta y revisión humana
 
@@ -522,7 +548,7 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 772 pruebas rápidas
+make check            # lint, formato y 822 pruebas rápidas
 make test-integration # integraciones existentes; pueden requerir Ollama/Qdrant
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000

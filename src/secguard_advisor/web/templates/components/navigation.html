@@ -26,6 +26,7 @@
     <ul class="mt-2 space-y-1">
       <li>{{ nav_link("/settings/ai", "Configuración de IA", "settings", active_section == "ai_settings") }}</li>
       <li>{{ nav_link("/settings/ai/usage", "Uso y comparativos de IA", "chart", active_section == "ai_usage") }}</li>
+      <li>{{ nav_link("/settings/contacts", "Contactos y canales", "users", active_section == "contacts") }}</li>
     </ul>
   </div>
 
@@ -41,6 +42,7 @@
       <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/vulnerabilities", "Vulnerabilidades", "shield", active_section == "vulnerabilities") }}</li>
       <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/chat", "Consulta documental", "chat", active_section == "chat") }}</li>
       <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/reports", "Informe ejecutivo", "chart", active_section == "reports") }}</li>
+      <li>{{ nav_link("/cases/" ~ nav_case.id ~ "/notifications", "Informes y notificaciones", "send", active_section == "notifications") }}</li>
     </ul>
   </div>
   {% endif %}

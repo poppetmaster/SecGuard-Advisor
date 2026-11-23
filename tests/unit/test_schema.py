@@ -54,6 +54,13 @@ EXPECTED_TABLES = {
     "reports",
     "report_versions",
     "report_artifacts",
+    "contact_channels",
+    "contact_case_links",
+    "contact_verification_challenges",
+    "report_confirmations",
+    "notification_events",
+    "notification_components",
+    "notification_attempts",
 }
 
 

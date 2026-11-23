@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Envío manual — SecGuard Advisor{% endblock %}
+{% block content %}
+{% if error %}<div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ error }}</div>{% endif %}
+<div class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h2 class="text-lg font-semibold text-slate-900">Envío manual del informe v{{ version.version_number }}</h2>
+  <p class="mt-1 text-sm text-slate-600">El PDF y el resumen se toman de los artefactos persistidos. No se regenera el informe.</p>
+  <p class="mt-1 text-xs text-slate-500">«Aceptado por Telegram» no significa entregado ni leído.</p>
+</div>
+
+{% if not contacts %}
+<div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">No hay contactos elegibles. Verificá el contacto, otorgá consentimiento, activalo y vinculalo al caso.</div>
+{% else %}
+<form method="post" action="/cases/{{ case_id }}/reports/{{ report_id }}/versions/{{ version.version_number }}/confirmations" data-form-key="manifest-confirm" class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h3 class="font-semibold text-slate-900">1. Destinatarios y vista previa</h3>
+  <ul class="mt-2 grid gap-2 sm:grid-cols-2">
+    {% for contact in contacts %}
+    <li><label class="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-sm"><input type="checkbox" name="contact_ids" value="{{ contact.id }}" {% if not confirmation or contact.id in (manifest.recipients | map(attribute="contact_id") | list) %}checked{% endif %}> {{ contact.alias }} · {{ contact.masked_chat }}</label></li>
+    {% endfor %}
+  </ul>
+  <label class="mt-3 block text-sm">Responsable declarado<input class="mt-1 block w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2" name="created_by" required></label>
+  <p data-form-error hidden class="mt-2 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-800" role="alert"></p>
+  <span data-pending-spinner hidden aria-hidden="true" class="mt-3 inline-flex h-5 w-5 animate-spin rounded-full border-2 border-blue-800 border-t-transparent"></span>
+  <span data-pending-text hidden class="mt-3 text-sm font-medium text-blue-900">Preparando confirmación…</span>
+  <button type="submit" class="mt-3 rounded-lg bg-blue-800 px-4 py-2 text-sm font-semibold text-white">Generar confirmación</button>
+</form>
+{% endif %}
+
+{% if manifest %}
+<section class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h3 class="font-semibold text-slate-900">2. Contenido exacto que saldrá</h3>
+  <pre class="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-slate-800">{{ manifest.outbound_text }}</pre>
+  <p class="mt-2 text-xs text-slate-500">Manifiesto: {{ manifest.manifest_sha256[:16] }}… · PDF: {{ manifest.pdf_sha256[:16] }}…</p>
+  <ul class="mt-2 text-sm text-slate-700">{% for recipient in manifest.recipients %}<li>{{ recipient.alias }} · {{ recipient.masked_chat }}</li>{% endfor %}</ul>
+  <form method="post" action="/cases/{{ case_id }}/reports/{{ report_id }}/versions/{{ version.version_number }}/notifications" data-form-key="manual-send" class="mt-3">
+    <input type="hidden" name="confirmation_id" value="{{ confirmation.id }}">
+    <p data-form-error hidden class="mt-2 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-800" role="alert"></p>
+    <span data-pending-spinner hidden aria-hidden="true" class="mt-3 inline-flex h-5 w-5 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent"></span>
+    <span data-pending-text hidden class="mt-3 text-sm font-medium text-emerald-900">Enviando resumen y PDF…</span>
+    <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Confirmar y enviar</button>
+    <span class="ml-2 text-xs text-slate-500">La confirmación se invalida si cambia el contenido o los destinatarios.</span>
+  </form>
+</section>
+{% endif %}
+
+{% if events %}
+<section class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h3 class="font-semibold text-slate-900">Historial de esta versión</h3>
+  <ul class="mt-2 space-y-2 text-sm text-slate-700">
+    {% for event in events %}<li>{{ event.contact_alias }} · {{ event.masked_chat }} · {{ event.status_label }} · resumen {{ event.components.summary.status_label }} · PDF {{ event.components.document.status_label }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -266,118 +266,118 @@ evitar duplicados.
 
 ### Migración y servicios base
 
-- [ ] T035 [US2] Crear la migración `alembic/versions/<rev>_add_notifications_manual.py` y actualizar `src/secguard_advisor/db/models.py`.
+- [X] T035 [US2] Crear la migración `alembic/versions/<rev>_add_notifications_manual.py` y actualizar `src/secguard_advisor/db/models.py`.
   - Depende de: T012.
   - Comprobación: crea `contact_channels`, `contact_case_links`, `contact_verification_challenges`, `report_confirmations`, `notification_events`, `notification_components` y `notification_attempts`; incluye `Unique(channel, chat_id)`, `Unique(event_id, kind)`, `Unique(event_id, component_kind, attempt_no)`, `idempotency_key` único, `Check(status IN ('pending','consumed','expired','locked'))` en el desafío y `Check(status != 'consumed' OR consumed_at IS NOT NULL)`; no crea tablas de reglas. `upgrade head`/`downgrade -1` en base temporal.
   - Evidencia: revisión Alembic, `alembic upgrade/downgrade`; T035 implementa y crea `tests/unit/test_notifications_manual_migration.py` con la restricción del desafío.
 
-- [ ] T036 [P] [US2] Implementar contactos, consentimiento y vínculos en `src/secguard_advisor/notifications/contacts.py`.
+- [X] T036 [P] [US2] Implementar contactos, consentimiento y vínculos en `src/secguard_advisor/notifications/contacts.py`.
   - Depende de: T035.
   - Comprobación: alta `unverified`, `consent_status=pending`, `active=false`; `status IN ('unverified','verified','revoked','disabled')`; `consent_status IN ('pending','granted','revoked')`; vínculo `authorized` por caso; revocar bloquea informes; no solicita teléfono ni correo.
   - Evidencia: `tests/unit/test_contacts.py` con alta, duplicado, consentimiento y vínculo.
 
-- [ ] T037 [US2] Implementar desafíos de verificación en `src/secguard_advisor/notifications/verification.py`.
+- [X] T037 [US2] Implementar desafíos de verificación en `src/secguard_advisor/notifications/verification.py`.
   - Depende de: T035, T036.
   - Comprobación: crea `contact_verification_challenges` con `code_sha256`, `bot_fingerprint`, `purpose='contact_verification'`, `expires_at` +10 min, `attempts`, `max_attempts=3`, `request_count`, `window_started_at`; máximo 3 solicitudes por ventana; consume solo `pending` no expirado; estados `pending|consumed|expired|locked`; nunca guarda código en claro ni token.
   - Evidencia: cubierto por T049 (`test_contact_verification.py`); T037 no crea el archivo.
 
-- [ ] T038 [P] [US2] Implementar transporte Telegram real/doble en `src/secguard_advisor/notifications/channels/base.py` y `src/secguard_advisor/notifications/channels/telegram.py`.
+- [X] T038 [P] [US2] Implementar transporte Telegram real/doble en `src/secguard_advisor/notifications/channels/base.py` y `src/secguard_advisor/notifications/channels/telegram.py`.
   - Depende de: T003, T010.
   - Comprobación: `send_message`, `send_document`, `get_chat`, `get_chat_member`, `get_me`; timeout 10/30 s; sin reintentos internos; `stub` registra llamadas sin red; `real` exige token; errores mapeados a códigos seguros; no registra token/chat completo.
   - Evidencia: T038 implementa y crea `tests/unit/test_telegram_transport.py` con doble y errores simulados.
 
-- [ ] T039 [P] [US2] Implementar el manifiesto canónico en `src/secguard_advisor/notifications/manifest.py`.
+- [X] T039 [P] [US2] Implementar el manifiesto canónico en `src/secguard_advisor/notifications/manifest.py`.
   - Depende de: T007, T035.
   - Comprobación: `report-manifest-v1` incluye caso, informe, versión, `dataset_sha256`, `outbound_text`, `outbound_text_sha256`, `pdf_sha256`, `content_policy`, `recipients` y `recipients_sha256`; `manifest_sha256` estable; no incluye token ni chat completo.
   - Evidencia: cubierto por T050 (`test_report_manifest.py`); T039 no crea el archivo.
 
 ### Entrega y ejecución manual
 
-- [ ] T040 [US2] Implementar eventos, componentes, intentos e idempotencia en `src/secguard_advisor/notifications/delivery.py`.
+- [X] T040 [US2] Implementar eventos, componentes, intentos e idempotencia en `src/secguard_advisor/notifications/delivery.py`.
   - Depende de: T035, T038, T039.
   - Comprobación: `idempotency_key = SHA-256(case_id + ':' + report_version_id + ':' + contact_id)` única; el modo no participa; componentes `summary`/`document` con estado independiente; un componente `accepted` no vuelve a `requested`; `prepared|queued|sending|accepted|partial|failed|uncertain|skipped`; guarda manifiesto ejecutado.
   - Evidencia: T040 implementa y crea `tests/unit/test_delivery_states.py`; la idempotencia queda en T051 (`test_delivery_idempotency.py`).
 
-- [ ] T041 [US2] Implementar el ejecutor manual compartido y su recuperación en `src/secguard_advisor/notifications/executor.py`.
+- [X] T041 [US2] Implementar el ejecutor manual compartido y su recuperación en `src/secguard_advisor/notifications/executor.py`.
   - Depende de: T040.
   - Comprobación: reclama en transacción corta (`BEGIN IMMEDIATE`) y llama a Telegram fuera de transacción; **antes de cada componente** (resumen y PDF) revalida destinatario verificado, consentimiento, vínculo y manifiesto; si se revoca, conserva el componente aceptado y marca los restantes `skipped`; al arrancar, componentes `requested` sin resultado pasan a `uncertain/interrupted`; no reintenta automáticamente; reintento manual solo de componentes no aceptados; un fallo no revierte la importación.
   - Evidencia: cubierto por T052 (`test_delivery_recovery.py`), que incluye revocación entre resumen y PDF.
 
-- [ ] T042 [US2] Implementar confirmación y manifiesto en `src/secguard_advisor/notifications/confirmations.py`.
+- [X] T042 [US2] Implementar confirmación y manifiesto en `src/secguard_advisor/notifications/confirmations.py`.
   - Depende de: T039, T040.
   - Comprobación: confirma versión, destinatarios, texto, PDF y política; guarda `manifest_json`/`manifest_sha256`; invalida si cambia el informe, PDF, política o destinatarios; no confirma contactos no verificados, sin consentimiento, inactivos o no vinculados.
   - Evidencia: cubierto por T050 (`test_confirmations.py`); T042 no crea el archivo.
 
-- [ ] T043 [US2] Implementar el envío manual en `src/secguard_advisor/notifications/manual.py`.
+- [X] T043 [US2] Implementar el envío manual en `src/secguard_advisor/notifications/manual.py`.
   - Depende de: T041, T042.
   - Comprobación: recalcula manifiesto; si `manifest_sha256` no coincide devuelve `manifest_mismatch` y no llama; crea/reutiliza evento por contacto; encola resumen y PDF; un doble clic devuelve el evento existente.
   - Evidencia: cubierto por T051 (`test_manual_send.py`); T043 no crea el archivo.
 
 ### Rutas y UI
 
-- [ ] T044 [US2] Crear rutas de contactos en `src/secguard_advisor/web/routes/contacts.py` e incluirlas en `src/secguard_advisor/web/app.py`.
+- [X] T044 [US2] Crear rutas de contactos en `src/secguard_advisor/web/routes/contacts.py` e incluirlas en `src/secguard_advisor/web/app.py`.
   - Depende de: T036, T037, T038.
   - Comprobación: `GET/POST /settings/contacts`, `POST .../verification`, `POST .../verification/confirm`, `POST .../consent`, `POST .../status`, `POST /cases/{case_id}/contacts/{contact_id}`; el código se envía con `unverified` y sin consentimiento/vínculo; no muestra token ni chat completo.
   - Evidencia: cubierto por T049 (`test_contact_verification_routes.py`); T044 no crea el archivo.
 
-- [ ] T045 [US2] Crear rutas de confirmación y notificaciones en `src/secguard_advisor/web/routes/notifications.py` e incluirlas en `src/secguard_advisor/web/app.py`.
+- [X] T045 [US2] Crear rutas de confirmación y notificaciones en `src/secguard_advisor/web/routes/notifications.py` e incluirlas en `src/secguard_advisor/web/app.py`.
   - Depende de: T041, T042, T043.
   - Comprobación: confirmaciones, envío manual, historial y reintento; 409 `manifest_mismatch`; 422 contacto inválido; 202 eventos; un GET no envía.
   - Evidencia: cubierto por T053 (`test_manual_delivery.py`) y T054 (`test_notification_history.py`); T045 no crea los archivos.
 
-- [ ] T046 [P] [US2] Crear plantillas de contactos en `src/secguard_advisor/web/templates/contacts/index.html`, `_form.html` y `_verification.html`.
+- [X] T046 [P] [US2] Crear plantillas de contactos en `src/secguard_advisor/web/templates/contacts/index.html`, `_form.html` y `_verification.html`.
   - Depende de: T044.
   - Comprobación: alias, tipo, estado, consentimiento, casos autorizados y última verificación; formulario de código; mensajes de error claros; sin token ni chat completo; responsive.
   - Evidencia: cubierto por T049/T055 (captura y recorrido).
 
-- [ ] T047 [P] [US2] Crear plantillas de informes/notificaciones en `src/secguard_advisor/web/templates/notifications/_panel.html`, `_preview.html`, `_history.html` y `src/secguard_advisor/web/templates/reports/_notifications.html`.
+- [X] T047 [P] [US2] Crear plantillas de informes/notificaciones en `src/secguard_advisor/web/templates/notifications/_panel.html`, `_preview.html`, `_history.html` y `src/secguard_advisor/web/templates/reports/_notifications.html`.
   - Depende de: T045.
   - Comprobación: vista previa del contenido exacto; confirmación; destinatarios; estados por componente; historial con modo, regla, fechas e identificador; «preparado/solicitado/aceptado/parcial/fallido/incierto».
   - Evidencia: cubierto por T054/T055 (captura y contrato).
 
-- [ ] T048 [P] [US2] Añadir navegación de contactos y notificaciones en `src/secguard_advisor/web/templates/components/navigation.html` y `src/secguard_advisor/web/navigation.py`.
+- [X] T048 [P] [US2] Añadir navegación de contactos y notificaciones en `src/secguard_advisor/web/templates/components/navigation.html` y `src/secguard_advisor/web/navigation.py`.
   - Depende de: T044, T045.
   - Comprobación: Administración → Contactos; caso → Informes y notificaciones; escritorio y móvil; sección activa.
   - Evidencia: cubierto por T031/T055/T073.
 
 ### Pruebas del Corte B
 
-- [ ] T049 [P] [US2] Escribir `tests/unit/test_contact_verification.py` y `tests/contract/test_contact_verification_routes.py`; T049 es dueña de ambos y T037/T044 no los crean.
+- [X] T049 [P] [US2] Escribir `tests/unit/test_contact_verification.py` y `tests/contract/test_contact_verification_routes.py`; T049 es dueña de ambos y T037/T044 no los crean.
   - Depende de: T037, T044.
   - Comprobación: el código se envía con informe bloqueado; hash/expiración/intentos/consumo/límites; no se guarda código en claro ni token; sin código correcto no hay `verified`.
   - Evidencia: pytest y consulta a `contact_verification_challenges`.
 
-- [ ] T050 [P] [US2] Escribir `tests/unit/test_report_manifest.py` y `tests/unit/test_confirmations.py`; T050 es dueña de ambos y T039/T042 no los crean.
+- [X] T050 [P] [US2] Escribir `tests/unit/test_report_manifest.py` y `tests/unit/test_confirmations.py`; T050 es dueña de ambos y T039/T042 no los crean.
   - Depende de: T039, T042.
   - Comprobación: manifiesto canónico; cambio de texto/PDF/política/destinatarios invalida; confirmación válida solo con manifiesto coincidente.
   - Evidencia: pytest con manifiestos alterados.
 
-- [ ] T051 [P] [US2] Escribir `tests/unit/test_manual_send.py` y `tests/unit/test_delivery_idempotency.py`; T051 es dueña de ambos y T040/T043 no los crean.
+- [X] T051 [P] [US2] Escribir `tests/unit/test_manual_send.py` y `tests/unit/test_delivery_idempotency.py`; T051 es dueña de ambos y T040/T043 no los crean.
   - Depende de: T040, T043.
   - Comprobación: doble clic/recarga no crea segundo evento; un componente aceptado no se reenvía; modo manual no duplica; `manifest_mismatch` bloquea.
   - Evidencia: pytest y conteo de eventos/componentes.
 
-- [ ] T052 [P] [US2] Escribir `tests/unit/test_delivery_recovery.py`.
+- [X] T052 [P] [US2] Escribir `tests/unit/test_delivery_recovery.py`.
   - Depende de: T041.
   - Comprobación: timeout → `uncertain`; reinicio → `uncertain/interrupted`; parcial → solo documento se reintenta; resumen aceptado no se reenvía; importación intacta; **revocación de consentimiento entre resumen y PDF** conserva el resumen aceptado y deja el documento `skipped` con motivo.
   - Evidencia: pytest con reloj/estado simulado y salida de estados; cubre T041.
 
-- [ ] T053 [P] [US2] Escribir `tests/unit/test_delivery_privacy.py` y `tests/contract/test_manual_delivery.py`; T053 es dueña de ambos y T038/T043/T045 no los crean.
+- [X] T053 [P] [US2] Escribir `tests/unit/test_delivery_privacy.py` y `tests/contract/test_manual_delivery.py`; T053 es dueña de ambos y T038/T043/T045 no los crean.
   - Depende de: T038, T043, T045.
   - Comprobación: sin IP/nombres internos/Results/título sensible por defecto; alias; errores sin secretos; aislamiento entre casos; 409/422 correctos.
   - Evidencia: pytest y búsqueda de cadenas prohibidas.
 
-- [ ] T054 [P] [US4] Escribir `tests/contract/test_notification_history.py`; T054 es dueña y T045 no lo crea.
+- [X] T054 [P] [US4] Escribir `tests/contract/test_notification_history.py`; T054 es dueña y T045 no lo crea.
   - Depende de: T045, T047.
   - Comprobación: historial muestra versión, modo, regla (nula en manual), destinatarios, contenido, estado por componente, fechas e id; distingue aceptado de entregado/leído.
   - Evidencia: pytest y captura de la vista.
 
-- [ ] T055 [US2] Escribir `tests/acceptance/test_manual_notification_journey.py`.
+- [X] T055 [US2] Escribir `tests/acceptance/test_manual_notification_journey.py`.
   - Depende de: T049–T054.
   - Comprobación: recorrido contacto → código → verificación → consentimiento → vínculo → vista previa → confirmación → envío con doble → estados; sin red externa.
   - Evidencia: pytest y registro del transporte doble.
 
-- [ ] T056 [US2] Documentar el Corte B en `docs/evidencia/006-corte-b/README.md` y actualizar `docs/planificacion/006-ultimo-resultado.md`.
+- [X] T056 [US2] Documentar el Corte B en `docs/evidencia/006-corte-b/README.md` y actualizar `docs/planificacion/006-ultimo-resultado.md`.
   - Depende de: T055.
   - Comprobación: comandos, resultados, capturas, límites de verificación, manifiesto, idempotencia y pendientes.
   - Evidencia: documento revisado y enlaces.

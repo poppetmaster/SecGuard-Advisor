@@ -20,6 +20,7 @@ from secguard_advisor.db.engine import create_engine_for_settings, create_sessio
 from secguard_advisor.db.recovery import reconcile_startup
 from secguard_advisor.documents.embedding import OllamaEmbeddingClient
 from secguard_advisor.evidence.budget import reconcile_startup as reconcile_budget_startup
+from secguard_advisor.notifications.executor import recover_interrupted
 from secguard_advisor.retrieval.errors import IndexError as IndexFailure
 from secguard_advisor.retrieval.index import QdrantIndex
 from secguard_advisor.retrieval.instance import InstanceLockBusy, lock_conflict_code
@@ -29,7 +30,9 @@ from secguard_advisor.web.routes import (
     ai_usage,
     cases,
     chat,
+    contacts,
     documents,
+    notifications,
     reports,
     review,
     runs,
@@ -121,6 +124,9 @@ def create_app(
                 reconcile_startup(session)
                 reconcile_budget_startup(session)
                 session.commit()
+            recover_interrupted(factory)
+            if not hasattr(app.state, "telegram_transport"):
+                app.state.telegram_transport = None
             yield
         finally:
             memory.close()
@@ -154,6 +160,8 @@ def create_app(
     app.include_router(documents.router)
     app.include_router(vulnerabilities.router)
     app.include_router(reports.router)
+    app.include_router(contacts.router)
+    app.include_router(notifications.router)
     app.include_router(chat.router)
     app.include_router(runs.router)
     app.include_router(review.router)

@@ -48,7 +48,9 @@ explícito para 005 y una acción externa controlada para 006. 004 reconstruye e
 desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación obligatoria y sin
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
 Ollama; 004 está implementado y aceptado localmente; 005 tiene adaptadores API implementados con
-aceptación externa real pendiente; 006 Corte A está implementado localmente, pero contactos, envío manual, reglas automáticas y Telegram no están implementados.
+aceptación externa real pendiente; 006 Cortes A y B están implementados localmente, pero el envío
+real de Telegram, las reglas automáticas y la recuperación automática no están implementados ni
+aceptados.
 
 **005 Entregas 1–3 completadas (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
@@ -79,11 +81,31 @@ a un informe factual si falla o no está autorizada. La síntesis externa exige 
 concurrencia de 005; Qualys privado no sale. La recuperación automática futura usa `generation_key`; C
 no se implementó. Evidencia: `docs/evidencia/006-corte-a/`.
 
+**006 Corte B implementado (2026-11-23):** los contactos de Telegram se registran en
+`/settings/contacts` (grupo **Administración**) con alias e identificador de chat; nunca se piden
+teléfono ni correo. Un contacto nuevo queda `unverified`, con consentimiento `pending` y `active=false`.
+La verificación envía un código de 6 dígitos, persiste solo su hash, expira en 10 minutos y limita a 3
+intentos y 3 solicitudes por ventana. Consentimiento, activación y vínculo por caso son pasos
+separados. El envío manual parte de una versión `ready`, construye un manifiesto canónico con versión,
+texto saliente, hash del PDF, política y destinatarios enmascarados, y exige una confirmación que se
+invalida si cambia el contenido o los destinatarios. El resumen y el PDF son componentes
+independientes que revalidan contacto, consentimiento, vínculo y manifiesto antes de cada envío. La
+idempotencia es `SHA-256(caso:versión:contacto)` y no depende del modo manual/automático; los estados
+son preparado, solicitado, aceptado, fallido, incierto, parcial y omitido, y «aceptado» no equivale a
+entregado ni leído. Un timeout incierto no se reintenta automáticamente y el reinicio marca las
+solicitudes en vuelo como inciertas conservando los componentes aceptados. El transporte real está
+implementado con timeouts y sin reintentos internos, pero toda la aceptación del corte usa el doble
+`StubTelegramTransport`: no se enviaron códigos ni informes reales. Evidencia:
+`docs/evidencia/006-corte-b/`.
+
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
 `/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities`, `/cases/{id}/reports` y
-`/cases/{id}/chat`; la evidencia de ejecución vive en `/cases/{id}/runs/{run_id}`. HTMX se conserva
-solo dentro de cada sección.
+`/cases/{id}/chat`; la evidencia de ejecución vive en `/cases/{id}/runs/{run_id}`. El grupo
+**Administración** incluye `/settings/ai`, `/settings/ai/usage` y `/settings/contacts`. Las
+notificaciones por caso viven en `/cases/{id}/notifications` y la preparación en
+`/cases/{id}/reports/{report_id}/versions/{n}/notifications`. HTMX se conserva solo dentro de cada
+sección.
 
 La verdad normativa vive en [`CONSTITUTION.md`](./CONSTITUTION.md), que es un enlace simbólico a
 `.specify/memory/constitution.md`. Se edita únicamente el archivo real; nunca se mantienen dos
@@ -233,6 +255,20 @@ la aplicación no ejecuta `create_all` al arrancar.
   almacenamiento separado (`SECGUARD_ACCEPTANCE_DIR` o `tmp_path`). `make demo-prepare` prepara
   `storage/demo` con migraciones, corpus y seed; `make demo` arranca esa misma instancia. No modifica
   `storage/`.
+- El token del bot de Telegram vive solo en `.env` o configuración secreta; nunca en SQLite, HTML,
+  capturas, logs ni Git. El transporte predeterminado es el doble `stub`; el transporte real no se usa
+  en pruebas ni en aceptación sin autorización explícita y un destino acordado.
+- Un contacto nuevo es `unverified`, con consentimiento `pending` y `active=false`; no se piden
+  teléfono ni correo. El código de verificación se persiste solo como hash, expira en 10 minutos y
+  admite 3 intentos y 3 solicitudes por ventana; nunca se guarda ni se muestra en claro.
+- El envío manual exige una versión `ready` y sus artefactos persistidos, y no regenera el informe. El
+  manifiesto incluye versión, texto saliente, hash del PDF, política y destinatarios enmascarados; la
+  confirmación se invalida si cambia el contenido o los destinatarios.
+- Resumen y PDF son componentes independientes; antes de cada uno se revalidan contacto,
+  consentimiento, vínculo y manifiesto. La idempotencia es `SHA-256(caso:versión:contacto)` y no
+  depende del modo manual/automático. «Aceptado» no equivale a entregado ni leído.
+- Un timeout incierto no se reintenta automáticamente y el reinicio conserva los componentes
+  aceptados. Ninguna llamada HTTP se ejecuta con una transacción SQLite de escritura abierta.
 - No se declaran resultados, métricas ni estados de CI antes de ejecutarlos.
 
 ## Spec Kit

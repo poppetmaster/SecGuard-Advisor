@@ -358,7 +358,7 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Infraestructura vectorial | Qdrant en servidor local con Docker Compose; embebido para pruebas | Implementado y aceptado localmente en 004 (Corte 6); servidor 1.20.0; embebido solo para pruebas |
 | Transición de índice | Reconstrucción limpia; sin exportación de vectores, escritura dual, selección permanente ni retorno a Chroma | Confirmado por el responsable; Chroma no se borra en 004 |
 | Trazas y evaluación | LangSmith | Fijado |
-| Acción externa | Telegram para evaluación; correo y mesa de ayuda posteriores | Objetivo 006; no implementado |
+| Acción externa | Telegram para evaluación; correo y mesa de ayuda posteriores | 006 Corte B: código y pruebas locales de contactos, verificación, consentimiento, vínculo, manifiesto, confirmación y envío manual contra transporte doble; envío real no verificado ni aceptado; reglas automáticas y correo no implementados |
 | Clasificación (003) | scikit-learn | Fijado |
 | Registro de modelos (003) | MLflow con backend SQLite y artefactos locales | Fijado |
 | Orquestación por lotes (003) | Prefect | Fijado |
@@ -376,7 +376,7 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 | Generador objetivo | API por evaluar en 005 | Claude Haiku / DeepSeek; no seleccionado; Ollama se mantiene disponible junto a los externos |
 | Índice | Qdrant local persistente (004) | Implementado y aceptado localmente en 004 (Corte 6); Chroma histórico, archivos conservados; servidor local con Docker Compose 1.20.0 |
 | Transición de índice | Reconstrucción limpia sin exportación, escritura dual, comparación obligatoria ni retorno | Confirmado; recuperación ante fallos de Qdrant sí se conserva |
-| Acción externa | Telegram para evaluación (006) | No implementada; correo y mesa de ayuda posteriores |
+| Acción externa | Telegram para evaluación (006) | Envío manual probado localmente solo con transporte doble; sin envío real ni aceptación; reglas automáticas, correo y mesa de ayuda posteriores |
 | Presupuesto API | No aprobado | Sin llamadas pagadas ni cuentas creadas |
 | Presupuesto de chunk | ≤1600 tokens de contenido | Reserva para prefijo y solape |
 | Prefijos de embeddings | `task: search result \| query:` y `title: … \| text:` | Tarjeta oficial del modelo |
@@ -602,6 +602,7 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-23 | 006: la confirmación individual se exige para el envío manual; una regla activa por la persona responsable es autorización previa para envíos automáticos que coincidan exactamente con sus condiciones | Decisión del responsable | IX, XIV | La regla registra caso, destinatarios verificados, disparador, filtros, contenido, versión, autor y fecha; modificarla exige reactivación; el contenido automático se identifica sin revisión humana individual; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica; no autoriza envíos reales |
 | Pendiente | Evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal para la enmienda 1.3.0 | Pendiente | Gobernanza | La ratificación del responsable está registrada; no se inventan acuerdos del equipo |
 | 2026-11-23 | Enmienda 1.4.0: el principio XIV distingue confirmación individual del envío manual y autorización previa mediante regla activa para envíos automáticos coincidentes; la identidad de envío excluye el modo | Enmienda MINOR | XIV | Ratificación del responsable registrada; la regla exige destinatarios verificados, condiciones exactas, versión, autor y fecha, y reactivación tras cambios; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica |
+| 2026-11-23 | 006 Corte B: contactos, verificación por código con hash, consentimiento, vínculo por caso, manifiesto canónico, confirmación invalidable y envío manual de resumen y PDF con historial e idempotencia, probados localmente solo con transporte doble; transporte real escrito pero no verificado | Estado de implementación | IX, XIII, XIV | Evidencia en `docs/evidencia/006-corte-b/`; `make check` 822 passed; toda la aceptación usa `StubTelegramTransport`; no se enviaron códigos ni informes reales; no se implementaron reglas automáticas, recuperación automática ni correo; no implica aprobación académica |
 | Pendiente | Presupuesto API para Claude Haiku / DeepSeek | Pendiente | IV, XI | No se activan llamadas pagadas ni se crean cuentas |
 | Pendiente | Selección del proveedor API y del canal definitivo de acción | Pendiente | IV, XIV | Requiere evidencia de 005/006; no se declara ganador |
 

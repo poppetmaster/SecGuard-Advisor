@@ -1,97 +1,88 @@
 # 006 — Último resultado
 
 **Fecha**: 2026-11-23  
-**Estado**: Corte A implementado y validado localmente. T001–T034 completadas; T035–T081 pendientes.
-Sin contactos, envíos, reglas automáticas ni Telegram. Sin llamadas pagadas ni mensajes reales.
+**Estado**: Cortes A y B implementados y validados localmente. T001–T056 completadas; T057–T081
+pendientes. Envío real de Telegram no verificado; reglas automáticas y recuperación automática no
+implementadas.
 
-## 1. Implementación del Corte A
+## 1. Corte A (T001–T034)
 
-Se implementó el informe ejecutivo dentro del caso:
+- Sección **Informe ejecutivo** con historial de versiones.
+- Dataset canónico inmutable por versión, calculado en SQLite y persistido en
+  `report_versions.dataset_json`.
+- Tarjetas, cuatro gráficas ECharts con tabla alternativa y PDF local de 2–3 páginas.
+- Síntesis opcional `report-synthesis-v1` con `claim_refs` y fallback factual.
+- Evidencia: `docs/evidencia/006-corte-a/` y `docs/evidencia/006-correcciones-corte-a/`.
 
-- sección **Informe ejecutivo** con historial de versiones;
-- selección explícita de una instantánea Qualys confirmada y filtros opcionales;
-- dataset canónico inmutable por versión, calculado en SQLite y persistido en
-  `report_versions.dataset_json`;
-- tarjetas de pendientes, críticas, altas, activos, explotabilidad, malware, ambos indicadores,
-  Fixed y revisión manual;
-- cuatro gráficas ECharts con títulos-conclusión y tablas alternativas;
-- PDF local de 3 páginas con composición de impresión, gráficas SVG y detalle técnico;
-- historial y descarga del PDF persistido;
-- síntesis opcional `report-synthesis-v1` con `claim_refs`, propuestas identificadas y fallback
-  factual.
+## 2. Corte B (T035–T056)
 
-## 2. Tareas
+- Contactos en **Administración → Contactos y canales**: alta con alias e identificador de chat, sin
+  teléfono ni correo. Estado inicial `unverified`, consentimiento `pending`, `active=false`.
+- Verificación por código de 6 dígitos: se persiste solo `code_sha256`, expira en 10 minutos y admite 3
+  intentos y 3 solicitudes por ventana; estados `pending`, `consumed`, `expired`, `locked`.
+- Consentimiento, activación y vínculo por caso como pasos separados; la activación exige verificación
+  y consentimiento.
+- Manifiesto `report-manifest-v1` con versión, dataset, texto saliente, hash del PDF, política y
+  destinatarios enmascarados.
+- Confirmación manual invalidable si cambia el contenido o los destinatarios.
+- Eventos, componentes e intentos: idempotencia `SHA-256(caso:versión:contacto)`, componentes
+  `summary` y `document` independientes, revalidación por componente, timeout incierto sin reintento
+  automático y recuperación al arrancar.
+- Historial por destinatario y componente, sin token ni identificadores en claro.
+- Transporte real con timeouts y sin reintentos internos; aceptación solo con `StubTelegramTransport`.
 
-**Completadas**: T001–T034 (Setup, Foundational y Corte A).
+## 3. Tareas
 
-**Pendientes**: T035–T081 (contactos, envío manual, reglas automáticas, recuperación y aceptación
-integrada). No se inició T035.
+**Completadas**: T001–T056 (Setup, Foundational, Corte A y Corte B).
 
-Las migraciones del Corte A son `d8e9f0a1b2c3` (tablas de informe y `runs`) y `e2f3a4b5c6d7`
-(`report_versions.status` y `qualys_imports.provenance`). `generation_key` queda preparado para C.
+**Pendientes**: T057–T081 (reglas automáticas, envío automático, aceptación integrada y cierre). No se
+inició T057.
 
-## 3. Verificación observada
+Migraciones vigentes: `d8e9f0a1b2c3` (A), `e2f3a4b5c6d7` (estado/procedencia) y `f3a4b5c6d7e8`
+(Corte B: contactos, desafíos, confirmaciones, eventos, componentes e intentos).
+
+## 4. Verificación observada
 
 | Comprobación | Resultado |
 |---|---|
-| `uv sync --locked` | Entorno reproducible; `playwright` 1.65.2 |
-| `uv run python scripts/check_pdf_runtime.py` | `PDF runtime OK (chrome, 9130 bytes)` |
-| `node scripts/render_report_charts.mjs --check` | `ECharts SSR OK (2790 bytes)` |
-| `make assets` | Tailwind y recursos recompilados |
-| `make check` | **786 passed, 40 deselected** |
-| PDF real + navegador | **2 passed** (`test_report_pdf.py`, `test_report_browser.py`) |
+| `make check` | **822 passed, 41 deselected** |
+| Pruebas focalizadas del Corte B | **37 passed** |
+| Navegador de contactos/envío + PDF del Corte A | **3 passed** |
+| Migración temporal B (upgrade/downgrade) | OK |
 | `pre-commit run --all-files` | Todos los hooks en verde |
-| Correcciones focalizadas de síntesis/servicio/migración | **21 passed** |
 
-La prueba de PDF usa pypdf para páginas, texto y estructura. La inspección visual se hizo sobre las
-páginas renderizadas como imágenes; no se atribuye a pypdf.
+## 5. Evidencia
 
-## 4. Evidencia
+- `docs/evidencia/006-corte-b/README.md`
+- `docs/evidencia/006-corte-b/contacts-desktop.png`
+- `docs/evidencia/006-corte-b/contacts-mobile.png`
+- `docs/evidencia/006-corte-b/manual-preview-desktop.png`
+- `docs/evidencia/006-corte-b/manual-history-desktop.png`
+- Corte A: `docs/evidencia/006-corte-a/` y `docs/evidencia/006-correcciones-corte-a/`
 
-- `docs/evidencia/006-corte-a/README.md`
-- `docs/evidencia/006-corte-a/pdf-muestra.pdf` (3 páginas)
-- `docs/evidencia/006-corte-a/pdf-pages/page-1.png`, `page-2.png`, `page-3.png`
-- `docs/evidencia/006-corte-a/browser-desktop.png`
-- `docs/evidencia/006-corte-a/browser-mobile.png`
-- `docs/evidencia/006-corte-a/browser-mobile-nav.png`
-- `docs/evidencia/006-correcciones-corte-a/README.md` y artefactos de la revisión
+## 6. Defectos y verificaciones no ejecutadas
 
-## 5. Hallazgos del análisis
+**Defectos abiertos de los Cortes A y B**: ninguno observado tras las pruebas del corte.
 
-Los 21 hallazgos documentales del análisis quedaron resueltos antes de implementar: generación
-recuperable (`generation_key`), revalidación por componente, dependencias/paralelismo, propiedad de
-pruebas, contrato de síntesis, separación pypdf/inspección visual y defaults de top 5/título. El
-detalle está en `docs/planificacion/006-analisis.md`.
+**Verificaciones no ejecutadas**:
 
-## 6. Defectos actuales y verificaciones no ejecutadas
-
-**Defectos abiertos del Corte A**: ninguno observado tras las correcciones de la revisión.
-
-Se corrigieron tres defectos reportados: controles de síntesis, validación de afirmaciones/contenido y
-transacciones/recuperación de artefactos. La evidencia y las pruebas están en
-`docs/evidencia/006-correcciones-corte-a/`.
-
-**Verificaciones futuras no ejecutadas**:
-
-- envío real de Telegram;
-- contactos, consentimiento y reglas automáticas (Cortes B/C);
+- envío real de Telegram con token y destino acordados;
+- reglas automáticas y envío automático (Corte C);
 - llamadas pagadas y presupuesto;
 - evaluación semántica humana;
 - rendimiento formal de informe/PDF;
 - navegadores distintos de Chrome local.
 
-No son defectos del Corte A ni aprobaciones.
+No son defectos del corte ni aprobaciones.
 
 ## 7. Límites
 
-- No se implementaron contactos, envíos, reglas automáticas ni Telegram; no se declara Telegram
-  implementado.
-- La síntesis se probó con dobles y fallback; no se consumieron créditos externos.
-- El PDF se genera con Chrome local y ECharts SSR con Node; no hay CDN.
-- El título sensible se excluye del PDF por defecto (`include_case_title=false`); la vista web local
-  conserva el contexto del caso.
-- El top 5 de activos es el valor predeterminado y declara el recorte.
+- No se enviaron códigos ni informes reales: toda la aceptación del Corte B usa el transporte doble.
+- «Aceptado por Telegram» significa aceptación del proveedor; no prueba entrega ni lectura.
+- Las reglas automáticas, la recuperación automática y el correo no están implementados.
+- No se modificaron `storage/` ni `storage/demo`.
 
 ## 8. Siguiente paso
 
-Revisar la evidencia y decidir si se autoriza el Corte B (T035–T056). No ejecutar `/speckit.implement`.
+Revisar la evidencia del Corte B y decidir si se autoriza el Corte C (T057–T081). No ejecutar
+`/speckit.implement`.

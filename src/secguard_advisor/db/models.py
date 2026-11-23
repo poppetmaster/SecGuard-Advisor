@@ -1100,3 +1100,242 @@ class ReportArtifact(Base):
         _status_check("kind", ("pdf", "chart_svg"), "artifact_kind_valid"),
         CheckConstraint("bytes >= 0", name="artifact_bytes_nonnegative"),
     )
+
+
+class ContactChannel(Base):
+    """Contacto o grupo de Telegram autorizado por caso."""
+
+    __tablename__ = "contact_channels"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    alias: Mapped[str] = mapped_column(String(80), nullable=False)
+    channel: Mapped[str] = mapped_column(String(20), nullable=False, default="telegram")
+    chat_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    chat_type: Mapped[str] = mapped_column(String(20), nullable=False, default="private")
+    display_name: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="unverified")
+    verification_method: Mapped[str | None] = mapped_column(String(40))
+    verified_at: Mapped[str | None] = mapped_column(String(40))
+    verified_by: Mapped[str | None] = mapped_column(String(120))
+    verification_evidence: Mapped[str | None] = mapped_column(Text)
+    chat_fingerprint: Mapped[str | None] = mapped_column(String(64))
+    consent_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    consent_at: Mapped[str | None] = mapped_column(String(40))
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(
+        String(40), nullable=False, default=utc_now_iso, onupdate=utc_now_iso
+    )
+
+    __table_args__ = (
+        UniqueConstraint("channel", "chat_id", name="uq_contact_channels_chat"),
+        Index("ix_contact_channels_status", "status", "active"),
+        _status_check("channel", ("telegram",), "channel_valid"),
+        _status_check(
+            "chat_type", ("private", "group", "supergroup", "channel"), "chat_type_valid"
+        ),
+        _status_check(
+            "status", ("unverified", "verified", "revoked", "disabled"), "contact_status_valid"
+        ),
+        _status_check("consent_status", ("pending", "granted", "revoked"), "consent_status_valid"),
+        CheckConstraint(
+            "status != 'verified' OR verified_at IS NOT NULL", name="verified_has_time"
+        ),
+        CheckConstraint(
+            "consent_status != 'granted' OR consent_at IS NOT NULL", name="consent_has_time"
+        ),
+    )
+
+
+class ContactCaseLink(Base):
+    """Autorización de un contacto para un caso concreto."""
+
+    __tablename__ = "contact_case_links"
+
+    contact_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("contact_channels.id", ondelete="CASCADE"), primary_key=True
+    )
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), primary_key=True
+    )
+    authorized: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (Index("ix_contact_case_links_case", "case_id", "authorized"),)
+
+
+class ContactVerificationChallenge(Base):
+    """Desafío de código de verificación, sin código en claro."""
+
+    __tablename__ = "contact_verification_challenges"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    contact_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("contact_channels.id", ondelete="CASCADE"), nullable=False
+    )
+    bot_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    code_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(30), nullable=False, default="contact_verification")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    expires_at: Mapped[str] = mapped_column(String(40), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    consumed_at: Mapped[str | None] = mapped_column(String(40))
+    last_sent_at: Mapped[str | None] = mapped_column(String(40))
+    request_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    window_started_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        Index("ix_contact_challenges_contact_status", "contact_id", "status"),
+        _status_check("purpose", ("contact_verification",), "challenge_purpose_valid"),
+        _status_check(
+            "status", ("pending", "consumed", "expired", "locked"), "challenge_status_valid"
+        ),
+        CheckConstraint(
+            "attempts >= 0 AND attempts <= max_attempts", name="challenge_attempts_range"
+        ),
+        CheckConstraint("max_attempts = 3", name="challenge_max_attempts"),
+        CheckConstraint(
+            "status != 'consumed' OR consumed_at IS NOT NULL", name="consumed_has_time"
+        ),
+    )
+
+
+class ReportConfirmation(Base):
+    """Confirmación humana del manifiesto de una versión."""
+
+    __tablename__ = "report_confirmations"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    report_version_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("report_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    manifest_json: Mapped[str] = mapped_column(Text, nullable=False)
+    manifest_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    contacts_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    invalidated_at: Mapped[str | None] = mapped_column(String(40))
+
+    __table_args__ = (
+        Index("ix_report_confirmations_version", "report_version_id", "created_at"),
+        Index("ix_report_confirmations_case", "case_id", "created_at"),
+    )
+
+
+class NotificationEvent(Base):
+    """Intento de entrega de una versión a un contacto."""
+
+    __tablename__ = "notification_events"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    report_version_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("report_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    contact_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("contact_channels.id", ondelete="CASCADE"), nullable=False
+    )
+    mode: Mapped[str] = mapped_column(String(20), nullable=False)
+    rule_id: Mapped[str | None] = mapped_column(String(32))
+    rule_version: Mapped[int | None] = mapped_column(Integer)
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    manifest_json: Mapped[str] = mapped_column(Text, nullable=False)
+    manifest_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    content_policy_json: Mapped[str] = mapped_column(Text, nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    confirmed_by: Mapped[str | None] = mapped_column(String(120))
+    confirmed_at: Mapped[str | None] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="prepared")
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(
+        String(40), nullable=False, default=utc_now_iso, onupdate=utc_now_iso
+    )
+
+    __table_args__ = (
+        Index("ix_notification_events_case_status", "case_id", "status"),
+        Index("ix_notification_events_version", "report_version_id"),
+        _status_check("mode", ("manual", "automatic"), "event_mode_valid"),
+        _status_check(
+            "status",
+            (
+                "prepared",
+                "queued",
+                "sending",
+                "accepted",
+                "partial",
+                "failed",
+                "uncertain",
+                "skipped",
+            ),
+            "event_status_valid",
+        ),
+    )
+
+
+class NotificationComponent(Base):
+    """Componente independiente de una entrega: resumen o PDF."""
+
+    __tablename__ = "notification_components"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    event_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("notification_events.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="prepared")
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    provider_message_id: Mapped[str | None] = mapped_column(String(128))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    updated_at: Mapped[str] = mapped_column(
+        String(40), nullable=False, default=utc_now_iso, onupdate=utc_now_iso
+    )
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "kind", name="uq_notification_components_kind"),
+        _status_check("kind", ("summary", "document"), "component_kind_valid"),
+        _status_check(
+            "status",
+            ("prepared", "requested", "accepted", "failed", "uncertain", "skipped"),
+            "component_status_valid",
+        ),
+        CheckConstraint("attempt_count >= 0", name="component_attempts_nonnegative"),
+    )
+
+
+class NotificationAttempt(Base):
+    """Intento físico por componente, para evidencia y reintentos acotados."""
+
+    __tablename__ = "notification_attempts"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    event_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("notification_events.id", ondelete="CASCADE"), nullable=False
+    )
+    component_kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="requested")
+    requested_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    finished_at: Mapped[str | None] = mapped_column(String(40))
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    provider_message_id: Mapped[str | None] = mapped_column(String(128))
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    evidence_note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "event_id", "component_kind", "attempt_no", name="uq_notification_attempts_no"
+        ),
+        _status_check(
+            "status", ("requested", "accepted", "failed", "uncertain"), "attempt_status_valid"
+        ),
+        CheckConstraint("attempt_no >= 1", name="attempt_no_positive"),
+    )

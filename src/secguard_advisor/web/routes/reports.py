@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from secguard_advisor.cases.scope import CaseNotFoundError, require_case, resolve_case_scope
 from secguard_advisor.db.models import ReportArtifact
+from secguard_advisor.notifications.delivery import event_view, list_events
 from secguard_advisor.reports.canonical import parse_json
 from secguard_advisor.reports.errors import ReportError
 from secguard_advisor.reports.metrics import ReportFilters
@@ -247,6 +248,11 @@ def reports_view(request: Request, case_id: str, report_id: str, version_number:
         )
         pdf_ready = any(item.kind == "pdf" for item in artifacts)
         versions = list_versions(session, case_id)
+        notification_events = [
+            event_view(session, event)
+            for event in list_events(session, case_id)
+            if event.report_version_id == version.id
+        ]
     return _templates(request).TemplateResponse(
         request=request,
         name="reports/view.html",
@@ -259,6 +265,7 @@ def reports_view(request: Request, case_id: str, report_id: str, version_number:
             "charts": charts,
             "pdf_ready": pdf_ready,
             "versions": versions,
+            "notification_events": notification_events,
             "wide": True,
             **page(
                 title=f"Informe ejecutivo · versión {version_number}",
