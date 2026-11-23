@@ -1,0 +1,28 @@
+{
+  "version": "005-reevaluation-v1",
+  "frozen_at": "2026-11-23",
+  "sha256": "862e652ee9ecef8f912ce1061461307bc0f1f1f36816259ed9cb32cf62a5f8f8",
+  "dataset": {
+    "version": "005-reevaluation-v1",
+    "frozen_at": "2026-11-23",
+    "plan": {
+      "deepseek": [
+        "S03",
+        "S04",
+        "S10"
+      ],
+      "anthropic": [
+        "S02",
+        "S03",
+        "S04",
+        "S07",
+        "S10"
+      ]
+    }
+  },
+  "note": "Reevaluación externa focalizada; no es la corrida completa de 30 escenarios.",
+  "result_files": [
+    "resultados-deepseek.json",
+    "resultados-anthropic.json"
+  ]
+}

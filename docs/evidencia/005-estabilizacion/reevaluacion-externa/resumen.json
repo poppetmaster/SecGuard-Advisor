@@ -1,0 +1,41 @@
+{
+  "kind": "focalized_external_reevaluation",
+  "dataset": "005-evaluation-v1",
+  "scenarios": {
+    "deepseek": [
+      "S03",
+      "S04",
+      "S10"
+    ],
+    "anthropic": [
+      "S02",
+      "S03",
+      "S04",
+      "S07",
+      "S10"
+    ]
+  },
+  "cap_usd": "0.10",
+  "estimate": {
+    "cap_usd": "0.10",
+    "worst_case_usd": "0.047175",
+    "providers": {
+      "deepseek": {
+        "per_call_usd": "0.001395",
+        "max_calls": 15,
+        "worst_case_usd": "0.020925"
+      },
+      "anthropic": {
+        "per_call_usd": "0.001050",
+        "max_calls": 25,
+        "worst_case_usd": "0.026250"
+      }
+    }
+  },
+  "known_cost_usd": "0.010526000",
+  "ledger_settled_usd": "0.010870",
+  "requests": 16,
+  "unknown_cost_requests": 0,
+  "stop_reason": null,
+  "completed_at": "2026-11-23T04:19:34.314848+00:00"
+}

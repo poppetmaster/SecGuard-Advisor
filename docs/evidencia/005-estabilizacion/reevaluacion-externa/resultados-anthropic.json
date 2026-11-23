@@ -1,0 +1,330 @@
+[
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "f07308052aca42db8c4f5779b40b123d",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 57137,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 57137
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10314,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001641",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "964d2a1b56e24a63b10f08e9b5edb177",
+    "scenario_id": "S02",
+    "requests": 2,
+    "known_cost_usd": "0.001641000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: truncated_content."
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "bc6046ce33e24488a87e029ed202f5a9",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 22834,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1748
+      },
+      {
+        "name": "agent",
+        "duration_ms": 21033
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10958,
+      "output_tokens": 1026,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001609",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Limit the permissions that LLM extensions are granted to other systems to the minimum necessary in order to limit the scope of undesirable actions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Avoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Treat the model as any other user, adopting a zero-trust approach, and apply proper input validation on responses coming from the model to backend functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Separate and clearly denote untrusted content to limit its influence on user prompts.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según el OWASP Top 10 for LLM Applications 2025 presente en las fuentes, dos riesgos descritos son la inyección de prompts (y la falta de validación de salidas) y la agencia excesiva (Excessive Agency). Como control recomendado, el documento sugiere minimizar los permisos de las extensiones del LLM al mínimo necesario. Las fuentes recuperadas no abarcan la totalidad del Top 10, por lo que el panorama es parcial.",
+    "case_id": "6fb3660eb2a24b91a50c9d2a3c7bfbf3",
+    "scenario_id": "S03",
+    "requests": 2,
+    "known_cost_usd": "0.001609000",
+    "unknown_cost_requests": 0,
+    "error_message": null
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "ae8e087d4d134ccfb27e5952a53e5b4c",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 7857,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 7857
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 9981,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001608",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "d38314db8df64930855757fc39be70a3",
+    "scenario_id": "S04",
+    "requests": 2,
+    "known_cost_usd": "0.001608000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "e9f6be36cc5e4c128a2c5d75ab9abdb2",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 9600,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 9600
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 8892,
+      "output_tokens": 1315,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001547",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "16dfb64c8c24498a8b83acbf80725b45",
+    "scenario_id": "S07",
+    "requests": 2,
+    "known_cost_usd": "0.001203000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "16ca4ad0fd2748149d87db33399215c0",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 10732,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 10732
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5807,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001190",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "2d7eb36cb9e64766b83d93e6a3a7397c",
+    "scenario_id": "S10",
+    "requests": 2,
+    "known_cost_usd": "0.001190000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: truncated_content."
+  }
+]

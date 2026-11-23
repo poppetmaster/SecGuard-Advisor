@@ -1,0 +1,239 @@
+[
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "cede6811f9604a5292d1fc4dd7ddc589",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 7437,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 7437
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6673,
+      "output_tokens": 1213,
+      "cached_tokens": 2048,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001428",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "90c3b25b066a4ca191dd7c71e86c83d1",
+    "scenario_id": "S03",
+    "requests": 2,
+    "known_cost_usd": "0.001428000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "2f5c3489541b4482969d3aa5fb50e8ac",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 6707,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 6707
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5935,
+      "output_tokens": 1213,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001223",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "755f743b1e1b4df7a4e4033929402eb8",
+    "scenario_id": "S04",
+    "requests": 2,
+    "known_cost_usd": "0.001223000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "c29666ad4bf3417ba5d10ca71516bbcf",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4725,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 974
+      },
+      {
+        "name": "agent",
+        "duration_ms": 3694
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3458,
+      "output_tokens": 833,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000624",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Resumen: el caso documenta una política de respaldo con copias cifradas, prueba de restauración periódica y almacenamiento fuera del sitio, y una gestión de accesos con MFA para acceso remoto, revisión trimestral de permisos, aprobación y registro para proveedores y deshabilitación de cuentas inactivas. Evidencias: S1 y S2 describen estos controles a nivel de política; no se aportan registros de ejecución, métricas ni fechas de las pruebas. Recomendaciones: 1) verificar contra registros operativos que las copias y las pruebas de restauración se ejecutan según la política; 2) confirmar evidencia de las revisiones trimestrales de permisos y de la baja de cuentas inactivas; 3) validar aprobaciones y registros de sesión de proveedores. Limitaciones: no hay evidencia de implementación efectiva ni resultados de pruebas; tampoco se documentan métricas de restauración ni controles de acceso físico.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Verificar mediante registros operativos que las copias cifradas y las pruebas de restauración se ejecutan según la política y que se conserva el registro de cada prueba.\n2. Confirmar con evidencia las revisiones trime",
+    "case_id": "b4fd999aa6624f6fabdb871b475e25b9",
+    "scenario_id": "S10",
+    "requests": 2,
+    "known_cost_usd": "0.000624000",
+    "unknown_cost_requests": 0,
+    "error_message": null
+  }
+]

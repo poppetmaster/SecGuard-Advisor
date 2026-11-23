@@ -131,6 +131,15 @@ inválida, mixta con citas válidas, citas parcialmente rechazadas y herramienta
 - S10 local real y timeout local real: ver archivos de evidencia.
 - No se hicieron llamadas pagadas y no se modificó la evidencia original de los 30 escenarios.
 
+## 2.1 Reevaluación externa focalizada
+
+La pasada autorizada de DeepSeek/Claude está separada en
+`docs/evidencia/005-estabilizacion/reevaluacion-externa/`. Consumo: 0,010526 USD conocidos,
+0,010870 USD de ledger, dentro del tope adicional de 0,10 USD. DeepSeek S10 aprobado; las seis
+generaciones fallidas consumieron 1 200 tokens de salida y se clasificaron como `schema_mismatch` o
+`truncated_content`. No se aumentó el límite ni se cambió el criterio. T039 y la aceptación externa
+siguen pendientes; no se avanza a 006.
+
 ## 3. Capturas
 
 - `ui-configuracion-proveedor.png`

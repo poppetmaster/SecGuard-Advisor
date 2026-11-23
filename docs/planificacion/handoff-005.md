@@ -73,8 +73,14 @@ aceptación local, sin aceptación de proveedores externos.
 - Estabilización 2026-11-23: deadline total de Ollama, parser externo estricto con motivos,
   S10 con recuperación de respaldo para informes, S07 exclusivamente de herramienta persistido y
   marker `external` para T039. Evidencia en `docs/evidencia/005-estabilizacion/`.
-- Pendiente real sin cambios: aceptación externa/T039, reproducción externa de salidas, variabilidad
-  de latencia de Ollama y revisión semántica de S10.
+- Reevaluación externa focalizada 2026-11-23: 8 escenarios, 16 solicitudes, 0,010870 USD de ledger,
+  tope 0,10 respetado. DeepSeek S10 aprobado; el resto falló, principalmente por el límite de 1 200
+  tokens de salida (`schema_mismatch`/`truncated_content`). Claude S03 respondió con citas pero no
+  cumplió el criterio de palabras clave; Claude S07 no ejecutó la herramienta.
+- T039 sigue pendiente y 005 no se acepta para externos. No se avanza a 006 hasta decidir el límite
+  de salida y validar S07/S10 externos. Evidencia:
+  `docs/evidencia/005-estabilizacion/reevaluacion-externa/`.
+- Pendiente real sin cambios: variabilidad de latencia de Ollama y revisión semántica de S10.
 
 ## 3. T039 — Comparación externa real
 

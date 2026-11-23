@@ -1,0 +1,919 @@
+[
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "cede6811f9604a5292d1fc4dd7ddc589",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 7437,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 7437
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6673,
+      "output_tokens": 1213,
+      "cached_tokens": 2048,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001428",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "90c3b25b066a4ca191dd7c71e86c83d1",
+    "scenario_id": "S03",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:25.622707+00:00",
+        "finished_at": "2026-11-23T04:17:27.021637+00:00",
+        "status": "completed",
+        "duration_ms": 1393,
+        "input_tokens": 1642,
+        "output_tokens": 13,
+        "cached_tokens": 1280,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000066000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:27.030094+00:00",
+        "finished_at": "2026-11-23T04:17:33.019060+00:00",
+        "status": "error",
+        "duration_ms": 5986,
+        "input_tokens": 5031,
+        "output_tokens": 1200,
+        "cached_tokens": 768,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001362000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "schema_mismatch"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001428000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "2f5c3489541b4482969d3aa5fb50e8ac",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 6707,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 6707
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5935,
+      "output_tokens": 1213,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001223",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "755f743b1e1b4df7a4e4033929402eb8",
+    "scenario_id": "S04",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:33.082928+00:00",
+        "finished_at": "2026-11-23T04:17:34.506140+00:00",
+        "status": "completed",
+        "duration_ms": 1421,
+        "input_tokens": 1646,
+        "output_tokens": 13,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000048000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:34.511456+00:00",
+        "finished_at": "2026-11-23T04:17:39.743174+00:00",
+        "status": "error",
+        "duration_ms": 5229,
+        "input_tokens": 4289,
+        "output_tokens": 1200,
+        "cached_tokens": 1280,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001175000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "schema_mismatch"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001223000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "c29666ad4bf3417ba5d10ca71516bbcf",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4725,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 974
+      },
+      {
+        "name": "agent",
+        "duration_ms": 3694
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3458,
+      "output_tokens": 833,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000624",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Resumen: el caso documenta una política de respaldo con copias cifradas, prueba de restauración periódica y almacenamiento fuera del sitio, y una gestión de accesos con MFA para acceso remoto, revisión trimestral de permisos, aprobación y registro para proveedores y deshabilitación de cuentas inactivas. Evidencias: S1 y S2 describen estos controles a nivel de política; no se aportan registros de ejecución, métricas ni fechas de las pruebas. Recomendaciones: 1) verificar contra registros operativos que las copias y las pruebas de restauración se ejecutan según la política; 2) confirmar evidencia de las revisiones trimestrales de permisos y de la baja de cuentas inactivas; 3) validar aprobaciones y registros de sesión de proveedores. Limitaciones: no hay evidencia de implementación efectiva ni resultados de pruebas; tampoco se documentan métricas de restauración ni controles de acceso físico.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Verificar mediante registros operativos que las copias cifradas y las pruebas de restauración se ejecutan según la política y que se conserva el registro de cada prueba.\n2. Confirmar con evidencia las revisiones trime",
+    "case_id": "b4fd999aa6624f6fabdb871b475e25b9",
+    "scenario_id": "S10",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:40.324046+00:00",
+        "finished_at": "2026-11-23T04:17:41.294978+00:00",
+        "status": "completed",
+        "duration_ms": 969,
+        "input_tokens": 1640,
+        "output_tokens": 13,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000047000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:17:41.299319+00:00",
+        "finished_at": "2026-11-23T04:17:44.989216+00:00",
+        "status": "completed",
+        "duration_ms": 3687,
+        "input_tokens": 1818,
+        "output_tokens": 820,
+        "cached_tokens": 1280,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000577000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.000624000",
+    "unknown_cost_requests": 0,
+    "error_message": null
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "f07308052aca42db8c4f5779b40b123d",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 57137,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 57137
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10314,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001641",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "964d2a1b56e24a63b10f08e9b5edb177",
+    "scenario_id": "S02",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:18:34.441366+00:00",
+        "finished_at": "2026-11-23T04:18:36.001351+00:00",
+        "status": "completed",
+        "duration_ms": 1557,
+        "input_tokens": 2838,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000293000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:18:36.344758+00:00",
+        "finished_at": "2026-11-23T04:18:42.159358+00:00",
+        "status": "error",
+        "duration_ms": 5811,
+        "input_tokens": 7476,
+        "output_tokens": 1200,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001348000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "truncated_content"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001641000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: truncated_content."
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "bc6046ce33e24488a87e029ed202f5a9",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 22834,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1748
+      },
+      {
+        "name": "agent",
+        "duration_ms": 21033
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10958,
+      "output_tokens": 1026,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001609",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Limit the permissions that LLM extensions are granted to other systems to the minimum necessary in order to limit the scope of undesirable actions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Avoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Treat the model as any other user, adopting a zero-trust approach, and apply proper input validation on responses coming from the model to backend functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Separate and clearly denote untrusted content to limit its influence on user prompts.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según el OWASP Top 10 for LLM Applications 2025 presente en las fuentes, dos riesgos descritos son la inyección de prompts (y la falta de validación de salidas) y la agencia excesiva (Excessive Agency). Como control recomendado, el documento sugiere minimizar los permisos de las extensiones del LLM al mínimo necesario. Las fuentes recuperadas no abarcan la totalidad del Top 10, por lo que el panorama es parcial.",
+    "case_id": "6fb3660eb2a24b91a50c9d2a3c7bfbf3",
+    "scenario_id": "S03",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:18:42.450482+00:00",
+        "finished_at": "2026-11-23T04:18:43.972897+00:00",
+        "status": "completed",
+        "duration_ms": 1520,
+        "input_tokens": 2865,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000296000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:00.173667+00:00",
+        "finished_at": "2026-11-23T04:19:05.008473+00:00",
+        "status": "completed",
+        "duration_ms": 4832,
+        "input_tokens": 8093,
+        "output_tokens": 1007,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001313000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001609000",
+    "unknown_cost_requests": 0,
+    "error_message": null
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "ae8e087d4d134ccfb27e5952a53e5b4c",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 7857,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 7857
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 9981,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001608",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "d38314db8df64930855757fc39be70a3",
+    "scenario_id": "S04",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:05.364566+00:00",
+        "finished_at": "2026-11-23T04:19:06.905779+00:00",
+        "status": "completed",
+        "duration_ms": 1539,
+        "input_tokens": 2873,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000297000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:07.276974+00:00",
+        "finished_at": "2026-11-23T04:19:12.891915+00:00",
+        "status": "error",
+        "duration_ms": 5612,
+        "input_tokens": 7108,
+        "output_tokens": 1200,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001311000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "schema_mismatch"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001608000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "e9f6be36cc5e4c128a2c5d75ab9abdb2",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 9600,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 9600
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 8892,
+      "output_tokens": 1315,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001547",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "16dfb64c8c24498a8b83acbf80725b45",
+    "scenario_id": "S07",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:13.642115+00:00",
+        "finished_at": "2026-11-23T04:19:14.708548+00:00",
+        "status": "completed",
+        "duration_ms": 1064,
+        "input_tokens": 2831,
+        "output_tokens": 43,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000305000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:16.369364+00:00",
+        "finished_at": "2026-11-23T04:19:23.016354+00:00",
+        "status": "error",
+        "duration_ms": 6644,
+        "input_tokens": 2981,
+        "output_tokens": 1200,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000898000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "schema_mismatch"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001203000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: schema_mismatch."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "16ca4ad0fd2748149d87db33399215c0",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 10732,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 10732
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5807,
+      "output_tokens": 1219,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001190",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "",
+    "case_id": "2d7eb36cb9e64766b83d93e6a3a7397c",
+    "scenario_id": "S10",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:24.052785+00:00",
+        "finished_at": "2026-11-23T04:19:25.397904+00:00",
+        "status": "completed",
+        "duration_ms": 1343,
+        "input_tokens": 2865,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000296000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:19:25.710222+00:00",
+        "finished_at": "2026-11-23T04:19:34.305370+00:00",
+        "status": "error",
+        "duration_ms": 8593,
+        "input_tokens": 2942,
+        "output_tokens": 1200,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000894000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": "invalid_model_output",
+        "error_reason": "truncated_content"
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001190000",
+    "unknown_cost_requests": 0,
+    "error_message": "La salida del modelo no cumple el esquema esperado. Motivo: truncated_content."
+  }
+]

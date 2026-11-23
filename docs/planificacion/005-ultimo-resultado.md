@@ -291,3 +291,33 @@ y el informe breve S10.
 - Pruebas: `make check` **736 passed**, 38 deselected; integraciones afectadas **8 passed**;
   externas **1 skipped**. Evidencia en `docs/evidencia/005-estabilizacion/`.
 - Sin llamadas pagadas nuevas. No se inició Telegram ni 003.
+
+## Reevaluación externa focalizada (2026-11-23)
+
+Autorizada con tope adicional conjunto de **0,10 USD**; una sola pasada por escenario, sin retries
+del arnés. Evidencia separada en
+`docs/evidencia/005-estabilizacion/reevaluacion-externa/` (evaluación `005-reevaluation-v1`).
+
+| Proveedor | Escenario | Resultado | Motivo |
+|---|---|---|---|
+| DeepSeek | S03 | fallido | `schema_mismatch`; generación en 1 200 tokens |
+| DeepSeek | S04 | fallido | `schema_mismatch`; generación en 1 200 tokens |
+| DeepSeek | S10 | aprobado | respuesta, citas e informe |
+| Claude | S02 | fallido | `truncated_content`; generación en 1 200 tokens |
+| Claude | S03 | fallido | respuesta con 4 citas, pero criterio de palabras clave no cumplido |
+| Claude | S04 | fallido | `schema_mismatch`; generación en 1 200 tokens |
+| Claude | S07 | fallido | `schema_mismatch`; no se ejecutó `findings_query` |
+| Claude | S10 | fallido | `truncated_content`; generación en 1 200 tokens |
+
+- Consumo conocido de solicitudes: **0,010526 USD**; ledger liquidado **0,010870 USD**; 16
+  solicitudes, todas con uso observado y costo conocido. Estimación previa: 0,047175 USD; tope
+  0,10 USD respetado. No se aumentaron límites.
+- **Causa observada:** las seis generaciones fallidas consumieron exactamente 1 200 tokens de
+  salida. Cuatro terminaron en `schema_mismatch` y dos en `truncated_content`. El límite de salida
+  es la restricción común; no se cambió el criterio ni se ocultaron fallos.
+- La evaluación histórica de 30 escenarios queda intacta. Esta pasada se importa como evaluación
+  separada con `scripts/import_evaluation_005.py --evidence-dir .../reevaluacion-externa`; no es una comparación
+  completa.
+- **T039 sigue pendiente** y **005 no se acepta para externos**. No se avanza a 006: falta decidir
+  un límite de salida externo suficiente o reducir el esquema/prompt, y falta validar la ruta de
+  herramienta S07 y la estructura S10 en Claude.

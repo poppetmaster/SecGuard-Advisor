@@ -1,0 +1,17 @@
+provider,model,scenario,operation,status,duration_ms,input_tokens,output_tokens,cached_tokens,reasoning_tokens,usage_source,cost_status,cost_usd,currency,tariff_version,error_code,error_reason
+deepseek,deepseek-flash,S03,decide,completed,1393,1642,13,1280,,observed,calculated,0.000066000,USD,2026-11-22,,
+deepseek,deepseek-flash,S03,generate,error,5986,5031,1200,768,,observed,calculated,0.001362000,USD,2026-11-22,invalid_model_output,schema_mismatch
+deepseek,deepseek-flash,S04,decide,completed,1421,1646,13,1408,,observed,calculated,0.000048000,USD,2026-11-22,,
+deepseek,deepseek-flash,S04,generate,error,5229,4289,1200,1280,,observed,calculated,0.001175000,USD,2026-11-22,invalid_model_output,schema_mismatch
+deepseek,deepseek-flash,S10,decide,completed,969,1640,13,1408,,observed,calculated,0.000047000,USD,2026-11-22,,
+deepseek,deepseek-flash,S10,generate,completed,3687,1818,820,1280,,observed,calculated,0.000577000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S02,decide,completed,1557,2838,19,0,,observed,calculated,0.000293000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S02,generate,error,5811,7476,1200,0,,observed,calculated,0.001348000,USD,2026-11-22,invalid_model_output,truncated_content
+anthropic,claude-haiku-5-5,S03,decide,completed,1520,2865,19,0,,observed,calculated,0.000296000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S03,generate,completed,4832,8093,1007,0,,observed,calculated,0.001313000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S04,decide,completed,1539,2873,19,0,,observed,calculated,0.000297000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S04,generate,error,5612,7108,1200,0,,observed,calculated,0.001311000,USD,2026-11-22,invalid_model_output,schema_mismatch
+anthropic,claude-haiku-5-5,S07,decide,completed,1064,2831,43,0,,observed,calculated,0.000305000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S07,generate,error,6644,2981,1200,0,,observed,calculated,0.000898000,USD,2026-11-22,invalid_model_output,schema_mismatch
+anthropic,claude-haiku-5-5,S10,decide,completed,1343,2865,19,0,,observed,calculated,0.000296000,USD,2026-11-22,,
+anthropic,claude-haiku-5-5,S10,generate,error,8593,2942,1200,0,,observed,calculated,0.000894000,USD,2026-11-22,invalid_model_output,truncated_content
