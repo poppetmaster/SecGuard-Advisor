@@ -123,7 +123,7 @@ def test_inflight_turn_keeps_its_profile_when_selection_changes(tmp_path: Path) 
     with env.factory() as session:
         run = session.get(Run, context.run_id)
         assert run.generator_provider == "ollama"
-        assert run.generator_max_output_tokens == 64
+        assert run.generator_max_output_tokens == 1200
         assert run.generator_timeout_seconds == 12.5
         new = resolve_turn_settings(session, settings)
     assert new.generation_provider == "deepseek"

@@ -135,11 +135,15 @@ def create_app(
     app.state.index_factory = index_factory or default_index
     app.state.llm_factory = llm_factory
     app.state.llm_factory_override = llm_factory
+    app.state.llm_owned_by_turn = llm_factory is None
+    app.state.embedder_owned_by_turn = embedder_factory is None
+    app.state.index_owned_by_turn = index_factory is None
     app.state.generation_slot = generation_slot or GenerationSlot(
         resolved.generation_queue_timeout_seconds
     )
     app.state.token_counter = token_counter or build_prompt_counter(resolved)
     app.state.token_counter_override = token_counter
+    app.state.token_counter_owned_by_turn = token_counter is None
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(ai_settings.router)

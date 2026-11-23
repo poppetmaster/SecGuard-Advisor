@@ -25,6 +25,16 @@
   </p>
 </div>
 <div class="mt-3 grid gap-3 sm:grid-cols-2">
+  {% if selected_provider == "ollama" %}
+  <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+    <p class="font-semibold text-slate-900">Reserva de salida automática</p>
+    <p class="mt-1">
+      {{ profile.max_output_tokens }} tokens dentro del contexto técnico de
+      {{ profile.context_window }} tokens. No es una cuota comercial.
+    </p>
+    <input type="hidden" name="max_output_tokens" value="{{ profile.max_output_tokens }}">
+  </div>
+  {% else %}
   <div>
     <label class="block text-sm font-semibold text-slate-800" for="max_output_tokens">Máximo de tokens de salida</label>
     <input
@@ -33,11 +43,13 @@
       name="max_output_tokens"
       type="number"
       min="1"
-      max="{{ max_output_limit }}"
+      max="{{ profile.max_output_limit }}"
       value="{{ form_output }}"
       required
     >
+    <p class="mt-1 text-xs text-slate-600">Límite técnico del proveedor/modelo: {{ profile.max_output_limit }} tokens.</p>
   </div>
+  {% endif %}
   <div>
     <label class="block text-sm font-semibold text-slate-800" for="timeout_seconds">Tiempo máximo por llamada (s)</label>
     <input
@@ -56,7 +68,7 @@
 <p class="mt-1 text-xs text-slate-600">
   {% if profile.credential_status == "configured" %}Clave configurada.{% elif profile.credential_status == "missing" %}Clave pendiente en .env.{% else %}Este proveedor no requiere credencial.{% endif %}
 </p>
-{% if profile.provider != "ollama" and view.external_blocked %}
+{% if profile.provider != "ollama" and (view.global_budget_usd <= 0 or view.run_budget_usd <= 0) %}
 <p class="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900" role="status">
   Configurado; consultas externas bloqueadas hasta autorizar presupuesto.
 </p>

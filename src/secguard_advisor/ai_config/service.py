@@ -33,6 +33,7 @@ MODEL_CATALOG = {
             "confirmed": True,
             "source": "Modelo local configurado por el proyecto",
             "date": "2026-11-22",
+            "max_output": None,
         }
     },
     "deepseek": {
@@ -40,6 +41,7 @@ MODEL_CATALOG = {
             "confirmed": True,
             "source": "https://api-docs.deepseek.com/quick_start/pricing",
             "date": "2026-11-22",
+            "max_output": 384_000,
         }
     },
     "anthropic": {
@@ -47,6 +49,7 @@ MODEL_CATALOG = {
             "confirmed": True,
             "source": "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
             "date": "2026-11-22",
+            "max_output": 128_000,
         }
     },
 }
@@ -65,6 +68,8 @@ class ProviderProfile:
     provider: str
     model: str
     max_output_tokens: int
+    max_output_limit: int
+    context_window: int
     timeout_seconds: float
     source: str
     model_status: str
@@ -99,19 +104,52 @@ def _default_model(settings: Settings, provider: str) -> str:
     return DEFAULT_MODELS[provider]
 
 
+def _context_window(settings: Settings, provider: str) -> int:
+    if provider == "ollama":
+        return settings.generator_num_ctx
+    return settings.external_context_window_tokens
+
+
+def auto_output_tokens(settings: Settings) -> int:
+    """Reserva técnica de salida para Ollama dentro de su contexto."""
+    available = settings.generator_num_ctx - settings.context_safety_margin_tokens - 1
+    return max(1, min(settings.generator_num_predict, available))
+
+
+def max_output_limit(settings: Settings, provider: str, model: str | None = None) -> int:
+    """Límite técnico/comercial del proveedor/modelo seleccionado."""
+    context = _context_window(settings, provider)
+    available = context - settings.context_safety_margin_tokens
+    if provider == "ollama":
+        return auto_output_tokens(settings)
+    catalog = MODEL_CATALOG.get(provider, {}).get(model or "", {})
+    model_cap = catalog.get("max_output") or 128_000
+    return min(int(model_cap), available)
+
+
 def _environment_profile(settings: Settings, provider: str) -> ProviderProfile:
-    model = (
-        settings.provider_model
-        if provider == settings.generation_provider
-        else _default_model(settings, provider)
-    )
+    active_environment = provider == settings.generation_provider
+    model = settings.provider_model if active_environment else _default_model(settings, provider)
     catalog = MODEL_CATALOG.get(provider, {}).get(model)
+    if provider == "ollama":
+        max_output = auto_output_tokens(settings)
+    elif active_environment and settings.generation_max_output_tokens is not None:
+        max_output = settings.generation_max_output_tokens
+    else:
+        max_output = settings.generator_num_predict
+    timeout = (
+        settings.provider_timeout_seconds
+        if active_environment
+        else (settings.generation_timeout_seconds or settings.llm_timeout_seconds)
+    )
     return ProviderProfile(
         provider=provider,
         model=model,
-        max_output_tokens=settings.provider_max_output_tokens,
-        timeout_seconds=settings.provider_timeout_seconds,
-        source=("environment" if provider == settings.generation_provider else "default"),
+        max_output_tokens=max_output,
+        max_output_limit=max_output_limit(settings, provider, model),
+        context_window=_context_window(settings, provider),
+        timeout_seconds=timeout,
+        source=("environment" if active_environment else "default"),
         model_status="confirmed" if catalog and catalog["confirmed"] else "unconfirmed",
         model_source=catalog["source"] if catalog else None,
         model_date=catalog["date"] if catalog else None,
@@ -125,6 +163,8 @@ def _saved_profile(row: AIProviderProfile, settings: Settings) -> ProviderProfil
         provider=row.provider,
         model=row.model,
         max_output_tokens=row.max_output_tokens,
+        max_output_limit=max_output_limit(settings, row.provider, row.model),
+        context_window=_context_window(settings, row.provider),
         timeout_seconds=row.timeout_seconds,
         source="saved",
         model_status="confirmed" if catalog and catalog["confirmed"] else "unconfirmed",
@@ -178,10 +218,6 @@ def resolve_turn_settings(session: Session, settings: Settings) -> Settings:
     )
 
 
-def _max_output_limit(settings: Settings) -> int:
-    return min(128_000, settings.provider_context_window - settings.context_safety_margin_tokens)
-
-
 def save_configuration(
     session: Session,
     settings: Settings,
@@ -205,9 +241,15 @@ def save_configuration(
             f"El modelo «{normalized_model}» pertenece a otro proveedor. "
             f"Elegí un identificador compatible con {PROVIDER_LABELS[provider]}."
         )
-    limit = _max_output_limit(settings)
-    if not isinstance(max_output_tokens, int) or not 1 <= max_output_tokens <= limit:
-        raise AIConfigurationError(f"El máximo de tokens de salida debe estar entre 1 y {limit}.")
+    if provider == "ollama":
+        normalized_output = auto_output_tokens(settings)
+    else:
+        limit = max_output_limit(settings, provider, normalized_model)
+        if not isinstance(max_output_tokens, int) or not 1 <= max_output_tokens <= limit:
+            raise AIConfigurationError(
+                f"El máximo de tokens de salida debe estar entre 1 y {limit}."
+            )
+        normalized_output = max_output_tokens
     if not 0 < timeout_seconds <= settings.run_timeout_seconds:
         raise AIConfigurationError(
             f"El tiempo máximo por llamada debe ser mayor que 0 y no superar "
@@ -220,14 +262,14 @@ def save_configuration(
         profile = AIProviderProfile(
             provider=provider,
             model=normalized_model,
-            max_output_tokens=max_output_tokens,
+            max_output_tokens=normalized_output,
             timeout_seconds=timeout_seconds,
             updated_at=now,
         )
         session.add(profile)
     else:
         profile.model = normalized_model
-        profile.max_output_tokens = max_output_tokens
+        profile.max_output_tokens = normalized_output
         profile.timeout_seconds = timeout_seconds
         profile.updated_at = now
     configuration = session.get(AIConfiguration, 1)

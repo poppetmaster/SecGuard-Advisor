@@ -39,9 +39,6 @@ def _context(request: Request, *, errors=None, notice=None, form=None) -> dict:
             {"id": provider, "label": PROVIDER_LABELS[provider]} for provider in PROVIDERS
         ],
         "model_catalog": MODEL_CATALOG,
-        "max_output_limit": min(
-            128_000, settings.provider_context_window - settings.context_safety_margin_tokens
-        ),
         "run_timeout_seconds": settings.run_timeout_seconds,
         "errors": errors or {},
         "notice": notice,

@@ -138,6 +138,9 @@ def _run_generation(request: Request, scope: CaseScope, starter):
         )
 
     embedder = None
+    index = None
+    generator = None
+    token_counter = None
     try:
         with request.app.state.session_factory() as session:
             turn_settings = resolve_turn_settings(session, request.app.state.settings)
@@ -188,9 +191,17 @@ def _run_generation(request: Request, scope: CaseScope, starter):
             },
         )
     finally:
-        close = getattr(embedder, "close", None)
-        if callable(close):
-            close()
+        resources = (
+            (generator, request.app.state.llm_owned_by_turn),
+            (token_counter, request.app.state.token_counter_owned_by_turn),
+            (embedder, request.app.state.embedder_owned_by_turn),
+            (index, request.app.state.index_owned_by_turn),
+        )
+        for resource, owned in resources:
+            if owned and resource is not None:
+                close = getattr(resource, "close", None)
+                if callable(close):
+                    close()
         slot.release()
 
 

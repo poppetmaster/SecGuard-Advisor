@@ -14,6 +14,7 @@ from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerat
 from secguard_advisor.ai_config.service import save_configuration
 from secguard_advisor.cases.external import authorize_case
 from secguard_advisor.config import Settings
+from secguard_advisor.conversation.llm import AnswerPayload, ToolDecision
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url
 from secguard_advisor.db.models import AIConfiguration, AIProviderProfile
@@ -138,7 +139,13 @@ def test_switching_provider_keeps_independent_profiles(tmp_path: Path) -> None:
 def test_invalid_values_and_missing_credential_are_explained(tmp_path: Path) -> None:
     settings = _settings(tmp_path, deepseek_api_key=None)
     with _client(settings) as client:
-        invalid = _save(client, provider="ollama", max_output_tokens="0", timeout_seconds="12.5")
+        invalid = _save(
+            client,
+            provider="anthropic",
+            model="claude-haiku-5-5",
+            max_output_tokens="0",
+            timeout_seconds="12.5",
+        )
         missing = _save(client, provider="deepseek", model="deepseek-flash")
 
     assert invalid.status_code == 422
@@ -322,3 +329,52 @@ def test_saved_external_selection_is_blocked_by_zero_budget(tmp_path: Path) -> N
         )
     assert response.status_code == 402
     assert "presupuesto" in response.text
+
+
+def test_local_page_hides_economic_fields_and_token_quota(tmp_path: Path) -> None:
+    settings = _settings(tmp_path, external_budget_usd=Decimal("0"))
+    with _client(settings) as client:
+        page = client.get("/settings/ai")
+    assert "Ejecución local; sin cobro por tokens de API." in page.text
+    assert "Reserva de salida automática" in page.text
+    assert "Presupuesto global" not in page.text
+    assert "Presupuesto por turno" not in page.text
+    assert "Máximo de tokens de salida" not in page.text
+
+
+def test_local_turn_works_with_zero_external_budget(tmp_path: Path) -> None:
+    env = build_env(tmp_path, with_documents=False, min_score=-1.0)
+    settings = Settings(
+        _env_file=None,
+        storage_dir=env.settings.storage_dir,
+        generation_provider="ollama",
+        external_budget_usd=Decimal("0"),
+        external_run_budget_usd=Decimal("0"),
+    )
+    generator = ScriptedGenerator(
+        payloads=[AnswerPayload(answer="respuesta", claims=[])],
+        decisions=[ToolDecision(use_findings=False, arguments={})],
+    )
+    generator.provider = "ollama"
+    generator.model = "qwen3.5:9b"
+    generator.identity = "digest-local"
+    generator.last_usage = {"input_tokens": 10, "output_tokens": 2, "source": "observed"}
+    app = create_app(
+        settings,
+        ollama_probe=lambda: True,
+        embedder_factory=lambda: FakeEmbedder(),
+        index_factory=lambda: env.index,
+        llm_factory=lambda: generator,
+        token_counter=FakeTokenCounter(),
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            f"/cases/{env.case_id}/chat/messages",
+            data={"question": "¿Qué controles aplican?"},
+            headers=HTMX,
+        )
+    assert response.status_code == 200
+    from secguard_advisor.db.models import ProviderBudgetLedger
+
+    with env.factory() as session:
+        assert session.scalar(select(ProviderBudgetLedger)) is None

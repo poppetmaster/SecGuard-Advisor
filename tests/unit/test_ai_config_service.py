@@ -50,7 +50,7 @@ def test_first_load_uses_environment_without_saved_configuration(tmp_path: Path)
     assert view.active_provider == "ollama"
     assert view.active_profile.model == "qwen3.5:9b"
     assert view.active_profile.source == "environment"
-    assert view.active_profile.max_output_tokens == 64
+    assert view.active_profile.max_output_tokens == 1200
     assert view.active_profile.timeout_seconds == 12.5
     assert view.global_budget_usd == Decimal("0")
     assert view.external_blocked is False
@@ -202,3 +202,54 @@ def test_unconfirmed_model_is_saved_with_explicit_warning(tmp_path: Path) -> Non
         )
     assert view.active_profile.model_status == "unconfirmed"
     assert view.active_profile.model == "deepseek-compatible-custom"
+
+
+def test_ollama_ignores_commercial_budget_and_auto_reserves(tmp_path: Path) -> None:
+    settings = _settings(tmp_path, external_budget_usd=Decimal("0"))
+    factory = _factory(tmp_path, settings)
+
+    with factory() as session:
+        view = save_configuration(
+            session,
+            settings,
+            provider="ollama",
+            model="qwen3.5:9b",
+            max_output_tokens=999_999,
+            timeout_seconds=12.5,
+        )
+    assert view.active_profile.max_output_tokens == 1200
+    assert view.active_profile.max_output_limit == 1200
+    assert view.active_profile.max_output_tokens <= view.active_profile.context_window
+    assert view.external_blocked is False
+    assert view.global_budget_usd == Decimal("0")
+
+
+def test_external_limits_are_validated_against_selected_provider(tmp_path: Path) -> None:
+    settings = _settings(
+        tmp_path,
+        generation_provider="ollama",
+        deepseek_api_key="d",
+        anthropic_api_key="a",
+    )
+    factory = _factory(tmp_path, settings)
+
+    with factory() as session:
+        anthropic = save_configuration(
+            session,
+            settings,
+            provider="anthropic",
+            model="claude-haiku-5-5",
+            max_output_tokens=100_000,
+            timeout_seconds=20,
+        )
+        assert anthropic.active_profile.max_output_limit == 127_680
+        with pytest.raises(AIConfigurationError, match="entre 1"):
+            save_configuration(
+                session,
+                settings,
+                provider="deepseek",
+                model="deepseek-flash",
+                max_output_tokens=200_000,
+                timeout_seconds=20,
+            )
+        assert load_view(session, settings).active_provider == "anthropic"

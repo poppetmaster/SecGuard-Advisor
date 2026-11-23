@@ -72,8 +72,12 @@
         <div><dt class="text-slate-500">Origen</dt><dd>{% if view.active_profile.source == "saved" %}Guardada en la aplicación{% elif view.active_profile.source == "environment" %}Valores de .env{% else %}Modelo predeterminado del proveedor{% endif %}</dd></div>
         <div><dt class="text-slate-500">Máximo de salida</dt><dd>{{ view.active_profile.max_output_tokens }} tokens</dd></div>
         <div><dt class="text-slate-500">Tiempo por llamada</dt><dd>{{ view.active_profile.timeout_seconds }} s</dd></div>
+        {% if view.active_provider != "ollama" %}
         <div><dt class="text-slate-500">Presupuesto global</dt><dd>{{ view.global_budget_usd }} {{ view.currency }}</dd></div>
         <div><dt class="text-slate-500">Presupuesto por turno</dt><dd>{{ view.run_budget_usd }} {{ view.currency }}</dd></div>
+        {% else %}
+        <div><dt class="text-slate-500">Costo de API</dt><dd>Ejecución local; sin cobro por tokens de API.</dd></div>
+        {% endif %}
         <div><dt class="text-slate-500">Conexión</dt><dd>No verificada</dd></div>
       </dl>
 
