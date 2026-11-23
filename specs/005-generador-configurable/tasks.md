@@ -11,7 +11,7 @@ un resultado esperado claro.
 **Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 tiene la comparación externa real
 ejecutada y registrada, pero permanece pendiente el marker `external` de pytest. 005 mantiene
 aceptación local parcial; no se declara aceptación de proveedores externos. El panel «Uso y
-comparativos de IA» está implementado (T050–T057).
+comparativos de IA» está implementado (T050–T058).
 
 ## Formato
 
@@ -485,6 +485,14 @@ regresión completa verde; documentación final y decisión de aceptación basad
     leyendas, tablas accesibles y exportación; HTMX sin instancias duplicadas.
   - Evidence: `package.json`, `package-lock.json`, `scripts/copy-vendor.mjs`,
     `tests/unit/test_ai_usage_charts.py`, `docs/evidencia/005-panel-uso-ia/`.
+
+- [x] T058 [Estabilización] Corregir deadline total de Ollama, parser externo estricto con motivos,
+  recuperación S10, persistencia de recomendaciones/limitaciones y respuesta con tool evidence.
+  - Story: Uso
+  - Check: timeout local con `model_timeout`; S10 con 2 fuentes y respuesta; S07 persistido sin citas;
+    `make check` 728 passed; externas omitidas con motivo.
+  - Evidence: `tests/unit/test_llm_client.py`, `tests/unit/test_limits.py`,
+    `tests/unit/test_qualys_conversation.py`, `docs/evidencia/005-estabilizacion/`.
 
 ## Dependencias y orden
 

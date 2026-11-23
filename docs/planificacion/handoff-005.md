@@ -64,13 +64,17 @@ aceptación local, sin aceptación de proveedores externos.
   `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
 - Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
 - Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
-- `make check`: 717 passed; integraciones afectadas: 8 passed.
+- `make check`: 728 passed, 38 deselected; integraciones afectadas: 8 passed.
 - Corrección de exactitud (2026-11-23): consumo completo incluye bloqueados; costo conocido
   DeepSeek 0,006201 USD y Anthropic 0,006150 USD, con 2 y 3 registros desconocidos. El comparativo
   funcional usa la muestra común de 9 escenarios (Ollama 5/9, DeepSeek 6/9, Anthropic 4/9).
 - Gráficas interactivas con Apache ECharts 5.6.0 (Apache-2.0) servido localmente; exportación PNG,
   tooltips y tablas accesibles. Evidencia en `docs/evidencia/005-panel-uso-ia/`.
-- Pendiente sin cambios: T039, timeouts de Ollama, salida estructurada externa y S10.
+- Estabilización 2026-11-23: deadline total de Ollama, parser externo estricto con motivos,
+  S10 con recuperación de respaldo para informes, S07 persistido con evidencia de herramienta y
+  marker `external` para T039. Evidencia en `docs/evidencia/005-estabilizacion/`.
+- Pendiente real sin cambios: aceptación externa/T039, reproducción externa de salidas, variabilidad
+  de latencia de Ollama y revisión semántica de S10.
 
 ## 3. T039 — Comparación externa real
 

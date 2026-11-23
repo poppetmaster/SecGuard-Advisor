@@ -108,3 +108,7 @@ aplicación, con telemetría por solicitud, agregados, filtros, comparativo de e
   servido localmente. Gráficas de consumo y comparativo con tooltips, leyendas, exportación PNG,
   tablas accesibles, reinicialización HTMX y `ResizeObserver`. `make check` 717 passed; Playwright
   validó 1440/390/320 px, filtros, pestañas, varios swaps y ausencia de llamadas externas.
+- **L6 (estabilización 005, 2026-11-23)**: deadline total de Ollama, parser externo con primer objeto
+  JSON y motivos seguros, recuperación de respaldo para informes S10, persistencia de
+  recomendaciones/limitaciones y S07 con evidencia de herramienta. Se registró el marker `external`
+  para T039. Sin llamadas pagadas nuevas; pendientes externos y T039 conservan su estado.

@@ -488,6 +488,7 @@ uv run python scripts/rebuild_qdrant.py --status   # estado sin reconstruir
 ```bash
 make test              # pruebas rápidas, sin integración
 make test-integration  # pruebas reales con Ollama y Qdrant
+make test-external     # pruebas externas; se omiten sin autorización explícita
 make check             # lint + formato + pruebas
 ```
 

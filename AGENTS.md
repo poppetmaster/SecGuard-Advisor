@@ -110,6 +110,7 @@ make lint               # Ruff
 make format             # Ruff format
 make test               # pruebas rápidas, sin integración
 make test-integration   # pruebas reales con Ollama y Qdrant
+make test-external      # pruebas externas; se omiten sin autorización explícita
 make check              # lint + formato + pruebas
 make dev                # servidor con casos, documentos y consulta, un worker
 make corpus             # descarga y verifica el corpus oficial
