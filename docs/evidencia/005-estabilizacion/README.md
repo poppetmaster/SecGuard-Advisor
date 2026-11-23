@@ -117,13 +117,13 @@ inválida, mixta con citas válidas, citas parcialmente rechazadas y herramienta
 - `make check` excluye `external`; `make test-external` los ejecuta aparte.
 - `tests/external/test_external_readiness.py` omite con motivo si falta
   `SECGUARD_EXTERNAL_TESTS_AUTHORIZED=1`, presupuesto o credenciales. No envía solicitudes.
-- `pytest -m external`: 1 skipped, 773 deselected.
+- `pytest -m external`: 1 skipped, 775 deselected.
 - T039 **no está cerrado**: la infraestructura está lista, pero no hay aceptación externa real
   nueva. Tampoco se presenta la prueba omitida como evaluación real.
 
 ## 2. Pruebas ejecutadas
 
-- `make check`: **736 passed**, 38 deselected.
+- `make check`: **738 passed**, 38 deselected.
 - Integraciones afectadas (`test_ollama_provider_regression`, `test_answer_real`,
   `test_tool_only_question`, `test_midturn_failure`, `test_trace_and_fallback`): **8 passed**
   (76,07 s).
@@ -138,6 +138,14 @@ La pasada autorizada de DeepSeek/Claude está separada en
 0,010870 USD de ledger, dentro del tope adicional de 0,10 USD. DeepSeek S10 aprobado; las seis
 generaciones fallidas consumieron 1 200 tokens de salida y se clasificaron como `schema_mismatch` o
 `truncated_content`. No se aumentó el límite ni se cambió el criterio. T039 y la aceptación externa
+siguen pendientes; no se avanza a 006.
+
+## 2.2 Reevaluación con salida 4096
+
+La pasada separada `reevaluacion-externa-4096/` configuró 4096 tokens para perfiles externos y
+consumió 0,013628 USD autorizados (0,014512 USD de ledger, incluyendo un S10 extra no solicitado).
+DeepSeek S04 y Claude S04/S10 aprobaron; S03 falla por el criterio existente, S02 por citas
+rechazadas y S07 ejecutó `findings_query` pero terminó insuficiente. T039 y la aceptación externa
 siguen pendientes; no se avanza a 006.
 
 ## 3. Capturas

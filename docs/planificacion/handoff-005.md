@@ -64,7 +64,7 @@ aceptación local, sin aceptación de proveedores externos.
   `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
 - Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
 - Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
-- `make check`: 736 passed, 38 deselected; integraciones afectadas: 8 passed.
+- `make check`: 738 passed, 38 deselected; integraciones afectadas: 8 passed.
 - Corrección de exactitud (2026-11-23): consumo completo incluye bloqueados; costo conocido
   DeepSeek 0,006201 USD y Anthropic 0,006150 USD, con 2 y 3 registros desconocidos. El comparativo
   funcional usa la muestra común de 9 escenarios (Ollama 5/9, DeepSeek 6/9, Anthropic 4/9).
@@ -77,9 +77,13 @@ aceptación local, sin aceptación de proveedores externos.
   tope 0,10 respetado. DeepSeek S10 aprobado; el resto falló, principalmente por el límite de 1 200
   tokens de salida (`schema_mismatch`/`truncated_content`). Claude S03 respondió con citas pero no
   cumplió el criterio de palabras clave; Claude S07 no ejecutó la herramienta.
-- T039 sigue pendiente y 005 no se acepta para externos. No se avanza a 006 hasta decidir el límite
-  de salida y validar S07/S10 externos. Evidencia:
-  `docs/evidencia/005-estabilizacion/reevaluacion-externa/`.
+- Segunda pasada 2026-11-23 con perfiles externos de 4096 tokens: 7 escenarios autorizados,
+  0,013628 USD conocidos y 0,014512 USD de ledger (incluye un DeepSeek S10 extra no solicitado).
+  DeepSeek S04 y Claude S04/S10 aprobados; S03 falla por criterio de palabras clave; S02 abstiene
+  por citas rechazadas; S07 ejecuta `findings_query` pero termina insuficiente. Evidencia:
+  `docs/evidencia/005-estabilizacion/reevaluacion-externa-4096/`.
+- T039 sigue pendiente y 005 no se acepta para externos. No se avanza a 006 hasta resolver S07 con
+  herramienta y la calibración de S03; la muestra no es comparación completa.
 - Pendiente real sin cambios: variabilidad de latencia de Ollama y revisión semántica de S10.
 
 ## 3. T039 — Comparación externa real

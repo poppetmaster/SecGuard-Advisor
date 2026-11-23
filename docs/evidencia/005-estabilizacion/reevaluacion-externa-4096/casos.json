@@ -1,0 +1,24 @@
+{
+  "version": "005-reevaluation-4096-v1",
+  "frozen_at": "2026-11-23",
+  "sha256": "b7263f91a72fc56ed6c56dc822214cb4c91f9a2439b3b0747eae263963456014",
+  "dataset": {
+    "version": "005-reevaluation-4096-v1",
+    "frozen_at": "2026-11-23",
+    "plan": {
+      "deepseek": [
+        "S03",
+        "S04"
+      ],
+      "anthropic": [
+        "S02",
+        "S03",
+        "S04",
+        "S07",
+        "S10"
+      ]
+    },
+    "note": "Pasada autorizada; DeepSeek S10 se conserva aparte como llamada adicional no solicitada."
+  },
+  "note": "Pasada autorizada; DeepSeek S10 se conserva aparte como llamada adicional no solicitada."
+}

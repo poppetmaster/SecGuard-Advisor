@@ -1,0 +1,249 @@
+[
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "9ee4cbafd8b840f3b09fb9aa019aba4a",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 6316,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 832
+      },
+      {
+        "name": "agent",
+        "duration_ms": 5443
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6739,
+      "output_tokens": 925,
+      "cached_tokens": 1792,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001303",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Avoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Minimize extension permissions Limit the permissions that LLM extensions are granted to other systems to the minimum necessary in order to limit the scope of undesirable actions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Treat the model as any other user, adopting a zero-trust approach, and apply proper input validation on responses coming from the model to backend functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Implement context-aware output encoding based on where the LLM output will be used (e.g., HTML encoding for web content, SQL escaping for database queries).",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Unsafe Code Generation The model suggests insecure or non-existent code libraries, which can introduce vulnerabilities when integrated into software systems.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Secure Coding Practices Establish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Enforce privilege control and least privilege access Provide the application with its own API tokens for extensible functionality, and handle these functions in code rather than providing them to the model.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Require human approval for high-risk actions Implement human-in-the-loop controls for privileged operations to prevent unauthorized actions.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "OWASP describe varios riesgos en aplicaciones con LLM. Uno es el de las extensiones de LLM con exceso de agencia/privilegios: recomienda evitar extensiones abiertas y preferir funcionalidades granulares (por ejemplo, una extensión específica de escritura de archivos en lugar de ejecutar un shell), minimizar los permisos de las extensiones y ejecutarlas en el contexto del usuario con mínimo privilegio. Otro riesgo es la validación insuficiente de entradas y salidas del modelo: recomienda tratar al modelo como usuario no confiable, validar entradas y sanitizar salidas, aplicar codificación de salida según el contexto, usar consultas parametrizadas, políticas CSP estrictas y monitoreo. También menciona la generación insegura de código y recomienda establecer prácticas de codificación segura para evitar incorporar vulnerabilidades por sugerencias de código. Además, para inyección de prompts, recomienda control de privilegios y mínimo privilegio, aprobación humana para acciones de alto riesgo, segregar contenido externo no confiable y realizar pruebas adversariales.",
+    "case_id": "0aea14210d4d48e8adf7b4a631eb216b",
+    "scenario_id": "S03",
+    "requests": 2,
+    "known_cost_usd": "0.001303000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "430d456f852b4173916c76ae6d27f7e6",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 14554,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1230
+      },
+      {
+        "name": "agent",
+        "duration_ms": 7045
+      },
+      {
+        "name": "repair",
+        "duration_ms": 6226
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10335,
+      "output_tokens": 2387,
+      "cached_tokens": 7040,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001948",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "A contemporary example is\nartificial intelligence (AI), which has cybersecurity and privacy risks, as well as many\nother types of risk. The NIST Artificial Intelligence Risk Management Framework (AI\nRMF) w as developed to help address the se risks.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The AI RMF Core uses Functions,\nCategories, and Subcategories to describe AI outcomes and help manage risks related to\nAI.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "This appendix describes the Functions, Categories, and Subcategories of the CSF Core. Table 1\nlists the CSF 2.0 Core Function and Category names and unique alphabetic identifiers.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "As illus-\ntrated in Figure 5, the Core is composed of four functions: GOVERN , MAP, MEASURE ,\nand MANAGE .",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "Governance is designed to be a cross-cutting function to inform\nand be infused throughout the other three functions.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-\ncesses and procedures, the MAP, MEASURE , and MANAGE functions can be applied in AI\nsystem-specific contexts and at specific stages of the AI lifecycle.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "map",
+      "measure",
+      "manage"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Las fuentes recuperadas permiten establecer algunos puntos de conexión entre ambos marcos: el CSF 2.0 menciona que el AI RMF de NIST fue desarrollado para abordar los riesgos de IA (incluidos los de ciberseguridad y privacidad) y que su Core usa Funciones, Categorías y Subcategorías para describir resultados de IA y gestionar sus riesgos; además, el CSF 2.0 organiza su propio Core en Funciones y Categorías. Por el lado del AI RMF, su Core se compone de cuatro funciones —GOVERN, MAP, MEASURE y MANAGE—, con GOVERN como función transversal que informa e impregna a las otras tres. No obstante, ninguna fuente recuperada establece un mapeo explícito función por función entre el CSF 2.0 (GV, ID, PR, DE, RS, RC) y el AI RMF; por lo tanto, no corresponde afirmar equivalencias o correspondencias directas entre funciones específicas de ambos marcos.",
+    "case_id": "80784fb27c7c443ab7ddc224a69e36f7",
+    "scenario_id": "S04",
+    "requests": 3,
+    "known_cost_usd": "0.001948000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  }
+]

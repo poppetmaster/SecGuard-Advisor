@@ -311,7 +311,7 @@ confirmada para interpretar seguimientos.
 Antes de cada generación —incluida la reparación de citas— se mide el prompt completo con el
 **tokenizador del propio modelo**: vocabulario y fusiones BPE leídos del GGUF instalado por Ollama, con
 la plantilla de conversación del renderizador. Se incluyen instrucciones, pregunta, historial, fuentes,
-envoltorio, la salida reservada (`num_predict=1200`) y un margen de 320 tokens para variaciones de
+envoltorio, la salida reservada (Ollama 1200; perfiles externos 4096 por defecto) y un margen de 320 tokens para variaciones de
 plantilla. Si no cabe, se quita primero el historial más antiguo por turnos completos y después las
 fuentes de menor rango; la pregunta y los textos incluidos no se recortan y el historial persistido no
 se altera. Si el contenido mínimo no cabe, la ejecución falla con `context_budget_exceeded` sin

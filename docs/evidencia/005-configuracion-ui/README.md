@@ -15,6 +15,9 @@ implica autenticación ni roles.
 
 - Selección explícita: Local — Ollama, DeepSeek, Claude — Anthropic.
 - Modelo asociado, máximo de tokens de salida (solo externos) y tiempo máximo por llamada.
+- Perfiles externos: **4096 tokens por defecto**, editables en el formulario; Ollama conserva su
+  reserva automática. La migración `c1d2e3f4a5b6` eleva perfiles externos guardados por debajo de
+  4096.
 - **Ollama**: sin claves, sin presupuesto monetario y sin cuota comercial. La reserva de salida se
   administra automáticamente dentro del contexto técnico; no se solicita cuota de tokens. Se muestra
   «Ejecución local; sin cobro por tokens de API» sin afirmar costo operativo total cero.
@@ -47,6 +50,7 @@ implica autenticación ni roles.
 SECGUARD_GENERATION_PROVIDER=ollama|deepseek|anthropic
 SECGUARD_GENERATION_MODEL=              # vacío = predeterminado del proveedor
 SECGUARD_GENERATION_MAX_OUTPUT_TOKENS=1200
+# Perfiles externos: 4096 tokens de salida por defecto, editable en el formulario.
 SECGUARD_GENERATION_TIMEOUT_SECONDS=90
 DEEPSEEK_API_KEY=                       # solo en .env local
 ANTHROPIC_API_KEY=                      # solo en .env local

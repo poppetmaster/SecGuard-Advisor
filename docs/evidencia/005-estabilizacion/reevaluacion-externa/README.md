@@ -107,7 +107,7 @@ El panel la mostrará como **005-reevaluation-v1**, con su propia muestra; no se
 
 - **Ejecutadas**: 8 escenarios externos (16 solicitudes reales); `make check` **736 passed**, 38
   deselected; integraciones afectadas **8 passed**.
-- **Omitidas**: pruebas externas de pytest (`1 skipped`, 773 deselected) por falta de la variable de
+- **Omitidas**: pruebas externas de pytest (`1 skipped`, 775 deselected) por falta de la variable de
   autorización de esa suite; corrida completa de 30 escenarios; S08; reintentos del arnés.
 - **Fallidas**: 6 escenarios (DeepSeek S03/S04; Claude S02/S04/S07/S10). Claude S03 terminó
   `answered` con 4 citas, pero no cumple el criterio de palabras clave existente.

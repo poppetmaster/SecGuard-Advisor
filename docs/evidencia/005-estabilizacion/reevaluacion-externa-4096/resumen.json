@@ -1,0 +1,60 @@
+{
+  "kind": "focalized_external_reevaluation",
+  "dataset": "005-evaluation-v1",
+  "scenarios": {
+    "deepseek": [
+      "S03",
+      "S04"
+    ],
+    "anthropic": [
+      "S02",
+      "S03",
+      "S04",
+      "S07",
+      "S10"
+    ]
+  },
+  "cap_usd": "0.10",
+  "estimate": {
+    "cap_usd": "0.10",
+    "worst_case_usd": "0.085656",
+    "providers": {
+      "deepseek": {
+        "per_call_usd": "0.003058",
+        "max_calls": 12,
+        "worst_case_usd": "0.036696"
+      },
+      "anthropic": {
+        "per_call_usd": "0.002448",
+        "max_calls": 20,
+        "worst_case_usd": "0.048960"
+      }
+    }
+  },
+  "known_cost_usd": "0.014160000",
+  "ledger_settled_usd": "0.014512",
+  "requests": 19,
+  "unknown_cost_requests": 0,
+  "stop_reason": null,
+  "completed_at": "2026-11-23T04:31:55.787077+00:00",
+  "plan_authorized": {
+    "deepseek": [
+      "S03",
+      "S04"
+    ],
+    "anthropic": [
+      "S02",
+      "S03",
+      "S04",
+      "S07",
+      "S10"
+    ]
+  },
+  "extra_scenarios": [
+    "deepseek:S10"
+  ],
+  "requests_authorized": 17,
+  "requests_extra": 2,
+  "authorized_known_cost_usd": "0.013628000",
+  "extra_known_cost_usd": "0.000532000"
+}

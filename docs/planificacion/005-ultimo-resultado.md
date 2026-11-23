@@ -288,7 +288,7 @@ y el informe breve S10.
   no se eliminan silenciosamente ni se presentan como verificados. Una cita válida junto con otra rechazada ya no persiste por la salida anticipada: repara una vez y abstiene si sigue rechazada.
 - **T039:** marker `external`, `make check` excluye externas y `pytest -m external` omite sin
   autorización explícita. La infraestructura está lista; la aceptación externa real no se declara.
-- Pruebas: `make check` **736 passed**, 38 deselected; integraciones afectadas **8 passed**;
+- Pruebas: `make check` **738 passed**, 38 deselected; integraciones afectadas **8 passed**;
   externas **1 skipped**. Evidencia en `docs/evidencia/005-estabilizacion/`.
 - Sin llamadas pagadas nuevas. No se inició Telegram ni 003.
 
@@ -321,3 +321,28 @@ del arnés. Evidencia separada en
 - **T039 sigue pendiente** y **005 no se acepta para externos**. No se avanza a 006: falta decidir
   un límite de salida externo suficiente o reducir el esquema/prompt, y falta validar la ruta de
   herramienta S07 y la estructura S10 en Claude.
+
+## Reevaluación externa con salida 4096 (2026-11-23)
+
+- Los perfiles externos DeepSeek y Claude usan **4096 tokens de salida** por defecto, editables en
+  `/settings/ai`; Ollama conserva 1200. Migración `c1d2e3f4a5b6` eleva perfiles externos guardados
+  por debajo de 4096. La admisión de contexto y la reserva de presupuesto usan el límite efectivo.
+- Previsión con 4000 tokens de entrada, 4096 de salida y 4 llamadas posibles por escenario:
+  **0,085656 USD**, dentro del tope adicional de 0,10 USD.
+- Muestra autorizada: DeepSeek S03/S04; Claude S02/S03/S04/S07/S10. Resultados:
+  - DeepSeek S04 aprobado; S03 fallido por el criterio de palabras clave, con 8 citas válidas.
+  - Claude S04 y S10 aprobados.
+  - Claude S02 terminó `abstained_invalid_citations` con 2 citas rechazadas.
+  - Claude S03 respondió con 5 citas válidas, pero no cumple el criterio de palabras clave.
+  - Claude S07 **sí ejecutó `findings_query`** (`ok`, total/grupos correctos), pero el modelo terminó
+    en `insufficient_evidence` tras la reparación; la respuesta con herramienta sigue pendiente.
+- Consumo autorizado: **0,013628 USD** conocidos, 17 solicitudes. Se ejecutó además DeepSeek S10 por
+  error del plan del ejecutor (2 solicitudes, 0,000532 USD), conservado aparte como extra no
+  autorizado; el ledger total fue **0,014512 USD**.
+- `make check`: **738 passed**, 38 deselected; integraciones afectadas **8 passed**; externas pytest
+  **1 skipped**, 775 deselected.
+- Evaluación separada `005-reevaluation-4096-v1`, importable con
+  `scripts/import_evaluation_005.py --evidence-dir .../reevaluacion-externa-4096`.
+- **T039 sigue pendiente**. **005 no se acepta para externos y no se avanza a 006**: falta resolver
+  la respuesta S07 con herramienta y la calibración del criterio S03; la muestra focalizada no es
+  una comparación completa.

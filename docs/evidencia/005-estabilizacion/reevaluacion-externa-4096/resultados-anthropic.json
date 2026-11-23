@@ -1,0 +1,533 @@
+[
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "b9785b2d86de4287acbab2793a0ab1dc",
+    "status": "succeeded",
+    "outcome": "abstained_invalid_citations",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 14179,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1657
+      },
+      {
+        "name": "agent",
+        "duration_ms": 9191
+      },
+      {
+        "name": "repair",
+        "duration_ms": 3282
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 17948,
+      "output_tokens": 2756,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.003173",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "As illustrated in Figure 5, the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE .",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-cesses and procedures, the MAP, MEASURE , and MANAGE functions can be applied in AI system-specific contexts and at specific stages of the AI lifecycle.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+    "case_id": "82e985c054f0490c90cc99612dc1f6aa",
+    "scenario_id": "S02",
+    "requests": 3,
+    "known_cost_usd": "0.003173000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "d1fd57859bf0494a9b8538da70d243f7",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 12525,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1358
+      },
+      {
+        "name": "agent",
+        "duration_ms": 11122
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 11069,
+      "output_tokens": 2493,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.002354",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "An attacker injects a prompt into a customer support chatbot, instructing it to ignore",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Encode model output back to users to mitigate undesired code execution by JavaScript or Markdown.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "The following options will not prevent Excessive Agency, but can limit the level of damage caused:",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Restrict the model's access privileges to the minimum necessary for its intended operations.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Utilise human-in-the-loop control to require a human to approve high-impact actions before",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Los fragmentos recuperados describen, al menos, dos riesgos: inyección de prompts (S4) y manejo inseguro de la salida del LLM (S2), además de Excessive Agency (S1). Como recomendación, las fuentes proponen restringir los privilegios del modelo al mínimo necesario y exigir aprobación humana para acciones de alto impacto. Son orientación general del OWASP, no evidencia de controles implementados en el caso.",
+    "case_id": "ee2a82127499415a8876b694edf720f3",
+    "scenario_id": "S03",
+    "requests": 2,
+    "known_cost_usd": "0.002354000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "06bf23e82b8341d6ac84ef8678463721",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 7901,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1214
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6637
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10077,
+      "output_tokens": 1636,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001826",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE .",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Govern (GV) Organizational Context GV.OC",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Treating AI risks alongside other enterprise risks (e.g., financial, cybersecurity, reputational, and privacy) will yield a more integrated outcome and organizational efficiencies.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Cybersecurity and privacy risk management considerations and approaches are applicable to the design, development,",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "cultivates and implements a culture of risk management within organizations design-",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Function Category Category Identifier",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "map",
+      "measure",
+      "manage"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Ambos marcos son complementarios: el CSF 2.0 organiza la gestión de riesgos de ciberseguridad en seis funciones (GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER), mientras que el AI RMF 1.0 organiza la gestión de riesgos de IA en cuatro funciones (GOVERN, MAP, MEASURE, MANAGE). La fuente S1 indica que los riesgos de IA deben tratarse junto con otros riesgos empresariales, y que las consideraciones de ciberseguridad y privacidad aplican al diseño, desarrollo, despliegue, evaluación y uso de sistemas de IA. GOVERN aparece en ambos marcos como función transversal: en el AI RMF se aplica a todas las etapas del proceso de gestión de riesgos de IA, y en el CSF 2.0 la función GV incluye categorías como GV.RM y GV.SC. Las fuentes recuperadas no establecen una correspondencia punto a punto entre subcategorías de ambos marcos, por lo que esa asignación detallada requiere información adicional.",
+    "case_id": "13f8dfb5e37d495890d4fe1e24c8413f",
+    "scenario_id": "S04",
+    "requests": 2,
+    "known_cost_usd": "0.001826000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "a4566af08e8a4db2904c846770981e81",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 11453,
+    "model_calls": 4,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1257
+      },
+      {
+        "name": "decide",
+        "duration_ms": 1519
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6603
+      },
+      {
+        "name": "repair",
+        "duration_ms": 2036
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 11785,
+      "output_tokens": 1493,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001925",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-639e29",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto.",
+    "case_id": "639e291974b8409093753fa3d900187c",
+    "scenario_id": "S07",
+    "requests": 3,
+    "known_cost_usd": "0.001573000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "ac29d40269c84f879890c61b64f29a8c",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 8165,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1252
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6860
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5904,
+      "output_tokens": 1721,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001451",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre y el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Informe breve sobre controles de respaldo y acceso (basado solo en S1 y S2, documentos del caso). Resumen: S1 describe copias de seguridad cifradas cada 24 horas, pruebas de restauración trimestrales con registro del responsable de infraestructura y almacenamiento fuera del sitio. S2 describe autenticación multifactor para acceso remoto, revisión trimestral de permisos, aprobación y registro de sesión para proveedores, y deshabilitación de cuentas inactivas a los 30 días. Los documentos describen controles previstos; no muestran su ejecución, resultados ni efectividad. Recomendaciones (propuestas del agente, no controles implementados): 1) Obtener y revisar los registros de las pruebas trimestrales de restauración. 2) Verificar evidencia de la revisión trimestral de permisos y de las aprobaciones y registros de sesión de proveedores. 3) Confirmar con registros que las cuentas inactivas se deshabilitan efectivamente a los 30 días. Limitaciones: no se recuperaron registros de ejecución, resultados de pruebas, cobertura de cuentas ni cifras; no se evalúa cumplimiento normativo.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Obtener y revisar los registr",
+    "case_id": "6af726ea938e45a4be0e3821a7ac0143",
+    "scenario_id": "S10",
+    "requests": 2,
+    "known_cost_usd": "0.001451000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  }
+]

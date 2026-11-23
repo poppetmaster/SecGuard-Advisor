@@ -1,0 +1,1319 @@
+[
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "9ee4cbafd8b840f3b09fb9aa019aba4a",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 6316,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 832
+      },
+      {
+        "name": "agent",
+        "duration_ms": 5443
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6739,
+      "output_tokens": 925,
+      "cached_tokens": 1792,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001303",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Avoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Minimize extension permissions Limit the permissions that LLM extensions are granted to other systems to the minimum necessary in order to limit the scope of undesirable actions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Treat the model as any other user, adopting a zero-trust approach, and apply proper input validation on responses coming from the model to backend functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Implement context-aware output encoding based on where the LLM output will be used (e.g., HTML encoding for web content, SQL escaping for database queries).",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Unsafe Code Generation The model suggests insecure or non-existent code libraries, which can introduce vulnerabilities when integrated into software systems.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Secure Coding Practices Establish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Enforce privilege control and least privilege access Provide the application with its own API tokens for extensible functionality, and handle these functions in code rather than providing them to the model.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Require human approval for high-risk actions Implement human-in-the-loop controls for privileged operations to prevent unauthorized actions.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "OWASP describe varios riesgos en aplicaciones con LLM. Uno es el de las extensiones de LLM con exceso de agencia/privilegios: recomienda evitar extensiones abiertas y preferir funcionalidades granulares (por ejemplo, una extensión específica de escritura de archivos en lugar de ejecutar un shell), minimizar los permisos de las extensiones y ejecutarlas en el contexto del usuario con mínimo privilegio. Otro riesgo es la validación insuficiente de entradas y salidas del modelo: recomienda tratar al modelo como usuario no confiable, validar entradas y sanitizar salidas, aplicar codificación de salida según el contexto, usar consultas parametrizadas, políticas CSP estrictas y monitoreo. También menciona la generación insegura de código y recomienda establecer prácticas de codificación segura para evitar incorporar vulnerabilidades por sugerencias de código. Además, para inyección de prompts, recomienda control de privilegios y mínimo privilegio, aprobación humana para acciones de alto riesgo, segregar contenido externo no confiable y realizar pruebas adversariales.",
+    "case_id": "0aea14210d4d48e8adf7b4a631eb216b",
+    "scenario_id": "S03",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:34.230549+00:00",
+        "finished_at": "2026-11-23T04:30:35.055235+00:00",
+        "status": "completed",
+        "duration_ms": 819,
+        "input_tokens": 1702,
+        "output_tokens": 13,
+        "cached_tokens": 384,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000207000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:35.063754+00:00",
+        "finished_at": "2026-11-23T04:30:40.503811+00:00",
+        "status": "completed",
+        "duration_ms": 5439,
+        "input_tokens": 5037,
+        "output_tokens": 912,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001096000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001303000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "430d456f852b4173916c76ae6d27f7e6",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 14554,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1230
+      },
+      {
+        "name": "agent",
+        "duration_ms": 7045
+      },
+      {
+        "name": "repair",
+        "duration_ms": 6226
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10335,
+      "output_tokens": 2387,
+      "cached_tokens": 7040,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001948",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "A contemporary example is\nartificial intelligence (AI), which has cybersecurity and privacy risks, as well as many\nother types of risk. The NIST Artificial Intelligence Risk Management Framework (AI\nRMF) w as developed to help address the se risks.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The AI RMF Core uses Functions,\nCategories, and Subcategories to describe AI outcomes and help manage risks related to\nAI.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "This appendix describes the Functions, Categories, and Subcategories of the CSF Core. Table 1\nlists the CSF 2.0 Core Function and Category names and unique alphabetic identifiers.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "As illus-\ntrated in Figure 5, the Core is composed of four functions: GOVERN , MAP, MEASURE ,\nand MANAGE .",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "Governance is designed to be a cross-cutting function to inform\nand be infused throughout the other three functions.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-\ncesses and procedures, the MAP, MEASURE , and MANAGE functions can be applied in AI\nsystem-specific contexts and at specific stages of the AI lifecycle.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "map",
+      "measure",
+      "manage"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Las fuentes recuperadas permiten establecer algunos puntos de conexión entre ambos marcos: el CSF 2.0 menciona que el AI RMF de NIST fue desarrollado para abordar los riesgos de IA (incluidos los de ciberseguridad y privacidad) y que su Core usa Funciones, Categorías y Subcategorías para describir resultados de IA y gestionar sus riesgos; además, el CSF 2.0 organiza su propio Core en Funciones y Categorías. Por el lado del AI RMF, su Core se compone de cuatro funciones —GOVERN, MAP, MEASURE y MANAGE—, con GOVERN como función transversal que informa e impregna a las otras tres. No obstante, ninguna fuente recuperada establece un mapeo explícito función por función entre el CSF 2.0 (GV, ID, PR, DE, RS, RC) y el AI RMF; por lo tanto, no corresponde afirmar equivalencias o correspondencias directas entre funciones específicas de ambos marcos.",
+    "case_id": "80784fb27c7c443ab7ddc224a69e36f7",
+    "scenario_id": "S04",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:40.564841+00:00",
+        "finished_at": "2026-11-23T04:30:41.792675+00:00",
+        "status": "completed",
+        "duration_ms": 1226,
+        "input_tokens": 1706,
+        "output_tokens": 13,
+        "cached_tokens": 1536,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000038000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:41.797958+00:00",
+        "finished_at": "2026-11-23T04:30:48.838765+00:00",
+        "status": "completed",
+        "duration_ms": 7038,
+        "input_tokens": 4287,
+        "output_tokens": 1331,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001235000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "repair",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:48.851853+00:00",
+        "finished_at": "2026-11-23T04:30:55.073093+00:00",
+        "status": "completed",
+        "duration_ms": 6219,
+        "input_tokens": 4342,
+        "output_tokens": 1043,
+        "cached_tokens": 4096,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000675000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 3,
+    "known_cost_usd": "0.001948000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "095149fe34474192aef89b4ccfc6ee13",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4858,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 790
+      },
+      {
+        "name": "agent",
+        "duration_ms": 4008
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3520,
+      "output_tokens": 728,
+      "cached_tokens": 2944,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000532",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "El caso cuenta con evidencia documental sobre respaldo y gestión de accesos. En respaldo, se realizan copias cifradas cada 24 horas con prueba de restauración trimestral, registro a cargo del responsable de infraestructura y almacenamiento fuera del sitio. En accesos, el acceso remoto exige autenticación multifactor, los permisos se revisan trimestralmente, el acceso de proveedores requiere aprobación del responsable y registro de sesión, y las cuentas inactivas se deshabilitan a los 30 días. La evidencia es declarativa y de política; no se aportaron registros, fechas de prueba ni resultados de auditoría que permitan verificar la ejecución.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Solicitar y revisar los registros de las pruebas de restauración trimestrales y verificar que incluyan resultado, fecha y responsable.\n2. Verificar mediante muestreo la ejecución de las revisiones trimestrales de permisos y la deshabilitación de cuentas inactivas a los 30 días.\n3. Auditar las aprobaciones y los registros de sesión de proveedores, y confirmar los controles de acceso y cifrado de las copias almacenadas fuera del sitio.\n\nLimitaciones o información faltan",
+    "case_id": "7eb0003f278549f0bf4c5c425a6e6db5",
+    "scenario_id": "S10",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:55.650523+00:00",
+        "finished_at": "2026-11-23T04:30:56.437850+00:00",
+        "status": "completed",
+        "duration_ms": 785,
+        "input_tokens": 1700,
+        "output_tokens": 13,
+        "cached_tokens": 1536,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000037000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:56.443014+00:00",
+        "finished_at": "2026-11-23T04:31:00.447680+00:00",
+        "status": "completed",
+        "duration_ms": 4002,
+        "input_tokens": 1820,
+        "output_tokens": 715,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000495000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.000532000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": false
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "b9785b2d86de4287acbab2793a0ab1dc",
+    "status": "succeeded",
+    "outcome": "abstained_invalid_citations",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 14179,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1657
+      },
+      {
+        "name": "agent",
+        "duration_ms": 9191
+      },
+      {
+        "name": "repair",
+        "duration_ms": 3282
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 17948,
+      "output_tokens": 2756,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.003173",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "As illustrated in Figure 5, the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE .",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-cesses and procedures, the MAP, MEASURE , and MANAGE functions can be applied in AI system-specific contexts and at specific stages of the AI lifecycle.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance.",
+    "case_id": "82e985c054f0490c90cc99612dc1f6aa",
+    "scenario_id": "S02",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:00.767251+00:00",
+        "finished_at": "2026-11-23T04:31:02.172124+00:00",
+        "status": "completed",
+        "duration_ms": 1401,
+        "input_tokens": 2935,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000303000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:02.475407+00:00",
+        "finished_at": "2026-11-23T04:31:11.360160+00:00",
+        "status": "completed",
+        "duration_ms": 8882,
+        "input_tokens": 7477,
+        "output_tokens": 2071,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001783000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "repair",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:11.713868+00:00",
+        "finished_at": "2026-11-23T04:31:14.652050+00:00",
+        "status": "completed",
+        "duration_ms": 2936,
+        "input_tokens": 7536,
+        "output_tokens": 666,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001087000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 3,
+    "known_cost_usd": "0.003173000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "d1fd57859bf0494a9b8538da70d243f7",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 12525,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1358
+      },
+      {
+        "name": "agent",
+        "duration_ms": 11122
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 11069,
+      "output_tokens": 2493,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.002354",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "An attacker injects a prompt into a customer support chatbot, instructing it to ignore",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Encode model output back to users to mitigate undesired code execution by JavaScript or Markdown.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "The following options will not prevent Excessive Agency, but can limit the level of damage caused:",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Restrict the model's access privileges to the minimum necessary for its intended operations.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Utilise human-in-the-loop control to require a human to approve high-impact actions before",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Los fragmentos recuperados describen, al menos, dos riesgos: inyección de prompts (S4) y manejo inseguro de la salida del LLM (S2), además de Excessive Agency (S1). Como recomendación, las fuentes proponen restringir los privilegios del modelo al mínimo necesario y exigir aprobación humana para acciones de alto impacto. Son orientación general del OWASP, no evidencia de controles implementados en el caso.",
+    "case_id": "ee2a82127499415a8876b694edf720f3",
+    "scenario_id": "S03",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:14.919024+00:00",
+        "finished_at": "2026-11-23T04:31:16.068718+00:00",
+        "status": "completed",
+        "duration_ms": 1148,
+        "input_tokens": 2962,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000306000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:16.567940+00:00",
+        "finished_at": "2026-11-23T04:31:27.191567+00:00",
+        "status": "completed",
+        "duration_ms": 10621,
+        "input_tokens": 8107,
+        "output_tokens": 2474,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.002048000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.002354000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "06bf23e82b8341d6ac84ef8678463721",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 7901,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1214
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6637
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 10077,
+      "output_tokens": 1636,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001826",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE .",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Govern (GV) Organizational Context GV.OC",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Treating AI risks alongside other enterprise risks (e.g., financial, cybersecurity, reputational, and privacy) will yield a more integrated outcome and organizational efficiencies.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Cybersecurity and privacy risk management considerations and approaches are applicable to the design, development,",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "cultivates and implements a culture of risk management within organizations design-",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "Function Category Category Identifier",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "map",
+      "measure",
+      "manage"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Ambos marcos son complementarios: el CSF 2.0 organiza la gestión de riesgos de ciberseguridad en seis funciones (GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER), mientras que el AI RMF 1.0 organiza la gestión de riesgos de IA en cuatro funciones (GOVERN, MAP, MEASURE, MANAGE). La fuente S1 indica que los riesgos de IA deben tratarse junto con otros riesgos empresariales, y que las consideraciones de ciberseguridad y privacidad aplican al diseño, desarrollo, despliegue, evaluación y uso de sistemas de IA. GOVERN aparece en ambos marcos como función transversal: en el AI RMF se aplica a todas las etapas del proceso de gestión de riesgos de IA, y en el CSF 2.0 la función GV incluye categorías como GV.RM y GV.SC. Las fuentes recuperadas no establecen una correspondencia punto a punto entre subcategorías de ambos marcos, por lo que esa asignación detallada requiere información adicional.",
+    "case_id": "13f8dfb5e37d495890d4fe1e24c8413f",
+    "scenario_id": "S04",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:27.472021+00:00",
+        "finished_at": "2026-11-23T04:31:28.479408+00:00",
+        "status": "completed",
+        "duration_ms": 1005,
+        "input_tokens": 2970,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000307000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:28.851383+00:00",
+        "finished_at": "2026-11-23T04:31:35.117918+00:00",
+        "status": "completed",
+        "duration_ms": 6264,
+        "input_tokens": 7107,
+        "output_tokens": 1617,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001519000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001826000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "a4566af08e8a4db2904c846770981e81",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 11453,
+    "model_calls": 4,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1257
+      },
+      {
+        "name": "decide",
+        "duration_ms": 1519
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6603
+      },
+      {
+        "name": "repair",
+        "duration_ms": 2036
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 11785,
+      "output_tokens": 1493,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001925",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-639e29",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto.",
+    "case_id": "639e291974b8409093753fa3d900187c",
+    "scenario_id": "S07",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:35.889663+00:00",
+        "finished_at": "2026-11-23T04:31:36.933122+00:00",
+        "status": "completed",
+        "duration_ms": 1041,
+        "input_tokens": 2928,
+        "output_tokens": 43,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000314000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:38.894647+00:00",
+        "finished_at": "2026-11-23T04:31:45.062700+00:00",
+        "status": "completed",
+        "duration_ms": 6166,
+        "input_tokens": 2979,
+        "output_tokens": 1158,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000877000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "repair",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:45.425691+00:00",
+        "finished_at": "2026-11-23T04:31:47.100499+00:00",
+        "status": "completed",
+        "duration_ms": 1673,
+        "input_tokens": 2703,
+        "output_tokens": 223,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000382000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 3,
+    "known_cost_usd": "0.001573000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "ac29d40269c84f879890c61b64f29a8c",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 8165,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1252
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6860
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5904,
+      "output_tokens": 1721,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001451",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre y el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Informe breve sobre controles de respaldo y acceso (basado solo en S1 y S2, documentos del caso). Resumen: S1 describe copias de seguridad cifradas cada 24 horas, pruebas de restauración trimestrales con registro del responsable de infraestructura y almacenamiento fuera del sitio. S2 describe autenticación multifactor para acceso remoto, revisión trimestral de permisos, aprobación y registro de sesión para proveedores, y deshabilitación de cuentas inactivas a los 30 días. Los documentos describen controles previstos; no muestran su ejecución, resultados ni efectividad. Recomendaciones (propuestas del agente, no controles implementados): 1) Obtener y revisar los registros de las pruebas trimestrales de restauración. 2) Verificar evidencia de la revisión trimestral de permisos y de las aprobaciones y registros de sesión de proveedores. 3) Confirmar con registros que las cuentas inactivas se deshabilitan efectivamente a los 30 días. Limitaciones: no se recuperaron registros de ejecución, resultados de pruebas, cobertura de cuentas ni cifras; no se evalúa cumplimiento normativo.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Obtener y revisar los registr",
+    "case_id": "6af726ea938e45a4be0e3821a7ac0143",
+    "scenario_id": "S10",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:47.875760+00:00",
+        "finished_at": "2026-11-23T04:31:48.906155+00:00",
+        "status": "completed",
+        "duration_ms": 1028,
+        "input_tokens": 2962,
+        "output_tokens": 19,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000306000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "started_at": "2026-11-23T04:31:49.260404+00:00",
+        "finished_at": "2026-11-23T04:31:55.766834+00:00",
+        "status": "completed",
+        "duration_ms": 6503,
+        "input_tokens": 2942,
+        "output_tokens": 1702,
+        "cached_tokens": 0,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.001145000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.001451000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": true
+  }
+]

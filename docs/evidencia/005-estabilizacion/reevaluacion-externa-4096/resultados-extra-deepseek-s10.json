@@ -1,0 +1,170 @@
+[
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "095149fe34474192aef89b4ccfc6ee13",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4858,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 790
+      },
+      {
+        "name": "agent",
+        "duration_ms": 4008
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3520,
+      "output_tokens": 728,
+      "cached_tokens": 2944,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000532",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las copias se almacenan fuera del sitio.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El acceso remoto exige autenticación multifactor.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Los permisos se revisan cada trimestre",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "el acceso de proveedores requiere aprobación del responsable y registro de sesión.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Gestión de accesos",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "Las cuentas inactivas se deshabilitan a los 30 días.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "respaldo",
+      "acceso",
+      "recomend",
+      "limit"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 1,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "El caso cuenta con evidencia documental sobre respaldo y gestión de accesos. En respaldo, se realizan copias cifradas cada 24 horas con prueba de restauración trimestral, registro a cargo del responsable de infraestructura y almacenamiento fuera del sitio. En accesos, el acceso remoto exige autenticación multifactor, los permisos se revisan trimestralmente, el acceso de proveedores requiere aprobación del responsable y registro de sesión, y las cuentas inactivas se deshabilitan a los 30 días. La evidencia es declarativa y de política; no se aportaron registros, fechas de prueba ni resultados de auditoría que permitan verificar la ejecución.\n\nRecomendaciones propuestas por el agente (no son controles implementados):\n1. Solicitar y revisar los registros de las pruebas de restauración trimestrales y verificar que incluyan resultado, fecha y responsable.\n2. Verificar mediante muestreo la ejecución de las revisiones trimestrales de permisos y la deshabilitación de cuentas inactivas a los 30 días.\n3. Auditar las aprobaciones y los registros de sesión de proveedores, y confirmar los controles de acceso y cifrado de las copias almacenadas fuera del sitio.\n\nLimitaciones o información faltan",
+    "case_id": "7eb0003f278549f0bf4c5c425a6e6db5",
+    "scenario_id": "S10",
+    "request_details": [
+      {
+        "operation": "decide",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:55.650523+00:00",
+        "finished_at": "2026-11-23T04:30:56.437850+00:00",
+        "status": "completed",
+        "duration_ms": 785,
+        "input_tokens": 1700,
+        "output_tokens": 13,
+        "cached_tokens": 1536,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000037000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      },
+      {
+        "operation": "generate",
+        "attempt": 1,
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "started_at": "2026-11-23T04:30:56.443014+00:00",
+        "finished_at": "2026-11-23T04:31:00.447680+00:00",
+        "status": "completed",
+        "duration_ms": 4002,
+        "input_tokens": 1820,
+        "output_tokens": 715,
+        "cached_tokens": 1408,
+        "reasoning_tokens": null,
+        "usage_source": "observed",
+        "cost_status": "calculated",
+        "cost_usd": "0.000495000",
+        "currency": "USD",
+        "tariff_version": "2026-11-22",
+        "error_code": null,
+        "error_reason": null
+      }
+    ],
+    "requests": 2,
+    "known_cost_usd": "0.000532000",
+    "unknown_cost_requests": 0,
+    "error_message": null,
+    "authorized_scope": false
+  }
+]
