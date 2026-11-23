@@ -33,8 +33,17 @@ def schema_instruction(system: str, schema) -> str:
 def parse_structured(content: str, schema):
     if not content or not content.strip():
         raise InvalidModelOutput("La salida del proveedor está vacía.")
+    text = content.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1] if "\n" in text else text
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3].rstrip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        text = text[start : end + 1]
     try:
-        payload = json.loads(content)
+        payload = json.loads(text)
     except json.JSONDecodeError as exc:
         raise InvalidModelOutput("La salida del proveedor no es JSON válido.") from exc
     try:
