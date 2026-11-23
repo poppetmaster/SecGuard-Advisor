@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -110,37 +111,110 @@ class AnswerPayload(BaseModel):
     )
 
 
-class _DeadlineStream(httpx.SyncByteStream):
-    """Corta la lectura cuando se supera el plazo total de la llamada."""
+class _DeadlineGuard:
+    """Reloj monotónico y cierre de la operación al vencer el plazo total."""
 
-    def __init__(self, stream: httpx.SyncByteStream, deadline: float) -> None:
+    def __init__(self, deadline: float) -> None:
+        self.deadline = deadline
+        self.expired = threading.Event()
+        self._lock = threading.Lock()
+        self._response: httpx.Response | None = None
+        self._transport: httpx.BaseTransport | None = None
+        delay = max(0.0, deadline - time.monotonic())
+        self._timer = threading.Timer(delay, self._expire)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def set_transport(self, transport: httpx.BaseTransport) -> None:
+        with self._lock:
+            self._transport = transport
+        if self.expired.is_set():
+            self._close_transport()
+
+    def attach(self, response: httpx.Response) -> None:
+        with self._lock:
+            self._response = response
+        if self.expired.is_set():
+            response.close()
+            raise TimeoutError("timed out: total model deadline")
+
+    def _close_transport(self) -> None:
+        with self._lock:
+            transport = self._transport
+        if transport is not None:
+            with suppress(Exception):
+                transport.close()
+
+    def _expire(self) -> None:
+        self.expired.set()
+        with self._lock:
+            response = self._response
+        if response is not None:
+            with suppress(Exception):
+                response.close()
+        self._close_transport()
+
+    def finish(self) -> None:
+        self._timer.cancel()
+        with self._lock:
+            self._response = None
+            self._transport = None
+
+
+class _DeadlineStream(httpx.SyncByteStream):
+    """Corta la lectura cuando se supera el plazo total, incluso si está bloqueada."""
+
+    def __init__(self, stream: httpx.SyncByteStream, guard: _DeadlineGuard) -> None:
         self._stream = stream
-        self._deadline = deadline
+        self._guard = guard
 
     def __iter__(self):
-        for chunk in self._stream:
-            if time.monotonic() > self._deadline:
-                raise TimeoutError("timed out: total model deadline")
-            yield chunk
+        try:
+            for chunk in self._stream:
+                if self._guard.expired.is_set():
+                    raise TimeoutError("timed out: total model deadline")
+                yield chunk
+        except TimeoutError:
+            raise
+        except (httpx.StreamError, httpx.ReadError, RuntimeError) as exc:
+            if self._guard.expired.is_set():
+                raise TimeoutError("timed out: total model deadline") from exc
+            raise
+        if self._guard.expired.is_set():
+            raise TimeoutError("timed out: total model deadline")
+        self._guard.finish()
 
     def close(self) -> None:
-        self._stream.close()
+        try:
+            self._stream.close()
+        finally:
+            self._guard.finish()
 
 
 class _DeadlineTransport(httpx.BaseTransport):
-    """Transporte HTTP que aplica un plazo total además del timeout por lectura."""
+    """Transporte HTTP que aplica un plazo total a cabeceras y cuerpo."""
 
-    def __init__(self, deadline: float) -> None:
-        self._deadline = deadline
-        self._transport = httpx.HTTPTransport()
+    def __init__(self, deadline: float, transport: httpx.BaseTransport | None = None) -> None:
+        self._guard = _DeadlineGuard(deadline)
+        self._transport = transport or httpx.HTTPTransport()
+        self._guard.set_transport(self._transport)
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
-        response = self._transport.handle_request(request)
+        if self._guard.expired.is_set():
+            raise TimeoutError("timed out: total model deadline")
+        try:
+            response = self._transport.handle_request(request)
+        except Exception:
+            if self._guard.expired.is_set():
+                raise TimeoutError("timed out: total model deadline") from None
+            raise
+        self._guard.attach(response)
         if response.stream is not None:
-            response.stream = _DeadlineStream(response.stream, self._deadline)
+            response.stream = _DeadlineStream(response.stream, self._guard)
         return response
 
     def close(self) -> None:
+        self._guard.finish()
         self._transport.close()
 
 

@@ -12,7 +12,7 @@ from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerat
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.budget import plan_prompt
-from secguard_advisor.conversation.llm import AnswerPayload, Claim, ToolDecision
+from secguard_advisor.conversation.llm import AnswerPayload, ToolDecision
 from secguard_advisor.conversation.prompts import DECISION_SYSTEM_PROMPT
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.models import RunToolCall
@@ -78,7 +78,7 @@ def test_imported_tool_result_is_in_prompt_and_summary(tmp_path: Path) -> None:
         assert "dataset" not in summary
 
 
-def test_tool_result_answers_even_if_the_model_adds_invalid_document_claims(
+def test_tool_result_answers_when_the_model_adds_no_document_claims(
     tmp_path: Path,
 ) -> None:
     env = build_env(tmp_path, with_documents=False, min_score=-1.0)
@@ -97,13 +97,7 @@ def test_tool_result_answers_even_if_the_model_adds_invalid_document_claims(
         payloads=[
             AnswerPayload(
                 answer="Hay 3 registros pendientes en la instantánea.",
-                claims=[
-                    Claim(
-                        text="Según el documento inexistente.",
-                        chunk_ids=["S9"],
-                        quote="cita que no existe",
-                    )
-                ],
+                claims=[],
             )
         ],
         decisions=[_use({"origin": "imported"}), _no_tool()],

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import threading
+import time
 
 import httpx
 import pytest
@@ -14,7 +16,9 @@ from secguard_advisor.conversation.llm import (
     ModelTimeout,
     ModelUnavailable,
     OllamaGenerator,
+    _DeadlineGuard,
     _DeadlineStream,
+    _DeadlineTransport,
 )
 from secguard_advisor.conversation.prompts import (
     PROMPT_VERSION,
@@ -154,9 +158,81 @@ def test_deadline_stream_raises_after_total_deadline() -> None:
         def close(self):
             return None
 
-    stream = _DeadlineStream(SlowStream(), deadline=0.0)
+    guard = _DeadlineGuard(time.monotonic() - 0.01)
+    stream = _DeadlineStream(SlowStream(), guard)
     with pytest.raises(TimeoutError):
         list(stream)
+
+
+def test_deadline_transport_interrupts_blocked_header_wait() -> None:
+    class BlockedHeaderTransport(httpx.BaseTransport):
+        def __init__(self) -> None:
+            self.released = threading.Event()
+
+        def handle_request(self, _request):
+            self.released.wait(timeout=2.0)
+            raise httpx.ReadError("closed by deadline")
+
+        def close(self):
+            self.released.set()
+
+    started = time.monotonic()
+    transport = _DeadlineTransport(time.monotonic() + 0.05, transport=BlockedHeaderTransport())
+    try:
+        with pytest.raises(TimeoutError):
+            transport.handle_request(httpx.Request("POST", "http://ollama.test/api/chat"))
+    finally:
+        transport.close()
+    elapsed = time.monotonic() - started
+    assert 0.03 <= elapsed < 0.8
+
+
+def test_deadline_transport_interrupts_blocked_body_read() -> None:
+    class BlockedBody(httpx.SyncByteStream):
+        def __init__(self) -> None:
+            self.released = threading.Event()
+
+        def __iter__(self):
+            self.released.wait(timeout=2.0)
+            yield b"{}"
+
+        def close(self):
+            self.released.set()
+
+    class BodyTransport(httpx.BaseTransport):
+        def handle_request(self, request):
+            return httpx.Response(200, stream=BlockedBody(), request=request)
+
+        def close(self):
+            return None
+
+    started = time.monotonic()
+    transport = _DeadlineTransport(time.monotonic() + 0.05, transport=BodyTransport())
+    try:
+        response = transport.handle_request(httpx.Request("POST", "http://ollama.test/api/chat"))
+        with pytest.raises(TimeoutError):
+            list(response.iter_bytes())
+    finally:
+        transport.close()
+    elapsed = time.monotonic() - started
+    assert 0.03 <= elapsed < 0.8
+
+
+def test_deadline_stream_allows_successive_delays_below_deadline() -> None:
+    class DelayedStream(httpx.SyncByteStream):
+        def __iter__(self):
+            for _ in range(3):
+                time.sleep(0.01)
+                yield b"a"
+
+        def close(self):
+            return None
+
+    guard = _DeadlineGuard(time.monotonic() + 0.4)
+    stream = _DeadlineStream(DelayedStream(), guard)
+    started = time.monotonic()
+    assert list(stream) == [b"a", b"a", b"a"]
+    assert time.monotonic() - started < 0.3
 
 
 def test_answer_payload_rejects_invented_fields() -> None:

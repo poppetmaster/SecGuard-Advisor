@@ -296,20 +296,70 @@ def test_report_without_missing_info_adds_a_standard_limitation(tmp_path: Path) 
     assert "Limitaciones: este informe se basa solo en la evidencia recuperada" in message.content
 
 
-def test_tool_evidence_with_invalid_claims_routes_to_persist() -> None:
+def test_exclusive_tool_evidence_persists_without_document_citations() -> None:
+    payload = AnswerPayload(answer="Hay 3 hallazgos High.", claims=[])
+    state = {
+        "citations": (),
+        "payload": payload,
+        "hits": (),
+        "tool_results": ({"tool": "findings_query", "status": "ok", "result": {"total": 3}},),
+        "repaired": False,
+    }
+
+    assert route_after_validate(state) == "persist"
+
+
+def test_tool_evidence_with_invalid_document_claim_requires_repair() -> None:
     payload = AnswerPayload(
         answer="Hay 3 hallazgos High.",
         claims=[Claim(text="dato", chunk_ids=["S9"], quote="no existe")],
     )
     state = {
         "citations": (),
+        "rejected": ("cita rechazada",),
         "payload": payload,
         "hits": (),
-        "tool_results": ({"tool": "findings_query", "status": "ok"},),
+        "tool_results": ({"tool": "findings_query", "status": "ok", "result": {"total": 3}},),
+        "repaired": False,
+    }
+
+    assert route_after_validate(state) == "repair"
+    state["repaired"] = True
+    assert route_after_validate(state) == "abstain"
+
+
+def test_mixed_response_with_valid_citations_and_tool_evidence_persists() -> None:
+    payload = AnswerPayload(
+        answer="La política exige MFA y hay 3 hallazgos.",
+        claims=[Claim(text="MFA", chunk_ids=["S1"], quote="texto")],
+    )
+    state = {
+        "citations": ("cita válida",),
+        "rejected": (),
+        "payload": payload,
+        "hits": ("hit",),
+        "tool_results": ({"tool": "findings_query", "status": "ok", "result": {"total": 3}},),
         "repaired": False,
     }
 
     assert route_after_validate(state) == "persist"
+
+
+def test_failed_or_empty_tool_does_not_back_a_documentless_answer() -> None:
+    payload = AnswerPayload(answer="Hay 3 hallazgos High.", claims=[])
+    for tool_result in (
+        {"tool": "findings_query", "status": "error"},
+        {"tool": "findings_query", "status": "ok", "result": {}},
+    ):
+        state = {
+            "citations": (),
+            "rejected": (),
+            "payload": payload,
+            "hits": (),
+            "tool_results": (tool_result,),
+            "repaired": False,
+        }
+        assert route_after_validate(state) == "abstain"
 
 
 def test_only_one_repair_route_is_available() -> None:

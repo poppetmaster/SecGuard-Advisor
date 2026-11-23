@@ -833,16 +833,27 @@ def validate(state: dict[str, Any], config) -> dict[str, Any]:
     }
 
 
+def _has_tool_evidence(state: dict[str, Any]) -> bool:
+    """Un resultado vacío no se trata como evidencia estructurada."""
+    return any(
+        item.get("status") == "ok" and isinstance(item.get("result"), dict) and bool(item["result"])
+        for item in state.get("tool_results", ())
+    )
+
+
 def route_after_validate(state: dict[str, Any]) -> str:
     if state.get("citations"):
         return "persist"
     payload = state.get("payload")
     claims = payload.claims if payload is not None else []
-    tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
-    if tool_evidence and payload is not None and payload.answer.strip():
-        # Un resultado estructurado válido puede sostener la respuesta sin citas.
+    rejected = state.get("rejected", ())
+    tool_evidence = _has_tool_evidence(state)
+    if state.get("citations") and not rejected:
         return "persist"
-    if (state.get("hits") or claims) and not state.get("repaired"):
+    if tool_evidence and not claims and payload is not None and payload.answer.strip():
+        # Solo una respuesta exclusivamente basada en herramienta prescinde de citas.
+        return "persist"
+    if (state.get("hits") or claims or rejected) and not state.get("repaired"):
         return "repair"
     return "abstain"
 
@@ -986,10 +997,11 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
-    tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
+    claims = payload.claims if payload is not None else []
+    tool_evidence = _has_tool_evidence(state)
     if state.get("outcome"):
         outcome = state["outcome"]
-    elif citations or (tool_evidence and answer_text):
+    elif citations or (tool_evidence and not claims and answer_text):
         outcome = "answered"
     else:
         outcome = "insufficient_evidence"
