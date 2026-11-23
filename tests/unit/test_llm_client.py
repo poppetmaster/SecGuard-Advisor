@@ -14,6 +14,7 @@ from secguard_advisor.conversation.llm import (
     ModelTimeout,
     ModelUnavailable,
     OllamaGenerator,
+    _DeadlineStream,
 )
 from secguard_advisor.conversation.prompts import (
     PROMPT_VERSION,
@@ -144,8 +145,29 @@ def test_missing_digest_is_not_invented(monkeypatch) -> None:
     assert generator.resolve_digest() is None
 
 
+def test_deadline_stream_raises_after_total_deadline() -> None:
+    class SlowStream(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b"a"
+            yield b"b"
+
+        def close(self):
+            return None
+
+    stream = _DeadlineStream(SlowStream(), deadline=0.0)
+    with pytest.raises(TimeoutError):
+        list(stream)
+
+
+def test_answer_payload_rejects_invented_fields() -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        AnswerPayload.model_validate({"answer": "ok", "claims": [], "invented": True})
+
+
 def test_prompt_version_and_rules() -> None:
-    assert PROMPT_VERSION == "chat-v8"
+    assert PROMPT_VERSION == "chat-v9"
     folded = SYSTEM_PROMPT.casefold()
     for rule in (
         "ciberseguridad empresarial",

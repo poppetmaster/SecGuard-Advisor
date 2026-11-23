@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tests.fixtures.conversation import build_env
+import pytest
+from sqlalchemy import select
+from tests.fixtures.conversation import CASE_TEXT, build_env
 from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter
 
 from secguard_advisor.cases.scope import CaseScope
@@ -17,7 +19,7 @@ from secguard_advisor.conversation.llm import (
     StepLimit,
     ToolDecision,
 )
-from secguard_advisor.conversation.nodes import route_after_validate
+from secguard_advisor.conversation.nodes import _model_timeout, route_after_validate
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 
 
@@ -177,6 +179,137 @@ def test_step_limit_exception_is_classified() -> None:
 
 def test_run_timeout_exception_is_classified() -> None:
     assert issubclass(RunTimeout, Exception)
+
+
+def test_synthesis_question_uses_case_fallback_when_threshold_filters_everything(
+    tmp_path: Path,
+) -> None:
+    env = build_env(tmp_path, min_score=1.1)
+    generator = RecordingGenerator(
+        payloads=[
+            AnswerPayload(
+                answer=(
+                    "Informe: el cifrado en reposo está documentado. "
+                    "Recomendación propuesta: revisar el registro de accesos."
+                ),
+                claims=[
+                    Claim(
+                        text="El control aplica cifrado en reposo.",
+                        chunk_ids=["S1"],
+                        quote=CASE_TEXT,
+                    )
+                ],
+                missing_info=["No hay datos sobre frecuencia de revisión."],
+            )
+        ]
+    )
+
+    result = _ask(
+        env,
+        generator,
+        question="Prepará un informe breve con resumen, evidencias y recomendaciones.",
+    )
+
+    assert result.status == "succeeded"
+    assert result.outcome == "answered"
+    with env.factory() as session:
+        from secguard_advisor.db.models import Run
+
+        run = session.scalar(select(Run).where(Run.case_id == env.case_id))
+        assert run is not None
+    assert generator.generate_timeouts
+
+
+def test_no_model_call_starts_with_less_than_one_second_left() -> None:
+    import time
+    from types import SimpleNamespace
+
+    context = SimpleNamespace(
+        deps=SimpleNamespace(
+            settings=SimpleNamespace(run_timeout_seconds=0.2, provider_timeout_seconds=90.0)
+        ),
+        started_perf=time.perf_counter(),
+    )
+
+    with pytest.raises(RunTimeout):
+        _model_timeout(context)
+
+
+def test_report_answer_includes_recommendations_and_limitations(tmp_path: Path) -> None:
+    env = build_env(tmp_path, min_score=-1.0)
+    generator = RecordingGenerator(
+        payloads=[
+            AnswerPayload(
+                answer="Resumen documentado del control.",
+                claims=[
+                    Claim(
+                        text="El control aplica cifrado en reposo.",
+                        chunk_ids=["S1"],
+                        quote=CASE_TEXT,
+                    )
+                ],
+                missing_info=["No hay datos sobre frecuencia de revisión."],
+                recommendations=["Revisar el registro de accesos."],
+            )
+        ]
+    )
+
+    result = _ask(env, generator, question="Prepará un informe breve.")
+
+    assert result.outcome == "answered"
+    with env.factory() as session:
+        from secguard_advisor.db.models import Message
+
+        message = session.scalar(select(Message).where(Message.role == "assistant"))
+    assert message is not None
+    assert "Recomendaciones propuestas por el agente" in message.content
+    assert "1. Revisar el registro de accesos." in message.content
+    assert "Limitaciones o información faltante" in message.content
+
+
+def test_report_without_missing_info_adds_a_standard_limitation(tmp_path: Path) -> None:
+    env = build_env(tmp_path, min_score=-1.0)
+    generator = RecordingGenerator(
+        payloads=[
+            AnswerPayload(
+                answer="Resumen documentado.",
+                claims=[
+                    Claim(
+                        text="El control aplica cifrado en reposo.",
+                        chunk_ids=["S1"],
+                        quote=CASE_TEXT,
+                    )
+                ],
+                missing_info=[],
+                recommendations=["Revisar el registro de accesos."],
+            )
+        ]
+    )
+
+    _ask(env, generator, question="Prepará un informe breve.")
+
+    with env.factory() as session:
+        from secguard_advisor.db.models import Message
+
+        message = session.scalar(select(Message).where(Message.role == "assistant"))
+    assert message is not None
+    assert "Limitaciones: este informe se basa solo en la evidencia recuperada" in message.content
+
+
+def test_tool_evidence_with_invalid_claims_routes_to_persist() -> None:
+    payload = AnswerPayload(
+        answer="Hay 3 hallazgos High.",
+        claims=[Claim(text="dato", chunk_ids=["S9"], quote="no existe")],
+    )
+    state = {
+        "citations": (),
+        "payload": payload,
+        "hits": (),
+        "tool_results": ({"tool": "findings_query", "status": "ok"},),
+        "repaired": False,
+    }
+
+    assert route_after_validate(state) == "persist"
 
 
 def test_only_one_repair_route_is_available() -> None:

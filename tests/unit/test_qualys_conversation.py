@@ -12,7 +12,7 @@ from tests.fixtures.fakes import FakeEmbedder, FakeTokenCounter, ScriptedGenerat
 from secguard_advisor.cases.scope import CaseScope
 from secguard_advisor.config import Settings
 from secguard_advisor.conversation.budget import plan_prompt
-from secguard_advisor.conversation.llm import AnswerPayload, ToolDecision
+from secguard_advisor.conversation.llm import AnswerPayload, Claim, ToolDecision
 from secguard_advisor.conversation.prompts import DECISION_SYSTEM_PROMPT
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 from secguard_advisor.db.models import RunToolCall
@@ -76,6 +76,61 @@ def test_imported_tool_result_is_in_prompt_and_summary(tmp_path: Path) -> None:
         assert summary["truncated"] is True
         assert "items" not in summary
         assert "dataset" not in summary
+
+
+def test_tool_result_answers_even_if_the_model_adds_invalid_document_claims(
+    tmp_path: Path,
+) -> None:
+    env = build_env(tmp_path, with_documents=False, min_score=-1.0)
+    service = QualysImportService(
+        env.factory,
+        Settings(_env_file=None, storage_dir=tmp_path / "imports"),
+    )
+    staged = service.stage_import(
+        env.case_id,
+        "valid.csv",
+        (FIXTURES / "qualys_synthetic_valid.csv").read_bytes(),
+    )
+    service.confirm_import(env.case_id, staged.import_record.id)
+
+    generator = ScriptedGenerator(
+        payloads=[
+            AnswerPayload(
+                answer="Hay 3 registros pendientes en la instantánea.",
+                claims=[
+                    Claim(
+                        text="Según el documento inexistente.",
+                        chunk_ids=["S9"],
+                        quote="cita que no existe",
+                    )
+                ],
+            )
+        ],
+        decisions=[_use({"origin": "imported"}), _no_tool()],
+    )
+    context = start_question_turn(
+        env.factory,
+        env.settings,
+        scope=CaseScope(case_id=env.case_id),
+        question="¿Cuántos registros importados hay?",
+        generator=generator,
+        embedder=FakeEmbedder(),
+        index=env.index,
+        token_counter=FakeTokenCounter(),
+    )
+    result = execute_turn(context)
+
+    assert result.status == "succeeded"
+    assert result.outcome == "answered"
+    with env.factory() as session:
+        from secguard_advisor.db.models import Message, Run
+
+        run = session.get(Run, context.run_id)
+        assert run is not None
+        message = session.get(Message, run.answer_message_id)
+        assert message is not None
+        assert "3 registros pendientes" in message.content
+        assert message.content.startswith("Hay 3 registros")
 
 
 def test_imported_tool_definition_and_budget() -> None:

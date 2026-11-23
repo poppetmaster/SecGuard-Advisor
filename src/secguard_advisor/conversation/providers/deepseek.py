@@ -80,13 +80,21 @@ class DeepSeekGenerator:
             started=started,
             reasoning_tokens=details.get("reasoning_tokens"),
         )
+        finish_reason = None
         try:
-            content = data["choices"][0]["message"].get("content") or ""
+            choice = data["choices"][0]
+            finish_reason = choice.get("finish_reason")
+            content = choice["message"].get("content") or ""
         except (KeyError, IndexError, TypeError) as exc:
             from secguard_advisor.conversation.llm import InvalidModelOutput
 
-            raise InvalidModelOutput("DeepSeek devolvió una respuesta sin contenido.") from exc
-        return parse_structured(content, schema)
+            raise InvalidModelOutput(
+                "DeepSeek devolvió una respuesta sin contenido.",
+                reason="truncated_content"
+                if finish_reason in {"length", "max_tokens"}
+                else "empty_content",
+            ) from exc
+        return parse_structured(content, schema, finish_reason=finish_reason)
 
     def close(self) -> None:
         if getattr(self, "_owns_client", False) and self.client is not None:

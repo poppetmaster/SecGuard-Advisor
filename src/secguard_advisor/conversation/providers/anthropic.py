@@ -96,7 +96,7 @@ class AnthropicGenerator:
             for block in data.get("content", [])
             if block.get("type") == "text"
         )
-        return parse_structured(content, schema)
+        return parse_structured(content, schema, finish_reason=data.get("stop_reason"))
 
     def close(self) -> None:
         if getattr(self, "_owns_client", False) and self.client is not None:

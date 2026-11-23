@@ -32,7 +32,11 @@ from secguard_advisor.conversation.providers.usage import provider_call
 from secguard_advisor.evidence.budget import ensure_budget_available
 from secguard_advisor.evidence.tracing import NullTracer
 from secguard_advisor.retrieval.citations import check_citation
-from secguard_advisor.retrieval.search import RetrievedChunk, search_documents
+from secguard_advisor.retrieval.search import (
+    RetrievalResult,
+    RetrievedChunk,
+    search_documents,
+)
 from secguard_advisor.tools.findings import (
     TOOL_NAME,
     FindingsQuery,
@@ -87,6 +91,10 @@ def tracer_of(config):
     return config["configurable"].get("tracer") or NullTracer()
 
 
+MIN_MODEL_CALL_SECONDS = 1.0
+MIN_TOOL_OPERATION_SECONDS = 0.5
+
+
 def _remaining_turn_seconds(context) -> float:
     return max(
         0.0,
@@ -97,8 +105,8 @@ def _remaining_turn_seconds(context) -> float:
 def _model_timeout(context) -> float:
     """Tiempo máximo de esta llamada: nunca supera el tiempo restante del turno."""
     remaining = _remaining_turn_seconds(context)
-    if remaining <= 0:
-        raise RunTimeout("Se agotó el tiempo del turno.")
+    if remaining < MIN_MODEL_CALL_SECONDS:
+        raise RunTimeout("No queda tiempo suficiente para otra llamada al modelo.")
     return min(context.deps.settings.provider_timeout_seconds, remaining)
 
 
@@ -226,6 +234,22 @@ def _index_evidence(result) -> dict[str, Any]:
     return evidence
 
 
+SYNTHESIS_MARKERS = (
+    "informe",
+    "resumen",
+    "síntesis",
+    "sintesis",
+    "recomendaciones",
+    "reporte",
+)
+
+
+def is_synthesis_question(question: str) -> bool:
+    """Detecta pedidos de informe o síntesis sin relajar el umbral general."""
+    folded = question.casefold()
+    return any(marker in folded for marker in SYNTHESIS_MARKERS)
+
+
 def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
     started = time.perf_counter()
     context = runtime_of(config)
@@ -242,6 +266,25 @@ def retrieve(state: dict[str, Any], config) -> dict[str, Any]:
             min_score=settings.retrieval_min_score,
             token_budget=settings.retrieval_token_budget,
         )
+        if not result.hits and is_synthesis_question(context.question):
+            fallback = search_documents(
+                session,
+                scope=context.scope,
+                query=query,
+                embedder=context.deps.embedder,
+                index=context.deps.index,
+                top_k=settings.retrieval_top_k,
+                min_score=0.0,
+                token_budget=settings.retrieval_token_budget,
+            )
+            case_hits = tuple(hit for hit in fallback.hits if hit.origin == "case_evidence")
+            if case_hits:
+                result = RetrievalResult(
+                    hits=case_hits,
+                    status="expanded_case",
+                    public_evidence=fallback.public_evidence,
+                    case_evidence=fallback.case_evidence,
+                )
     hits = result.hits
     if getattr(context, "external_scope", None) == "public_corpus":
         hits = tuple(hit for hit in hits if hit.origin == "public_corpus")
@@ -511,8 +554,8 @@ def tools(state: dict[str, Any], config) -> dict[str, Any]:
     settings = context.deps.settings
     step_count = _consume_step(state, context)
     remaining = _remaining_turn_seconds(context)
-    if remaining <= 0:
-        raise RunTimeout("Se agotó el tiempo del turno.")
+    if remaining < MIN_TOOL_OPERATION_SECONDS:
+        raise RunTimeout("No queda tiempo suficiente para otra operación.")
     decision = state.get("decision") or {}
     arguments = decision.get("arguments") or {}
     external_scope = getattr(context, "external_scope", None)
@@ -796,7 +839,8 @@ def route_after_validate(state: dict[str, Any]) -> str:
     payload = state.get("payload")
     claims = payload.claims if payload is not None else []
     tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
-    if not claims and tool_evidence:
+    if tool_evidence and payload is not None and payload.answer.strip():
+        # Un resultado estructurado válido puede sostener la respuesta sin citas.
         return "persist"
     if (state.get("hits") or claims) and not state.get("repaired"):
         return "repair"
@@ -942,17 +986,33 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
-    claims = payload.claims if payload is not None else []
     tool_evidence = any(item.get("status") == "ok" for item in state.get("tool_results", ()))
     if state.get("outcome"):
         outcome = state["outcome"]
-    elif citations or (tool_evidence and not claims):
+    elif citations or (tool_evidence and answer_text):
         outcome = "answered"
     else:
         outcome = "insufficient_evidence"
     if not answer_text:
         answer_text = ABSTAINED_CITATIONS_TEXT
         outcome = "abstained_invalid_citations" if state.get("hits") else "insufficient_evidence"
+    if outcome == "answered" and payload is not None and is_synthesis_question(context.question):
+        if payload.recommendations:
+            recommendations = "\n".join(
+                f"{position}. {item}" for position, item in enumerate(payload.recommendations, 1)
+            )
+            answer_text += (
+                "\n\nRecomendaciones propuestas por el agente "
+                "(no son controles implementados):\n" + recommendations
+            )
+        if payload.missing_info:
+            limitations = "\n".join(f"- {item}" for item in payload.missing_info)
+            answer_text += "\n\nLimitaciones o información faltante:\n" + limitations
+        elif is_synthesis_question(context.question):
+            answer_text += (
+                "\n\nLimitaciones: este informe se basa solo en la evidencia recuperada "
+                "del caso y no constituye certificación ni auditoría."
+            )
 
     duration_ms = _turn_duration(context)
     message_id = persist_turn(

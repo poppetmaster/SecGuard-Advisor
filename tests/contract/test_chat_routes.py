@@ -16,6 +16,7 @@ from secguard_advisor.conversation.concurrency import GenerationSlot
 from secguard_advisor.conversation.llm import (
     AnswerPayload,
     Claim,
+    InvalidModelOutput,
     ModelTimeout,
     ModelUnavailable,
 )
@@ -278,6 +279,24 @@ def test_model_timeout_returns_504(context) -> None:
         run = session.scalar(select(Run).where(Run.case_id == case_id))
         assert run.status == "timeout"
         assert run.error_code == "model_timeout"
+
+
+def test_invalid_model_output_records_a_safe_reason(context) -> None:
+    settings, factory, case_id, _seeded, _public, index, _engine = context
+    generator = ScriptedGenerator(
+        error=InvalidModelOutput("salida inválida", reason="truncated_content")
+    )
+    app = _app(settings, index, generator)
+
+    with TestClient(app) as client:
+        response = _ask(client, case_id)
+
+    assert response.status_code == 500
+    with factory() as session:
+        run = session.scalar(select(Run).where(Run.case_id == case_id))
+        assert run.status == "failed"
+        assert run.error_code == "invalid_model_output"
+        assert "truncated_content" in (run.error_message or "")
 
 
 def test_panel_shows_sources_with_provenance(context) -> None:

@@ -6,7 +6,7 @@ import json
 
 from secguard_advisor.retrieval.search import RetrievedChunk
 
-PROMPT_VERSION = "chat-v8"
+PROMPT_VERSION = "chat-v9"
 DECISION_PROMPT_VERSION = "decide-v6"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad empresarial.
@@ -63,6 +63,11 @@ Reglas obligatorias:
     Usalo para interpretar la pregunta y no completes con supuestos los datos que falten.
 17. Distinguí orientación general, evidencia documental del caso y resultados estructurados de
     vulnerabilidades. No presentes orientación general como si fuera evidencia del caso.
+18. Si piden un informe, resumen o recomendaciones, sintetizá solo hechos documentados y citados.
+    Las recomendaciones son propuestas del agente: no son controles implementados ni evidencia.
+    Mantené el informe breve (máximo 300 palabras): resumen, evidencias, tres recomendaciones y
+    limitaciones. Declará datos faltantes en `missing_info`; si hay evidencia parcial, respondé
+    con lo respaldado en vez de abstenerte por lo que falta.
 
 """
 

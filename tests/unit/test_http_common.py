@@ -33,11 +33,26 @@ def test_parse_structured_ignores_surrounding_prose() -> None:
     assert decision.use_findings is False
 
 
+def test_parse_structured_ignores_later_braces_after_a_valid_object() -> None:
+    content = '{"use_findings": false} nota {esto no es json}'
+
+    decision = parse_structured(content, ToolDecision)
+
+    assert decision.use_findings is False
+
+
 def test_parse_structured_rejects_invalid_json() -> None:
     with pytest.raises(InvalidModelOutput):
         parse_structured("no es json", ToolDecision)
 
 
 def test_parse_structured_rejects_a_schema_mismatch() -> None:
-    with pytest.raises(InvalidModelOutput):
+    with pytest.raises(InvalidModelOutput) as captured:
         parse_structured('{"use_findings": "quizá"}', ToolDecision)
+    assert captured.value.reason == "schema_mismatch"
+
+
+def test_parse_structured_marks_truncated_empty_content() -> None:
+    with pytest.raises(InvalidModelOutput) as captured:
+        parse_structured("", ToolDecision, finish_reason="length")
+    assert captured.value.reason == "truncated_content"

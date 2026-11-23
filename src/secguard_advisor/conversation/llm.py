@@ -32,9 +32,15 @@ class StepLimit(Exception):
 class InvalidModelOutput(Exception):
     """La salida del modelo no cumple el esquema esperado."""
 
+    def __init__(self, message: str, *, reason: str | None = None) -> None:
+        super().__init__(message)
+        self.reason = reason
+
 
 class Claim(BaseModel):
     """Afirmación con las fuentes y la cita literal que la sostienen."""
+
+    model_config = ConfigDict(extra="forbid")
 
     text: str = Field(description="Afirmación redactada en español")
     chunk_ids: list[str] = Field(
@@ -76,6 +82,8 @@ class ToolArguments(BaseModel):
 class ToolDecision(BaseModel):
     """Decisión estructurada del modelo sobre usar findings_query."""
 
+    model_config = ConfigDict(extra="forbid")
+
     use_findings: bool = Field(
         description="Verdadero si la pregunta necesita datos de hallazgos del caso"
     )
@@ -88,6 +96,8 @@ class ToolDecision(BaseModel):
 class AnswerPayload(BaseModel):
     """Respuesta estructurada del agente documental."""
 
+    model_config = ConfigDict(extra="forbid")
+
     answer: str = Field(description="Respuesta en español para el usuario")
     claims: list[Claim] = Field(
         default_factory=list, description="Afirmaciones con su respaldo documental"
@@ -98,6 +108,40 @@ class AnswerPayload(BaseModel):
     recommendations: list[str] = Field(
         default_factory=list, description="Recomendaciones derivadas de la evidencia"
     )
+
+
+class _DeadlineStream(httpx.SyncByteStream):
+    """Corta la lectura cuando se supera el plazo total de la llamada."""
+
+    def __init__(self, stream: httpx.SyncByteStream, deadline: float) -> None:
+        self._stream = stream
+        self._deadline = deadline
+
+    def __iter__(self):
+        for chunk in self._stream:
+            if time.monotonic() > self._deadline:
+                raise TimeoutError("timed out: total model deadline")
+            yield chunk
+
+    def close(self) -> None:
+        self._stream.close()
+
+
+class _DeadlineTransport(httpx.BaseTransport):
+    """Transporte HTTP que aplica un plazo total además del timeout por lectura."""
+
+    def __init__(self, deadline: float) -> None:
+        self._deadline = deadline
+        self._transport = httpx.HTTPTransport()
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        response = self._transport.handle_request(request)
+        if response.stream is not None:
+            response.stream = _DeadlineStream(response.stream, self._deadline)
+        return response
+
+    def close(self) -> None:
+        self._transport.close()
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,6 +192,8 @@ class OllamaGenerator:
         return None
 
     def _chat(self, timeout_seconds: float | None = None) -> ChatOllama:
+        effective_timeout = timeout_seconds or self.config.timeout_seconds
+        deadline = time.monotonic() + effective_timeout
         return ChatOllama(
             model=self.config.model,
             base_url=self.config.base_url,
@@ -158,7 +204,10 @@ class OllamaGenerator:
             # El modelo configurado es de razonamiento: se desactiva para acotar la
             # latencia y obtener la salida estructurada dentro del presupuesto del turno.
             reasoning=False,
-            client_kwargs={"timeout": timeout_seconds or self.config.timeout_seconds},
+            client_kwargs={
+                "timeout": effective_timeout,
+                "transport": _DeadlineTransport(deadline),
+            },
         )
 
     def decide(

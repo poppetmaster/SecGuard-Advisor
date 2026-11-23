@@ -30,26 +30,52 @@ def schema_instruction(system: str, schema) -> str:
     )
 
 
-def parse_structured(content: str, schema):
+def _first_json_object(text: str) -> dict | None:
+    """Extrae el primer objeto JSON completo sin confiar en el último ``}``."""
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        return parsed
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(text):
+        if char != "{":
+            continue
+        try:
+            candidate, _ = decoder.raw_decode(text[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict):
+            return candidate
+    return None
+
+
+def parse_structured(content: str, schema, *, finish_reason: str | None = None):
+    truncated = finish_reason in {"length", "max_tokens"}
     if not content or not content.strip():
-        raise InvalidModelOutput("La salida del proveedor está vacía.")
+        raise InvalidModelOutput(
+            "La salida del proveedor está vacía.",
+            reason="truncated_content" if truncated else "empty_content",
+        )
     text = content.strip()
     if text.startswith("```"):
         text = text.split("\n", 1)[-1] if "\n" in text else text
         if text.rstrip().endswith("```"):
             text = text.rstrip()[:-3].rstrip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        text = text[start : end + 1]
-    try:
-        payload = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise InvalidModelOutput("La salida del proveedor no es JSON válido.") from exc
+    payload = _first_json_object(text)
+    if payload is None:
+        raise InvalidModelOutput(
+            "La salida del proveedor no es JSON válido.",
+            reason="truncated_content" if truncated else "json_invalid",
+        )
     try:
         return schema.model_validate(payload)
     except Exception as exc:
-        raise InvalidModelOutput("La salida del proveedor no cumple el esquema.") from exc
+        raise InvalidModelOutput(
+            "La salida del proveedor no cumple el esquema.",
+            reason="schema_mismatch",
+        ) from exc
 
 
 def raise_for_status(response: httpx.Response) -> None:

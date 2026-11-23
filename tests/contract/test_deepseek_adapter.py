@@ -154,15 +154,16 @@ def test_invalid_json_keeps_the_reported_usage() -> None:
         return httpx.Response(
             200,
             json={
-                "choices": [{"message": {"content": "no es json"}}],
+                "choices": [{"message": {"content": "no es json"}, "finish_reason": "length"}],
                 "usage": {"prompt_tokens": 120, "completion_tokens": 30},
             },
         )
 
     generator = DeepSeekGenerator(_settings(), client=_client(handler))
     try:
-        with pytest.raises(InvalidModelOutput):
+        with pytest.raises(InvalidModelOutput) as captured:
             generator.generate(system="Respondé.", user="¿Qué?")
+        assert captured.value.reason == "truncated_content"
         assert generator.last_usage is not None
         assert generator.last_usage["input_tokens"] == 120
         assert generator.last_usage["output_tokens"] == 30

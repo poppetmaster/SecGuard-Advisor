@@ -355,12 +355,16 @@ def _execute_turn(context: TurnContext, memory, tracer) -> TurnResult:
             message="El modelo local no responde.",
         )
         return TurnResult("failed", "error", 503, "model_unavailable")
-    except InvalidModelOutput:
+    except InvalidModelOutput as exc:
+        reason = getattr(exc, "reason", None)
+        message = "La salida del modelo no cumple el esquema esperado."
+        if reason:
+            message = f"{message} Motivo: {reason}."
         _fail(
             context,
             status="failed",
             code="invalid_model_output",
-            message="La salida del modelo no cumple el esquema esperado.",
+            message=message,
         )
         return TurnResult("failed", "error", 500, "invalid_model_output")
     except Exception:
