@@ -366,3 +366,19 @@ del arnés. Evidencia separada en
   005 (S02 se mantiene como fallo funcional con abstención segura, S07 real no revalidado tras el
   fallback, S03 v2 es recálculo auxiliar). No se declara aceptación externa completa ni se inicia
   006 en este trabajo.
+
+## Especificación de 006 (2026-11-23)
+
+- Creada `specs/006-informe-ejecutivo-telegram/spec.md` y
+  `specs/006-informe-ejecutivo-telegram/checklists/requirements.md`. No se creó plan ni tareas, no
+  se implementó código y no se enviaron mensajes.
+- Alcance: informe ejecutivo web/PDF desde una importación Qualys confirmada, contactos verificados,
+  envío manual y regla automática previamente activada, con evidencia por destinatario.
+- Decisión registrada en la constitución: confirmación individual para el envío manual; una regla
+  activada por la persona responsable es autorización previa para envíos que coincidan exactamente
+  con sus condiciones. No se inventan acuerdos del equipo ni aprobación académica.
+- Límites conservados: S02 queda como fallo funcional con abstención segura; S07 real no revalidado
+  tras el fallback; S03 v2 es recálculo auxiliar; T039 y aceptación externa siguen pendientes.
+- **Dictamen**: se puede iniciar la planificación de 006. La especificación no exige 100 % de aciertos
+  del modelo ni otra evaluación pagada; las limitaciones de 005 quedan documentadas.
+- Siguiente paso: revisión del `spec.md` y del checklist; luego `/speckit.plan` cuando se autorice.

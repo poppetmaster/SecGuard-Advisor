@@ -1,7 +1,7 @@
 # Handoff — 005 Generador configurable (Entregas 1–3)
 
 **Fecha**: 2026-11-23 (actualizado tras la evaluación real)
-**Estado**: R1–R3 corregidos; T001–T038, T040–T042 y T043–T048 completadas. La comparación externa
+**Estado**: 006 especificada el 2026-11-23; R1–R3 corregidos; T001–T038, T040–T042 y T043–T048 completadas. La comparación externa
 real se ejecutó; T039 queda parcialmente acreditada por el marker `external` y 005 mantiene
 aceptación local, sin aceptación de proveedores externos.
 **Rama**: `005-generador-configurable`.
@@ -117,7 +117,20 @@ Implementar el marker `external` de pytest con omisión sin credencial para cerr
 decidir si se corrige el exceso de timeout de Ollama y si se repite la comparación externa con más
 escenarios. La aceptación externa requiere mejor calidad sostenida y revisión semántica.
 
-## 6. Límites
+## 6. Especificación de 006
+
+- `specs/006-informe-ejecutivo-telegram/spec.md`: informe ejecutivo web/PDF y notificaciones
+  Telegram con envío manual y regla automática previa.
+- `checklists/requirements.md`: checklist de calidad; sin `[NEEDS CLARIFICATION]`.
+- Decisión registrada en la constitución: confirmación individual en manual; activación de regla
+  como autorización previa limitada a sus condiciones. No constan acuerdos del equipo ni aprobación
+  académica.
+- No hay plan, tareas ni implementación; no se enviaron mensajes. S02 sigue como fallo funcional
+  con abstención segura; T039/aceptación externa permanecen pendientes.
+- Dictamen: se puede iniciar la planificación de 006 sin otra evaluación pagada. Siguiente paso:
+  revisar la especificación y el checklist, luego planificar cuando se autorice.
+
+## 7. Límites
 
 - Sin evaluación semántica; solo comprobaciones automáticas.
 - Corpus ficticio; no datos del usuario.
