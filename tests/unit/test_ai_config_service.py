@@ -15,6 +15,7 @@ from secguard_advisor.ai_config.service import (
     save_configuration,
 )
 from secguard_advisor.config import Settings
+from secguard_advisor.conversation.budget import prompt_limit
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
 from secguard_advisor.db.models import AIConfiguration, AIProviderProfile
@@ -54,6 +55,9 @@ def test_first_load_uses_environment_without_saved_configuration(tmp_path: Path)
     assert view.active_profile.timeout_seconds == 12.5
     assert view.global_budget_usd == Decimal("0")
     assert view.external_blocked is False
+    assert view.profiles["deepseek"].max_output_tokens == 4096
+    assert view.profiles["anthropic"].max_output_tokens == 4096
+    assert view.profiles["ollama"].max_output_tokens == 1200
 
 
 def test_save_and_reload_persists_active_profile(tmp_path: Path) -> None:
@@ -114,6 +118,28 @@ def test_switching_provider_does_not_overwrite_other_profiles(tmp_path: Path) ->
         "deepseek": 111,
         "anthropic": 222,
     }
+
+
+def test_external_4096_profile_controls_context_admission(tmp_path: Path) -> None:
+    settings = _settings(tmp_path, deepseek_api_key="secret")
+    factory = _factory(tmp_path, settings)
+
+    with factory() as session:
+        save_configuration(
+            session,
+            settings,
+            provider="deepseek",
+            model="deepseek-flash",
+            max_output_tokens=4096,
+            timeout_seconds=15,
+        )
+        session.commit()
+        turn = resolve_turn_settings(session, settings)
+
+    assert turn.provider_max_output_tokens == 4096
+    assert prompt_limit(turn) == (
+        turn.provider_context_window - 4096 - turn.context_safety_margin_tokens
+    )
 
 
 def test_resolve_turn_settings_returns_active_profile(tmp_path: Path) -> None:

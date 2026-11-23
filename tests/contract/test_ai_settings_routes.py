@@ -78,6 +78,16 @@ def test_first_load_without_saved_configuration(tmp_path: Path) -> None:
     assert "Clave configurada" in response.text
 
 
+def test_external_profile_default_is_4096_in_the_form(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    with _client(settings) as client:
+        response = client.get("/settings/ai/profile?provider=deepseek", headers=HTMX)
+
+    assert response.status_code == 200
+    assert 'value="4096"' in response.text
+    assert "Límite técnico del proveedor/modelo" in response.text
+
+
 def test_save_persists_and_survives_restart(tmp_path: Path) -> None:
     settings = _settings(tmp_path)
     with _client(settings) as client:

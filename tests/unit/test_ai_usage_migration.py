@@ -50,6 +50,16 @@ def test_upgrade_adds_tables_without_rewriting_runs(tmp_path: Path) -> None:
             )
             """
         )
+        connection.execute(
+            """
+            INSERT INTO ai_provider_profiles (
+                provider, model, max_output_tokens, timeout_seconds, updated_at
+            ) VALUES
+                ('deepseek', 'deepseek-flash', 1200, 90, '2026-11-01T00:00:00+00:00'),
+                ('anthropic', 'claude-haiku-5-5', 512, 90, '2026-11-01T00:00:00+00:00'),
+                ('ollama', 'qwen3.5:9b', 800, 90, '2026-11-01T00:00:00+00:00')
+            """
+        )
         connection.commit()
 
     _alembic(storage, "head")
@@ -62,5 +72,11 @@ def test_upgrade_adds_tables_without_rewriting_runs(tmp_path: Path) -> None:
         row = connection.execute(
             "SELECT generator_provider, generator_model, status FROM runs WHERE id='legacy-run'"
         ).fetchone()
+        profiles = dict(
+            connection.execute(
+                "SELECT provider, max_output_tokens FROM ai_provider_profiles"
+            ).fetchall()
+        )
     assert {"ai_requests", "ai_evaluations", "ai_evaluation_results"} <= tables
     assert row == ("deepseek", "deepseek-flash", "succeeded")
+    assert profiles == {"deepseek": 4096, "anthropic": 4096, "ollama": 800}

@@ -129,6 +129,7 @@ def test_tool_result_answers_when_the_model_adds_no_document_claims(
 
 def test_imported_tool_definition_and_budget() -> None:
     assert "origin" in DECISION_SYSTEM_PROMPT
+    assert "aunque creas conocer la respuesta" in DECISION_SYSTEM_PROMPT
     assert "snapshot_id" in DECISION_SYSTEM_PROMPT
     assert "imported" in DECISION_SYSTEM_PROMPT
     for argument in (

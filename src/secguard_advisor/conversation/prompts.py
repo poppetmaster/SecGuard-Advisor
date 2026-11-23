@@ -7,7 +7,7 @@ import json
 from secguard_advisor.retrieval.search import RetrievedChunk
 
 PROMPT_VERSION = "chat-v9"
-DECISION_PROMPT_VERSION = "decide-v6"
+DECISION_PROMPT_VERSION = "decide-v7"
 
 SYSTEM_PROMPT = """Sos un asesor defensivo de ciberseguridad empresarial.
 Respondés en español, con tono profesional, sin afirmar cumplimiento ni emitir certificaciones.
@@ -232,6 +232,9 @@ Si un intento anterior ya devolvió un resultado que responde exactamente esta p
 {"use_findings": false, "arguments": {}}; no repitas la misma consulta. Si la pregunta actual pide
 otro filtro, severidad, grupo o conteo distinto, consultá de nuevo con los argumentos
 correspondientes.
+Si la pregunta pide conteos, filtros, agrupaciones o detalles de hallazgos, usá findings_query
+aunque creas conocer la respuesta o la pregunta mencione solo una severidad, un activo o un estado.
+No respondas esos conteos con conocimiento general.
 Ejemplo para "¿Cuántos hallazgos High hay por activo?": devolvé
 {"use_findings":true,"arguments":{"origin":"synthetic","severity":"High","group_by":"asset"}}.
 Ejemplo para "¿Cuántos registros pendientes hay?": devolvé

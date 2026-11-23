@@ -56,10 +56,10 @@ from secguard_advisor.db.models import (
 )
 
 MAX_EXTRA_USD = Decimal("0.10")
-MAX_CALLS_PER_SCENARIO = 5
-ESTIMATED_INPUT_TOKENS = 4500
+MAX_CALLS_PER_SCENARIO = 4
+ESTIMATED_INPUT_TOKENS = 4000
 PLAN = {
-    "deepseek": ("S03", "S04", "S10"),
+    "deepseek": ("S03", "S04"),
     "anthropic": ("S02", "S03", "S04", "S07", "S10"),
 }
 SCENARIO_BY_ID = {scenario["id"]: scenario for scenario in SCENARIOS}

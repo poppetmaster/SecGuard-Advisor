@@ -27,6 +27,8 @@ DEFAULT_MODELS = {
     "deepseek": "deepseek-flash",
     "anthropic": "claude-haiku-5-5",
 }
+DEFAULT_EXTERNAL_MAX_OUTPUT = 4096
+
 MODEL_CATALOG = {
     "ollama": {
         "qwen3.5:9b": {
@@ -136,7 +138,10 @@ def _environment_profile(settings: Settings, provider: str) -> ProviderProfile:
     elif active_environment and settings.generation_max_output_tokens is not None:
         max_output = settings.generation_max_output_tokens
     else:
-        max_output = settings.generator_num_predict
+        max_output = min(
+            DEFAULT_EXTERNAL_MAX_OUTPUT,
+            max_output_limit(settings, provider, model),
+        )
     timeout = (
         settings.provider_timeout_seconds
         if active_environment

@@ -70,7 +70,7 @@ from secguard_advisor.vulnerabilities.service import QualysImportService
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "files"
 PROVIDERS = ("ollama", "deepseek", "anthropic")
 MODELS = {"ollama": "qwen3.5:9b", "deepseek": "deepseek-flash", "anthropic": "claude-haiku-5-5"}
-MAX_OUTPUT_EXTERNAL = 1200
+MAX_OUTPUT_EXTERNAL = 4096
 
 
 class ProviderBlocked(RuntimeError):
