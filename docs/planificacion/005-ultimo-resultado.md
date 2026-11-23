@@ -288,7 +288,7 @@ y el informe breve S10.
   no se eliminan silenciosamente ni se presentan como verificados. Una cita válida junto con otra rechazada ya no persiste por la salida anticipada: repara una vez y abstiene si sigue rechazada.
 - **T039:** marker `external`, `make check` excluye externas y `pytest -m external` omite sin
   autorización explícita. La infraestructura está lista; la aceptación externa real no se declara.
-- Pruebas: `make check` **738 passed**, 38 deselected; integraciones afectadas **8 passed**;
+- Pruebas: `make check` **748 passed**, 38 deselected; integraciones afectadas **8 passed**;
   externas **1 skipped**. Evidencia en `docs/evidencia/005-estabilizacion/`.
 - Sin llamadas pagadas nuevas. No se inició Telegram ni 003.
 
@@ -339,10 +339,30 @@ del arnés. Evidencia separada en
 - Consumo autorizado: **0,013628 USD** conocidos, 17 solicitudes. Se ejecutó además DeepSeek S10 por
   error del plan del ejecutor (2 solicitudes, 0,000532 USD), conservado aparte como extra no
   autorizado; el ledger total fue **0,014512 USD**.
-- `make check`: **738 passed**, 38 deselected; integraciones afectadas **8 passed**; externas pytest
-  **1 skipped**, 775 deselected.
+- `make check`: **748 passed**, 38 deselected; integraciones afectadas **8 passed**; externas pytest
+  **1 skipped**, 785 deselected.
 - Evaluación separada `005-reevaluation-4096-v1`, importable con
   `scripts/import_evaluation_005.py --evidence-dir .../reevaluacion-externa-4096`.
 - **T039 sigue pendiente**. **005 no se acepta para externos y no se avanza a 006**: falta resolver
   la respuesta S07 con herramienta y la calibración del criterio S03; la muestra focalizada no es
   una comparación completa.
+
+## Cierre focalizado S07/S03 y validación de plan (2026-11-23)
+
+- **S07:** si `findings_query` devuelve un resultado válido pero la generación/reparación no produce
+  respuesta, se persiste un resumen determinista con filtros, total, grupos, origen e instantánea.
+  Se rotula «Resultado de herramienta; síntesis del modelo no disponible» y no se presenta como
+  respuesta documental ni generación exitosa. Los rechazos se conservan. Regresiones: herramienta
+  válida, total cero, instantánea histórica, fallo/vacío y aislamiento de `case_id`.
+- **S03:** se añadió `005-s03-bilingual-v2`, un recálculo separado sobre respuestas conservadas con
+  conceptos equivalentes español/inglés. No reemplaza el criterio histórico ni modifica los datos
+  originales: Ollama histórico sigue fallido; las respuestas externas históricas sin texto quedan
+  sin determinar; DeepSeek y Claude de la pasada 4096 pasan v2. Evidencia en
+  `docs/evidencia/005-estabilizacion/s03-bilingue/`.
+- **Plan externo:** el ejecutor rechaza antes de llamar cualquier pareja fuera de DeepSeek S03/S04
+  y Claude S02/S03/S04/S07/S10; DeepSeek S10 tiene prueba específica de rechazo. No se repitieron
+  llamadas.
+- **Dictamen:** se puede **iniciar la especificación de 006** con las limitaciones documentadas de
+  005 (S02 se mantiene como fallo funcional con abstención segura, S07 real no revalidado tras el
+  fallback, S03 v2 es recálculo auxiliar). No se declara aceptación externa completa ni se inicia
+  006 en este trabajo.

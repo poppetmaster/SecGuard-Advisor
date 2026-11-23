@@ -117,13 +117,13 @@ inválida, mixta con citas válidas, citas parcialmente rechazadas y herramienta
 - `make check` excluye `external`; `make test-external` los ejecuta aparte.
 - `tests/external/test_external_readiness.py` omite con motivo si falta
   `SECGUARD_EXTERNAL_TESTS_AUTHORIZED=1`, presupuesto o credenciales. No envía solicitudes.
-- `pytest -m external`: 1 skipped, 775 deselected.
+- `pytest -m external`: 1 skipped, 785 deselected.
 - T039 **no está cerrado**: la infraestructura está lista, pero no hay aceptación externa real
   nueva. Tampoco se presenta la prueba omitida como evaluación real.
 
 ## 2. Pruebas ejecutadas
 
-- `make check`: **738 passed**, 38 deselected.
+- `make check`: **748 passed**, 38 deselected.
 - Integraciones afectadas (`test_ollama_provider_regression`, `test_answer_real`,
   `test_tool_only_question`, `test_midturn_failure`, `test_trace_and_fallback`): **8 passed**
   (76,07 s).
@@ -147,6 +147,17 @@ consumió 0,013628 USD autorizados (0,014512 USD de ledger, incluyendo un S10 ex
 DeepSeek S04 y Claude S04/S10 aprobaron; S03 falla por el criterio existente, S02 por citas
 rechazadas y S07 ejecutó `findings_query` pero terminó insuficiente. T039 y la aceptación externa
 siguen pendientes; no se avanza a 006.
+
+## 2.3 S07 y S03 posteriores
+
+- **S07:** el fallback determinista de `findings_query` está implementado y probado: muestra filtros,
+  total, grupos, origen e instantánea con la etiqueta «Resultado de herramienta; síntesis del modelo
+  no disponible». No se ejecutó una llamada nueva; la evidencia real 4096 conserva el fallo previo.
+- **S03:** recálculo separado `005-s03-bilingual-v2` sobre respuestas conservadas; el criterio
+  histórico no se modifica y los dos resultados se muestran en `s03-bilingue/`.
+- **Validación de plan externo:** `scripts/reevaluate_external_005.py` rechaza antes de llamar
+  cualquier pareja fuera de DeepSeek S03/S04 y Claude S02/S03/S04/S07/S10; DeepSeek S10 tiene prueba
+  específica de rechazo.
 
 ## 3. Capturas
 

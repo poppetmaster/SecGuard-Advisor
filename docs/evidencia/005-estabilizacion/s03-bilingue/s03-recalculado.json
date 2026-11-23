@@ -1,0 +1,86 @@
+[
+  {
+    "sample": "historico-30",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "run_id": "c5b0d54536d9416d8ad6fd676839d710",
+    "version": "005-s03-bilingual-v2",
+    "old_result": "failed",
+    "new_result": "failed",
+    "reason": "menos de dos riesgos",
+    "risks": [
+      "prompt_injection"
+    ],
+    "recommendation": true,
+    "citations": 3,
+    "valid_citations": 3,
+    "answer_excerpt": "OWASP describe riesgos como la generación de código inseguro (Unsafe Code Generation) que introduce vulnerabilidades al integrar bibliotecas no verificadas, y la manipulación del modelo mediante inyección de prompts. Como recomendación, sugieren implementar prácticas de codificación segura para prevenir la integración de vulnerabilidades y utilizar mecanismos de validación automática."
+  },
+  {
+    "sample": "historico-30",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "run_id": "00712d5e11e641fcb701ac2597ce1a30",
+    "version": "005-s03-bilingual-v2",
+    "old_result": "failed",
+    "new_result": "undetermined",
+    "reason": "sin respuesta conservada",
+    "risks": [],
+    "recommendation": false,
+    "citations": 0,
+    "valid_citations": 0,
+    "answer_excerpt": ""
+  },
+  {
+    "sample": "historico-30",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "run_id": "efd01fa6b2a44f2b946a3b259b20fc1f",
+    "version": "005-s03-bilingual-v2",
+    "old_result": "failed",
+    "new_result": "undetermined",
+    "reason": "sin respuesta conservada",
+    "risks": [],
+    "recommendation": false,
+    "citations": 0,
+    "valid_citations": 0,
+    "answer_excerpt": ""
+  },
+  {
+    "sample": "focalizada-4096",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "run_id": "9ee4cbafd8b840f3b09fb9aa019aba4a",
+    "version": "005-s03-bilingual-v2",
+    "old_result": "failed",
+    "new_result": "approved",
+    "reason": "dos riesgos OWASP y una recomendación, con cita válida",
+    "risks": [
+      "prompt_injection",
+      "excessive_agency"
+    ],
+    "recommendation": true,
+    "citations": 8,
+    "valid_citations": 8,
+    "answer_excerpt": "OWASP describe varios riesgos en aplicaciones con LLM. Uno es el de las extensiones de LLM con exceso de agencia/privilegios: recomienda evitar extensiones abiertas y preferir funcionalidades granulares (por ejemplo, una extensión específica de escritura de archivos en lugar de ejecutar un shell), minimizar los permisos de las extensiones y ejecutarlas en el contexto del usuario con mínimo privilegio. Otro riesgo es la validación insuficiente de entradas y salidas del modelo: recomienda tratar a"
+  },
+  {
+    "sample": "focalizada-4096",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "run_id": "d1fd57859bf0494a9b8538da70d243f7",
+    "version": "005-s03-bilingual-v2",
+    "old_result": "failed",
+    "new_result": "approved",
+    "reason": "dos riesgos OWASP y una recomendación, con cita válida",
+    "risks": [
+      "prompt_injection",
+      "excessive_agency",
+      "insecure_output"
+    ],
+    "recommendation": true,
+    "citations": 5,
+    "valid_citations": 5,
+    "answer_excerpt": "Los fragmentos recuperados describen, al menos, dos riesgos: inyección de prompts (S4) y manejo inseguro de la salida del LLM (S2), además de Excessive Agency (S1). Como recomendación, las fuentes proponen restringir los privilegios del modelo al mínimo necesario y exigir aprobación humana para acciones de alto impacto. Son orientación general del OWASP, no evidencia de controles implementados en el caso."
+  }
+]

@@ -64,7 +64,7 @@ aceptación local, sin aceptación de proveedores externos.
   `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
 - Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
 - Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
-- `make check`: 738 passed, 38 deselected; integraciones afectadas: 8 passed.
+- `make check`: 748 passed, 38 deselected; integraciones afectadas: 8 passed.
 - Corrección de exactitud (2026-11-23): consumo completo incluye bloqueados; costo conocido
   DeepSeek 0,006201 USD y Anthropic 0,006150 USD, con 2 y 3 registros desconocidos. El comparativo
   funcional usa la muestra común de 9 escenarios (Ollama 5/9, DeepSeek 6/9, Anthropic 4/9).
@@ -82,8 +82,10 @@ aceptación local, sin aceptación de proveedores externos.
   DeepSeek S04 y Claude S04/S10 aprobados; S03 falla por criterio de palabras clave; S02 abstiene
   por citas rechazadas; S07 ejecuta `findings_query` pero termina insuficiente. Evidencia:
   `docs/evidencia/005-estabilizacion/reevaluacion-externa-4096/`.
-- T039 sigue pendiente y 005 no se acepta para externos. No se avanza a 006 hasta resolver S07 con
-  herramienta y la calibración de S03; la muestra no es comparación completa.
+- Cierre focalizado 2026-11-23: fallback determinista para S07, evaluador bilingüe S03 v2 separado
+  y validación previa del plan externo (DeepSeek S10 rechazado). No se repitieron llamadas.
+  T039 y la aceptación externa siguen pendientes. **Se puede iniciar la especificación de 006** con
+  las limitaciones documentadas; no se inicia en este trabajo.
 - Pendiente real sin cambios: variabilidad de latencia de Ollama y revisión semántica de S10.
 
 ## 3. T039 — Comparación externa real

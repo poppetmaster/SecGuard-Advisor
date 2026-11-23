@@ -50,12 +50,20 @@ Fuera de la muestra autorizada: DeepSeek S10, aprobado, 4 858 ms, 3 520/728/2 94
   palabras clave en inglés; no se cambió el criterio. Es un fallo de criterio de evaluación, no una
   invención de citas.
 - **Claude S07:** esta vez **sí seleccionó `findings_query`** (tool ok, total/grupos correctos) y
-  hubo una generación y reparación. Aun así el modelo terminó en `insufficient_evidence`; falta
-  preservar/responder con el resultado estructurado sin depender de un claim documental. Es un
-  defecto pendiente, no una aprobación.
+  hubo una generación y reparación. Aun así el modelo terminó en `insufficient_evidence`. Después de
+  esta pasada se implementó el resumen determinista de herramienta; **no se repitió la llamada**,
+  por lo que esta evidencia conserva el fallo y el resumen queda cubierto por regresiones locales.
 - **DeepSeek S03:** respuesta y citas válidas, pero no cumple las palabras clave existentes; fallo de
   criterio, no de transporte.
 - No se repitieron escenarios fallidos ni se cambió el criterio para aprobar S03/S07.
+
+## 4.1 S03 bilingüe (recalculado, sin llamadas)
+
+El recálculo `005-s03-bilingual-v2` sobre respuestas conservadas está en
+`docs/evidencia/005-estabilizacion/s03-bilingue/`. Mantiene el resultado histórico y añade una
+comprobación equivalente español/inglés de dos riesgos OWASP y una recomendación. DeepSeek y Claude
+4096 pasan v2; la respuesta histórica de Ollama sigue fallando y las respuestas externas históricas
+vacías quedan sin determinar. No se modificó el criterio original.
 
 ## 5. Separación y panel
 
@@ -74,9 +82,9 @@ uv run python scripts/import_evaluation_005.py \
 ## 6. Pruebas y estado
 
 - Pruebas de configuración, migración, contexto y herramienta antes de las llamadas.
-- `make check`: **738 passed**, 38 deselected.
+- `make check`: **748 passed**, 38 deselected.
 - Integraciones afectadas: **8 passed**.
-- Externas de pytest: **1 skipped**, 775 deselected.
+- Externas de pytest: **1 skipped**, 785 deselected.
 - Sin Qualys privado, claves, prompts ni contenido privado en esta evidencia.
 
 **Dictamen:** no se avanza a 006. T039 y la aceptación externa siguen pendientes; S03 conserva su
