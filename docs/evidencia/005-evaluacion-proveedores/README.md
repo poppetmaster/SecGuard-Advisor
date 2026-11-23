@@ -86,43 +86,40 @@ uv run python scripts/evaluate_providers_005.py \
 
 ## Resultados
 
-### Resumen por proveedor
+### Consumo completo por proveedor
 
-| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Tasa de éxito | Mediana | Media | Máxima |
+Incluye todos los escenarios e intentos registrados, también los bloqueados. El costo es un
+**subtotal conocido**, no facturación completa; los registros desconocidos no se presentan como cero.
+
+| Proveedor | Registros | Bloqueados | Tokens E | Tokens S | Caché | Costo conocido | Cobertura | Conocidos / desconocidos / N/A |
 |---|---|---|---|---|---|---|---|---|
-| Ollama `qwen3.5:9b` | 10 | 6 | 4 | 0 | 60,0 % | 38 793 ms | 66 896 ms | 182 842 ms |
-| DeepSeek `deepseek-flash` | 9 | 6 | 3 | 1 | 66,7 % | 5 541 ms | 6 000 ms | 11 792 ms |
-| Anthropic `claude-haiku-5-5` | 9 | 4 | 5 | 1 | 44,4 % | 7 028 ms | 24 879 ms | 85 696 ms |
+| Ollama `qwen3.5:9b` | 10 | 0 | 33 168 | 3 664 | 0 | sin cobro por API | — | 0 / 0 / 10 |
+| DeepSeek `deepseek-flash` | 10 | 1 | 34 998 | 2 625 | 24 704 | 0,006201 USD | 80,00 % (8/10) | 8 / 2 / 0 |
+| Anthropic `claude-haiku-5-5` | 10 | 1 | 52 076 | 3 654 | 0 | 0,006150 USD | 70,00 % (7/10) | 7 / 3 / 0 |
 
-- Latencia medida sobre ejecuciones; los bloqueados no son llamadas completas. Medianas sin tiempos
-  agotados: Ollama 32 463 ms, DeepSeek 5 541 ms, Anthropic 7 028 ms.
-- Ollama agotó el tiempo en S02 (136 618 ms) y S04 (182 842 ms); ambas filas conservan su uso
-  observado y se cuentan como fallidas.
+- DeepSeek incluye 0,000114 USD de S08 bloqueado; Anthropic incluye 0,000311 USD de S08 bloqueado.
+- Un bloqueo posterior a una llamada no elimina su consumo.
+- Ollama se ejecuta localmente: no hay cobro por API ni cuota comercial; no se declara costo
+  operativo total cero.
+- Las llamadas externas sin uso devuelto quedan como costo desconocido, no como cero.
 
-### Tokens y costo
+### Comparativo funcional — muestra común
 
-| Proveedor | Entrada | Salida | Caché | Costo calculado | Costo medio | Costos desconocidos |
-|---|---|---|---|---|---|---|
-| Ollama | 33 168 | 3 664 | 0 | sin cobro por API | sin cobro por API | 0 |
-| DeepSeek | 33 371 | 2 592 | 23 296 | 0,006087 USD | 0,000870 USD | 2 ejecuciones |
-| Anthropic | 49 230 | 3 602 | 0 | 0,005839 USD | 0,000973 USD | 3 ejecuciones |
+Muestra común ejecutada: **9 escenarios** (S01, S02, S03, S04, S05, S06, S07, S09, S10). Éxito,
+latencia y calidad se recalculan solo sobre esta intersección; los bloqueos y fallos siguen en la
+matriz completa.
 
-Ollama se ejecuta localmente: no hay cobro por API ni cuota comercial; no se declara costo operativo
-total cero. Las llamadas externas fallidas que no devolvieron uso quedan como costo desconocido, no
-como cero.
-
-### Validaciones automáticas
-
-| Proveedor | Salida estructurada | Citas válidas (respuestas con citas) | Consultas SQL correctas | Abstención | Calidad IA 0-2 |
-|---|---|---|---|---|---|
-| Ollama | 8/10 (80 %) | 4/4 | 2/2 | 1/1 | 0,90 |
-| DeepSeek | 7/9 (77,8 %) | 4/4 | 1/1 (S08 bloqueado) | 1/1 | 1,13 |
-| Anthropic | 6/9 (66,7 %) | 3/3 | 1/1 (S08 bloqueado) | 1/1 | 0,87 |
+| Proveedor | Muestra | Aprobados | Fallidos | Éxito | Latencia mediana | Estructura | Citas válidas | Herramientas | Abstención | Calidad IA |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Ollama | 9 | 5 | 4 | 5/9 (55,56 %) | 42 303 ms (n=9) | 77,78 % | 100 % (4/4) | 100 % (n=1) | 1/1 | 0,87 (n=9) |
+| DeepSeek | 9 | 6 | 3 | 6/9 (66,67 %) | 5 541 ms (n=9) | 77,78 % | 100 % (4/4) | 100 % (n=1) | 1/1 | 1,13 (n=9) |
+| Anthropic | 9 | 4 | 5 | 4/9 (44,44 %) | 7 028 ms (n=9) | 66,67 % | 100 % (3/3) | 100 % (n=1) | 1/1 | 0,87 (n=9) |
 
 «Citas válidas» usa el validador del producto (`check_citation`, comparación normalizada) y exige
-cita resoluble. La columna `citations_byte_exact` de `metricas.csv` es más estricta (igualdad byte a
-byte) y no representa un fallo: por ejemplo, Anthropic S01 tiene dos citas aceptadas por el
-validador y cero coincidencias byte a byte por diferencias de espacios y tipografía.
+cita resoluble. No prueba respaldo semántico. La columna `citations_byte_exact` de `metricas.csv` es
+más estricta y no representa un fallo.
+
+La calidad 0-2 es asistida por IA, no una revisión humana independiente. No se declara un ganador.
 
 ### Detalle por escenario
 

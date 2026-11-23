@@ -99,3 +99,8 @@ aplicación, con telemetría por solicitud, agregados, filtros, comparativo de e
   detalle por intento HTTP sin contradecirlos. El histórico sin filas de solicitud se agrega desde
   `runs` y se marca incompleto. La evaluación actual se importa como histórico agregado desde JSON,
   sin fabricar solicitudes. Las gráficas se generan como SVG/HTML en Jinja2, sin dependencia nueva.
+- **L4 (corrección de exactitud, 2026-11-23)**: se separó consumo completo (incluye bloqueados)
+  del comparativo funcional sobre la muestra común de 9 escenarios. Costo conocido DeepSeek
+  0,006201 USD (incluye S08) y Anthropic 0,006150 USD (incluye S08), con 2 y 3 registros
+  desconocidos. Los adaptadores capturan uso antes de validar y reinician `last_usage`; la salida
+  inválida conserva tokens/costo cuando hay evidencia. Informes regenerados y Playwright verificado.

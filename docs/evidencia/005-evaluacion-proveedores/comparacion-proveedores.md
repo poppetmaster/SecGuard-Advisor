@@ -4,35 +4,31 @@ Conjunto `005-evaluation-v1` congelado el 2026-11-23; hash `998dc34b889fd5455f56
 
 Resultados **exploratorios**: 10 escenarios por proveedor no alcanzan para una conclusión estadística. La calidad 0-2 es una evaluación asistida por IA, no una revisión humana independiente.
 
-## Resumen por proveedor
+## Consumo completo por proveedor
 
-| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Tasa de éxito | Latencia mediana | Latencia media | Máxima |
-|---|---|---|---|---|---|---|---|---|
-| Ollama (`qwen3.5:9b`) | 10 | 6 | 4 | 0 | 60.00% | 38793 ms | 66896 ms | 182842 ms |
-| DeepSeek (`deepseek-flash`) | 9 | 6 | 3 | 1 | 66.67% | 5541 ms | 6000 ms | 11792 ms |
-| Anthropic (`claude-haiku-5-5`) | 9 | 4 | 5 | 1 | 44.44% | 7028 ms | 24879 ms | 85696 ms |
+Todos los escenarios e intentos registrados, incluidos los bloqueados. El costo es el subtotal **conocido**: no es facturación completa y los registros desconocidos no se presentan como cero.
 
-Latencia medida sobre las ejecuciones (los bloqueados no son llamadas completas). Medianas sin tiempos agotados: ollama 32463 ms, deepseek 5541 ms, anthropic 7028 ms.
+| Proveedor | Registros | Bloqueados | Tokens E | Tokens S | Caché | Costo conocido | Costo / registro | Registros con costo | Desconocidos | No aplica | Cobertura de costo |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ollama (`qwen3.5:9b`) | 10 | 0 | 33168 | 3664 | 0 | sin cobro por API | — | 0 | 0 | 10 | sin registros con costo |
+| DeepSeek (`deepseek-flash`) | 10 | 1 | 34998 | 2625 | 24704 | 0.006201 | 0.000620 | 8 | 2 | 0 | 80.00% |
+| Anthropic (`claude-haiku-5-5`) | 10 | 1 | 52076 | 3654 | 0 | 0.006150 | 0.000615 | 7 | 3 | 0 | 70.00% |
 
-## Tokens y costo
+Los tokens incluyen escenarios bloqueados cuando la llamada se registró. Ollama no tiene cobro por API; no se declara costo operativo total cero.
 
-| Proveedor | Entrada | Salida | Caché | Costo total | Costo medio | Costos desconocidos |
-|---|---|---|---|---|---|---|
-| ollama | 33168 | 3664 | 0 | sin cobro por API | sin cobro por API | 0 |
-| deepseek | 33371 | 2592 | 23296 | 0.006087 | 0.0008695714285714285714285714286 | 2 |
-| anthropic | 49230 | 3602 | 0 | 0.005839 | 0.0009731666666666666666666666667 | 3 |
+## Comparativo funcional — muestra común
 
-Ollama se ejecuta localmente: no hay cobro por API ni cuota comercial. No se declara costo operativo total cero.
+Muestra común ejecutada: **9 escenarios** (S01, S02, S03, S04, S05, S06, S07, S09, S10). Éxito, latencia y calidad se recalculan solo sobre esta intersección.
 
-## Calidad y validaciones automáticas
+| Proveedor | Muestra | Aprobados | Fallidos | Éxito | Latencia mediana | Estructura | Citas válidas | Herramientas | Abstención | Calidad IA |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Ollama (`qwen3.5:9b`) | 9 | 5 | 4 | 5/9 (55.56%) | 42303 ms (n=9) | 77.78% | 100.00% (4/4) | 100.00% (n=1) | 1/1 | 0.87 (n=9) |
+| DeepSeek (`deepseek-flash`) | 9 | 6 | 3 | 6/9 (66.67%) | 5541 ms (n=9) | 77.78% | 100.00% (4/4) | 100.00% (n=1) | 1/1 | 1.13 (n=9) |
+| Anthropic (`claude-haiku-5-5`) | 9 | 4 | 5 | 4/9 (44.44%) | 7028 ms (n=9) | 66.67% | 100.00% (3/3) | 100.00% (n=1) | 1/1 | 0.87 (n=9) |
 
-| Proveedor | Estructura | Citas válidas (respuestas con citas) | Consultas estructuradas | Abstención | Calidad IA 0-2 |
-|---|---|---|---|---|---|
-| ollama | 80.00% | 1 (4/4) | 1 (2 consultas) | 1/1 | 0.9 |
-| deepseek | 77.78% | 1 (4/4) | 1 (1 consultas) | 1/1 | 1.13 |
-| anthropic | 66.67% | 1 (3/3) | 1 (1 consultas) | 1/1 | 0.87 |
+«Citas válidas» usa el validador del producto (`check_citation`, comparación normalizada) y exige cita resoluble. No prueba respaldo semántico. La columna `citations_byte_exact` de `metricas.csv` es más estricta y no representa un fallo.
 
-«Citas válidas» usa el validador del producto (`check_citation`, comparación normalizada) y exige cita resoluble. La columna `citations_byte_exact` de `metricas.csv` es más estricta (igualdad byte a byte) y no representa un fallo.
+La calidad 0-2 es asistida por IA, no una revisión humana independiente.
 
 ## Detalle por escenario
 

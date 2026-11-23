@@ -33,6 +33,10 @@
 
 - **Costo calculado**: suma de `ai_requests.cost_usd` con `cost_status='calculated'`. Si una
   ejecución no tiene detalle, se usa `runs.cost_usd` solo si su estado es `calculated`.
+- **Consumo de evaluación**: todos los escenarios e intentos registrados, incluidos los
+  bloqueados. Un bloqueo posterior a una llamada no elimina sus tokens ni su costo conocido.
+- **Costo conocido parcial**: suma solo de registros con costo calculado. Se muestran cobertura,
+  registros conocidos, desconocidos y no aplicables; nunca se presenta como factura completa.
 - **Tokens**: suma de valores disponibles. `cached_tokens` se muestra aparte y no se suma otra vez
   a la entrada. `reasoning_tokens` se conserva y no se suma si `reasoning_included_in_output` es
   verdadero.
@@ -42,7 +46,11 @@
 - **Costo / consulta**: costo calculado dividido por consultas del mismo proveedor/modelo.
 - **Cobertura**: conteo de solicitudes `observed`, `estimated`, `unavailable` y ejecuciones
   históricas sin telemetría por solicitud.
-- **Éxito de evaluación**: aprobados / ejecutados (los bloqueados no cuentan como ejecutados).
+- **Éxito funcional de evaluación**: aprobados / muestra común ejecutada. La muestra común es la
+  intersección de escenarios ejecutados por todos los proveedores seleccionados. Éxito, latencia y
+  calidad se recalculan solo sobre esa intersección; la matriz completa conserva bloqueos y fallos.
+- **Consumo completo**: todos los registros del proveedor, incluidos los bloqueados, con sus tokens
+  y costo conocido. Es una vista separada del comparativo funcional.
 - **Abstención correcta**: `abstention_ok = true` sobre filas con ese dato.
 - **Exactitud de herramientas**: `findings_match = true` sobre filas con ese dato.
 - **Validez automática de citas**: citas aceptadas por el validador / citas emitidas. No prueba
@@ -99,12 +107,13 @@ uv run python scripts/seed_ai_usage_demo.py --storage /ruta/temporal/storage
 
 ## Pruebas ejecutadas
 
-- `make check`: **707 passed**, 37 deselected.
+- `make check`: **714 passed**, 37 deselected.
 - Integraciones afectadas:
   `test_ollama_provider_regression`, `test_answer_real`, `test_tool_only_question`,
-  `test_midturn_failure`, `test_trace_and_fallback`: **8 passed** (90.84 s).
-- Nuevas pruebas: telemetría (10), agregados y comparativo (6), importación (3), migración (1),
-  contrato de rutas (5).
+  `test_midturn_failure`, `test_trace_and_fallback`: **8 passed** (53.66 s).
+- Nuevas pruebas: telemetría, agregados y comparativo, importación, migración, contrato de rutas,
+  adaptadores y regeneración del informe. Incluyen: uso tras JSON inválido, timeout sin reutilizar
+  uso previo, consumo de bloqueados y muestra común.
 - Sin llamadas pagadas para probar el panel.
 
 ## Validación en navegador
@@ -116,20 +125,23 @@ Playwright:
 - Filtros aplicados y período visible; error controlado con fecha inicial posterior a la final.
 - Tarjetas, cobertura, reservas separadas, gráficas con tabla accesible, tabla por proveedor/modelo,
   detalle paginado y enlace «Ver ejecución».
-- Pestaña de comparativo con evaluación importada, escenarios comunes y muestra incompleta.
+- Pestaña de comparativo con dos vistas: **consumo completo** (incluye bloqueados, costo conocido
+  parcial y cobertura) y **comparativo funcional** sobre la muestra común de 9 escenarios. Se
+  verifican etiquetas de costo parcial, denominadores e IDs de la muestra.
 - Estados sin datos y con histórico incompleto.
 - Escritorio 1280 px; móvil 390 px y 320 px sin desborde horizontal del documento.
 - Navegación por teclado: enlace de salto, navegación, pestañas, campos y botones reciben foco;
   etiquetas asociadas por `for`/`id`.
 - Consola: 0 errores y 0 advertencias.
-- Red: solo peticiones a `127.0.0.1:8773` para la página y recursos estáticos; ninguna llamada a
-  proveedores de IA.
+- Red: solo peticiones locales para la página y recursos estáticos; ninguna llamada a proveedores
+  de IA.
 
 Capturas:
 
 - `panel-escritorio.png`
 - `panel-filtros.png`
 - `comparativo-pruebas.png`
+- `comparativo-movil-320.png`
 - `panel-movil-390.png`
 - `panel-movil-320.png`
 - `panel-sin-datos.png`
@@ -148,6 +160,11 @@ Capturas:
 
 - Los datos previos a esta migración no tienen telemetría por solicitud; se muestran incompletos.
 - El comparativo actual es histórico agregado y no permite reconstruir solicitudes.
+- T039 sigue pendiente por el marker `external` de pytest; esta corrección no lo cierra.
+- Los tiempos excedidos de Ollama (S02 136 618 ms; S04 182 842 ms) siguen sin corregir.
+- Los errores de salida estructurada externa (DeepSeek y Anthropic) se conservan como fallos; la
+  captura de uso ya no los convierte en consumo cero cuando el proveedor informó tokens.
+- El informe breve S10 sigue fallando por abstención en los tres proveedores; no se declara resuelto.
 - Una reserva de una ejecución terminal se reconcilia al arrancar y aparece como reserva incierta,
   no como pendiente; ambas categorías se muestran por separado.
 - Los totales de tokens entre modelos no implican igual trabajo ni calidad.

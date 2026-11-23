@@ -64,7 +64,11 @@ aceptación local, sin aceptación de proveedores externos.
   `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
 - Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
 - Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
-- `make check`: 707 passed; integraciones afectadas: 8 passed.
+- `make check`: 714 passed; integraciones afectadas: 8 passed.
+- Corrección de exactitud (2026-11-23): consumo completo incluye bloqueados; costo conocido
+  DeepSeek 0,006201 USD y Anthropic 0,006150 USD, con 2 y 3 registros desconocidos. El comparativo
+  funcional usa la muestra común de 9 escenarios (Ollama 5/9, DeepSeek 6/9, Anthropic 4/9).
+- Pendiente sin cambios: T039, timeouts de Ollama, salida estructurada externa y S10.
 
 ## 3. T039 — Comparación externa real
 
@@ -73,7 +77,7 @@ aceptación local, sin aceptación de proveedores externos.
 - Conjunto congelado `005-evaluation-v1` (10 escenarios), instancia temporal, corpus público y caso
   ficticio. Evidencia en `docs/evidencia/005-evaluacion-proveedores/`.
 - Ollama: 6/10 aprobados; DeepSeek: 6/9 (S08 bloqueado); Anthropic: 4/9 (S08 bloqueado).
-- Costo calculado: DeepSeek 0,006087 USD; Anthropic 0,005839 USD. Ledger acumulado 0,025515 USD;
+- Costo conocido (incluye S08 bloqueado): DeepSeek 0,006201 USD; Anthropic 0,006150 USD. Ledger acumulado 0,025515 USD;
   restante conservador 4,974485 USD.
 - S08 queda bloqueado en externos por `external_tool_blocked`; es el comportamiento esperado.
 - Defecto pendiente: Ollama supera los límites declarados (S02 136 618 ms, S04 182 842 ms).

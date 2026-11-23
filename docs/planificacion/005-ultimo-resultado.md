@@ -179,11 +179,11 @@ congelado `005-evaluation-v1`
 (`998dc34b889fd5455f56287fcbb1ca5430be33fac644f9a23c7ee04774a007bd`). Evidencia completa en
 `docs/evidencia/005-evaluacion-proveedores/`.
 
-| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Éxito | Mediana | Costo calculado |
+| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Éxito | Mediana | Costo conocido |
 |---|---|---|---|---|---|---|---|
 | Ollama `qwen3.5:9b` | 10 | 6 | 4 | 0 | 60,0 % | 38 793 ms | sin cobro por API |
-| DeepSeek `deepseek-flash` | 9 | 6 | 3 | 1 | 66,7 % | 5 541 ms | 0,006087 USD |
-| Anthropic `claude-haiku-5-5` | 9 | 4 | 5 | 1 | 44,4 % | 7 028 ms | 0,005839 USD |
+| DeepSeek `deepseek-flash` | 9 | 6 | 3 | 1 | 66,7 % | 5 541 ms | 0,006201 USD (incluye S08) |
+| Anthropic `claude-haiku-5-5` | 9 | 4 | 5 | 1 | 44,4 % | 7 028 ms | 0,006150 USD (incluye S08) |
 
 - S08 quedó bloqueado en los externos por `external_tool_blocked`; es el comportamiento esperado,
   no un fallo.
@@ -223,6 +223,28 @@ cierra. La aceptación externa sigue pendiente y no se declara.
   asistida por IA y revisión humana registrada.
 - Las ejecuciones sin telemetría se agregan desde `runs` y se marcan como histórico incompleto; los
   agregados importados no fabrican solicitudes.
-- Pruebas: `make check` con **707 passed**, 37 deselected; integraciones afectadas **8 passed**.
+- Pruebas: `make check` con **714 passed**, 37 deselected; integraciones afectadas **8 passed**.
   Evidencia y capturas en `docs/evidencia/005-panel-uso-ia/`.
 - Ver y filtrar no invoca modelos ni gasta. No se añadieron botones para lanzar evaluaciones.
+
+## Corrección de exactitud del panel de uso (2026-11-23)
+
+- El comparativo separa **consumo completo** (todos los escenarios e intentos, incluidos los
+  bloqueados) del **comparativo funcional** sobre la muestra común ejecutada.
+- Costo conocido: DeepSeek **0,006201 USD** (incluye 0,000114 de S08 bloqueado) y Anthropic
+  **0,006150 USD** (incluye 0,000311 de S08 bloqueado). Son subtotales conocidos: DeepSeek tiene 2
+  registros con costo desconocido y Anthropic 3; no se presentan como factura completa.
+- La muestra común ejecutada es de **9 escenarios** (S01–S07, S09, S10). Éxito funcional: Ollama
+  5/9, DeepSeek 6/9, Anthropic 4/9. Latencia y calidad se recalculan sobre esa muestra. La matriz
+  completa conserva S08 bloqueado y el resto de fallos.
+- Los adaptadores DeepSeek y Anthropic capturan el uso antes de validar el esquema y reinician
+  `last_usage` por llamada. `provider_call` conserva tokens y costo cuando la respuesta informó uso
+  aunque el JSON sea inválido; sin evidencia mantiene costo desconocido y la reserva conservadora.
+- Informes regenerados desde los resultados existentes, sin repetir la evaluación pagada:
+  `docs/evidencia/005-evaluacion-proveedores/comparacion-proveedores.md`, `resumen.json` y
+  `metricas.csv`.
+- Evidencia y capturas actualizadas en `docs/evidencia/005-panel-uso-ia/`.
+
+**Pendiente, no resuelto por esta corrección**: T039 (marker `external` de pytest), tiempos
+excedidos de Ollama (S02 136 618 ms; S04 182 842 ms), errores de salida estructurada externa y el
+informe breve S10.

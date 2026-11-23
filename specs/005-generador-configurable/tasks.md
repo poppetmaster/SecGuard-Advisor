@@ -11,7 +11,7 @@ un resultado esperado claro.
 **Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 tiene la comparación externa real
 ejecutada y registrada, pero permanece pendiente el marker `external` de pytest. 005 mantiene
 aceptación local parcial; no se declara aceptación de proveedores externos. El panel «Uso y
-comparativos de IA» está implementado (T050–T055).
+comparativos de IA» está implementado (T050–T056).
 
 ## Formato
 
@@ -468,6 +468,15 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Story: Uso
   - Check: escritorio/móvil 390/320, teclado, consola limpia y cero llamadas a proveedores.
   - Evidence: `docs/evidencia/005-panel-uso-ia/README.md` y capturas.
+
+- [x] T056 [Uso] Corregir exactitud: consumo de bloqueados, uso tras salida inválida y muestra
+  común del comparativo.
+  - Story: Uso
+  - Check: costo conocido DeepSeek 0,006201 USD y Anthropic 0,006150 USD; 2 y 3 desconocidos;
+    muestra común de 9; sin llamadas pagadas nuevas.
+  - Evidence: `tests/unit/test_ai_usage_import.py`, `tests/unit/test_report_evaluation_005.py`,
+    `tests/contract/test_deepseek_adapter.py`, `tests/contract/test_anthropic_adapter.py`,
+    `docs/evidencia/005-panel-uso-ia/README.md`.
 
 ## Dependencias y orden
 
