@@ -272,7 +272,7 @@ y el informe breve S10.
 - **Tiempos de Ollama:** causa: timeout httpx por lectura, no plazo total; el plazo se comprobaba
   después de la llamada. Se añadió un transporte con deadline total y un mínimo de tiempo restante
   para iniciar otra operación. No se aumentaron 90 s/llamada ni 120 s/turno. Prueba local:
-  `model_timeout` en 5 163 ms con timeout de 0,5 s. Persisten los límites y la variabilidad del
+  `model_timeout` en 3 656 ms con timeout de 0,5 s. Persisten los límites y la variabilidad del
   modelo local; cerrar la espera HTTP no garantiza detener la inferencia en Ollama.
 - **Salidas externas:** la evidencia histórica no conservó finish_reason ni contenido crudo; 13/19
   tokens de salida no sostienen truncamiento por el límite de 1200. Se mejoró el parser para extraer
@@ -282,11 +282,12 @@ y el informe breve S10.
 - **S10:** causa: el umbral global 0.5033 filtró los fragmentos de respaldo/acceso (0.399/0.326/
   0.251), dejando 0 hits. Se añadió recuperación de respaldo solo para preguntas de informe, sin
   cambiar el umbral global. Prompt `chat-v9` y persistencia de recomendaciones/limitaciones.
-  Corrida local: 2 hits `expanded_case`, `answered`, 3 recomendaciones y limitación; 92 003 ms.
-- **S07 externo:** si `findings_query` devuelve `ok` y hay respuesta, se persiste aunque el modelo
-  añada claims documentales inválidos; se conserva el resultado estructurado sin fabricar citas.
+  Corrida local: 2 hits `expanded_case`, `answered`, 3 recomendaciones y limitación; 44 631 ms.
+- **S07 externo:** una respuesta exclusivamente de herramienta (sin claims documentales) puede
+  persistir sin citas. Si hay claims documentales rechazados, se conserva reparación/abstención;
+  no se eliminan silenciosamente ni se presentan como verificados.
 - **T039:** marker `external`, `make check` excluye externas y `pytest -m external` omite sin
   autorización explícita. La infraestructura está lista; la aceptación externa real no se declara.
-- Pruebas: `make check` **728 passed**, 38 deselected; integraciones afectadas **8 passed**;
+- Pruebas: `make check` **734 passed**, 38 deselected; integraciones afectadas **8 passed**;
   externas **1 skipped**. Evidencia en `docs/evidencia/005-estabilizacion/`.
 - Sin llamadas pagadas nuevas. No se inició Telegram ni 003.

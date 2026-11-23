@@ -1,15 +1,17 @@
-RESULT succeeded answered None 92003 2068 539
-ANSWER 211a88c495804feea22fe4b41358551b
-TEXT El caso 'Evaluación ollama S10' presenta controles de respaldo con copias cifradas diarias y pruebas trimestrales, además de gestión de accesos que exige autenticación multifactor, revisión trimestral de permisos y deshabilitación de cuentas inactivas tras 30 días.
+RESULT succeeded answered None 44631 2072 659
+ANSWER 7890feb6f865474b9f66f5d602621cf6
+TEXT El caso presenta copias de seguridad cifradas diarias con pruebas trimestrales y almacenamiento fuera del sitio (S1). El acceso remoto requiere autenticación multifactor, revisión trimestral de permisos, aprobación para proveedores y deshabilitación de cuentas inactivas a los 30 días (S2).
 
 Recomendaciones propuestas por el agente (no son controles implementados):
-1. Verificar la integridad de los registros de prueba de restauración conservados por el responsable de infraestructura para asegurar que las pruebas trimestrales se ejecutaron exitosamente.
-2. Asegurar que el almacenamiento fuera del sitio de las copias de seguridad esté geográficamente separado y protegido contra amenazas físicas o lógicas similares a las del sitio principal.
-3. Monitorear continuamente la inactividad de cuentas para garantizar que el proceso de deshabilitación se active automáticamente antes de los 30 días, reduciendo la ventana de riesgo.
+1. Verificar que el registro de cada prueba de restauración sea accesible y auditable por terceros independientes para garantizar la integridad del proceso.
+2. Asegurar que la aprobación del responsable para proveedores incluya una definición clara de privilegios mínimos necesarios (principio de menor privilegio) en el momento de la solicitud.
+3. Implementar alertas automáticas cuando las cuentas inactivas alcancen los 20 días para permitir una revisión proactiva antes de la deshabilitación automática.
+
+Limitaciones: este informe se basa solo en la evidencia recuperada del caso y no constituye certificación ni auditoría.
 STEP load_scope ok 0
-STEP load_memory ok 9 {"messages": 0, "memory": "rebuilt_missing"}
-STEP retrieve ok 117 {"hits": 2, "status": "expanded_case", "vector_backend": "qdrant", "instance_id": "eval005-4b7334d3", "qdrant_version": "1.20.0", "embedding_model": "embeddinggemma", "embedding_dim": 768, "score_metric": "cosine", "collection_alias": "secguard__eval005-4b7334d3__case__13c15293c56d4eaeb639580d1588f915__embeddinggemma__768__active", "generation": "20261123T031740459177Z", "error_code": null, "public_alias": "secguard__eval005-4b7334d3__public__embeddinggemma__768__active", "public_generation": "20261123T031719602619Z"}
-STEP decide ok 6703 {"use_findings": false, "admitted_tokens": 752, "observed_prompt_tokens": 723}
-STEP agent ok 85153 {"claims": 5, "recommendations": 3, "missing_info": 0, "admitted_tokens": 1367, "estimated_tokens": 2162, "limit": 6672, "output_reserve": 1200, "safety_margin": 320, "history_messages": 0, "sources": 2, "dropped_history_messages": 0, "dropped_sources": 0, "counter": {"method": "tokenizer", "model": "qwen3.5:9b", "template": "qwen35-chat"}, "observed_prompt_tokens": 1345}
-STEP validate ok 4 {"valid": 5, "rejected": 0, "reasons": []}
+STEP load_memory ok 2 {"messages": 0, "memory": "rebuilt_missing"}
+STEP retrieve ok 48 {"hits": 2, "status": "expanded_case", "vector_backend": "qdrant", "instance_id": "eval005-1f81032c", "qdrant_version": "1.20.0", "embedding_model": "embeddinggemma", "embedding_dim": 768, "score_metric": "cosine", "collection_alias": "secguard__eval005-1f81032c__case__9f9a10db8ca64b67ab4ffa1b1b03a4da__embeddinggemma__768__active", "generation": "20261123T034807695331Z", "error_code": null, "public_alias": "secguard__eval005-1f81032c__public__embeddinggemma__768__active", "public_generation": "20261123T034758462815Z"}
+STEP decide ok 8861 {"use_findings": false, "admitted_tokens": 752, "observed_prompt_tokens": 723}
+STEP agent ok 35710 {"claims": 5, "recommendations": 3, "missing_info": 0, "admitted_tokens": 1370, "estimated_tokens": 2162, "limit": 6672, "output_reserve": 1200, "safety_margin": 320, "history_messages": 0, "sources": 2, "dropped_history_messages": 0, "dropped_sources": 0, "counter": {"method": "tokenizer", "model": "qwen3.5:9b", "template": "qwen35-chat"}, "observed_prompt_tokens": 1349}
+STEP validate ok 2 {"valid": 5, "rejected": 0, "reasons": []}
 STEP persist ok 0

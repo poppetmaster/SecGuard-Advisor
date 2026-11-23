@@ -24,12 +24,15 @@ terminara. Los registros históricos muestran S02 con 136 618 ms y S04 con 182 8
 - La reserva y el uso desconocido se conservan; una respuesta tardía no se persiste como éxito.
 
 **Evidencia:** `timeout-local-ollama.txt`. Prueba local con timeout de 0,5 s: estado `timeout`,
-código `model_timeout`, 5 163 ms observados (incluye preparación/cierre), sin esperar 136 s.
+código `model_timeout`, 3 656 ms observados (incluye preparación/cierre), sin esperar 136 s.
 La prueba determinista de `_DeadlineStream` está en `tests/unit/test_llm_client.py`.
 
 **Límite:** cerrar la conexión HTTP no garantiza que Ollama detenga la inferencia en el servidor. El
 comportamiento observado es que la aplicación deja de esperar y no persiste una respuesta tardía;
-no se afirma cancelación del cómputo local.
+no se afirma cancelación del cómputo local. El permiso global de generación se libera cuando termina
+la espera local; si Ollama sigue infiriendo, la aplicación no inicia dos generaciones locales
+simultáneas y Ollama serializa la siguiente solicitud, pero no hay confirmación de cancelación del
+trabajo del servidor.
 
 ### 1.2 Salidas estructuradas externas
 
@@ -84,7 +87,7 @@ filtro dejó `hits=0`. El modelo recibió cero fuentes y se abstuvo. No fue una 
 | Recuperación S10 | 0 hits | 2 hits `case_evidence`, estado `expanded_case` |
 | Resultado | `insufficient_evidence` | `answered` |
 | Contenido | Abstención | Resumen, 4–5 claims, 3 recomendaciones y limitación |
-| Duración del turno | — | 92 003 ms (agente 85 153 ms, dentro de 90 s por llamada) |
+| Duración del turno | — | 44 631 ms (agente 35 710 ms, dentro de 90 s por llamada) |
 
 **Evidencia:** `s10-local-ollama.txt`, `ui-s10-respuesta.png`, `tests/unit/test_limits.py`.
 
@@ -98,9 +101,10 @@ una limitación real.
 documentales inválidos. El grafo exigía persistir sin claims cuando había evidencia de herramienta;
 al haber claims, enviaba a reparación y luego a abstención.
 
-**Corrección:** si `findings_query` tiene un resultado `ok` y la respuesta no está vacía, el grafo
-persiste la respuesta aunque los claims documentales sean inválidos; no inventa citas y usa el
-resultado estructurado como respaldo. La prueba cubre el recorrido completo con una cita inválida.
+**Corrección:** una respuesta **exclusivamente** de herramienta (sin claims documentales) puede
+persistir con `findings_query` `ok`. Si hay claims documentales rechazados, se conserva la
+reparación/abstención; no se eliminan silenciosamente ni se presentan como verificados. Las pruebas
+cubren tool-only, mixta inválida, mixta con citas válidas y herramienta fallida/vacía.
 
 **Evidencia:** `tests/unit/test_qualys_conversation.py`,
 `tests/unit/test_limits.py` y `ui-chat-completo.png` (findings_query con total y grupos).
@@ -111,16 +115,16 @@ resultado estructurado como respaldo. La prueba cubre el recorrido completo con 
 - `make check` excluye `external`; `make test-external` los ejecuta aparte.
 - `tests/external/test_external_readiness.py` omite con motivo si falta
   `SECGUARD_EXTERNAL_TESTS_AUTHORIZED=1`, presupuesto o credenciales. No envía solicitudes.
-- `pytest -m external`: 1 skipped, 765 deselected.
+- `pytest -m external`: 1 skipped, 771 deselected.
 - T039 **no está cerrado**: la infraestructura está lista, pero no hay aceptación externa real
   nueva. Tampoco se presenta la prueba omitida como evaluación real.
 
 ## 2. Pruebas ejecutadas
 
-- `make check`: **728 passed**, 38 deselected.
+- `make check`: **734 passed**, 38 deselected.
 - Integraciones afectadas (`test_ollama_provider_regression`, `test_answer_real`,
   `test_tool_only_question`, `test_midturn_failure`, `test_trace_and_fallback`): **8 passed**
-  (114,02 s).
+  (170,42 s).
 - `pytest -m external`: **1 skipped** con motivo explícito.
 - S10 local real y timeout local real: ver archivos de evidencia.
 - No se hicieron llamadas pagadas y no se modificó la evidencia original de los 30 escenarios.

@@ -112,3 +112,8 @@ aplicación, con telemetría por solicitud, agregados, filtros, comparativo de e
   JSON y motivos seguros, recuperación de respaldo para informes S10, persistencia de
   recomendaciones/limitaciones y S07 con evidencia de herramienta. Se registró el marker `external`
   para T039. Sin llamadas pagadas nuevas; pendientes externos y T039 conservan su estado.
+- **L7 (corrección focalizada, 2026-11-23)**: el deadline de Ollama ahora usa un guardián con cierre de
+  transporte/respuesta, cubre cabeceras y cuerpo bloqueados y conserva la distinción entre espera del
+  cliente y cancelación del servidor. La política de herramientas exige que la respuesta sea
+  exclusivamente de herramienta para prescindir de citas; mezclas con claims rechazados van a
+  reparación/abstención. Pruebas: `make check` 734 passed; integraciones 8 passed; externas 1 skipped.
