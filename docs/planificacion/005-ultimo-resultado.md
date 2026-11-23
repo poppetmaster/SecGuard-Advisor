@@ -205,3 +205,24 @@ congelado `005-evaluation-v1`
 **T039**: la comparación externa real está ejecutada y registrada; el criterio de marcar pruebas
 `external` en pytest y omitirlas sin credencial **no** está implementado, por lo que T039 no se
 cierra. La aceptación externa sigue pendiente y no se declara.
+
+## Panel «Uso y comparativos de IA» (2026-11-23)
+
+- Ruta `/settings/ai/usage`, en **Administración** debajo de Configuración de IA, fuera de un caso.
+- Persistencia aditiva: `ai_requests` (una fila por intento lógico), `ai_evaluations` y
+  `ai_evaluation_results`. Migración `a3c4d5e6f7a8`; no se reescribieron ejecuciones.
+- Instrumentación única en `provider_call`: reutiliza `runs`, `provider_usage` y
+  `provider_budget_ledger`; registra operación, estado, duración, tokens, caché, razonamiento,
+  fuente de uso, costo calculado, tarifa histórica y vínculo de evaluación. Sin claves, prompts ni
+  respuestas.
+- Tarjetas, gráficas SVG con tabla accesible, tabla por proveedor/modelo, detalle paginado con enlace
+  a la ejecución y cobertura observada/estimada/no disponible. Reservas pendientes e inciertas se
+  muestran aparte del gasto calculado.
+- Comparativo de pruebas con importación idempotente del informe 005
+  (`make import-evaluation`); escenarios comunes, muestra incompleta, métricas automáticas, calidad
+  asistida por IA y revisión humana registrada.
+- Las ejecuciones sin telemetría se agregan desde `runs` y se marcan como histórico incompleto; los
+  agregados importados no fabrican solicitudes.
+- Pruebas: `make check` con **707 passed**, 37 deselected; integraciones afectadas **8 passed**.
+  Evidencia y capturas en `docs/evidencia/005-panel-uso-ia/`.
+- Ver y filtrar no invoca modelos ni gasta. No se añadieron botones para lanzar evaluaciones.

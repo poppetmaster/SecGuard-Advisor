@@ -63,7 +63,10 @@ en los externos por `external_tool_blocked`. La evidencia está en
 externos exigen credencial, presupuesto aprobado y autorización por caso para datos públicos o
 ficticios; Qualys y los datos privados no salen. La calidad externa observada no permite declarar
 ningún proveedor aceptado en uso real; 005 mantiene **aceptación local parcial** y T039 sigue
-pendiente por el marker `external` de pytest.
+pendiente por el marker `external` de pytest. El panel **Uso y comparativos de IA** vive en
+`/settings/ai/usage`, dentro de Administración: persiste telemetría por solicitud en `ai_requests`,
+importa el informe 005 de forma idempotente con `make import-evaluation` y no invoca modelos al
+consultar o filtrar.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
@@ -114,6 +117,7 @@ make seed-demo          # dataset sintético; requiere el esquema migrado
 make qdrant-up          # infraestructura local de 004; no cambia el backend
 make qdrant-down        # detiene Qdrant conservando su volumen
 make qdrant-health      # /readyz y versión del servidor Qdrant
+make import-evaluation  # importa el informe de evaluación 005; no llama a proveedores
 uv run alembic upgrade head  # crea/actualiza el esquema
 SECGUARD_REVIEWER_NAME="Nombre" make dev  # habilita la revisión humana declarada
 ```

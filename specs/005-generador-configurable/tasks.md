@@ -10,7 +10,8 @@ un resultado esperado claro.
 
 **Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 tiene la comparación externa real
 ejecutada y registrada, pero permanece pendiente el marker `external` de pytest. 005 mantiene
-aceptación local parcial; no se declara aceptación de proveedores externos.
+aceptación local parcial; no se declara aceptación de proveedores externos. El panel «Uso y
+comparativos de IA» está implementado (T050–T055).
 
 ## Formato
 
@@ -435,6 +436,38 @@ regresión completa verde; documentación final y decisión de aceptación basad
     cerrados en éxito/error/preparación; Playwright escritorio y móvil.
   - Evidence: `tests/unit/test_ai_config_service.py`, `tests/contract/test_ai_settings_routes.py`,
     `tests/contract/test_chat_resource_cleanup.py`, `docs/evidencia/005-configuracion-ui/`.
+
+
+- [x] T050 [Uso] Persistir telemetría por solicitud y evaluaciones con migración aditiva.
+  - Story: Uso
+  - Check: `ai_requests`, `ai_evaluations`, `ai_evaluation_results`; ejecuciones previas intactas.
+  - Evidence: `alembic/versions/a3c4d5e6f7a8_add_ai_requests_and_evaluations.py`,
+    `tests/unit/test_ai_usage_migration.py`.
+
+- [x] T051 [Uso] Instrumentar `provider_call` sin duplicar callbacks, reintentos ni llamadas locales.
+  - Story: Uso
+  - Check: decisión/generación/reparación, timeout, error, incierto, caché, razonamiento y Ollama.
+  - Evidence: `tests/unit/test_ai_usage_telemetry.py`.
+
+- [x] T052 [Uso] Agregados, filtros de fecha America/Bogota, cobertura, medianas y detalle paginado.
+  - Story: Uso
+  - Check: reservas separadas, históricos incompletos y denominadores correctos.
+  - Evidence: `tests/unit/test_ai_usage_queries.py`.
+
+- [x] T053 [Uso] Panel, navegación, gráficas SVG accesibles y comparativo de pruebas.
+  - Story: Uso
+  - Check: tarjetas, tablas, estados vacíos, sin secretos y sin invocar modelos.
+  - Evidence: `tests/contract/test_ai_usage_routes.py`, `docs/evidencia/005-panel-uso-ia/`.
+
+- [x] T054 [Uso] Importación idempotente del informe de evaluación 005 como histórico agregado.
+  - Story: Uso
+  - Check: 30 resultados, segunda importación sin duplicados, sin fabricar solicitudes.
+  - Evidence: `tests/unit/test_ai_usage_import.py`, `scripts/import_evaluation_005.py`.
+
+- [x] T055 [Uso] Validación Playwright, `make check`, integraciones afectadas y evidencia.
+  - Story: Uso
+  - Check: escritorio/móvil 390/320, teclado, consola limpia y cero llamadas a proveedores.
+  - Evidence: `docs/evidencia/005-panel-uso-ia/README.md` y capturas.
 
 ## Dependencias y orden
 

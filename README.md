@@ -147,8 +147,9 @@ para 004, un proveedor API explícito para 005 y una acción externa controlada 
 el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
 obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
 código en el Corte 6. 005 tiene las Entregas 1–3 implementadas, una página
-«Configuración de IA» (`/settings/ai`) que persiste el proveedor y parámetros no secretos y una
-evaluación real del 2026-11-23 con 10 escenarios congelados por proveedor (Ollama 6/10 aprobados,
+«Configuración de IA» (`/settings/ai`) que persiste el proveedor y parámetros no secretos, el panel
+«Uso y comparativos de IA» (`/settings/ai/usage`) con telemetría por solicitud y comparativo de
+evaluaciones, y una evaluación real del 2026-11-23 con 10 escenarios congelados por proveedor (Ollama 6/10 aprobados,
 DeepSeek 6/9 y Anthropic 4/9; S08 bloqueado en externos). La evidencia está en
 `docs/evidencia/005-evaluacion-proveedores/`; DeepSeek/Anthropic no se declaran aceptados en uso real.
 006 sigue sin implementar.
@@ -242,6 +243,7 @@ make dev             # servidor con casos, documentos y consulta
 make qdrant-up       # levanta Qdrant local (volumen persistente)
 make qdrant-health   # comprueba /readyz y la versión del servidor
 make qdrant-rebuild  # reconstruye el índice desde SQLite
+make import-evaluation # importa el informe de evaluación 005; no llama a proveedores
 make corpus          # descarga y verifica el corpus oficial
 make corpus-ingest   # ingesta el corpus verificado en el almacenamiento configurado
 make seed-demo       # carga el dataset sintético en el almacenamiento configurado

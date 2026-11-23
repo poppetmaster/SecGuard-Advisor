@@ -57,6 +57,15 @@ aceptación local, sin aceptación de proveedores externos.
 - Evidencia y capturas: `docs/evidencia/005-configuracion-ui/`.
 - `make check`: 677 passed.
 
+## 2.2 Panel «Uso y comparativos de IA» (2026-11-23)
+
+- Ruta `/settings/ai/usage` en Administración, debajo de Configuración de IA.
+- Telemetría por solicitud en `ai_requests`; evaluación importada en
+  `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
+- Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
+- Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
+- `make check`: 707 passed; integraciones afectadas: 8 passed.
+
 ## 3. T039 — Comparación externa real
 
 - Ejecutada el 2026-11-23 con claves y presupuestos existentes (5 USD global / 5 USD por turno), sin
@@ -73,6 +82,7 @@ aceptación local, sin aceptación de proveedores externos.
 ## 4. Estado de tareas
 
 - T001–T038: completadas.
+- T050–T055 (panel de uso): completadas.
 - T039: ejecución real registrada; criterio del marker `external` pendiente.
 - T040: completada — `make check` y `make test-integration` verdes en el corte anterior; repetir
   `make check` tras los cambios de esta evaluación.
