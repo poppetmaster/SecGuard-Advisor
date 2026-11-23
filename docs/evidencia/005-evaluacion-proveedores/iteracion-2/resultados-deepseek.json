@@ -1,0 +1,755 @@
+[
+  {
+    "scenario": "S01",
+    "kind": "public_csf",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "85c689c7e46d45dfa709772efc5dffb2",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 3309,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 894
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2345
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6068,
+      "output_tokens": 373,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.001478",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The CSF Core Functions — GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, and RECOVER — organize\ncybersecurity outcomes at their highest level.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The highest level of organization for cybersecurity outcomes. There are six CSF Functions: Govern, Identify,\nProtect, Detect, Respond, and Recover.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "GOVERN is in the center of the wheel because it informs how an organization\nwill implement the other five Functions.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "protect",
+      "detect",
+      "respond",
+      "recover"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según el CSF 2.0 del NIST, las seis funciones centrales son GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND y RECOVER. GOVERN ocupa el centro del esquema e informa cómo se implementan las otras cinco funciones."
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "b82634a18a3e4b1297a659cc2ac4bddc",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 5449,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1101
+      },
+      {
+        "name": "agent",
+        "duration_ms": 4286
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6145,
+      "output_tokens": 933,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.002173",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "Categories and subcategories are subdivided into specific actions and outcomes. Actions do not constitute a checklist, nor are they necessarily an ordered set of steps.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "Governance is designed to be a cross-cutting function to inform and be infused throughout the other three functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "GOVERN is a cross-cutting function that is infused throughout AI risk management and enables the other functions of the process.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "Framework users may apply these functions as best suits their needs for managing AI risks based on their resources and capabilities.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "valid",
+        "quote": "However users integrate the functions, the process should be iterative, with cross-referencing between functions as necessary.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "It describes four specific functions to help organizations address the risks of AI systems in practice. These functions – GOVERN , MAP, MEASURE , and MANAGE – are broken down further into categories and subcate-gories.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "While GOVERN applies to all stages of organizations’ AI risk management pro-cesses and procedures, the MAP, MEASURE , and MANAGE functions can be applied in AI system-specific contexts and at specific stages of the AI lifecycle.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE . Each of these high-level functions is broken down into categories and sub-categories.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "map",
+      "measure",
+      "manage"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "El NIST AI RMF 1.0 organiza su «Core» en cuatro funciones centrales: GOVERN, MAP, MEASURE y MANAGE. Cada función se desglosa en categorías y subcategorías, y las acciones asociadas no constituyen una lista de verificación ni una secuencia ordenada de pasos. GOVERN es una función transversal que se aplica a todas las etapas y que habilita a las otras tres; MAP, MEASURE y MANAGE pueden aplicarse en contextos y etapas específicas del ciclo de vida del sistema de IA."
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "76b170042bf94b29a107aac8c4d7c7f7",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 8228,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1444
+      },
+      {
+        "name": "agent",
+        "duration_ms": 6723
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6535,
+      "output_tokens": 720,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.002034",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Avoid the use of open-ended extensions where possible (e.g., run a shell command, fetch a URL, etc.) and use extensions with more granular functionality.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Treat the model as any other user, adopting a zero-trust approach, and apply proper input validation on responses coming from the model to backend functions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Encode model output back to users to mitigate undesired code execution by JavaScript or Markdown.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "A user utilizes a website summarizer tool powered by an LLM to generate a concise summary of an article. The website includes a prompt injection instructing the LLM to capture sensitive content from either the website or from the user's conversation.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "OWASP Top 10 for LLM Applications v2.0 describe, entre otros, el riesgo de agencia excesiva (Excessive Agency) en extensiones de LLM y el riesgo de validación insuficiente de entradas/salidas que habilita inyección y XSS. Para el primero recomienda evitar extensiones de propósito abierto y usar extensiones con funcionalidad granular; para el segundo, tratar al modelo como un usuario no confiable con validación de entrada y codificar la salida del modelo antes de mostrarla a los usuarios."
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "3b7a629dbb2741938003a6a7ec64869f",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 7192,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 7192
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1640,
+      "output_tokens": 13,
+      "cached_tokens": 1408,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S05",
+    "kind": "case_policy",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "1579a2e035ad4ae08822c7986910d8e3",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 2768,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1048
+      },
+      {
+        "name": "agent",
+        "duration_ms": 1687
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3196,
+      "output_tokens": 214,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000425",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "prueba la restauración trimestralmente",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "trimestral",
+      "responsable de infraestructura",
+      "registro"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la política de respaldo, la restauración se prueba trimestralmente y el responsable de infraestructura conserva el registro de cada prueba."
+  },
+  {
+    "scenario": "S06",
+    "kind": "case_followup",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "2dee885bb58244818089dfe647b85d13",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 3424,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1363
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2016
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3291,
+      "output_tokens": 172,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000404",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "registro",
+      "prueba"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la política de respaldo, de cada prueba de restauración se conserva el registro correspondiente, a cargo del responsable de infraestructura."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "f5e1eb86fc5b4f00a309e9e3851c0e76",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4350,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1124
+      },
+      {
+        "name": "decide",
+        "duration_ms": 830
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2360
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 5163,
+      "output_tokens": 333,
+      "cached_tokens": 4352,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000670",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-2ef115",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según los resultados estructurados de vulnerabilidades calculados en SQLite para este caso (origen sintético, dataset demo-findings-2ef115 versión 1, instantánea con checksum e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20), los hallazgos de severidad High por activo son: api-gateway con 2 y customer-portal con 1, sobre un total de 3. La escala corresponde a etiquetas sintéticas y la consulta no fue truncada."
+  },
+  {
+    "scenario": "S08",
+    "kind": "findings_imported",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "11b2a00ebf374a1aa6e8011ca020556d",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "external_tool_blocked",
+    "result": "blocked",
+    "duration_ms": 1274,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 1274
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1627,
+      "output_tokens": 33,
+      "cached_tokens": 1408,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000114",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 1,
+      "groups": {
+        "asset-1.example": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S09",
+    "kind": "abstention",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "7795ec2f92ce4311a564d9e2528e61c7",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 2379,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 795
+      },
+      {
+        "name": "agent",
+        "duration_ms": 1540
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3088,
+      "output_tokens": 141,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000306",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": true,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 2,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "1382af6eb1aa457eb0bf8dae92212294",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 3502,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1060
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2412
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3136,
+      "output_tokens": 275,
+      "cached_tokens": 2688,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000481",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  }
+]

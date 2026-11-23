@@ -1,0 +1,1994 @@
+[
+  {
+    "scenario": "S01",
+    "kind": "public_csf",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "d3f6cd65433f4eda8e9dfe0f8b4abc2f",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 47229,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 8083
+      },
+      {
+        "name": "agent",
+        "duration_ms": 39094
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 4875,
+      "output_tokens": 650,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The CSF Core Functions — GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, and RECOVER — organize cybersecurity outcomes at their highest level.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "There are six CSF Functions: Govern, Identify, Protect, Detect, Respond, and Recover.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• GOVERN (GV) — The organization’s cybersecurity risk management strategy, expectations, and policy are established, communicated, and monitored.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• IDENTIFY (ID) — The organization’s current cybersecurity risks are understood.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• PROTECT (PR) — Safeguards to manage the organization’s cybersecurity risks are used.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• DETECT (DE) — Possible cybersecurity attacks and compromises are found and analyzed.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• RESPOND (RS) — Actions regarding a detected cybersecurity incident are taken.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• RECOVER (RC) — Assets and operations affected by a cybersecurity incident are restored.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "protect",
+      "detect",
+      "respond",
+      "recover"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Las seis funciones centrales del NIST Cybersecurity Framework (CSF) 2.0 son: GOVERN (GV), IDENTIFY (ID), PROTECT (PR), DETECT (DE), RESPOND (RS) y RECOVER (RC)."
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "5015bbab133e4bc49bb9ea6c5d98858e",
+    "status": "succeeded",
+    "outcome": "abstained_invalid_citations",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 67389,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1846
+      },
+      {
+        "name": "agent",
+        "duration_ms": 30673
+      },
+      {
+        "name": "repair",
+        "duration_ms": 33730
+      }
+    ],
+    "repairs": 1,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 9238,
+      "output_tokens": 571,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "Part 2 comprises the “Core” of the Framework. It describes four specific functions to help organizations address the risks of AI systems in practice. These functions – GOVERN , MAP, MEASURE , and MANAGE – are broken down further into categories and subcategories.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+        "source_id": "airmf",
+        "check_status": "rejected",
+        "quote": "As illustrated in Figure 5, the Core is composed of four functions: GOVERN , MAP, MEASURE , and MANAGE .",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "La respuesta propuesta no pudo sostenerse con citas verificables, así que no la presento como fundamentada. Revisá los documentos disponibles o reformulá la pregunta para que la evidencia recuperada alcance."
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "92305e8aa1834528be32f1ab749f323d",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 97645,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 5067
+      },
+      {
+        "name": "agent",
+        "duration_ms": 92437
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5325,
+      "output_tokens": 585,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Unsafe Code Generation The model suggests insecure or non-existent code libraries, which can introduce vulnerabilities when integrated into software systems. For example, LLMs propose using insecure third-party libraries, which, if trusted without verification, leads to security risks.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Scenario #1: Direct Injection An attacker injects a prompt into a customer support chatbot, instructing it to ignore previous guidelines, query private data stores, and send emails, leading to unauthorized access and privilege escalation.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Follow the OWASP ASVS (Application Security Verification Standard) guidelines to ensure effective input validation and sanitization.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Require human approval for high-risk actions Implement human-in-the-loop controls for privileged operations to prevent unauthorized actions.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "prompt injection"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "OWASP describe riesgos como la generación de código inseguro (Unsafe Code Generation) que introduce vulnerabilidades al integrar bibliotecas sugeridas sin verificarlas, y la inyección de prompts (Prompt Injection) que permite a atacantes manipular el modelo para acceder a datos privados o ejecutar acciones no autorizadas. Como recomendación, sugieren implementar validación estricta de entradas y salidas, utilizar principios de menor privilegio para las extensiones del modelo, y aplicar revisiones humanas (human-in-the-loop) para acciones de alto impacto."
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "bb205fb1441a432a8e2a705bb74b8fbd",
+    "status": "timeout",
+    "outcome": "error",
+    "error_code": "run_timeout",
+    "result": "failed",
+    "duration_ms": 148801,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 148801
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 4653,
+      "output_tokens": 950,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S05",
+    "kind": "case_policy",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "7886375e27e047d2831c92ca3acf8f51",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 32921,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 5109
+      },
+      {
+        "name": "agent",
+        "duration_ms": 27673
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1833,
+      "output_tokens": 172,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "prueba la restauración trimestralmente",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "trimestral",
+      "responsable de infraestructura",
+      "registro"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "La restauración del respaldo se prueba trimestralmente y el registro es conservado por el responsable de infraestructura."
+  },
+  {
+    "scenario": "S06",
+    "kind": "case_followup",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "41a03bac4de64a36acbc85b7544b80ec",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 20936,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 4641
+      },
+      {
+        "name": "agent",
+        "duration_ms": 16107
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1914,
+      "output_tokens": 108,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "registro",
+      "prueba"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 1,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Se conserva el registro de cada prueba."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "69e327e742644748b1446709cb9ad809",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 26586,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 6887
+      },
+      {
+        "name": "decide",
+        "duration_ms": 5803
+      },
+      {
+        "name": "agent",
+        "duration_ms": 13833
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 2913,
+      "output_tokens": 123,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-1c7fa6",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "En el caso Evaluación ollama S07, hay un total de 3 hallazgos con severidad High distribuidos entre los activos: 2 en 'api-gateway' y 1 en 'customer-portal'."
+  },
+  {
+    "scenario": "S08",
+    "kind": "findings_imported",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "b9b718b884124f46b3fad29078ab71b5",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 26962,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 7470
+      },
+      {
+        "name": "decide",
+        "duration_ms": 6300
+      },
+      {
+        "name": "agent",
+        "duration_ms": 13134
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 3202,
+      "output_tokens": 121,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "imported",
+      "total": 1,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "asset-1.example",
+          "count": 1
+        }
+      ],
+      "snapshot": {
+        "id": "7b2825c634334de7895360eed354bc3e",
+        "sequence": 1,
+        "confirmed_at": "2026-11-23T01:00:58.719846+00:00",
+        "csv_sha256": "88465844ee9ae0b31f11df7984a04c770f92060d3ae14f2ebfe8dddc3b0f0f96",
+        "adapter_version": "qualys-csv-1"
+      },
+      "status_group": "pending_known",
+      "status_counts": {
+        "Active": 1
+      },
+      "severity_counts": {
+        "5": 1
+      },
+      "exploitability_counts": {
+        "positive": 1
+      },
+      "malware_counts": {
+        "positive": 1
+      },
+      "manual_review_rows": 0,
+      "severity_scale": "project_1_5",
+      "priority_counts": {
+        "both_positive": 1
+      }
+    },
+    "expected": {
+      "total": 1,
+      "groups": {
+        "asset-1.example": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según los resultados estructurados importados para este caso, hay 1 registro con severidad 5 y explotabilidad positiva, agrupado en el activo 'asset-1.example'."
+  },
+  {
+    "scenario": "S09",
+    "kind": "abstention",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "48fda6f1f9934789a8b46f9d9488b20e",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 17251,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 2931
+      },
+      {
+        "name": "agent",
+        "duration_ms": 14241
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1729,
+      "output_tokens": 107,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": true,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 2,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "cdc732e9e10a4c15835c69ad1082621e",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 39324,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 3205
+      },
+      {
+        "name": "agent",
+        "duration_ms": 36062
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1773,
+      "output_tokens": 278,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S01",
+    "kind": "public_csf",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": null,
+    "run_id": "cdf44e57f7ae4b689475b2bd16411176",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 4739,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1098
+      },
+      {
+        "name": "agent",
+        "duration_ms": 3522
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 6058,
+      "output_tokens": 355,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.002244",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The CSF Core Functions — GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, and RECOVER — organize\ncybersecurity outcomes at their highest level.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "There are six CSF Functions: Govern, Identify,\nProtect, Detect, Respond, and Recover.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "GOVERN is in the center of the wheel because it informs how an organization\nwill implement the other five Functions.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "protect",
+      "detect",
+      "respond",
+      "recover"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "El NIST CSF 2.0 organiza los resultados de ciberseguridad en seis Funciones centrales: GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND y RECOVER. GOVERN ocupa el centro porque orienta la implementación de las otras cinco Funciones."
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "3d4090b98eb34ad487a14b375eb4f293",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 5522,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 5522
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1618,
+      "output_tokens": 13,
+      "cached_tokens": 1408,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "f9ead1ddb61a4cc8bc18b58cf04450c3",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 4637,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 4637
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1636,
+      "output_tokens": 13,
+      "cached_tokens": 1408,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "35e24940ea344e20a4bb672908bf616d",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 6294,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 6294
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1640,
+      "output_tokens": 13,
+      "cached_tokens": 1408,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S05",
+    "kind": "case_policy",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "56ed2e35558b4a848d4828508903a3a6",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 3183,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1148
+      },
+      {
+        "name": "agent",
+        "duration_ms": 1992
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3202,
+      "output_tokens": 197,
+      "cached_tokens": 2560,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000445",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "La organización realiza copias de seguridad cifradas cada 24 horas y prueba la restauración trimestralmente.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "trimestral",
+      "responsable de infraestructura",
+      "registro"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la política de respaldo, la restauración se prueba trimestralmente y el responsable de infraestructura conserva el registro de cada prueba."
+  },
+  {
+    "scenario": "S06",
+    "kind": "case_followup",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "cf37665aa28942a4a433c3d46b5cd1a6",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 4224,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1163
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2990
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3297,
+      "output_tokens": 211,
+      "cached_tokens": 2560,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000490",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "registro",
+      "prueba"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la política de respaldo, de cada prueba de restauración se conserva el registro correspondiente, a cargo del responsable de infraestructura."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "3b2a614fd1a24106bd742d2127ac1f82",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 6538,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1295
+      },
+      {
+        "name": "decide",
+        "duration_ms": 1239
+      },
+      {
+        "name": "agent",
+        "duration_ms": 3964
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 5163,
+      "output_tokens": 392,
+      "cached_tokens": 4096,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000815",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-3bc853",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la consulta estructurada ejecutada en SQLite para este caso (origen sintético, dataset demo-findings-3bc853 versión 1, checksum e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20, escala de severidad synthetic_labels), el total de hallazgos High es 3, distribuidos por activo así: api-gateway 2 y customer-portal 1. La consulta no está truncada. No se recuperaron fuentes documentales para esta pregunta, por lo que estas cifras provienen únicamente del resultado estructurado y no de citas documentales."
+  },
+  {
+    "scenario": "S08",
+    "kind": "findings_imported",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "d77f72f8e417464bbc431eb2e26c1d35",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "external_tool_blocked",
+    "result": "blocked",
+    "duration_ms": 1003,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 1003
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1627,
+      "output_tokens": 38,
+      "cached_tokens": 1408,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000120",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 1,
+      "groups": {
+        "asset-1.example": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S09",
+    "kind": "abstention",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "f98af6138b004a5aac83084a50972842",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 2847,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1062
+      },
+      {
+        "name": "agent",
+        "duration_ms": 1741
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3088,
+      "output_tokens": 155,
+      "cached_tokens": 2560,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000360",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": true,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 2,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "identity": "deepseek-flash",
+    "run_id": "e3c1efc04ddc4cdeac1aed603e1f546b",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 4764,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1358
+      },
+      {
+        "name": "agent",
+        "duration_ms": 3376
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 3136,
+      "output_tokens": 259,
+      "cached_tokens": 2560,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000499",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S01",
+    "kind": "public_csf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": null,
+    "run_id": "07b0b2d99bc44c8b8e681d4e0559be24",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 55499,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 55499
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2843,
+      "output_tokens": 19,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "0a6c7c588eaf49b9b63b2012e1f50110",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 5480,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 5480
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2837,
+      "output_tokens": 19,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "0ab8f024b11a4eb29072535ba7715e04",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 5304,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 5304
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2864,
+      "output_tokens": 19,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "ed6e09fd46d34c0d906915cd8620b261",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 4287,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 4287
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2872,
+      "output_tokens": 19,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S05",
+    "kind": "case_policy",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "36c5acc9b7a44470b8141cb8f8c537cf",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 5216,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 2642
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2539
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5425,
+      "output_tokens": 290,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000687",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "prueba la restauración trimestralmente",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": false,
+    "keywords_hit": [
+      "trimestral",
+      "responsable de infraestructura",
+      "registro"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según la política de respaldo, la organización prueba la restauración del respaldo trimestralmente, y el responsable de infraestructura conserva el registro de cada prueba."
+  },
+  {
+    "scenario": "S06",
+    "kind": "case_followup",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "11755294da024f5390a5f68bcbe79c3c",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 4333,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 4333
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2873,
+      "output_tokens": 19,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": false,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "786e76f3a02f4cacb8ebdbdc5d5051e1",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "invalid_model_output",
+    "result": "failed",
+    "duration_ms": 6742,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 6742
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5909,
+      "output_tokens": 106,
+      "cached_tokens": 0,
+      "source": "unknown"
+    },
+    "cost": {
+      "status": "unknown",
+      "usd": null,
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S08",
+    "kind": "findings_imported",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "ef8dbfd568bc47c48cd0a0c0193154e6",
+    "status": "failed",
+    "outcome": "error",
+    "error_code": "external_tool_blocked",
+    "result": "blocked",
+    "duration_ms": 1262,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 1262
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 2846,
+      "output_tokens": 52,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000311",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {
+      "total": 1,
+      "groups": {
+        "asset-1.example": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S09",
+    "kind": "abstention",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "16f245a04f4b441f85730f66b7bbccf3",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 3635,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 1609
+      },
+      {
+        "name": "agent",
+        "duration_ms": 1979
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5280,
+      "output_tokens": 204,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000630",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": true,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 1,
+      "uncertainty": 2,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "identity": "claude-haiku-5-5",
+    "run_id": "ceaa1f34e16747ed97c2010230e1b019",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 15434,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 13090
+      },
+      {
+        "name": "agent",
+        "duration_ms": 2311
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5364,
+      "output_tokens": 332,
+      "cached_tokens": 0,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "calculated",
+      "usd": "0.000703",
+      "tariff_version": "2026-11-22"
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  }
+]

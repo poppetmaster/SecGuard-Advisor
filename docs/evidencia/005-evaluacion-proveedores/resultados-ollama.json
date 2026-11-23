@@ -1,0 +1,763 @@
+[
+  {
+    "scenario": "S01",
+    "kind": "public_csf",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "9405e76cd98e407cae8f8ddbbd7da101",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 76614,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 4505
+      },
+      {
+        "name": "agent",
+        "duration_ms": 72052
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 4873,
+      "output_tokens": 650,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "The CSF Core Functions — GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, and RECOVER — organize cybersecurity outcomes at their highest level.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "There are six CSF Functions: Govern, Identify, Protect, Detect, Respond, and Recover.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• GOVERN (GV) — The organization’s cybersecurity risk management strategy, expectations, and policy are established, communicated, and monitored.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• IDENTIFY (ID) — The organization’s current cybersecurity risks are understood.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• PROTECT (PR) — Safeguards to manage the organization’s cybersecurity risks are used.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• DETECT (DE) — Possible cybersecurity attacks and compromises are found and analyzed.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• RESPOND (RS) — Actions regarding a detected cybersecurity incident are taken.",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "The NIST Cybersecurity Framework (CSF) 2.0",
+        "source_id": "csf2",
+        "check_status": "valid",
+        "quote": "• RECOVER (RC) — Assets and operations affected by a cybersecurity incident are restored.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "govern",
+      "identify",
+      "protect",
+      "detect",
+      "respond",
+      "recover"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Las seis funciones centrales del NIST Cybersecurity Framework (CSF) 2.0 son: GOVERN (GV), IDENTIFY (ID), PROTECT (PR), DETECT (DE), RESPOND (RS) y RECOVER (RC)."
+  },
+  {
+    "scenario": "S02",
+    "kind": "public_airmf",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "04981d9dc10740f99dee719a062c2488",
+    "status": "timeout",
+    "outcome": "error",
+    "error_code": "run_timeout",
+    "result": "failed",
+    "duration_ms": 136618,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 136618
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 4955,
+      "output_tokens": 683,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S03",
+    "kind": "public_owasp",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "c5b0d54536d9416d8ad6fd676839d710",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 97772,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 3371
+      },
+      {
+        "name": "agent",
+        "duration_ms": 94273
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 5316,
+      "output_tokens": 413,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Unsafe Code Generation\nThe model suggests insecure or non-existent code libraries, which can introduce vulnerabilities when integrated into software systems. For example, LLMs propose using insecure third-party libraries, which, if trusted without verification, leads to security risks.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Secure Coding Practices\nEstablish secure coding practices to prevent the integration of vulnerabilities due to incorrect code suggestions.",
+        "resolvable": true,
+        "literal": false
+      },
+      {
+        "document_title": "OWASP Top 10 for LLM Applications 2025",
+        "source_id": "owasp-llm-2025",
+        "check_status": "valid",
+        "quote": "Automatic Validation Mechanisms\nImplement tools and processes to automatically validate key outputs, especially output from high-stakes environments.",
+        "resolvable": true,
+        "literal": false
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "OWASP describe riesgos como la generación de código inseguro (Unsafe Code Generation) que introduce vulnerabilidades al integrar bibliotecas no verificadas, y la manipulación del modelo mediante inyección de prompts. Como recomendación, sugieren implementar prácticas de codificación segura para prevenir la integración de vulnerabilidades y utilizar mecanismos de validación automática."
+  },
+  {
+    "scenario": "S04",
+    "kind": "public_combined",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "ca81719d0bd44ed6911e4af887ab136b",
+    "status": "timeout",
+    "outcome": "error",
+    "error_code": "run_timeout",
+    "result": "failed",
+    "duration_ms": 182842,
+    "model_calls": 1,
+    "model_steps": [
+      {
+        "name": "agent",
+        "duration_ms": 182842
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 4654,
+      "output_tokens": 1010,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 0,
+      "clarity": 0,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": ""
+  },
+  {
+    "scenario": "S05",
+    "kind": "case_policy",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "1e6eb54eba1d405e82abfa90181ef1c9",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 35284,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 3908
+      },
+      {
+        "name": "agent",
+        "duration_ms": 31312
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1834,
+      "output_tokens": 172,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "prueba la restauración trimestralmente",
+        "resolvable": true,
+        "literal": true
+      },
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "trimestral",
+      "responsable de infraestructura",
+      "registro"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "La restauración del respaldo se prueba trimestralmente y el registro es conservado por el responsable de infraestructura."
+  },
+  {
+    "scenario": "S06",
+    "kind": "case_followup",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "a692416259ca4d6aad56975f847db419",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 21468,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 2997
+      },
+      {
+        "name": "agent",
+        "duration_ms": 18393
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1915,
+      "output_tokens": 108,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [
+      {
+        "document_title": "Política de respaldo",
+        "source_id": null,
+        "check_status": "valid",
+        "quote": "El responsable de infraestructura conserva el registro de cada prueba.",
+        "resolvable": true,
+        "literal": true
+      }
+    ],
+    "source_hit": true,
+    "keywords_hit": [
+      "registro",
+      "prueba"
+    ],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 1,
+      "relevance": 1,
+      "clarity": 1,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Se conserva el registro de cada prueba."
+  },
+  {
+    "scenario": "S07",
+    "kind": "findings_synthetic",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "77ea73e7ce6944439c8513138eacc303",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 26462,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 6812
+      },
+      {
+        "name": "decide",
+        "duration_ms": 3555
+      },
+      {
+        "name": "agent",
+        "duration_ms": 16010
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 2915,
+      "output_tokens": 122,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "synthetic",
+      "total": 3,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "api-gateway",
+          "count": 2
+        },
+        {
+          "key": "customer-portal",
+          "count": 1
+        }
+      ],
+      "dataset": {
+        "name": "demo-findings-7592d8",
+        "version": "1",
+        "checksum": "e4ba2e5e099f0ddaac2b77961da90bfb215057a1d3a7512f3a84ba618dd32c20",
+        "is_synthetic": true
+      },
+      "severity_scale": "synthetic_labels"
+    },
+    "expected": {
+      "total": 3,
+      "groups": {
+        "api-gateway": 2,
+        "customer-portal": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "En el caso Evaluación ollama S07, hay un total de 3 hallazgos con severidad High distribuidos por activo: 2 en 'api-gateway' y 1 en 'customer-portal'."
+  },
+  {
+    "scenario": "S08",
+    "kind": "findings_imported",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "d531c0388ff345bfba4d9de9a0c955fc",
+    "status": "succeeded",
+    "outcome": "answered",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 29642,
+    "model_calls": 3,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 7181
+      },
+      {
+        "name": "decide",
+        "duration_ms": 4736
+      },
+      {
+        "name": "agent",
+        "duration_ms": 17626
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [
+      {
+        "tool": "findings_query",
+        "status": "ok",
+        "origin": "model_requested"
+      }
+    ],
+    "usage": {
+      "input_tokens": 3204,
+      "output_tokens": 121,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": true,
+    "findings_summary": {
+      "origin": "imported",
+      "total": 1,
+      "truncated": false,
+      "items_count": 0,
+      "groups": [
+        {
+          "key": "asset-1.example",
+          "count": 1
+        }
+      ],
+      "snapshot": {
+        "id": "9517523858764aa58dfe1efc1389b635",
+        "sequence": 1,
+        "confirmed_at": "2026-11-23T01:28:20.010397+00:00",
+        "csv_sha256": "88465844ee9ae0b31f11df7984a04c770f92060d3ae14f2ebfe8dddc3b0f0f96",
+        "adapter_version": "qualys-csv-1"
+      },
+      "status_group": "pending_known",
+      "status_counts": {
+        "Active": 1
+      },
+      "severity_counts": {
+        "5": 1
+      },
+      "exploitability_counts": {
+        "positive": 1
+      },
+      "malware_counts": {
+        "positive": 1
+      },
+      "manual_review_rows": 0,
+      "severity_scale": "project_1_5",
+      "priority_counts": {
+        "both_positive": 1
+      }
+    },
+    "expected": {
+      "total": 1,
+      "groups": {
+        "asset-1.example": 1
+      }
+    },
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "Según los resultados estructurados importados para este caso, hay 1 registro con severidad 5 y explotabilidad positiva, agrupado en el activo 'asset-1.example'."
+  },
+  {
+    "scenario": "S09",
+    "kind": "abstention",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "bfc6a83623ed455b8ebdaa1c1e2e9904",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "approved",
+    "duration_ms": 19957,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 3692
+      },
+      {
+        "name": "agent",
+        "duration_ms": 16128
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1729,
+      "output_tokens": 107,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": true,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": true,
+    "quality": {
+      "accuracy": 2,
+      "relevance": 2,
+      "clarity": 2,
+      "recommendations": 0,
+      "uncertainty": 2,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  },
+  {
+    "scenario": "S10",
+    "kind": "report",
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "identity": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "run_id": "530ad61c6d934a47882fff5758c0eccd",
+    "status": "succeeded",
+    "outcome": "insufficient_evidence",
+    "error_code": null,
+    "result": "failed",
+    "duration_ms": 42303,
+    "model_calls": 2,
+    "model_steps": [
+      {
+        "name": "decide",
+        "duration_ms": 3555
+      },
+      {
+        "name": "agent",
+        "duration_ms": 38697
+      }
+    ],
+    "repairs": 0,
+    "tool_calls": [],
+    "usage": {
+      "input_tokens": 1773,
+      "output_tokens": 278,
+      "cached_tokens": null,
+      "source": "observed"
+    },
+    "cost": {
+      "status": "not_applicable",
+      "usd": null,
+      "tariff_version": null
+    },
+    "citations": [],
+    "source_hit": false,
+    "keywords_hit": [],
+    "structure_ok": true,
+    "findings_match": null,
+    "findings_summary": null,
+    "expected": {},
+    "followup_ok": true,
+    "abstention_ok": null,
+    "quality": {
+      "accuracy": 0,
+      "relevance": 1,
+      "clarity": 2,
+      "recommendations": 2,
+      "uncertainty": 0,
+      "method": "AI-assisted heuristic; not independent human review"
+    },
+    "answer": "No encontré evidencia documental suficiente en las fuentes disponibles del caso y del corpus público para responder esta pregunta. No voy a inventar una respuesta fundamentada. Cargá documentos pertinentes o reformulá la consulta dentro del alcance cubierto."
+  }
+]

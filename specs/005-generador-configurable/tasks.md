@@ -8,10 +8,9 @@ checklists/requirements.md
 **Tests**: incluidas porque la constitución aplica test-first cuando existe una prueba determinista y
 un resultado esperado claro.
 
-**Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 real permanece pendiente por
-ausencia de presupuesto y credenciales; su versión simulada está ejecutada. 005 tiene aceptación
-local parcial; no se declara aceptación de proveedores externos ni se realizaron llamadas externas
-pagadas.
+**Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 tiene la comparación externa real
+ejecutada y registrada, pero permanece pendiente el marker `external` de pytest. 005 mantiene
+aceptación local parcial; no se declara aceptación de proveedores externos.
 
 ## Formato
 
@@ -350,6 +349,10 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Dep: T038
   - Check: no se simula; el motivo queda en el reporte; `pytest -m external` se omite sin credencial.
   - Evidence: reporte por proveedor o registro de omisión, `pyproject.toml`.
+  - Estado 2026-11-23: comparación externa real ejecutada y registrada en
+    `docs/evidencia/005-evaluacion-proveedores/` (DeepSeek 0,006087 USD y Anthropic 0,005839 USD de
+    costo calculado). El marker `external` de pytest y su omisión sin credencial siguen sin
+    implementarse; por eso la tarea no se marca completada.
 
 - [x] T040 [US4] Ejecutar la regresión completa y la aceptación de los flujos afectados:
   `make check`, `make test-integration`, incluida la regresión de 001/002, la integración local de

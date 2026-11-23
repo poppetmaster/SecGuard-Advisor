@@ -56,12 +56,14 @@ Haiku (`claude-haiku-5-5`). La página `/settings/ai`, dentro del grupo **Admini
 y límites no secretos, persistidos en SQLite con precedencia sobre `Settings`/`.env`; cada turno toma una
 instantánea y `.env` conserva claves, endpoints y presupuestos. Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
 costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
-de uso, probados **solo contra transporte HTTP simulado**; la comparación local con Ollama real está
-ejecutada y la comparación externa real sigue pendiente por falta de presupuesto. No hay fallback ni cambio de proveedor en
-un turno. Los externos exigen credencial, presupuesto aprobado y autorización por caso para datos
-públicos o ficticios; Qualys y los datos privados no salen. No se ejecutaron llamadas reales ni se
-declara ningún proveedor externo aceptado en uso real; 005 tiene **aceptación local parcial** y
-los externos siguen pendientes.
+de uso. La evaluación real del 2026-11-23 comparó 10 escenarios congelados por proveedor sobre corpus
+público y un caso ficticio: Ollama 6/10 aprobados, DeepSeek 6/9 y Anthropic 4/9; S08 quedó bloqueado
+en los externos por `external_tool_blocked`. La evidencia está en
+`docs/evidencia/005-evaluacion-proveedores/`. No hay fallback ni cambio de proveedor en un turno. Los
+externos exigen credencial, presupuesto aprobado y autorización por caso para datos públicos o
+ficticios; Qualys y los datos privados no salen. La calidad externa observada no permite declarar
+ningún proveedor aceptado en uso real; 005 mantiene **aceptación local parcial** y T039 sigue
+pendiente por el marker `external` de pytest.
 
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,

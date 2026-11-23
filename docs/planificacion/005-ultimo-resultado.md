@@ -1,9 +1,10 @@
-# 005 — Último resultado (aceptación local parcial; T039 pendiente)
+# 005 — Último resultado (evaluación real completada; aceptación externa pendiente)
 
-**Fecha**: 2026-11-22 (America/Bogota, `-05`)
+**Fecha**: 2026-11-23 (America/Bogota, `-05`) — actualizado tras la evaluación real
 **Rama**: `005-generador-configurable`
-**Estado**: T001–T038, T040–T042 y T043–T048 completadas; R1–R3 corregidos; T039 real pendiente.
-**005 no tiene aceptación de proveedores externos.**
+**Estado**: T001–T038, T040–T042 y T043–T048 completadas; R1–R3 corregidos. La comparación externa
+real se ejecutó y T039 queda **parcialmente acreditada**: falta el marker `external` de pytest.
+**005 no tiene aceptación de proveedores externos**: la calidad observada no lo permite.
 
 ## Dictamen
 
@@ -140,7 +141,8 @@ cambio de perfiles, mensajes, foco, Escape, ausencia de overflow y consola sin e
 - Evaluación semántica no realizada; solo comprobaciones automáticas.
 - Corpus de comparación ficticio; no representa datos del usuario.
 - Ollama: costo de API no aplicable; no se declara costo operativo total cero.
-- Sin llamadas reales a DeepSeek/Anthropic.
+- Sin llamadas reales a DeepSeek/Anthropic en la comparación del 2026-11-22 (ver evaluación real
+  del 2026-11-23).
 - La configuración guardada no verifica la conexión; solo declara credencial presente.
 - No se enviaron Qualys, derivados ni datos privados.
 - `storage/`, `storage/demo`, Chroma y Qdrant sin cambios.
@@ -169,3 +171,37 @@ docs/evidencia/005-comparacion/*.md
 ## Commits
 
 Ver `git log --oneline` en `005-generador-configurable`.
+
+## Evaluación real de proveedores (2026-11-23)
+
+Ejecutada sobre una instancia temporal, corpus público oficial y caso ficticio, con el conjunto
+congelado `005-evaluation-v1`
+(`998dc34b889fd5455f56287fcbb1ca5430be33fac644f9a23c7ee04774a007bd`). Evidencia completa en
+`docs/evidencia/005-evaluacion-proveedores/`.
+
+| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Éxito | Mediana | Costo calculado |
+|---|---|---|---|---|---|---|---|
+| Ollama `qwen3.5:9b` | 10 | 6 | 4 | 0 | 60,0 % | 38 793 ms | sin cobro por API |
+| DeepSeek `deepseek-flash` | 9 | 6 | 3 | 1 | 66,7 % | 5 541 ms | 0,006087 USD |
+| Anthropic `claude-haiku-5-5` | 9 | 4 | 5 | 1 | 44,4 % | 7 028 ms | 0,005839 USD |
+
+- S08 quedó bloqueado en los externos por `external_tool_blocked`; es el comportamiento esperado,
+  no un fallo.
+- Ollama agotó el tiempo en S02 (136 618 ms) y S04 (182 842 ms), por encima de 90 s por llamada y
+  120 s por turno. Defecto registrado y pendiente.
+- DeepSeek falló S03, S04 y S10; Anthropic falló S02, S03, S04, S07 y S10 por salida estructurada
+  inválida, abstención o respuesta no sostenida; se conservan como fallos.
+- Se corrigió `parse_structured` para aceptar JSON envuelto en bloque cercado o con texto alrededor,
+  con regresión en `tests/unit/test_http_common.py` (5 pruebas). Bloqueaba la evaluación externa.
+- Presupuesto estimado antes de llamar: DeepSeek 0,052800 USD y Anthropic 0,020000 USD. Ledger
+  acumulado de las tres pasadas: 0,025515 USD; uso observado: 0,013423 USD; restante conservador
+  **4,974485 USD**. No se aumentaron presupuestos.
+- Playwright validó `/settings/ai` con los tres perfiles guardados y una ejecución real de S01 con
+  Ollama; la página de ejecución registró `ollama` / `qwen3.5:9b`, dos citas válidas y sin errores de
+  consola. Capturas en el directorio de evidencia.
+- Las pasadas 1 y 2 se conservan en `iteracion-1/` e `iteracion-2/`; la raíz contiene la pasada
+  declarada.
+
+**T039**: la comparación externa real está ejecutada y registrada; el criterio de marcar pruebas
+`external` en pytest y omitirlas sin credencial **no** está implementado, por lo que T039 no se
+cierra. La aceptación externa sigue pendiente y no se declara.

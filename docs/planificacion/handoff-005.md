@@ -1,7 +1,9 @@
 # Handoff — 005 Generador configurable (Entregas 1–3)
 
-**Fecha**: 2026-11-22
-**Estado**: R1–R3 corregidos; T001–T038, T040–T042 y T043–T048 completadas; T039 real pendiente; 005 con aceptación local parcial.
+**Fecha**: 2026-11-23 (actualizado tras la evaluación real)
+**Estado**: R1–R3 corregidos; T001–T038, T040–T042 y T043–T048 completadas. La comparación externa
+real se ejecutó; T039 queda parcialmente acreditada por el marker `external` y 005 mantiene
+aceptación local, sin aceptación de proveedores externos.
 **Rama**: `005-generador-configurable`.
 
 ## 1. Correcciones R1–R3
@@ -55,24 +57,33 @@
 - Evidencia y capturas: `docs/evidencia/005-configuracion-ui/`.
 - `make check`: 677 passed.
 
-## 3. T039 — Pendiente real
+## 3. T039 — Comparación externa real
 
-- `deepseek-real-pending.json` y `anthropic-real-pending.json`:
-  «Sin presupuesto externo aprobado (external_budget_usd=0).»
-- No se usaron claves ni se hicieron llamadas pagas.
+- Ejecutada el 2026-11-23 con claves y presupuestos existentes (5 USD global / 5 USD por turno), sin
+  aumentarlos ni modificar `.env`.
+- Conjunto congelado `005-evaluation-v1` (10 escenarios), instancia temporal, corpus público y caso
+  ficticio. Evidencia en `docs/evidencia/005-evaluacion-proveedores/`.
+- Ollama: 6/10 aprobados; DeepSeek: 6/9 (S08 bloqueado); Anthropic: 4/9 (S08 bloqueado).
+- Costo calculado: DeepSeek 0,006087 USD; Anthropic 0,005839 USD. Ledger acumulado 0,025515 USD;
+  restante conservador 4,974485 USD.
+- S08 queda bloqueado en externos por `external_tool_blocked`; es el comportamiento esperado.
+- Defecto pendiente: Ollama supera los límites declarados (S02 136 618 ms, S04 182 842 ms).
+- **T039 no se cierra**: falta registrar el marker `external` de pytest y su omisión sin credencial.
 
 ## 4. Estado de tareas
 
 - T001–T038: completadas.
-- T039: pendiente la ejecución real; simulación ejecutada.
-- T040: completada — `make check` 649 passed; `make test-integration` 37 passed (1213.60 s).
-- T041: documentación.
-- T042: completada como aceptación local parcial; externos no aceptados.
+- T039: ejecución real registrada; criterio del marker `external` pendiente.
+- T040: completada — `make check` y `make test-integration` verdes en el corte anterior; repetir
+  `make check` tras los cambios de esta evaluación.
+- T041: documentación actualizada.
+- T042: aceptación local parcial; externos no aceptados.
 
 ## 5. Siguiente dato necesario
 
-Presupuesto externo autorizado (global y por turno) y credenciales locales para ejecutar T039 real.
-Después: revalidar modelos/precios y repetir la comparación con el mismo conjunto congelado.
+Implementar el marker `external` de pytest con omisión sin credencial para cerrar T039. Después,
+decidir si se corrige el exceso de timeout de Ollama y si se repite la comparación externa con más
+escenarios. La aceptación externa requiere mejor calidad sostenida y revisión semántica.
 
 ## 6. Límites
 

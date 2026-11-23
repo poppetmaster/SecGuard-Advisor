@@ -146,9 +146,12 @@ del responsable registrada; acuerdos del equipo no constan) fija Qdrant en servi
 para 004, un proveedor API explícito para 005 y una acción externa controlada para 006. 004 reconstruye
 el índice desde cero desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación
 obligatoria y sin retorno a Chroma; los archivos Chroma existentes no se borran y quedaron fuera del
-código en el Corte 6. 005 tiene las Entregas 1–3 implementadas, la comparación local ejecutada con Ollama y una página
-«Configuración de IA» (`/settings/ai`) que persiste el proveedor y parámetros no secretos; DeepSeek/Anthropic solo se probaron con transporte simulado y no se declaran
-aceptados en uso real. 006 sigue sin implementar.
+código en el Corte 6. 005 tiene las Entregas 1–3 implementadas, una página
+«Configuración de IA» (`/settings/ai`) que persiste el proveedor y parámetros no secretos y una
+evaluación real del 2026-11-23 con 10 escenarios congelados por proveedor (Ollama 6/10 aprobados,
+DeepSeek 6/9 y Anthropic 4/9; S08 bloqueado en externos). La evidencia está en
+`docs/evidencia/005-evaluacion-proveedores/`; DeepSeek/Anthropic no se declaran aceptados en uso real.
+006 sigue sin implementar.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -178,7 +181,8 @@ La constitución completa las decisiones de arquitectura, seguridad y calidad:
 - FastAPI, Jinja2 y HTMX.
 - Tailwind CSS y Flowbite (gratuito), servidos localmente.
 - LangChain y LangGraph.
-- Ollama para inferencia local (actual); DeepSeek y Anthropic configurables, con pruebas simuladas en 005.
+- Ollama para inferencia local (actual); DeepSeek y Anthropic configurables, evaluados con llamadas
+  reales en 005 sin declararse aceptados.
 - SQLite para estado y procedencia; Qdrant para el índice vectorial derivado y reconstruible.
 - LangSmith para trazas y evaluación.
 - pytest, Ruff, pre-commit, Makefile y GitHub Actions.
