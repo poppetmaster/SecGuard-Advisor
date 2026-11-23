@@ -52,8 +52,8 @@ aceptación externa real pendiente; Telegram no está implementado.
 
 **005 Entregas 1–3 completadas (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
-Haiku (`claude-haiku-5-5`). La página `/settings/ai` permite seleccionar proveedor, modelo y límites
-no secretos, persistidos en SQLite con precedencia sobre `Settings`/`.env`; cada turno toma una
+Haiku (`claude-haiku-5-5`). La página `/settings/ai`, dentro del grupo **Administración**, permite seleccionar proveedor, modelo
+y límites no secretos, persistidos en SQLite con precedencia sobre `Settings`/`.env`; cada turno toma una
 instantánea y `.env` conserva claves, endpoints y presupuestos. Ollama está operativo; DeepSeek/Anthropic tienen adaptadores, contexto,
 costo, presupuesto, autorización por caso, bloqueo de herramientas importadas, redacción y evidencia
 de uso, probados **solo contra transporte HTTP simulado**; la comparación local con Ollama real está

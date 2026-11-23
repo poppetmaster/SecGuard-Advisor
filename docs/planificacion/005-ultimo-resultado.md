@@ -106,27 +106,34 @@ T039 real pendiente. T042 registra aceptación parcial, no integral.
 
 ## Configuración de IA desde la interfaz (T043–T048)
 
-- Ruta `/settings/ai`, en el menú General, fuera de un caso.
-- Selección de proveedor, modelo, máximo de salida y timeout; guardado en SQLite mediante
+- Ruta `/settings/ai`, en el grupo **Administración** del menú general, fuera de un caso y disponible en escritorio y móvil. El grupo no implica autenticación ni roles.
+- Selección de proveedor, modelo, máximo de salida (solo externos) y timeout; guardado en SQLite mediante
   `ai_configuration` y `ai_provider_profiles` (migración `f7a8b9c0d1e2`).
 - Precedencia: configuración guardada > `Settings`/`.env`; `.env` conserva claves, endpoints y
   presupuestos y no se modifica. `SECGUARD_GENERATION_MODEL` vacío usa el modelo predeterminado.
 - Perfiles independientes por proveedor; cambiar de proveedor no arrastra modelos ni sobrescribe
   parámetros de otro.
+- Ollama no exige clave ni presupuesto monetario; su reserva de salida es automática dentro del
+  contexto técnico y se muestra «Ejecución local; sin cobro por tokens de API». No se afirma costo
+  operativo cero.
+- Los límites externos se validan contra el proveedor/modelo seleccionado; cambiar de proveedor no
+  arrastra modelos ni altera consultas en curso.
 - Cada turno usa una instantánea; una consulta en curso conserva su perfil. Los reintentos usan la
   autorización vigente y registran los parámetros efectivos.
+- Los recursos propios del turno (generador, contador, embeddings e índice) se cierran en éxito,
+  error y fallo de preparación; no se cierran recursos inyectados o compartidos.
 - El formulario muestra presupuestos global/por turno, moneda y «Clave configurada»/«Clave
   pendiente»; nunca valores, fragmentos ni máscaras. Conexión: «No verificada».
 - Un externo con presupuesto cero muestra «Configurado; consultas externas bloqueadas hasta
   autorizar presupuesto». Guardar no autoriza gasto ni envía datos.
 - No hay llamadas externas ni conteo remoto al abrir o guardar.
 
-Pruebas nuevas: `tests/unit/test_ai_config_service.py` (7), `tests/contract/test_ai_settings_routes.py`
-(10) y `tests/unit/test_ai_config_turn.py` (4). Playwright validó escritorio y móvil, guardado,
+Pruebas nuevas: `tests/unit/test_ai_config_service.py` (9), `tests/contract/test_ai_settings_routes.py`
+(12) y `tests/unit/test_ai_config_turn.py` (4); cierre de recursos (3). Playwright validó escritorio y móvil, guardado,
 cambio de perfiles, mensajes, foco, Escape, ausencia de overflow y consola sin errores. Capturas en
 `docs/evidencia/005-configuracion-ui/`.
 
-`make check`: **670 passed**, 37 deselected.
+`make check`: **677 passed**, 37 deselected.
 
 ## Limitaciones
 

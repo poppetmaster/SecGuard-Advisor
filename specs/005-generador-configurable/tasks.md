@@ -8,7 +8,7 @@ checklists/requirements.md
 **Tests**: incluidas porque la constitución aplica test-first cuando existe una prueba determinista y
 un resultado esperado claro.
 
-**Estado**: T001–T038, T040–T042 y T043–T048 completadas. T039 real permanece pendiente por
+**Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 real permanece pendiente por
 ausencia de presupuesto y credenciales; su versión simulada está ejecutada. 005 tiene aceptación
 local parcial; no se declara aceptación de proveedores externos ni se realizaron llamadas externas
 pagadas.
@@ -423,6 +423,15 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Dep: T047
   - Check: documentación vigente sin secretos; T039 sigue pendiente.
   - Evidence: diffs y `docs/evidencia/005-configuracion-ui/README.md`.
+
+- [x] T049 Ajustar la configuración local sin cuotas comerciales, validar límites externos por
+  proveedor/modelo, mover «Configuración de IA» a Administración y cerrar recursos propios del turno.
+  - Story: UI
+  - Dep: T048
+  - Check: Ollama funciona con presupuesto externo cero; límites externos por proveedor; recursos
+    cerrados en éxito/error/preparación; Playwright escritorio y móvil.
+  - Evidence: `tests/unit/test_ai_config_service.py`, `tests/contract/test_ai_settings_routes.py`,
+    `tests/contract/test_chat_resource_cleanup.py`, `docs/evidencia/005-configuracion-ui/`.
 
 ## Dependencias y orden
 

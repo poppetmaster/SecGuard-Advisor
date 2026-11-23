@@ -43,14 +43,17 @@
 
 ## 2.1 Configuración de IA en la interfaz (T043–T048)
 
-- Página `/settings/ai` en el menú General.
+- Página `/settings/ai` en el grupo **Administración** del menú general, escritorio y móvil.
 - Tablas `ai_configuration`/`ai_provider_profiles`; migración `f7a8b9c0d1e2`.
 - Precedencia: guardado > `Settings`/`.env`; `.env` no se modifica.
 - Perfiles independientes; instantánea por turno y reintento.
-- Presupuestos informativos; claves solo como «Clave configurada»/«Clave pendiente».
+- Ollama sin clave, presupuesto ni cuota comercial; reserva de salida automática y mensaje local.
+- Presupuestos externos informativos; claves solo como «Clave configurada»/«Clave pendiente».
+- Límites externos validados por proveedor/modelo; recursos del turno cerrados en éxito, error y
+  preparación fallida.
 - Cero llamadas externas al abrir/guardar; sin conteo remoto.
 - Evidencia y capturas: `docs/evidencia/005-configuracion-ui/`.
-- `make check`: 670 passed.
+- `make check`: 677 passed.
 
 ## 3. T039 — Pendiente real
 

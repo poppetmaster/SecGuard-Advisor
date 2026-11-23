@@ -350,5 +350,15 @@ sin editar código ni reiniciar el servidor. Las claves y presupuestos siguen en
   Qualys y datos privados, los presupuestos y reservas, LangSmith independiente, embeddings locales,
   Qdrant y la ausencia de fallback.
 
+- **FR-045**: Ollama MUST NOT exigir claves ni presupuesto monetario, MUST NOT aplicar reservas
+  económicas externas y MUST administrar automáticamente la reserva de salida dentro del contexto
+  técnico. MOSTRAR «Ejecución local; sin cobro por tokens de API» sin afirmar costo operativo cero.
+- **FR-046**: Los límites de salida y tiempo de proveedores externos MUST validarse contra el
+  proveedor/modelo seleccionado, no contra el proveedor inicial de la aplicación.
+- **FR-047**: Los recursos propios del turno (generador, contador, embeddings e índice) MUST
+  cerrarse en éxito, error y fallo de preparación, sin cerrar recursos inyectados o compartidos.
+- **FR-048**: «Configuración de IA» MUST ubicarse en el grupo «Administración» del menú general,
+  disponible en escritorio y móvil; el grupo no implica autenticación ni roles.
+
 - **SC-007**: La configuración guardada se aplica a la consulta siguiente, una consulta en curso
   conserva su perfil y los secretos no aparecen en HTML, logs ni evidencia.

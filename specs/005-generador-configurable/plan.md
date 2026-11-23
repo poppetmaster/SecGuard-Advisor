@@ -152,6 +152,10 @@ errores, dependencias, razonamiento y comparación.
 - `resolve_turn_settings` toma una instantánea por turno; `_run_generation` construye generador,
   contador, budget y timeout desde esa instantánea.
 - La UI no modifica `.env`, no llama proveedores ni cuenta tokens remotos.
+- Ollama no usa presupuesto monetario; su reserva de salida es automática dentro del contexto. Los
+  límites externos se validan por proveedor/modelo. «Configuración de IA» vive en Administración.
+- `_run_generation` cierra generador, contador, embeddings e índice solo cuando son propiedad del
+  turno; conserva el release del permiso global.
 - Autorización por caso, Qualys, presupuestos, LangSmith, Qdrant y embeddings no cambian.
 
 ## Phase 2 — Tasks

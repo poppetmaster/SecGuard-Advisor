@@ -255,7 +255,7 @@ propia, accesible por URL y con su ruta de navegación visible:
 |---|---|
 | `/cases` | Casos |
 | `/cases/new` | Nuevo caso |
-| `/settings/ai` | Configuración de IA (proveedor, modelo, límites) |
+| `/settings/ai` | Configuración de IA (proveedor, modelo, límites), dentro del grupo **Administración** |
 | `/cases/{case_id}` | Resumen del caso (contexto y activos) |
 | `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
 | `/cases/{case_id}/vulnerabilities` | Vulnerabilidades: formulario, preview, confirmación y snapshot |

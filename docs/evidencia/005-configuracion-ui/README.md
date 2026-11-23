@@ -7,19 +7,24 @@ no aceptados; T039 real pendiente.
 
 ## Ruta
 
-`/settings/ai` — «Configuración de IA» en el menú **General**, fuera del contexto de un caso.
+`/settings/ai` — «Configuración de IA» en el grupo **Administración** del menú principal, fuera del
+contexto de un caso y disponible en escritorio y móvil. «Administración» solo agrupa opciones; no
+implica autenticación ni roles.
 
 ## Funcionalidad
 
 - Selección explícita: Local — Ollama, DeepSeek, Claude — Anthropic.
-- Modelo asociado, máximo de tokens de salida y tiempo máximo por llamada.
+- Modelo asociado, máximo de tokens de salida (solo externos) y tiempo máximo por llamada.
+- **Ollama**: sin claves, sin presupuesto monetario y sin cuota comercial. La reserva de salida se
+  administra automáticamente dentro del contexto técnico; no se solicita cuota de tokens. Se muestra
+  «Ejecución local; sin cobro por tokens de API» sin afirmar costo operativo total cero.
 - Guardado en SQLite; sin editar código ni reiniciar el servidor.
 - Perfiles independientes por proveedor; cambiar de proveedor no arrastra modelos ni sobrescribe
   parámetros de otro.
-- Resumen de configuración activa, presupuestos global y por turno (USD) y disponibilidad de
-  credenciales.
+- Resumen de configuración activa, presupuestos externos global y por turno (USD) y disponibilidad
+  de credenciales.
 - Claves: solo «Clave configurada» / «Clave pendiente» / «No requiere». No se envían valores,
-  fragmentos ni máscaras.
+  fragmentos ni máscaras; presencia no equivale a credencial válida ni conexión verificada.
 - Conexión: «No verificada». Guardar no verifica conexión ni autoriza gasto.
 - Proveedor externo con presupuesto cero:
   «Configurado; consultas externas bloqueadas hasta autorizar presupuesto.»
@@ -29,9 +34,11 @@ no aceptados; T039 real pendiente.
 1. Selección guardada en `ai_configuration`/`ai_provider_profiles`.
 2. Si no existe, valores iniciales de `Settings`/`.env`.
 3. `.env` conserva claves, endpoints y presupuestos; la interfaz no lo modifica.
-4. `SECGUARD_GENERATION_MODEL` vacío usa el modelo predeterminado del proveedor cuando no hay
+4. Los límites externos se validan contra el proveedor/modelo seleccionado, no contra el proveedor
+   inicial de la aplicación.
+5. `SECGUARD_GENERATION_MODEL` vacío usa el modelo predeterminado del proveedor cuando no hay
    selección guardada.
-5. Cada turno toma una instantánea; una consulta en curso conserva proveedor, modelo, límites,
+6. Cada turno toma una instantánea; una consulta en curso conserva proveedor, modelo, límites,
    timeout y autorización.
 
 ## Variables de `.env` (sin secretos)
@@ -62,14 +69,15 @@ confirmado» y no declara conexión aprobada. Un modelo confirmado de otro prove
 
 ```text
 make check
-  → 670 passed, 37 deselected, 17 warnings
+  → 677 passed, 37 deselected, 17 warnings
 ```
 
 | Prueba | Resultado |
 |---|---|
-| `tests/unit/test_ai_config_service.py` | 7 passed |
-| `tests/contract/test_ai_settings_routes.py` | 10 passed |
+| `tests/unit/test_ai_config_service.py` | 9 passed |
+| `tests/contract/test_ai_settings_routes.py` | 12 passed |
 | `tests/unit/test_ai_config_turn.py` | 4 passed |
+| `tests/contract/test_chat_resource_cleanup.py` | 3 passed |
 | Regresión R1–R3 | verde dentro de `make check` |
 
 Playwright (servidor local con almacenamiento temporal, `.env` real solo leído):
@@ -80,8 +88,9 @@ Playwright (servidor local con almacenamiento temporal, `.env` real solo leído)
 - Cambio a Ollama y regreso a DeepSeek conserva 64/12.5 del perfil DeepSeek.
 - Móvil 390×844: menú general, foco en cerrar, Escape, sin overflow (`scrollWidth == clientWidth`).
 - Consola: 0 errores.
-- Capturas: `settings-desktop.png`, `settings-saved-deepseek.png`, `settings-mobile.png`,
-  `settings-mobile-menu.png`. No contienen claves.
+- Capturas: `settings-desktop-local.png`, `settings-desktop-external.png`,
+  `settings-saved-deepseek.png`, `settings-mobile.png`, `settings-mobile-menu.png`. No contienen
+  claves.
 
 ## Garantías conservadas
 
@@ -96,6 +105,8 @@ Playwright (servidor local con almacenamiento temporal, `.env` real solo leído)
 
 - No se ejecutaron llamadas externas reales; las claves están configuradas pero no hay presupuesto
   autorizado en esta instrucción.
+- Ollama funciona con presupuesto externo cero o agotado y no crea reservas económicas externas.
+- El cierre de recursos propios se probó en éxito, error de modelo y fallo de preparación.
 - Guardar no prueba la conexión ni el modelo; no hay botones de prueba automática.
 - No se hace conteo remoto durante el guardado.
 - T039 real sigue pendiente.
