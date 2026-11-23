@@ -64,7 +64,7 @@ aceptación local, sin aceptación de proveedores externos.
   `ai_evaluations`/`ai_evaluation_results`; migración aditiva `a3c4d5e6f7a8`.
 - Importación idempotente: `make import-evaluation` (no crea solicitudes desde agregados).
 - Evidencia, fórmulas y capturas: `docs/evidencia/005-panel-uso-ia/`.
-- `make check`: 734 passed, 38 deselected; integraciones afectadas: 8 passed.
+- `make check`: 736 passed, 38 deselected; integraciones afectadas: 8 passed.
 - Corrección de exactitud (2026-11-23): consumo completo incluye bloqueados; costo conocido
   DeepSeek 0,006201 USD y Anthropic 0,006150 USD, con 2 y 3 registros desconocidos. El comparativo
   funcional usa la muestra común de 9 escenarios (Ollama 5/9, DeepSeek 6/9, Anthropic 4/9).

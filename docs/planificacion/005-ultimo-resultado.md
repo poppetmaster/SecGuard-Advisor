@@ -283,11 +283,11 @@ y el informe breve S10.
   0.251), dejando 0 hits. Se añadió recuperación de respaldo solo para preguntas de informe, sin
   cambiar el umbral global. Prompt `chat-v9` y persistencia de recomendaciones/limitaciones.
   Corrida local: 2 hits `expanded_case`, `answered`, 3 recomendaciones y limitación; 44 631 ms.
-- **S07 externo:** una respuesta exclusivamente de herramienta (sin claims documentales) puede
+- **S07 y citas parciales:** una respuesta exclusivamente de herramienta (sin claims documentales) puede
   persistir sin citas. Si hay claims documentales rechazados, se conserva reparación/abstención;
-  no se eliminan silenciosamente ni se presentan como verificados.
+  no se eliminan silenciosamente ni se presentan como verificados. Una cita válida junto con otra rechazada ya no persiste por la salida anticipada: repara una vez y abstiene si sigue rechazada.
 - **T039:** marker `external`, `make check` excluye externas y `pytest -m external` omite sin
   autorización explícita. La infraestructura está lista; la aceptación externa real no se declara.
-- Pruebas: `make check` **734 passed**, 38 deselected; integraciones afectadas **8 passed**;
+- Pruebas: `make check` **736 passed**, 38 deselected; integraciones afectadas **8 passed**;
   externas **1 skipped**. Evidencia en `docs/evidencia/005-estabilizacion/`.
 - Sin llamadas pagadas nuevas. No se inició Telegram ni 003.

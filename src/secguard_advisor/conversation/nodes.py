@@ -842,8 +842,6 @@ def _has_tool_evidence(state: dict[str, Any]) -> bool:
 
 
 def route_after_validate(state: dict[str, Any]) -> str:
-    if state.get("citations"):
-        return "persist"
     payload = state.get("payload")
     claims = payload.claims if payload is not None else []
     rejected = state.get("rejected", ())
@@ -997,11 +995,12 @@ def persist(state: dict[str, Any], config) -> dict[str, Any]:
     payload: AnswerPayload | None = state.get("payload")
     answer_text = (state.get("answer") or (payload.answer if payload else "")).strip()
     citations = state.get("citations", ())
+    rejected = state.get("rejected", ())
     claims = payload.claims if payload is not None else []
     tool_evidence = _has_tool_evidence(state)
     if state.get("outcome"):
         outcome = state["outcome"]
-    elif citations or (tool_evidence and not claims and answer_text):
+    elif (citations and not rejected) or (tool_evidence and not claims and answer_text):
         outcome = "answered"
     else:
         outcome = "insufficient_evidence"

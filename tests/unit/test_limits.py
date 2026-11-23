@@ -19,7 +19,8 @@ from secguard_advisor.conversation.llm import (
     StepLimit,
     ToolDecision,
 )
-from secguard_advisor.conversation.nodes import _model_timeout, route_after_validate
+from secguard_advisor.conversation.nodes import _model_timeout, persist, route_after_validate
+from secguard_advisor.conversation.persistence import CitationDraft
 from secguard_advisor.conversation.turn import execute_turn, start_question_turn
 
 
@@ -320,6 +321,84 @@ def test_tool_evidence_with_invalid_document_claim_requires_repair() -> None:
         "payload": payload,
         "hits": (),
         "tool_results": ({"tool": "findings_query", "status": "ok", "result": {"total": 3}},),
+        "repaired": False,
+    }
+
+    assert route_after_validate(state) == "repair"
+    state["repaired"] = True
+    assert route_after_validate(state) == "abstain"
+
+
+def test_persist_does_not_mark_answered_when_a_citation_is_rejected(
+    tmp_path: Path,
+) -> None:
+    env = build_env(tmp_path, min_score=-1.0)
+    context = start_question_turn(
+        env.factory,
+        env.settings,
+        scope=CaseScope(case_id=env.case_id),
+        question="¿Qué controles aplican?",
+        generator=RecordingGenerator(),
+        embedder=FakeEmbedder(),
+        index=env.index,
+        token_counter=FakeTokenCounter(),
+    )
+    valid = CitationDraft(
+        chunk_id=env.case_document.chunk_ids[0],
+        document_id=env.case_document.document_id,
+        version_id=env.case_document.version_id,
+        page=1,
+        section=None,
+        quote=CASE_TEXT,
+        locator="p:1#0",
+        check_status="valid",
+        check_reason=None,
+    )
+    rejected = CitationDraft(
+        chunk_id="",
+        document_id="",
+        version_id="",
+        page=None,
+        section=None,
+        quote="cita rechazada",
+        locator="",
+        check_status="rejected",
+        check_reason="quote_not_found",
+    )
+    state = {
+        "payload": AnswerPayload(answer="Respuesta mixta.", claims=[]),
+        "citations": (valid,),
+        "rejected": (rejected,),
+        "hits": (),
+        "tool_results": (),
+        "steps": (),
+        "tool_records": (),
+    }
+
+    persist(state, {"configurable": {"runtime": context, "memory": None}})
+
+    with env.factory() as session:
+        from secguard_advisor.db.models import Run
+
+        run = session.get(Run, context.run_id)
+        assert run is not None
+        assert run.outcome == "insufficient_evidence"
+
+
+def test_partial_citation_rejection_repairs_once_then_abstains() -> None:
+    payload = AnswerPayload(
+        answer="La política exige MFA y el control de acceso está documentado.",
+        claims=[
+            Claim(text="MFA", chunk_ids=["S1"], quote="texto"),
+            Claim(text="control", chunk_ids=["S9"], quote="no existe"),
+        ],
+    )
+    state = {
+        "citations": ("cita válida",),
+        "rejected": ("cita rechazada",),
+        "payload": payload,
+        "hits": ("hit",),
+        "tool_results": (),
         "repaired": False,
     }
 

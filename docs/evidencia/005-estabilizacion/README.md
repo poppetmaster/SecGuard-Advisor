@@ -103,8 +103,10 @@ al haber claims, enviaba a reparación y luego a abstención.
 
 **Corrección:** una respuesta **exclusivamente** de herramienta (sin claims documentales) puede
 persistir con `findings_query` `ok`. Si hay claims documentales rechazados, se conserva la
-reparación/abstención; no se eliminan silenciosamente ni se presentan como verificados. Las pruebas
-cubren tool-only, mixta inválida, mixta con citas válidas y herramienta fallida/vacía.
+reparación/abstención; no se eliminan silenciosamente ni se presentan como verificados. La salida
+anticipada que persistía con cualquier cita válida se corrigió: ahora una cita válida junto con una
+rechazada pasa por reparación y, si sigue rechazada, abstiene. Las pruebas cubren tool-only, mixta
+inválida, mixta con citas válidas, citas parcialmente rechazadas y herramienta fallida/vacía.
 
 **Evidencia:** `tests/unit/test_qualys_conversation.py`,
 `tests/unit/test_limits.py` y `ui-chat-completo.png` (findings_query con total y grupos).
@@ -115,16 +117,16 @@ cubren tool-only, mixta inválida, mixta con citas válidas y herramienta fallid
 - `make check` excluye `external`; `make test-external` los ejecuta aparte.
 - `tests/external/test_external_readiness.py` omite con motivo si falta
   `SECGUARD_EXTERNAL_TESTS_AUTHORIZED=1`, presupuesto o credenciales. No envía solicitudes.
-- `pytest -m external`: 1 skipped, 771 deselected.
+- `pytest -m external`: 1 skipped, 773 deselected.
 - T039 **no está cerrado**: la infraestructura está lista, pero no hay aceptación externa real
   nueva. Tampoco se presenta la prueba omitida como evaluación real.
 
 ## 2. Pruebas ejecutadas
 
-- `make check`: **734 passed**, 38 deselected.
+- `make check`: **736 passed**, 38 deselected.
 - Integraciones afectadas (`test_ollama_provider_regression`, `test_answer_real`,
   `test_tool_only_question`, `test_midturn_failure`, `test_trace_and_fallback`): **8 passed**
-  (170,42 s).
+  (76,07 s).
 - `pytest -m external`: **1 skipped** con motivo explícito.
 - S10 local real y timeout local real: ver archivos de evidencia.
 - No se hicieron llamadas pagadas y no se modificó la evidencia original de los 30 escenarios.
