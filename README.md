@@ -181,6 +181,7 @@ La constitución completa las decisiones de arquitectura, seguridad y calidad:
 - Python 3.14.6 y `uv`.
 - FastAPI, Jinja2 y HTMX.
 - Tailwind CSS y Flowbite (gratuito), servidos localmente.
+- Apache ECharts 5.6.0 (Apache-2.0), servido localmente para el panel de uso de IA.
 - LangChain y LangGraph.
 - Ollama para inferencia local (actual); DeepSeek y Anthropic configurables, evaluados con llamadas
   reales en 005 sin declararse aceptados.

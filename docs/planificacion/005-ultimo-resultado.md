@@ -215,7 +215,7 @@ cierra. La aceptación externa sigue pendiente y no se declara.
   `provider_budget_ledger`; registra operación, estado, duración, tokens, caché, razonamiento,
   fuente de uso, costo calculado, tarifa histórica y vínculo de evaluación. Sin claves, prompts ni
   respuestas.
-- Tarjetas, gráficas SVG con tabla accesible, tabla por proveedor/modelo, detalle paginado con enlace
+- Tarjetas, gráficas interactivas con tabla accesible, tabla por proveedor/modelo, detalle paginado con enlace
   a la ejecución y cobertura observada/estimada/no disponible. Reservas pendientes e inciertas se
   muestran aparte del gasto calculado.
 - Comparativo de pruebas con importación idempotente del informe 005
@@ -223,7 +223,7 @@ cierra. La aceptación externa sigue pendiente y no se declara.
   asistida por IA y revisión humana registrada.
 - Las ejecuciones sin telemetría se agregan desde `runs` y se marcan como histórico incompleto; los
   agregados importados no fabrican solicitudes.
-- Pruebas: `make check` con **714 passed**, 37 deselected; integraciones afectadas **8 passed**.
+- Pruebas: `make check` con **717 passed**, 37 deselected; integraciones afectadas **8 passed**.
   Evidencia y capturas en `docs/evidencia/005-panel-uso-ia/`.
 - Ver y filtrar no invoca modelos ni gasta. No se añadieron botones para lanzar evaluaciones.
 
@@ -248,3 +248,21 @@ cierra. La aceptación externa sigue pendiente y no se declara.
 **Pendiente, no resuelto por esta corrección**: T039 (marker `external` de pytest), tiempos
 excedidos de Ollama (S02 136 618 ms; S04 182 842 ms), errores de salida estructurada externa y el
 informe breve S10.
+
+## Gráficas interactivas del panel de uso (2026-11-23)
+
+- Apache ECharts **5.6.0** (Apache-2.0) instalado con npm, copiado a `static/js/echarts.min.js` por
+  `npm run copy:vendor` y registrado en `static/vendor/MANIFEST.md`. Sin CDN ni servicios externos.
+- Consumo: costo conocido diario por proveedor, solicitudes API externas y llamadas locales, y
+  tokens de entrada/salida por proveedor. Comparativo: latencia en segundos, resultados
+  aprobado/fallido/bloqueado, costo conocido por escenario con cobertura y matriz de escenarios.
+- Tooltips con unidad/cobertura, leyendas, exportación PNG, tablas accesibles y mensajes de datos
+  ausentes. `usage-charts.js` reinicializa tras HTMX, libera instancias y respeta
+  `prefers-reduced-motion`.
+- Se mantiene la separación entre consumo completo (incluye bloqueados) y comparativo funcional
+  sobre la muestra común de 9 escenarios; los totales conocidos siguen siendo parciales.
+- Pruebas: `make check` con **717 passed**, 37 deselected; integraciones afectadas **8 passed**.
+  Capturas y PNG exportado en `docs/evidencia/005-panel-uso-ia/`.
+
+**Pendiente sin cambios**: T039, tiempos excedidos de Ollama, errores de salida estructurada externa
+y el informe breve S10.

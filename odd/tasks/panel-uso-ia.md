@@ -104,3 +104,7 @@ aplicación, con telemetría por solicitud, agregados, filtros, comparativo de e
   0,006201 USD (incluye S08) y Anthropic 0,006150 USD (incluye S08), con 2 y 3 registros
   desconocidos. Los adaptadores capturan uso antes de validar y reinician `last_usage`; la salida
   inválida conserva tokens/costo cuando hay evidencia. Informes regenerados y Playwright verificado.
+- **L5 (gráficas ECharts, 2026-11-23)**: Apache ECharts 5.6.0 (Apache-2.0) instalado con npm y
+  servido localmente. Gráficas de consumo y comparativo con tooltips, leyendas, exportación PNG,
+  tablas accesibles, reinicialización HTMX y `ResizeObserver`. `make check` 717 passed; Playwright
+  validó 1440/390/320 px, filtros, pestañas, varios swaps y ausencia de llamadas externas.

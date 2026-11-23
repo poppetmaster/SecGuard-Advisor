@@ -11,7 +11,7 @@ un resultado esperado claro.
 **Estado**: T001–T038, T040–T042 y T043–T049 completadas. T039 tiene la comparación externa real
 ejecutada y registrada, pero permanece pendiente el marker `external` de pytest. 005 mantiene
 aceptación local parcial; no se declara aceptación de proveedores externos. El panel «Uso y
-comparativos de IA» está implementado (T050–T056).
+comparativos de IA» está implementado (T050–T057).
 
 ## Formato
 
@@ -477,6 +477,14 @@ regresión completa verde; documentación final y decisión de aceptación basad
   - Evidence: `tests/unit/test_ai_usage_import.py`, `tests/unit/test_report_evaluation_005.py`,
     `tests/contract/test_deepseek_adapter.py`, `tests/contract/test_anthropic_adapter.py`,
     `docs/evidencia/005-panel-uso-ia/README.md`.
+
+- [x] T057 [Uso] Integrar Apache ECharts local, gráficas interactivas, exportación PNG y
+  accesibilidad del panel.
+  - Story: Uso
+  - Check: ECharts 5.6.0 Apache-2.0 local, sin CDN; gráficas de consumo/comparativo con tooltips,
+    leyendas, tablas accesibles y exportación; HTMX sin instancias duplicadas.
+  - Evidence: `package.json`, `package-lock.json`, `scripts/copy-vendor.mjs`,
+    `tests/unit/test_ai_usage_charts.py`, `docs/evidencia/005-panel-uso-ia/`.
 
 ## Dependencias y orden
 

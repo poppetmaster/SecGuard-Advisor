@@ -17,7 +17,11 @@
 - Pestaña **Comparativo de pruebas** con evaluación importada, escenarios comunes, muestra
   incompleta, métricas automáticas, calidad asistida por IA y revisión humana registrada.
 - Importación explícita e idempotente del informe de evaluación 005.
-- Gráficas SVG/HTML generadas por Jinja2, sin CDN ni dependencia nueva.
+- Gráficas interactivas con **Apache ECharts 5.6.0** (Apache-2.0), servido localmente desde
+  `static/js/echarts.min.js` y copiado por `npm run copy:vendor`.
+- El panel usa el build completo de ECharts porque el proyecto no tiene un bundler de módulos; se
+  documenta como decisión y se evita añadir una cadena de build nueva. Sin CDN, React ni servicios
+  externos.
 
 ## Definiciones y fórmulas
 
@@ -105,14 +109,32 @@ uv run python scripts/import_evaluation_005.py --storage-dir storage/demo
 uv run python scripts/seed_ai_usage_demo.py --storage /ruta/temporal/storage
 ```
 
+## Gráficas interactivas
+
+- **Consumo:** costo conocido de API por día (líneas por proveedor), solicitudes API externas y
+  llamadas locales (barras apiladas), tokens de entrada y salida por proveedor (barras apiladas).
+- **Comparativo:** latencia mediana en segundos, resultados aprobado/fallido/bloqueado, costo
+  conocido por escenario comparable con cobertura y matriz de escenarios con tooltip de resultado,
+  duración y modelo.
+- Paleta: Ollama azul, DeepSeek violeta, Claude naranja; aprobado verde, fallido rojo, bloqueado
+  ámbar.
+- Tooltips con unidad, valor y cobertura cuando aplica; leyendas seleccionables; exportación PNG por
+  gráfica; tabla accesible en cada tarjeta.
+- `usage-charts.js` inicializa tras `htmx:afterSettle`, libera instancias en `htmx:beforeSwap`,
+  evita listeners duplicados, usa un único `ResizeObserver` y respeta `prefers-reduced-motion`.
+- Los datos se serializan con `tojson` y los tooltips usan `renderMode: "richText"` para no insertar
+  HTML no confiable.
+- No hay gráfica de calidad por dimensión: la base actual solo registra un promedio y no se
+  fabrican dimensiones.
+
 ## Pruebas ejecutadas
 
-- `make check`: **714 passed**, 37 deselected.
+- `make check`: **717 passed**, 37 deselected.
 - Integraciones afectadas:
   `test_ollama_provider_regression`, `test_answer_real`, `test_tool_only_question`,
-  `test_midturn_failure`, `test_trace_and_fallback`: **8 passed** (53.66 s).
+  `test_midturn_failure`, `test_trace_and_fallback`: **8 passed** (52.26 s).
 - Nuevas pruebas: telemetría, agregados y comparativo, importación, migración, contrato de rutas,
-  adaptadores y regeneración del informe. Incluyen: uso tras JSON inválido, timeout sin reutilizar
+  adaptadores, regeneración del informe y coherencia de datos de gráficas (3). Incluyen: uso tras JSON inválido, timeout sin reutilizar
   uso previo, consumo de bloqueados y muestra común.
 - Sin llamadas pagadas para probar el panel.
 
@@ -128,6 +150,9 @@ Playwright:
 - Pestaña de comparativo con dos vistas: **consumo completo** (incluye bloqueados, costo conocido
   parcial y cobertura) y **comparativo funcional** sobre la muestra común de 9 escenarios. Se
   verifican etiquetas de costo parcial, denominadores e IDs de la muestra.
+- ECharts renderizado en escritorio 1440 px y móvil 390/320 px; tooltips, leyendas, filtros,
+  pestañas, exportación PNG, varios reemplazos HTMX consecutivos, sin desbordamiento del documento,
+  consola limpia y solo peticiones locales.
 - Estados sin datos y con histórico incompleto.
 - Escritorio 1280 px; móvil 390 px y 320 px sin desborde horizontal del documento.
 - Navegación por teclado: enlace de salto, navegación, pestañas, campos y botones reciben foco;
@@ -142,6 +167,8 @@ Capturas:
 - `panel-filtros.png`
 - `comparativo-pruebas.png`
 - `comparativo-movil-320.png`
+- `panel-filtros.png`
+- `grafico-costo-exportado.png`
 - `panel-movil-390.png`
 - `panel-movil-320.png`
 - `panel-sin-datos.png`

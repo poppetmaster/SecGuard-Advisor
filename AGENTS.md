@@ -82,7 +82,8 @@ el mismo commit.
 ## Stack
 
 - Python 3.14.6, `uv`, src-layout, `uv_build`.
-- FastAPI, Jinja2, HTMX, Tailwind CSS y Flowbite (gratuito), recursos locales.
+- FastAPI, Jinja2, HTMX, Tailwind CSS, Flowbite (gratuito) y Apache ECharts 5.6.0
+  (Apache-2.0), recursos locales.
 - LangChain, LangGraph, SQLite y LangSmith. Ollama y Qdrant son la implementación actual; Qdrant es
   el único backend documental (004, implementado y aceptado localmente en el Corte 6). Chroma quedó
   retirado del código. Los adaptadores API de 005 existen, pero no tienen aceptación externa real y
