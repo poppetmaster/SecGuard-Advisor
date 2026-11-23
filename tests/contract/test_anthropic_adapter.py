@@ -8,7 +8,12 @@ import httpx
 import pytest
 
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.llm import AnswerPayload, InvalidModelOutput, ToolDecision
+from secguard_advisor.conversation.llm import (
+    AnswerPayload,
+    InvalidModelOutput,
+    ModelTimeout,
+    ToolDecision,
+)
 from secguard_advisor.conversation.providers.anthropic import AnthropicGenerator
 from secguard_advisor.conversation.providers.base import ProviderAuthError
 
@@ -117,6 +122,37 @@ def test_decide_returns_a_validated_tool_decision() -> None:
     assert decision.arguments.severity == "High"
 
 
+def test_timeout_does_not_reuse_previous_usage() -> None:
+    calls = {"count": 0}
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return httpx.Response(
+                200,
+                json={
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": json.dumps({"use_findings": False}),
+                        }
+                    ],
+                    "usage": {"input_tokens": 120, "output_tokens": 30},
+                },
+            )
+        raise httpx.ReadTimeout("timeout")
+
+    generator = AnthropicGenerator(_settings(), client=_client(handler))
+    try:
+        generator.decide(system="Clasificá.", user="¿Qué?")
+        assert generator.last_usage["input_tokens"] == 120
+        with pytest.raises(ModelTimeout):
+            generator.generate(system="Respondé.", user="¿Qué?")
+        assert generator.last_usage is None
+    finally:
+        generator.close()
+
+
 def test_invalid_json_is_rejected() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -131,6 +167,9 @@ def test_invalid_json_is_rejected() -> None:
     try:
         with pytest.raises(InvalidModelOutput):
             generator.generate(system="Respondé.", user="¿Qué?")
+        assert generator.last_usage is not None
+        assert generator.last_usage["input_tokens"] == 1
+        assert generator.last_usage["output_tokens"] == 1
     finally:
         generator.close()
 

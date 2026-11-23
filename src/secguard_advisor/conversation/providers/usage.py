@@ -85,9 +85,29 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
         duration = elapsed_ms(started)
         usage = getattr(generator, "last_usage", None) or {}
         status, error_code = status_and_error(exc)
+        input_tokens = _usage_value(usage, "input_tokens", "prompt_tokens")
+        output_tokens = _usage_value(usage, "output_tokens")
+        cost = (
+            CostResult("not_applicable", None, None, {"reason": "local"})
+            if provider == "ollama"
+            else CostResult("unknown", None, None, {"reason": "call_failed"})
+        )
         with context.factory() as session:
             if reservation is not None:
-                reconcile_call(session, reservation)
+                if input_tokens is not None and output_tokens is not None:
+                    cost = settle_call(
+                        session,
+                        reservation,
+                        provider=provider,
+                        model=model,
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        cached_tokens=_usage_value(usage, "cached_tokens"),
+                        cache_write_tokens=_usage_value(usage, "cache_write_tokens"),
+                        tariff_version=settings.external_tariff_version,
+                    )
+                else:
+                    reconcile_call(session, reservation)
                 session.add(
                     ProviderUsage(
                         run_id=context.run_id,
@@ -95,24 +115,19 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
                         operation=operation,
                         provider=provider,
                         model=model,
-                        input_tokens=None,
-                        output_tokens=None,
-                        cached_tokens=None,
-                        cache_write_tokens=None,
-                        usage_source="unknown",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        cached_tokens=_usage_value(usage, "cached_tokens"),
+                        cache_write_tokens=_usage_value(usage, "cache_write_tokens"),
+                        usage_source=usage.get("source") or "unknown",
                         duration_ms=duration,
-                        cost_usd=None,
-                        cost_status="unknown",
-                        tariff_version=settings.external_tariff_version,
+                        cost_usd=cost.usd,
+                        cost_status=cost.status,
+                        tariff_version=cost.tariff_version or settings.external_tariff_version,
                     )
                 )
-                _update_run(
-                    session,
-                    context.run_id,
-                    provider,
-                    {"source": "unknown"},
-                    CostResult("unknown", None, None, {"reason": "call_failed"}),
-                )
+            if usage or reservation is not None:
+                _update_run(session, context.run_id, provider, usage, cost)
             record_ai_request(
                 session,
                 run_id=context.run_id,
@@ -123,7 +138,7 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
                 started_at=started_at,
                 duration_ms=duration,
                 usage=usage,
-                cost=None,
+                cost=cost,
                 status=status,
                 error_code=error_code,
             )

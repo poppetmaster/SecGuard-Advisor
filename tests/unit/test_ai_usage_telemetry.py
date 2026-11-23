@@ -12,7 +12,11 @@ from tests.fixtures.conversation import build_env
 
 from secguard_advisor.ai_usage.telemetry import set_evaluation_context
 from secguard_advisor.config import Settings
-from secguard_advisor.conversation.llm import ModelTimeout, ModelUnavailable
+from secguard_advisor.conversation.llm import (
+    InvalidModelOutput,
+    ModelTimeout,
+    ModelUnavailable,
+)
 from secguard_advisor.conversation.providers.usage import provider_call
 from secguard_advisor.db.models import (
     AiRequest,
@@ -96,6 +100,7 @@ def _call(
     *,
     operation="generate",
     error: Exception | None = None,
+    usage: dict | None = None,
 ):
     context = _Context(
         factory=env.factory,
@@ -104,6 +109,7 @@ def _call(
         deps=_Deps(settings=settings, generator=generator),
     )
     with provider_call(context, operation=operation, admitted_tokens=1000):
+        generator.last_usage = usage
         if error is not None:
             raise error
         return None
@@ -126,7 +132,7 @@ def test_local_call_records_tokens_without_api_cost(tmp_path: Path) -> None:
         "source": "observed",
     }
 
-    _call(env, settings, generator, run_id)
+    _call(env, settings, generator, run_id, usage=generator.last_usage)
 
     (row,) = _rows(env)
     assert row.provider == "ollama"
@@ -152,7 +158,7 @@ def test_external_call_records_cache_cost_and_tariff(tmp_path: Path) -> None:
         "source": "observed",
     }
 
-    _call(env, settings, generator, run_id)
+    _call(env, settings, generator, run_id, usage=generator.last_usage)
 
     (row,) = _rows(env)
     assert row.cost_status == "calculated"
@@ -196,6 +202,68 @@ def test_connection_failure_is_uncertain(tmp_path: Path) -> None:
     assert row.cost_status == "unknown"
 
 
+def test_invalid_output_with_usage_keeps_tokens_and_cost(tmp_path: Path) -> None:
+    env = build_env(tmp_path)
+    settings = _settings(tmp_path)
+    run_id = _run(env, settings)
+    generator = _Generator(provider="deepseek", model="deepseek-flash")
+    generator.last_usage = {
+        "input_tokens": 1000,
+        "output_tokens": 100,
+        "cached_tokens": 400,
+        "source": "observed",
+    }
+
+    with pytest.raises(InvalidModelOutput):
+        _call(
+            env,
+            settings,
+            generator,
+            run_id,
+            error=InvalidModelOutput("json inválido"),
+            usage=generator.last_usage,
+        )
+
+    (row,) = _rows(env)
+    assert row.status == "error"
+    assert row.error_code == "invalid_model_output"
+    assert row.input_tokens == 1000
+    assert row.cost_status == "calculated"
+    assert row.cost_usd is not None and row.cost_usd > 0
+    with env.factory() as session:
+        ledger = session.scalar(select(ProviderBudgetLedger))
+        assert ledger.state == "settled"
+        assert ledger.settled_usd == row.cost_usd
+
+
+def test_timeout_after_a_valid_call_does_not_reuse_previous_usage(tmp_path: Path) -> None:
+    env = build_env(tmp_path)
+    settings = _settings(tmp_path)
+    run_id = _run(env, settings)
+    generator = _Generator(provider="deepseek", model="deepseek-flash")
+    generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
+    _call(env, settings, generator, run_id, operation="generate", usage=generator.last_usage)
+    generator.last_usage = None
+
+    with pytest.raises(ModelTimeout):
+        _call(
+            env,
+            settings,
+            generator,
+            run_id,
+            operation="repair",
+            error=ModelTimeout("timeout"),
+        )
+
+    rows = _rows(env)
+    assert len(rows) == 2
+    timeout_row = next(row for row in rows if row.operation == "repair")
+    assert timeout_row.input_tokens is None
+    assert timeout_row.usage_source == "unavailable"
+    assert timeout_row.cost_status == "unknown"
+    assert timeout_row.cost_usd is None
+
+
 def test_reasoning_tokens_are_kept_with_inclusion_flag(tmp_path: Path) -> None:
     env = build_env(tmp_path)
     settings = _settings(tmp_path)
@@ -209,7 +277,7 @@ def test_reasoning_tokens_are_kept_with_inclusion_flag(tmp_path: Path) -> None:
         "source": "observed",
     }
 
-    _call(env, settings, generator, run_id)
+    _call(env, settings, generator, run_id, usage=generator.last_usage)
 
     (row,) = _rows(env)
     assert row.reasoning_tokens == 3
@@ -223,11 +291,17 @@ def test_one_consultation_can_record_decision_generation_and_repair(tmp_path: Pa
     generator = _Generator(provider="deepseek", model="deepseek-flash")
     generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
 
-    _call(env, settings, generator, run_id, operation="decide")
-    _call(env, settings, generator, run_id, operation="generate")
-    _call(env, settings, generator, run_id, operation="repair")
+    _call(env, settings, generator, run_id, operation="decide", usage=generator.last_usage)
+    _call(env, settings, generator, run_id, operation="generate", usage=generator.last_usage)
+    _call(env, settings, generator, run_id, operation="repair", usage=generator.last_usage)
 
-    assert {row.operation for row in _rows(env)} == {"decide", "generate", "repair"}
+    rows = _rows(env)
+    assert {row.operation for row in rows} == {"decide", "generate", "repair"}
+    assert len(rows) == 3
+    assert sum(row.input_tokens for row in rows) == 30
+    with env.factory() as session:
+        run = session.get(Run, run_id)
+        assert run.usage_input_tokens == 30
 
 
 def test_operation_attempt_is_recorded_once(tmp_path: Path) -> None:
@@ -237,8 +311,8 @@ def test_operation_attempt_is_recorded_once(tmp_path: Path) -> None:
     generator = _Generator(provider="deepseek", model="deepseek-flash")
     generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
 
-    _call(env, settings, generator, run_id, operation="repair")
-    _call(env, settings, generator, run_id, operation="repair")
+    _call(env, settings, generator, run_id, operation="repair", usage=generator.last_usage)
+    _call(env, settings, generator, run_id, operation="repair", usage=generator.last_usage)
 
     assert len(_rows(env)) == 1
 
@@ -251,7 +325,7 @@ def test_evaluation_context_is_persisted(tmp_path: Path) -> None:
     generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
 
     with set_evaluation_context("eval-test", "S01"):
-        _call(env, settings, generator, run_id)
+        _call(env, settings, generator, run_id, usage=generator.last_usage)
 
     (row,) = _rows(env)
     assert row.evaluation_id == "eval-test"
@@ -265,7 +339,7 @@ def test_telemetry_keeps_no_secret_or_prompt(tmp_path: Path) -> None:
     generator = _Generator(provider="deepseek", model="deepseek-flash")
     generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
 
-    _call(env, settings, generator, run_id)
+    _call(env, settings, generator, run_id, usage=generator.last_usage)
 
     with env.factory() as session:
         row = session.scalar(select(AiRequest))
@@ -283,7 +357,7 @@ def test_retry_run_links_to_previous_run_without_duplication(tmp_path: Path) -> 
     generator = _Generator(provider="deepseek", model="deepseek-flash")
     generator.last_usage = {"input_tokens": 10, "output_tokens": 5, "source": "observed"}
 
-    _call(env, settings, generator, second)
+    _call(env, settings, generator, second, usage=generator.last_usage)
 
     with env.factory() as session:
         assert session.scalar(select(func.count()).select_from(AiRequest)) == 1

@@ -123,6 +123,53 @@ def test_generate_returns_a_validated_answer() -> None:
     assert payload.answer.startswith("La restauración")
 
 
+def test_timeout_does_not_reuse_previous_usage() -> None:
+    calls = {"count": 0}
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return httpx.Response(
+                200,
+                json={
+                    "choices": [{"message": {"content": json.dumps({"use_findings": False})}}],
+                    "usage": {"prompt_tokens": 120, "completion_tokens": 30},
+                },
+            )
+        raise httpx.ReadTimeout("timeout")
+
+    generator = DeepSeekGenerator(_settings(), client=_client(handler))
+    try:
+        generator.decide(system="Clasificá.", user="¿Qué?")
+        assert generator.last_usage["input_tokens"] == 120
+        with pytest.raises(ModelTimeout):
+            generator.generate(system="Respondé.", user="¿Qué?")
+        assert generator.last_usage is None
+    finally:
+        generator.close()
+
+
+def test_invalid_json_keeps_the_reported_usage() -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "no es json"}}],
+                "usage": {"prompt_tokens": 120, "completion_tokens": 30},
+            },
+        )
+
+    generator = DeepSeekGenerator(_settings(), client=_client(handler))
+    try:
+        with pytest.raises(InvalidModelOutput):
+            generator.generate(system="Respondé.", user="¿Qué?")
+        assert generator.last_usage is not None
+        assert generator.last_usage["input_tokens"] == 120
+        assert generator.last_usage["output_tokens"] == 30
+    finally:
+        generator.close()
+
+
 def test_blank_content_is_invalid_output() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(

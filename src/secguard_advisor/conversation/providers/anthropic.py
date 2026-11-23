@@ -53,6 +53,7 @@ class AnthropicGenerator:
 
     def _structured(self, system: str, user: str, schema, timeout_seconds):
         started = time.perf_counter()
+        self.last_usage = None
         api_key = self.settings.anthropic_api_key
         if api_key is None:
             from secguard_advisor.conversation.providers.base import ProviderAuthError
@@ -82,12 +83,6 @@ class AnthropicGenerator:
             timeout_seconds=timeout_seconds,
         )
         self.identity = data.get("model") or self.model
-        content = "".join(
-            block.get("text", "")
-            for block in data.get("content", [])
-            if block.get("type") == "text"
-        )
-        parsed = parse_structured(content, schema)
         usage = data.get("usage") or {}
         self.last_usage = usage_dict(
             input_tokens=usage.get("input_tokens"),
@@ -96,7 +91,12 @@ class AnthropicGenerator:
             cache_write_tokens=usage.get("cache_creation_input_tokens") or 0,
             started=started,
         )
-        return parsed
+        content = "".join(
+            block.get("text", "")
+            for block in data.get("content", [])
+            if block.get("type") == "text"
+        )
+        return parse_structured(content, schema)
 
     def close(self) -> None:
         if getattr(self, "_owns_client", False) and self.client is not None:

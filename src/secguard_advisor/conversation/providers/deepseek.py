@@ -42,6 +42,7 @@ class DeepSeekGenerator:
 
     def _structured(self, system: str, user: str, schema, timeout_seconds):
         started = time.perf_counter()
+        self.last_usage = None
         api_key = self.settings.deepseek_api_key
         if api_key is None:
             from secguard_advisor.conversation.providers.base import ProviderAuthError
@@ -69,13 +70,6 @@ class DeepSeekGenerator:
             timeout_seconds=timeout_seconds,
         )
         self.identity = data.get("model") or self.model
-        try:
-            content = data["choices"][0]["message"].get("content") or ""
-        except (KeyError, IndexError, TypeError) as exc:
-            from secguard_advisor.conversation.llm import InvalidModelOutput
-
-            raise InvalidModelOutput("DeepSeek devolvió una respuesta sin contenido.") from exc
-        parsed = parse_structured(content, schema)
         usage = data.get("usage") or {}
         details = usage.get("completion_tokens_details") or {}
         self.last_usage = usage_dict(
@@ -86,7 +80,13 @@ class DeepSeekGenerator:
             started=started,
             reasoning_tokens=details.get("reasoning_tokens"),
         )
-        return parsed
+        try:
+            content = data["choices"][0]["message"].get("content") or ""
+        except (KeyError, IndexError, TypeError) as exc:
+            from secguard_advisor.conversation.llm import InvalidModelOutput
+
+            raise InvalidModelOutput("DeepSeek devolvió una respuesta sin contenido.") from exc
+        return parse_structured(content, schema)
 
     def close(self) -> None:
         if getattr(self, "_owns_client", False) and self.client is not None:
