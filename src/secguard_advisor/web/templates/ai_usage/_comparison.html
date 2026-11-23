@@ -1,3 +1,5 @@
+{% from "ai_usage/_charts.html" import comparison_cost, comparison_latency, comparison_matrix, comparison_results %}
+
 {% if not comparison.evaluation %}
 <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
   <h2 class="text-lg font-semibold text-slate-900">Sin evaluaciones importadas</h2>
@@ -51,6 +53,19 @@
     Solo se comparan escenarios equivalentes. Las métricas automáticas no prueban respaldo
     semántico y la calidad de contenido es asistida por IA, no una revisión humana independiente.
   </p>
+</div>
+
+<div class="mt-6 grid min-w-0 gap-4 lg:grid-cols-2">
+  <div class="min-w-0 space-y-3">{{ comparison_latency(comparison_charts) }}</div>
+  <div class="min-w-0 space-y-3">{{ comparison_results(comparison_charts) }}</div>
+  <div class="min-w-0 space-y-3">{{ comparison_cost(comparison_charts) }}</div>
+  <div class="min-w-0 space-y-3">
+    <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="quality-dimensions-title">
+      <h2 id="quality-dimensions-title" class="text-base font-semibold text-slate-900">Calidad por dimensión</h2>
+      <p class="mt-2 text-sm text-slate-600">{{ comparison_charts.quality.message }}</p>
+    </section>
+  </div>
+  <div class="min-w-0 space-y-3 lg:col-span-2">{{ comparison_matrix(comparison_charts) }}</div>
 </div>
 
 <h2 class="mt-6 text-lg font-semibold text-slate-900">Consumo completo por proveedor</h2>
@@ -181,7 +196,7 @@
             <th scope="row" class="px-2 py-1 font-medium">{{ row.scenario }}</th>
             {% for cell in row.cells %}
             <td class="px-2 py-1">
-              <span class="rounded px-1 text-xs {% if cell.result == 'approved' %}bg-green-100 text-green-900{% elif cell.result == 'blocked' %}bg-slate-200 text-slate-800{% else %}bg-amber-100 text-amber-900{% endif %}">{{ cell.result or '—' }}</span>
+              <span class="rounded px-1 text-xs {% if cell.result == 'approved' %}bg-green-100 text-green-900{% elif cell.result == 'blocked' %}bg-amber-100 text-amber-900{% else %}bg-red-100 text-red-900{% endif %}">{{ cell.result or '—' }}</span>
               {% if not cell.executed %}<span class="ml-1 text-xs text-slate-600">sin ejecutar</span>{% endif %}
             </td>
             {% endfor %}

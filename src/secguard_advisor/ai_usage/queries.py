@@ -24,7 +24,7 @@ REQUEST_STATUSES = ("completed", "error", "timeout", "uncertain")
 SCOPES = ("general", "evaluation")
 PROVIDER_ORDER = ("ollama", "deepseek", "anthropic")
 PAGE_SIZE = 10
-DEFAULT_DAYS = 30
+DEFAULT_DAYS = 7
 
 
 class UsageFilterError(ValueError):
@@ -299,6 +299,15 @@ def _charts(runs: list[dict], period: dict) -> dict:
                 "input_tokens": 0,
                 "output_tokens": 0,
                 "series": defaultdict(int),
+                "provider_data": defaultdict(
+                    lambda: {
+                        "requests": 0,
+                        "input": 0,
+                        "output": 0,
+                        "cost": Decimal("0"),
+                        "cost_records": 0,
+                    }
+                ),
             }
         )
         cursor += timedelta(days=1)
@@ -310,8 +319,15 @@ def _charts(runs: list[dict], period: dict) -> dict:
             bucket = index.get(local_date)
             if bucket is None:
                 continue
+            provider_data = bucket["provider_data"][request.provider]
+            provider_data["requests"] += 1
+            provider_data["input"] += request.input_tokens or 0
+            provider_data["output"] += request.output_tokens or 0
             if request.cost_status == "calculated":
-                bucket["cost"] += _decimal(request.cost_usd) or Decimal("0")
+                amount = _decimal(request.cost_usd) or Decimal("0")
+                bucket["cost"] += amount
+                provider_data["cost"] += amount
+                provider_data["cost_records"] += 1
             bucket["input_tokens"] += request.input_tokens or 0
             bucket["output_tokens"] += request.output_tokens or 0
             bucket["series"][request.provider] += 1
@@ -322,9 +338,15 @@ def _charts(runs: list[dict], period: dict) -> dict:
         bucket = index.get(local_date)
         if bucket is None:
             continue
+        provider_data = bucket["provider_data"][run["provider"]]
+        provider_data["input"] += run["input_tokens"] or 0
+        provider_data["output"] += run["output_tokens"] or 0
         bucket["cost"] += run["cost_usd"]
         bucket["input_tokens"] += run["input_tokens"] or 0
         bucket["output_tokens"] += run["output_tokens"] or 0
+        if run["cost_status"] == "calculated":
+            provider_data["cost"] += run["cost_usd"]
+            provider_data["cost_records"] += 1
     providers = sorted(
         {provider for item in days for provider in item["series"]},
         key=lambda value: (
@@ -354,6 +376,7 @@ def _charts(runs: list[dict], period: dict) -> dict:
         ]
         item["input_pct"] = item["input_tokens"] / max_tokens * 100 if max_tokens else 0.0
         item["output_pct"] = item["output_tokens"] / max_tokens * 100 if max_tokens else 0.0
+        item["provider_data"] = dict(item["provider_data"])
     slot = max(1, len(providers)) * 12 + 8
     return {
         "days": days,

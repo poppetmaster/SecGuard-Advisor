@@ -17,6 +17,11 @@ const assets = [
     source: join(root, "node_modules", "flowbite", "dist", "flowbite.min.js"),
     target: join(root, "src", "secguard_advisor", "web", "static", "js", "flowbite.min.js"),
   },
+  {
+    packageName: "echarts",
+    source: join(root, "node_modules", "echarts", "dist", "echarts.min.js"),
+    target: join(root, "src", "secguard_advisor", "web", "static", "js", "echarts.min.js"),
+  },
 ];
 
 function readJson(path) {

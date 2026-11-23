@@ -8,6 +8,10 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
+from secguard_advisor.ai_usage.charts import (
+    build_comparison_charts,
+    build_consumption_charts,
+)
 from secguard_advisor.ai_usage.evaluations import build_comparison_view
 from secguard_advisor.ai_usage.queries import (
     UsageFilterError,
@@ -85,6 +89,7 @@ def _panel_context(
 ) -> dict:
     with request.app.state.session_factory() as session:
         usage = build_usage_view(session, filters)
+        usage_charts = build_consumption_charts(usage)
         comparison = None
         if tab == "comparison":
             default_evaluation = (
@@ -97,6 +102,7 @@ def _panel_context(
                 evaluation_id=evaluation_id or default_evaluation,
                 provider=provider,
             )
+            comparison_charts = build_comparison_charts(comparison)
     pages = usage["detail"]["pages"]
     usage["detail"]["prev_url"] = (
         _url(filters, tab="usage", page_number=usage["detail"]["page"] - 1)
@@ -120,7 +126,9 @@ def _panel_context(
         }
     return {
         "usage": usage,
+        "usage_charts": usage_charts,
         "comparison": comparison,
+        "comparison_charts": comparison_charts if comparison is not None else None,
         "tab": tab,
         "error": error,
         "evaluation_id": evaluation_id,

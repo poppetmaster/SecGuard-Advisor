@@ -82,6 +82,14 @@ def build_comparison_view(
             for item in functional_rows
             if item.quality_score is not None
         ]
+        functional_cost_rows = [
+            _decimal(item.cost_usd)
+            for item in functional_rows
+            if item.cost_status == "calculated" and item.cost_usd is not None
+        ]
+        functional_unknown = [item for item in functional_rows if item.cost_status == "unknown"]
+        functional_cost = sum(functional_cost_rows, Decimal("0"))
+        functional_cost_denominator = len(functional_cost_rows) + len(functional_unknown)
         total_cost = sum(cost_rows, Decimal("0"))
         cost_denominator = len(cost_rows) + len(unknown_cost)
         providers.append(
@@ -210,6 +218,20 @@ def build_comparison_view(
                     if citation_emitted
                     else None,
                     "citation_denominator": citation_emitted,
+                    "known_cost_usd": functional_cost,
+                    "known_cost_records": len(functional_cost_rows),
+                    "unknown_cost_records": len(functional_unknown),
+                    "cost_denominator": functional_cost_denominator,
+                    "cost_coverage": round(
+                        len(functional_cost_rows) / functional_cost_denominator, 4
+                    )
+                    if functional_cost_denominator
+                    else None,
+                    "cost_per_scenario_usd": (functional_cost / len(functional_rows)).quantize(
+                        Decimal("0.000001")
+                    )
+                    if functional_rows
+                    else None,
                 },
                 "rows": {item.scenario: item for item in items},
             }
@@ -244,6 +266,9 @@ def build_comparison_view(
                         "executed": item["rows"][scenario].executed
                         if scenario in item["rows"]
                         else False,
+                        "duration_ms": item["rows"][scenario].duration_ms
+                        if scenario in item["rows"]
+                        else None,
                     }
                     for item in providers
                 ],

@@ -111,10 +111,16 @@ def test_panel_is_reachable_from_administration(tmp_path: Path) -> None:
     assert "Solicitudes API externas" in text
     assert "Llamadas locales" in text
     assert "Latencia mediana del turno" in text
-    assert "Costo por día" in text
-    assert "Solicitudes por proveedor" in text
-    assert "Tokens por día" in text
+    assert "Costo conocido de API por día" in text
+    assert "Solicitudes API y llamadas locales por día" in text
+    assert "Tokens de entrada y salida por proveedor" in text
     assert "Ver tabla accesible" in text
+    assert 'data-echarts="consumption-cost"' in text
+    assert 'data-echarts="consumption-requests"' in text
+    assert 'data-echarts="consumption-tokens"' in text
+    assert "/static/js/echarts.min.js" in text
+    assert "/static/js/usage-charts.js" in text
+    assert "Exportar PNG" in text
     assert "deepseek-flash" in text
     assert "Ver ejecución" in text
     assert SECRET not in text
