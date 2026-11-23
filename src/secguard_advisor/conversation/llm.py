@@ -306,6 +306,12 @@ class OllamaGenerator:
             timeout_seconds=timeout_seconds,
         )
 
+    def generate_structured(self, *, system: str, user: str, schema, timeout_seconds=None):
+        """Genera una salida estructurada para un esquema de dominio."""
+        return self._structured(
+            system=system, user=user, schema=schema, timeout_seconds=timeout_seconds
+        )
+
     def _structured(self, *, system: str, user: str, schema, timeout_seconds=None):
         structured = self._chat(timeout_seconds).with_structured_output(
             schema, method="json_schema", include_raw=True

@@ -40,6 +40,9 @@ class DeepSeekGenerator:
     def generate(self, *, system: str, user: str, timeout_seconds=None) -> AnswerPayload:
         return self._structured(system, user, AnswerPayload, timeout_seconds)
 
+    def generate_structured(self, *, system: str, user: str, schema, timeout_seconds=None):
+        return self._structured(system, user, schema, timeout_seconds)
+
     def _structured(self, system: str, user: str, schema, timeout_seconds):
         started = time.perf_counter()
         self.last_usage = None

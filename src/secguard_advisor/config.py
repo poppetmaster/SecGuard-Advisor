@@ -141,6 +141,16 @@ class Settings(BaseSettings):
         default=86_400, validation_alias="SECGUARD_QUALYS_STAGING_TTL_SECONDS"
     )
 
+    telegram_bot_token: SecretStr | None = Field(
+        default=None, validation_alias="TELEGRAM_BOT_TOKEN"
+    )
+    telegram_transport: Literal["stub", "real"] = Field(
+        default="stub", validation_alias="SECGUARD_TELEGRAM_TRANSPORT"
+    )
+    telegram_api_base_url: str = Field(
+        default="https://api.telegram.org", validation_alias="TELEGRAM_API_BASE_URL"
+    )
+
     langsmith_tracing: bool = Field(default=False, validation_alias="LANGSMITH_TRACING")
     langsmith_endpoint: str = Field(
         default="https://api.smith.langchain.com",
@@ -154,6 +164,7 @@ class Settings(BaseSettings):
     @field_validator(
         "reviewer_name",
         "langsmith_api_key",
+        "telegram_bot_token",
         "instance_id",
         "generation_model",
         "deepseek_api_key",
@@ -284,12 +295,16 @@ class Settings(BaseSettings):
         return self.storage_dir / "originals"
 
     @property
+    def reports_dir(self) -> Path:
+        return self.storage_dir / "reports"
+
+    @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
 
     def ensure_directories(self) -> None:
         """Crea los directorios locales de almacenamiento."""
-        for path in (self.storage_dir, self.originals_dir):
+        for path in (self.storage_dir, self.originals_dir, self.reports_dir):
             path.mkdir(parents=True, exist_ok=True)
 
 

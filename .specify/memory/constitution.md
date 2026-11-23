@@ -304,9 +304,19 @@ frontera explícita evita confundir “no enviar el archivo” con “proteger s
   permisos aplicables.
 - El destinatario DEBE estar configurado y verificado. El agente NO inventa destinatarios ni envía
   mensajes por iniciativa propia.
-- La confirmación DEBE corresponder al contenido y destino concretos. Una edición del contenido o
-  del destino invalida la confirmación anterior.
+- La confirmación humana es obligatoria en el envío manual y DEBE corresponder al contenido y
+  destino concretos. Una edición del contenido o del destino invalida la confirmación anterior.
+- Una regla de notificación activada previamente por la persona responsable constituye autorización
+  previa para los envíos automáticos que coincidan exactamente con sus condiciones registradas:
+  caso, destinatarios verificados, disparador, filtros, contenido y detalle permitido, versión,
+  autor declarado y fecha de activación. Cambiar destinatarios, condiciones o contenido permitido
+  exige reactivación. La activación NO es una excepción silenciosa ni una confirmación individual.
+- Ninguna acción externa se ejecuta al seleccionar un archivo, validarlo, previsualizarlo o mostrar
+  un informe. Confirmar una importación solo PUEDE disparar el envío automático si existe una regla
+  activa y válida; el modo manual exige confirmación individual posterior.
 - Las credenciales DEBEN mantenerse separadas de los datos de destinatarios.
+- El envío DEBE identificarse por informe/versión y destinatario con independencia del modo; el modo
+  es metadato de evidencia y NO habilita un segundo envío.
 - Se DEBE registrar el resultado real del proveedor. Un envío aceptado NO equivale a recibido o
   leído; esas afirmaciones solo se hacen con evidencia.
 - Un timeout PUEDE producir un resultado incierto. NO habilita reintento ciego.
@@ -318,8 +328,9 @@ frontera explícita evita confundir “no enviar el archivo” con “proteger s
 - La identidad declarada actual NO es autenticación. El entorno educativo mantiene restricciones
   explícitas y el control de acceso multiusuario queda como necesidad futura.
 
-*Razón*: una acción externa sin confirmación, destinatario verificado y evidencia de resultado
-convierte una recomendación en una escritura irreversible fuera del sistema.
+*Razón*: una acción externa sin confirmación —individual o previa mediante regla—, destinatario
+verificado y evidencia de resultado convierte una recomendación en una escritura irreversible fuera
+del sistema.
 
 ## Stack técnico y parámetros revisables
 
@@ -390,8 +401,10 @@ convertir el índice vectorial en fuente de verdad— NO es un cambio de paráme
 - No enviar el CSV privado ni sus datos derivados a proveedores o acciones sin política explícita
   de contenido y autorización aplicable al caso.
 - No afirmar retención cero, ausencia de entrenamiento ni garantía de privacidad sin evidencia.
-- No ejecutar acciones externas sin preparación, vista previa y confirmación humana del contenido y
-  destino concretos.
+- No ejecutar acciones externas sin preparación y vista previa. El envío manual exige confirmación
+  humana del contenido y destino concretos; el envío automático exige una regla activada previamente
+  por la persona responsable, con destinatarios verificados y condiciones registradas que coincidan
+  exactamente. Sin regla activa y válida no se envía nada.
 - No presentar la identidad declarada como autenticación ni la aplicación como multiusuario segura.
 
 ## Flujo de trabajo y puertas de calidad
@@ -510,6 +523,17 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
   implementación sigue sujeta a las compuertas de planificación y aceptación.
 - **Alcance de la suspensión:** 003 sigue suspendida y su política P1–P4 no está aprobada.
 
+### Estado de ratificación de la enmienda 1.4.0
+
+- **Ratificación comunicada:** Edwin Perez L., responsable del producto, autorizó el 2026-11-23
+  alinear el principio XIV y las prohibiciones de arquitectura con la decisión registrada: el envío
+  manual exige confirmación individual y una regla activa es autorización previa solo para envíos
+  automáticos que coincidan exactamente con sus condiciones.
+- **Acuerdos del equipo:** no constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal. No se
+  inventan acta, firma, fecha de reunión ni aprobación académica.
+- **Efecto:** la versión 1.4.0 se registra como ratificada por el responsable y habilita el diseño de
+  006. No habilita envíos reales, gasto recurrente ni implementación sin las compuertas aplicables.
+
 ### Cumplimiento
 
 - Toda revisión de cambios DEBE verificar el cumplimiento de esta constitución.
@@ -577,11 +601,12 @@ es un enlace simbólico a ese archivo. NO se mantienen dos documentos editados p
 | 2026-11-22 | 005 Configuración de IA desde `/settings/ai` (grupo Administración): selección de proveedor/modelo/límites no secretos persistida en SQLite, perfiles independientes y instantánea por turno; Ollama sin cuota comercial ni presupuesto monetario, límites externos por proveedor/modelo; claves, endpoints y presupuestos permanecen en `.env` | Estado de implementación | IV, VIII, XI, XIII | Evidencia en `docs/evidencia/005-configuracion-ui/`; `make check` 669 passed; sin llamadas externas al abrir/guardar; guardar no verifica conexión ni autoriza gasto; T039 externo real sigue pendiente |
 | 2026-11-23 | 006: la confirmación individual se exige para el envío manual; una regla activa por la persona responsable es autorización previa para envíos automáticos que coincidan exactamente con sus condiciones | Decisión del responsable | IX, XIV | La regla registra caso, destinatarios verificados, disparador, filtros, contenido, versión, autor y fecha; modificarla exige reactivación; el contenido automático se identifica sin revisión humana individual; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica; no autoriza envíos reales |
 | Pendiente | Evidencia de acuerdo de Cristian Quebrada y Ruben Dario Sabogal para la enmienda 1.3.0 | Pendiente | Gobernanza | La ratificación del responsable está registrada; no se inventan acuerdos del equipo |
+| 2026-11-23 | Enmienda 1.4.0: el principio XIV distingue confirmación individual del envío manual y autorización previa mediante regla activa para envíos automáticos coincidentes; la identidad de envío excluye el modo | Enmienda MINOR | XIV | Ratificación del responsable registrada; la regla exige destinatarios verificados, condiciones exactas, versión, autor y fecha, y reactivación tras cambios; no constan acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica |
 | Pendiente | Presupuesto API para Claude Haiku / DeepSeek | Pendiente | IV, XI | No se activan llamadas pagadas ni se crean cuentas |
 | Pendiente | Selección del proveedor API y del canal definitivo de acción | Pendiente | IV, XIV | Requiere evidencia de 005/006; no se declara ganador |
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-11
+**Version**: 1.4.0 | **Ratified**: 2026-11-08 | **Last Amended**: 2026-11-23
 
-**Estado de ratificación**: ratificación comunicada por Edwin Perez L. el 2026-11-11. No constan
-los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta, firma ni aprobación académica. No se
-presenta como ratificación plena del equipo.
+**Estado de ratificación**: ratificación comunicada por Edwin Perez L. el 2026-11-11 para 1.3.0 y
+el 2026-11-23 para 1.4.0. No constan los acuerdos de Cristian Quebrada y Ruben Dario Sabogal, acta,
+firma ni aprobación académica. No se presenta como ratificación plena del equipo.

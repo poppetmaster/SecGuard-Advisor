@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe ejecutivo</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #0f172a; font-size: 10pt; line-height: 1.35; margin: 0; }
+    h1 { font-size: 20pt; margin: 0 0 4pt; }
+    h2 { font-size: 13pt; margin: 14pt 0 6pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 3pt; }
+    h3 { font-size: 11pt; margin: 0 0 4pt; }
+    p { margin: 0 0 6pt; }
+    .muted { color: #475569; }
+    .small { font-size: 8.5pt; }
+    .header { border-left: 5px solid #1d4ed8; padding-left: 10pt; margin-bottom: 10pt; }
+    .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 3pt 12pt; font-size: 9pt; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; margin: 8pt 0; }
+    .card { border: 1px solid #cbd5e1; border-radius: 6pt; padding: 7pt; background: #f8fafc; break-inside: avoid; }
+    .card .value { font-size: 19pt; font-weight: 700; line-height: 1; }
+    .card .label { font-size: 8.5pt; margin-top: 3pt; color: #334155; }
+    .card .scope { font-size: 7.5pt; color: #64748b; margin-top: 2pt; }
+    .chart { border: 1px solid #cbd5e1; border-radius: 6pt; padding: 7pt; margin: 6pt 0 10pt; break-inside: avoid; }
+    .chart img { width: 100%; height: auto; max-height: 180pt; object-fit: contain; display: block; }
+    .two .chart img { max-height: 150pt; }
+    .chart .conclusion { font-size: 9pt; color: #334155; margin: 2pt 0 4pt; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+    .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+    ul { margin: 3pt 0 6pt 14pt; padding: 0; }
+    li { margin: 0 0 3pt; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 4pt 0 8pt; }
+    th, td { border-bottom: 1px solid #e2e8f0; padding: 3pt; text-align: left; }
+    th { background: #f1f5f9; }
+    .tag { display: inline-block; border: 1px solid #cbd5e1; border-radius: 999px; padding: 1pt 6pt; font-size: 8pt; color: #334155; }
+    .page-break { page-break-before: always; }
+    .keep { break-inside: avoid; page-break-inside: avoid; }
+    .note { background: #fffbeb; border: 1px solid #fde68a; padding: 7pt; border-radius: 5pt; font-size: 8.5pt; }
+    .footer { margin-top: 10pt; border-top: 1px solid #cbd5e1; padding-top: 5pt; font-size: 7.5pt; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Informe ejecutivo de vulnerabilidades</h1>
+    <p class="muted">SecGuard Advisor · Escenario educativo</p>
+    <div class="meta">
+      <div><strong>Informe:</strong> {{ dataset.case.title if dataset.content_policy.include_case_title else "Caso reservado · " ~ dataset.case.id[:8] }}</div>
+      <div><strong>Versión:</strong> {{ summary.version_number }}</div>
+      <div><strong>Instantánea:</strong> #{{ dataset.snapshot.sequence }} · {{ dataset.snapshot.confirmed_at[:10] }}</div>
+      <div><strong>Generado:</strong> {{ summary.created_at[:10] }}</div>
+      <div><strong>Origen:</strong> Importación Qualys confirmada</div>
+      <div><strong>Alcance:</strong> {{ dataset.case.scope or "No declarado" }}</div>
+    </div>
+  </div>
+
+  <h2>Resumen ejecutivo</h2>
+  <p>{{ summary.summary_text }}</p>
+  <p class="small muted">Hechos calculados desde SQLite. Las propuestas del agente se identifican como tales. Un campo vacío o indeterminado no demuestra ausencia de amenaza.</p>
+
+  <div class="cards">
+    <div class="card"><div class="value">{{ dataset.cards.pending.value }}</div><div class="label">Registros pendientes</div><div class="scope">Active, New y Re-Opened · base {{ dataset.cards.pending.denominator }}</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.critical_pending.value }}</div><div class="label">Críticas pendientes (nivel 5)</div><div class="scope">Base: {{ dataset.cards.critical_pending.denominator }} pendientes</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.high_pending.value }}</div><div class="label">Altas pendientes (nivel 4)</div><div class="scope">Base: {{ dataset.cards.high_pending.denominator }} pendientes</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.distinct_assets_pending.value }}</div><div class="label">Activos distintos afectados</div><div class="scope">{{ dataset.cards.distinct_assets_pending.identifier }}; {{ dataset.cards.distinct_assets_pending.unknown_asset_rows }} sin activo</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.exploitability_positive_pending.value }}</div><div class="label">Explotabilidad positiva</div><div class="scope">Base: {{ dataset.cards.exploitability_positive_pending.denominator }} pendientes</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.malware_positive_pending.value }}</div><div class="label">Malware positivo</div><div class="scope">Base: {{ dataset.cards.malware_positive_pending.denominator }} pendientes</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.both_positive_pending.value }}</div><div class="label">Ambos indicadores positivos</div><div class="scope">Intersección, no suma</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.fixed.value }}</div><div class="label">Fixed (antecedente histórico)</div><div class="scope">No es remediación pendiente</div></div>
+    <div class="card"><div class="value">{{ dataset.cards.manual_review.value }}</div><div class="label">Requieren revisión</div><div class="scope">Estado o indicadores indeterminados; contados una vez</div></div>
+  </div>
+
+  <div class="note">
+    Cobertura: explotabilidad conocida {{ (dataset.coverage.exploitability_known_ratio * 100) | round(0) }} % ·
+    malware conocido {{ (dataset.coverage.malware_known_ratio * 100) | round(0) }} %.
+    {% if dataset.coverage.missing_fields %}Faltantes: {{ dataset.coverage.missing_fields | join("; ") }}.{% endif %}
+    Los indicadores solapados no se suman y los conteos no se multiplican por CVE.
+  </div>
+
+  <h2>Distribución y activos</h2>
+  <div class="chart">
+    <h3>{{ charts.severity.title }}</h3>
+    <p class="conclusion">{{ charts.severity.conclusion }}</p>
+    <img src="{{ chart_images.severity }}" alt="{{ charts.severity.title }}">
+    <p class="small muted">{{ charts.severity.denominator_label }}</p>
+  </div>
+  <div class="chart">
+    <h3>{{ charts.assets.title }}</h3>
+    <p class="conclusion">{{ charts.assets.conclusion }}</p>
+    <img src="{{ chart_images.assets }}" alt="{{ charts.assets.title }}">
+    <p class="small muted">{{ charts.assets.denominator_label }} Recorte declarado: {{ "Sí" if dataset.assets_top.recorted else "No" }}.</p>
+    <table>
+      <thead><tr><th>Activo</th><th>Críticas</th><th>Altas</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for item in dataset.assets_top["items"] %}
+        <tr><td>{{ item.alias }}</td><td>{{ item.critical }}</td><td>{{ item.high }}</td><td>{{ item.total }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="keep">
+  <h2>Indicadores</h2>
+  <div class="two">
+    <div class="chart">
+      <h3>{{ charts.exploitability.title }}</h3>
+      <p class="conclusion">{{ charts.exploitability.conclusion }}</p>
+      <img src="{{ chart_images.exploitability }}" alt="{{ charts.exploitability.title }}">
+      <p class="small muted">{{ charts.exploitability.denominator_label }}</p>
+    </div>
+    <div class="chart">
+      <h3>{{ charts.malware.title }}</h3>
+      <p class="conclusion">{{ charts.malware.conclusion }}</p>
+      <img src="{{ chart_images.malware }}" alt="{{ charts.malware.title }}">
+      <p class="small muted">{{ charts.malware.denominator_label }}</p>
+    </div>
+  </div>
+  </section>
+
+  <section class="keep">
+  <h2>Focos, recomendaciones y limitaciones</h2>
+  <h3>Focos de atención</h3>
+  <ul>
+    {% for item in summary.focus %}
+    <li><strong>{{ item.text }}</strong>{% if item.basis %} <span class="tag">{{ item.basis }}</span>{% endif %}</li>
+    {% else %}
+    <li>No se identificaron focos adicionales con los datos de la instantánea.</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Recomendaciones propuestas</h3>
+  <ul>
+    {% for item in summary.recommendations %}
+    <li>
+      <strong>{{ item.text }}</strong>
+      <span class="tag">{{ item.basis }}</span>
+      {% if item.caveat %}<span class="small muted"> {{ item.caveat }}</span>{% endif %}
+    </li>
+    {% else %}
+    <li>Sin recomendaciones generadas; el informe factual conserva cifras y limitaciones.</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Limitaciones y datos faltantes</h3>
+  <ul>
+    {% for item in summary.limitations %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Cómo leer este informe</h3>
+  <table>
+    <thead><tr><th>Término</th><th>Lectura correcta</th></tr></thead>
+    <tbody>
+      <tr><td>Pendientes</td><td>Active, New y Re-Opened. No incluye Fixed ni revisión manual.</td></tr>
+      <tr><td>Fixed</td><td>Antecedente histórico; no es una remediación pendiente.</td></tr>
+      <tr><td>Requieren revisión</td><td>Estado desconocido o indicadores indeterminados; se cuentan una vez y no se suman entre sí.</td></tr>
+      <tr><td>Explotabilidad y malware</td><td>Distribuciones independientes; un registro puede aparecer en ambas. «No informado» no equivale a negativo.</td></tr>
+      <tr><td>Severidad 1–5</td><td>Escala del proyecto. No es CVSS, QDS, TruRisk ni una prioridad P1–P4.</td></tr>
+    </tbody>
+  </table>
+  <p class="small muted">Este informe apoya decisiones con evidencia; no certifica cumplimiento ni sustituye la revisión humana.</p>
+
+  <h3>Detalle técnico</h3>
+  <div class="three">
+    <table>
+      <thead><tr><th>Severidad</th><th>Pend.</th><th>Fixed</th></tr></thead>
+      <tbody>
+        {% for item in dataset.severity.levels %}
+        <tr><td>{{ item.level }} {{ item.label }}</td><td>{{ item.pending }}</td><td>{{ item.fixed }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Explotabilidad</th><th>Registros</th></tr></thead>
+      <tbody>
+        <tr><td>Positiva</td><td>{{ dataset.exploitability.positive }}</td></tr>
+        <tr><td>Negativa/no informada</td><td>{{ dataset.exploitability.negative_no_info }}</td></tr>
+        <tr><td>Indeterminada</td><td>{{ dataset.exploitability.indeterminate }}</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Malware</th><th>Registros</th></tr></thead>
+      <tbody>
+        <tr><td>Positivo</td><td>{{ dataset.malware.positive }}</td></tr>
+        <tr><td>Negativo/no informado</td><td>{{ dataset.malware.negative_no_info }}</td></tr>
+        <tr><td>Indeterminado</td><td>{{ dataset.malware.indeterminate }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  </section>
+
+  <div class="footer">
+    Informe {{ summary.report_id }} · versión {{ summary.version_number }} · dataset {{ dataset.sha256 if dataset.sha256 else "" }}
+    · Los resultados de herramienta y las citas no se presentan como remediación.
+  </div>
+</body>
+</html>

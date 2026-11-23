@@ -9,7 +9,8 @@
   "scripts": {
     "build:css": "tailwindcss -i ./src/secguard_advisor/web/static/css/input.css -o ./src/secguard_advisor/web/static/css/app.css --minify",
     "copy:vendor": "node scripts/copy-vendor.mjs",
-    "build": "npm run copy:vendor && npm run build:css"
+    "build": "npm run copy:vendor && npm run build:css",
+    "render:report-charts": "node scripts/render_report_charts.mjs"
   },
   "devDependencies": {
     "echarts": "5.6.0",

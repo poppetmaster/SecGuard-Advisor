@@ -51,6 +51,9 @@ EXPECTED_TABLES = {
     "ai_requests",
     "ai_evaluations",
     "ai_evaluation_results",
+    "reports",
+    "report_versions",
+    "report_artifacts",
 }
 
 

@@ -30,6 +30,7 @@ from secguard_advisor.web.routes import (
     cases,
     chat,
     documents,
+    reports,
     review,
     runs,
     vulnerabilities,
@@ -152,6 +153,7 @@ def create_app(
     app.include_router(cases.router)
     app.include_router(documents.router)
     app.include_router(vulnerabilities.router)
+    app.include_router(reports.router)
     app.include_router(chat.router)
     app.include_router(runs.router)
     app.include_router(review.router)

@@ -1,0 +1,22 @@
+{% macro metric_card(value, label, scope, detail=None, tone="slate") %}
+<div class="rounded-xl border border-{{ tone }}-200 bg-white p-4 shadow-sm">
+  <p class="text-3xl font-semibold tracking-tight text-{{ tone }}-900">{{ value }}</p>
+  <p class="mt-1 text-sm font-medium text-slate-800">{{ label }}</p>
+  <p class="mt-1 text-xs text-slate-600">{{ scope }}</p>
+  {% if detail %}<p class="mt-1 text-xs text-slate-500">{{ detail }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro report_cards(dataset) %}
+<div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  {{ metric_card(dataset.cards.pending.value, "Registros pendientes", "Active, New y Re-Opened", "Base: " ~ dataset.cards.pending.denominator ~ " registros", "red") }}
+  {{ metric_card(dataset.cards.critical_pending.value, "Críticas pendientes (nivel 5)", "Registros pendientes de severidad 5", "Base: " ~ dataset.cards.critical_pending.denominator ~ " pendientes", "red") }}
+  {{ metric_card(dataset.cards.high_pending.value, "Altas pendientes (nivel 4)", "Registros pendientes de severidad 4", "Base: " ~ dataset.cards.high_pending.denominator ~ " pendientes", "amber") }}
+  {{ metric_card(dataset.cards.distinct_assets_pending.value, "Activos distintos afectados", "Identificación: " ~ dataset.cards.distinct_assets_pending.identifier, dataset.cards.distinct_assets_pending.unknown_asset_rows ~ " registros sin activo", "blue") }}
+  {{ metric_card(dataset.cards.exploitability_positive_pending.value, "Explotabilidad positiva", "Registros pendientes", "Base: " ~ dataset.cards.exploitability_positive_pending.denominator, "orange") }}
+  {{ metric_card(dataset.cards.malware_positive_pending.value, "Malware positivo", "Registros pendientes", "Base: " ~ dataset.cards.malware_positive_pending.denominator, "orange") }}
+  {{ metric_card(dataset.cards.both_positive_pending.value, "Ambos indicadores positivos", "Intersección, no suma de categorías", "Base: " ~ dataset.cards.both_positive_pending.denominator, "purple") }}
+  {{ metric_card(dataset.cards.fixed.value, "Fixed", "Antecedente histórico", "No es remediación pendiente", "slate") }}
+  {{ metric_card(dataset.cards.manual_review.value, "Requieren revisión", "Estado o indicadores indeterminados", "Contados una vez; no se suman", "amber") }}
+</div>
+{% endmacro %}

@@ -300,9 +300,7 @@ class Run(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     case_id: Mapped[str] = mapped_column(String(32), ForeignKey("cases.id"), nullable=False)
-    conversation_id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("conversations.id"), nullable=False
-    )
+    conversation_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("conversations.id"))
     question_message_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("messages.id"))
     answer_message_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("messages.id"))
     kind: Mapped[str] = mapped_column(String(20), nullable=False, default="chat")
@@ -361,10 +359,10 @@ class Run(Base):
             "ux_runs_one_active_per_case",
             "case_id",
             unique=True,
-            sqlite_where=text("status = 'running'"),
+            sqlite_where=text("status = 'running' AND kind = 'chat'"),
         ),
         UniqueConstraint("question_message_id", "attempt_no", name="uq_runs_question_attempt"),
-        _status_check("kind", ("chat",), "kind_valid"),
+        _status_check("kind", ("chat", "report"), "kind_valid"),
         _status_check("generator_provider", ("ollama", "deepseek", "anthropic"), "provider_valid"),
         _status_check(
             "cost_status", ("calculated", "unknown", "not_applicable"), "cost_status_valid"
@@ -385,7 +383,8 @@ class Run(Base):
         CheckConstraint(
             "outcome IS NULL OR outcome IN "
             "('answered', 'insufficient_evidence', "
-            "'abstained_invalid_citations', 'error')",
+            "'abstained_invalid_citations', 'error', "
+            "'report_ready', 'report_factual')",
             name="outcome_valid",
         ),
         _status_check(
@@ -1000,4 +999,96 @@ class AiRequest(Base):
             "cost_status", ("calculated", "unknown", "not_applicable"), "ai_request_cost_valid"
         ),
         CheckConstraint("attempt_no >= 1", name="ai_request_attempt_positive"),
+    )
+
+
+class Report(Base):
+    """Documento lógico de informe ejecutivo de un caso."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    created_by: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (Index("ix_reports_case_created", "case_id", "created_at"),)
+
+
+class ReportVersion(Base):
+    """Versión inmutable de un informe y su dataset canónico."""
+
+    __tablename__ = "report_versions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    report_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("reports.id", ondelete="CASCADE"), nullable=False
+    )
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    generation_key: Mapped[str | None] = mapped_column(String(64))
+    snapshot_import_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("qualys_imports.id"), nullable=False
+    )
+    snapshot_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    filters_json: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_json: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    chart_specs_json: Mapped[str] = mapped_column(Text, nullable=False)
+    synthesis_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    ai_run_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("runs.id", ondelete="SET NULL")
+    )
+    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
+    focus_json: Mapped[str] = mapped_column(Text, nullable=False)
+    recommendations_json: Mapped[str] = mapped_column(Text, nullable=False)
+    limitations_json: Mapped[str] = mapped_column(Text, nullable=False)
+    author_declared: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint("report_id", "version_number", name="uq_report_versions_number"),
+        Index(
+            "ux_report_versions_generation_key",
+            "generation_key",
+            unique=True,
+            sqlite_where=text("generation_key IS NOT NULL"),
+        ),
+        Index("ix_report_versions_case_created", "case_id", "created_at"),
+        Index("ix_report_versions_snapshot", "snapshot_import_id"),
+        CheckConstraint("version_number >= 1", name="version_positive"),
+        _status_check(
+            "synthesis_status",
+            ("not_requested", "completed", "unavailable", "failed"),
+            "synthesis_status_valid",
+        ),
+    )
+
+
+class ReportArtifact(Base):
+    """PDF o SVG inmutable asociado a una versión."""
+
+    __tablename__ = "report_artifacts"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    report_version_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("report_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    chart_key: Mapped[str] = mapped_column(String(40), nullable=False, default="")
+    relative_path: Mapped[str] = mapped_column(Text, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "report_version_id", "kind", "chart_key", name="uq_report_artifacts_kind_key"
+        ),
+        _status_check("kind", ("pdf", "chart_svg"), "artifact_kind_valid"),
+        CheckConstraint("bytes >= 0", name="artifact_bytes_nonnegative"),
     )

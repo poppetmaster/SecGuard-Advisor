@@ -48,7 +48,7 @@ explícito para 005 y una acción externa controlada para 006. 004 reconstruye e
 desde SQLite, sin migrar vectores de Chroma, sin escritura dual, sin comparación obligatoria y sin
 retorno a Chroma; los archivos Chroma existentes no se borran. La implementación actual usa Qdrant +
 Ollama; 004 está implementado y aceptado localmente; 005 tiene adaptadores API implementados con
-aceptación externa real pendiente; Telegram no está implementado.
+aceptación externa real pendiente; 006 Corte A está implementado localmente, pero contactos, envío manual, reglas automáticas y Telegram no están implementados.
 
 **005 Entregas 1–3 completadas (2026-11-22):** `specs/005-generador-configurable/` define la
 selección explícita del generador entre Ollama local, DeepSeek (`deepseek-flash`) y Anthropic Claude
@@ -68,9 +68,18 @@ pendiente por el marker `external` de pytest. El panel **Uso y comparativos de I
 importa el informe 005 de forma idempotente con `make import-evaluation` y no invoca modelos al
 consultar o filtrar.
 
+**006 Corte A implementado (2026-11-23):** el caso tiene una sección **Informe ejecutivo** que
+genera una versión inmutable desde una instantánea Qualys confirmada. El dataset canónico se calcula
+en SQLite, se persiste en `report_versions` y alimenta la vista web y el PDF; el PDF se compone con
+Playwright/Chrome y gráficas ECharts renderizadas localmente con Node (SSR a SVG). Se mantienen top 5
+de activos por defecto, alias de activos, exclusión del título sensible (`include_case_title=false`),
+indicadores independientes, `Fixed` separado y ausencia de P1–P4. La síntesis de IA es opcional y cae
+a un informe factual si falla o no está autorizada. La recuperación automática futura usa
+`generation_key`; C no se implementó. Evidencia: `docs/evidencia/006-corte-a/`.
+
 La interfaz es multipágina con renderizado del servidor: cabecera, barra lateral persistente en
 escritorio, menú desplegable en móvil y una sección visible por ruta. Las secciones son `/cases`,
-`/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities` y
+`/cases/new`, `/cases/{id}` (resumen), `/cases/{id}/documents`, `/cases/{id}/vulnerabilities`, `/cases/{id}/reports` y
 `/cases/{id}/chat`; la evidencia de ejecución vive en `/cases/{id}/runs/{run_id}`. HTMX se conserva
 solo dentro de cada sección.
 
@@ -153,6 +162,14 @@ la aplicación no ejecuta `create_all` al arrancar.
   definida.
 - `SECGUARD_REVIEWER_NAME` es una identidad local declarada para la revisión humana; no es
   autenticación. Sin esa variable no se escribe ninguna revisión.
+- El informe ejecutivo solo se genera desde una importación Qualys confirmada. Su dataset y PDF son
+  inmutables por versión; la web y el PDF consumen el mismo dataset persistido. No se suman categorías
+  solapadas ni se multiplican registros por CVE.
+- El PDF se compone localmente con Playwright/Chrome y gráficas ECharts SSR con Node; no se usa CDN.
+  La inspección visual del PDF es una comprobación separada de la extracción de texto con pypdf.
+- Top 5 de activos es el valor predeterminado y el título sensible del caso está excluido del
+  contenido saliente salvo política explícita. La síntesis de IA es opcional y nunca reemplaza el
+  informe factual.
 - `ai_application` es el nombre histórico del alcance del análisis. Se conserva por compatibilidad y
   se presenta como «Alcance del análisis»; no se renombra la columna, no se agrega un campo nuevo y
   no se reescribe el contenido de casos existentes.

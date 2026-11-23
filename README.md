@@ -68,6 +68,7 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 | Memoria por caso | Mantener continuidad conversacional con checkpoints separados y reconciliación antes de cada turno | Disponible localmente |
 | Hallazgos sintéticos | Consultar el dataset educativo con `findings_query` y conteos calculados en SQLite | Disponible localmente |
 | Vulnerabilidades Qualys | Importar CSV validado, revisar una vista previa, confirmar instantáneas, filtrar y consultar registros | Disponible localmente |
+| Informe ejecutivo | Generar una versión inmutable desde una instantánea confirmada, revisar tarjetas y gráficas, descargar PDF e historial | Disponible localmente (Corte A) |
 | Evidencia de ejecución | Consultar modelo, configuración, pasos, fuentes, herramientas, duración, presupuesto y citas | Disponible localmente |
 | Trazabilidad externa | Enviar trazas acotadas a LangSmith y confirmarlas por lectura externa | Disponible; LangSmith es opcional |
 | Revisión humana de citas | Registrar respaldo semántico por cita con identidad declarada | Disponible; SC-003 pendiente |
@@ -75,9 +76,8 @@ humana. El escenario de demostración es educativo y no está ligado a una empre
 
 ### Evidencia de validación
 
-- Pruebas rápidas: `make check` → **562 passed**, 36 deselected (Corte 6).
-- Integraciones: `make test-integration` → **36 passed**, 0 failed, 0 skipped (Corte 6), con Qdrant
-  1.20.0 y Ollama locales.
+- Pruebas rápidas: `make check` → **772 passed**, 40 deselected (Corte A de 006).
+- Integraciones del Corte A: `uv run pytest tests/integration/test_report_pdf.py tests/acceptance/test_report_browser.py` → **2 passed**; PDF real de 3 páginas y navegador de escritorio/móvil, con Chrome local.
 - Evaluación funcional final: **6/6** recuperaciones, 0 no pertinentes aceptadas, 0 fugas, umbral
   0.5033 congelado (`docs/evidencia/004-corte-6/evaluation-final.json`).
 - Aceptación de interfaz: 4 pruebas ASGI y recorrido Playwright MCP con servidor real; citas,
@@ -152,7 +152,9 @@ código en el Corte 6. 005 tiene las Entregas 1–3 implementadas, una página
 evaluaciones, y una evaluación real del 2026-11-23 con 10 escenarios congelados por proveedor (Ollama 6/10 aprobados,
 DeepSeek 6/9 y Anthropic 4/9; S08 bloqueado en externos). La evidencia está en
 `docs/evidencia/005-evaluacion-proveedores/`; DeepSeek/Anthropic no se declaran aceptados en uso real.
-006 sigue sin implementar.
+006 Corte A está implementado localmente: informe ejecutivo desde una instantánea Qualys confirmada,
+vista web, PDF de 2–3 páginas e historial inmutable. Contactos, envío manual, reglas automáticas y
+Telegram no están implementados; no se declaran disponibles.
 
 ```text
 FastAPI + Jinja2 + HTMX
@@ -266,6 +268,7 @@ propia, accesible por URL y con su ruta de navegación visible:
 | `/cases/{case_id}` | Resumen del caso (contexto y activos) |
 | `/cases/{case_id}/documents` | Documentos (carga, estados, versiones, reintentos) |
 | `/cases/{case_id}/vulnerabilities` | Vulnerabilidades: formulario, preview, confirmación y snapshot |
+| `/cases/{case_id}/reports` | Informe ejecutivo: versiones, tarjetas, gráficas y descarga PDF |
 | `/cases/{case_id}/chat` | Consulta documental (preguntas, citas, revisión) |
 | `/cases/{case_id}/runs/{run_id}` | Evidencia de ejecución, desde cada respuesta |
 | `/cases/{case_id}/documents/{document_id}` | Documento con sus versiones y fragmentos |
@@ -277,6 +280,17 @@ oculta para no desbordar.
 El grupo «Caso abierto» de la barra lateral solo aparece dentro de un caso. Las citas abren el
 fragmento correspondiente (del caso o del corpus público) y, cuando vienen de una respuesta, ofrecen
 «Volver a la consulta» con un destino construido por el servidor.
+
+### Informe ejecutivo
+
+1. Confirmá una importación Qualys del caso desde **Vulnerabilidades**.
+2. Abrí **Informe ejecutivo** en la barra lateral y elegí **Generar informe**.
+3. Seleccioná la instantánea confirmada, ajustá filtros si hace falta y generá una versión.
+4. La vista muestra tarjetas, gráficas ECharts y tablas alternativas; el botón **Descargar PDF**
+   entrega el artefacto persistido y **Vista de impresión** abre la composición de impresión.
+5. Cada regeneración crea una versión nueva; el historial conserva las anteriores.
+6. La generación no envía mensajes. La síntesis de IA es opcional y cae a un informe factual si no
+   está autorizada o falla.
 
 ### Consulta y revisión humana
 
@@ -507,8 +521,8 @@ se prueba con dobles y con una traza real si hay credenciales.
 ## Aceptación y demo
 
 ```bash
-make check            # lint, formato y 409 pruebas rápidas
-make test-integration # 34 pruebas de integración y 1 skipped (LangSmith no configurado)
+make check            # lint, formato y 772 pruebas rápidas
+make test-integration # integraciones existentes; pueden requerir Ollama/Qdrant
 make demo-prepare     # storage/demo: migraciones + corpus + dataset sintético
 make demo             # arranca storage/demo en 127.0.0.1:8000
 ```

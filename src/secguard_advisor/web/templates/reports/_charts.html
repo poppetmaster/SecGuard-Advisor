@@ -1,0 +1,56 @@
+{% macro chart_shell(chart_id, chart, table_rows, table_headers) %}
+<figure class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+  <figcaption id="{{ chart_id }}-title" class="text-base font-semibold text-slate-900">{{ chart.title }}</figcaption>
+  <p id="{{ chart_id }}-desc" class="mt-1 text-sm text-slate-700">{{ chart.conclusion }}</p>
+  <p class="mt-1 text-xs text-slate-500">{{ chart.denominator_label }}</p>
+  <div
+    id="{{ chart_id }}"
+    class="mt-3 h-80 w-full"
+    data-echarts="{{ chart_id }}"
+    role="img"
+    aria-labelledby="{{ chart_id }}-title"
+    aria-describedby="{{ chart_id }}-desc"
+  >
+    <script type="application/json" data-chart-data>{{ chart.option|tojson }}</script>
+  </div>
+  <details class="mt-3">
+    <summary class="cursor-pointer text-sm font-medium text-blue-800">Ver tabla accesible</summary>
+    <div class="mt-2 overflow-x-auto">
+      <table class="w-full min-w-[420px] text-left text-sm">
+        <caption class="sr-only">{{ chart.title }}</caption>
+        <thead><tr>{% for header in table_headers %}<th scope="col" class="px-2 py-1">{{ header }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in table_rows %}
+          <tr>{% for cell in row %}<td class="px-2 py-1">{{ cell }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+{% endmacro %}
+
+{% macro report_charts(dataset, charts) %}
+<div class="mt-6 grid gap-4 lg:grid-cols-2">
+  {% set severity_rows = [] %}
+  {% for item in dataset.severity.levels %}
+    {% set _ = severity_rows.append([item.level ~ " " ~ item.label, item.pending, item.fixed]) %}
+  {% endfor %}
+  {{ chart_shell("chart-severity", charts.severity, severity_rows, ["Severidad", "Pendientes", "Fixed"]) }}
+  {% set asset_rows = [] %}
+  {% for item in dataset.assets_top["items"] %}
+    {% set _ = asset_rows.append([item.alias, item.critical, item.high, item.total]) %}
+  {% endfor %}
+  {{ chart_shell("chart-assets", charts.assets, asset_rows, ["Activo", "Críticas", "Altas", "Total"]) }}
+  {% set exploitability_rows = [] %}
+  {% for key, label in {"positive": "Positivo", "negative_no_info": "Negativo / no informado", "indeterminate": "Indeterminado"}.items() %}
+    {% set _ = exploitability_rows.append([label, dataset.exploitability[key]]) %}
+  {% endfor %}
+  {{ chart_shell("chart-exploitability", charts.exploitability, exploitability_rows, ["Explotabilidad", "Registros"]) }}
+  {% set malware_rows = [] %}
+  {% for key, label in {"positive": "Positivo", "negative_no_info": "Negativo / no informado", "indeterminate": "Indeterminado"}.items() %}
+    {% set _ = malware_rows.append([label, dataset.malware[key]]) %}
+  {% endfor %}
+  {{ chart_shell("chart-malware", charts.malware, malware_rows, ["Malware", "Registros"]) }}
+</div>
+{% endmacro %}
