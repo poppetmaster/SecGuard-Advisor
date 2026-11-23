@@ -1,0 +1,52 @@
+{% from "ai_usage/_cards.html" import cards %}
+{% from "ai_usage/_charts.html" import cost_chart, requests_chart, tokens_chart %}
+{% from "ai_usage/_table.html" import provider_table %}
+{% from "ai_usage/_detail.html" import detail_table %}
+{% include "ai_usage/_filters.html" %}
+
+<p class="mt-3 text-sm text-slate-600">
+  Período aplicado:
+  <span class="font-medium text-slate-900">{{ usage.period.from_local }}</span>
+  a
+  <span class="font-medium text-slate-900">{{ usage.period.to_local }}</span>
+  (America/Bogota). Almacenamiento en UTC.
+</p>
+
+{% if usage.states.no_requests %}
+<p class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+  No hay solicitudes registradas por solicitud para este período. Las tarjetas de llamadas y
+  solicitudes API pueden ser cero; los totales desde ejecuciones históricas se marcan incompletos.
+</p>
+{% endif %}
+
+{{ cards(usage) }}
+
+<div class="mt-6 grid min-w-0 gap-4 lg:grid-cols-1">
+  {{ cost_chart(usage.charts) }}
+  {{ requests_chart(usage.charts) }}
+  {{ tokens_chart(usage.charts) }}
+</div>
+
+<section class="mt-6 min-w-0" aria-labelledby="provider-table-title">
+  <h2 id="provider-table-title" class="text-lg font-semibold text-slate-900">Por proveedor y modelo</h2>
+  <p class="mt-1 text-sm text-slate-600">
+    Una llamada al modelo es una operación lógica. Una solicitud API es un intento enviado a un
+    proveedor externo. Ollama se cuenta como llamada local.
+  </p>
+  {{ provider_table(usage.providers) }}
+</section>
+
+<section class="mt-6 min-w-0" aria-labelledby="detail-title">
+  <h2 id="detail-title" class="text-lg font-semibold text-slate-900">Detalle por ejecución</h2>
+  <p class="mt-1 text-sm text-slate-600">
+    Cada ejecución enlaza con su evidencia existente. Las operaciones se leen de la telemetría
+    persistida; los totales históricos sin detalle se marcan como incompletos.
+  </p>
+  {{ detail_table(usage.detail) }}
+</section>
+
+<p class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+  Este panel representa solo solicitudes registradas por SecGuard Advisor. No es una conciliación
+  de la factura ni del saldo de la cuenta del proveedor. Los totales de tokens entre modelos
+  observan consumo; no implican igual trabajo ni igual calidad.
+</p>

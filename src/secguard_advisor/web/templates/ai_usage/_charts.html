@@ -1,0 +1,111 @@
+{% macro cost_chart(charts) %}
+<section class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="cost-chart-title">
+  <h2 id="cost-chart-title" class="text-base font-semibold text-slate-900">Costo por día</h2>
+  <p class="mt-1 text-xs text-slate-600">Costo calculado en USD, agrupado por día de America/Bogota.</p>
+  <div class="mt-3 w-full max-w-full overflow-x-auto">
+    <svg class="h-40 w-full" viewBox="0 0 {{ charts.width }} 180" preserveAspectRatio="none" role="img" aria-labelledby="cost-chart-title">
+      <line x1="0" y1="160" x2="{{ charts.width }}" y2="160" stroke="#cbd5e1"></line>
+      {% for day in charts.days %}
+      {% set height = day.cost_pct * 1.4 %}
+      <rect x="{{ loop.index0 * 30 + 7 }}" y="{{ 160 - height }}" width="16" height="{{ height }}" fill="#0f766e">
+        <title>{{ day.date }}: {{ "%.6f"|format(day.cost) }} USD</title>
+      </rect>
+      {% endfor %}
+    </svg>
+  </div>
+  <details class="mt-2">
+    <summary class="cursor-pointer text-sm font-medium text-blue-800">Ver tabla accesible</summary>
+    <table class="mt-2 w-full text-sm">
+      <caption class="sr-only">Costo calculado por día</caption>
+      <thead><tr><th scope="col" class="text-left">Día</th><th scope="col" class="text-right">Costo USD</th></tr></thead>
+      <tbody>
+        {% for day in charts.days %}
+        <tr><th scope="row" class="text-left font-normal">{{ day.date }}</th><td class="text-right">{{ "%.6f"|format(day.cost) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+{% endmacro %}
+
+{% macro requests_chart(charts) %}
+{% set colors = {'ollama': '#64748b', 'deepseek': '#1d4ed8', 'anthropic': '#7c3aed'} %}
+<section class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="requests-chart-title">
+  <h2 id="requests-chart-title" class="text-base font-semibold text-slate-900">Solicitudes por proveedor</h2>
+  <p class="mt-1 text-xs text-slate-600">Solicitudes API externas y llamadas locales registradas por día.</p>
+  {% if charts.providers %}
+  <ul class="mt-2 flex flex-wrap gap-3 text-xs">
+    {% for provider in charts.providers %}
+    <li class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded" style="background-color: {{ colors.get(provider, '#334155') }}"></span>{{ provider }}</li>
+    {% endfor %}
+  </ul>
+  <div class="mt-3 w-full max-w-full overflow-x-auto">
+    <svg class="h-40 w-full" viewBox="0 0 {{ charts.requests_width }} 180" preserveAspectRatio="none" role="img" aria-labelledby="requests-chart-title">
+      <line x1="0" y1="160" x2="{{ charts.requests_width }}" y2="160" stroke="#cbd5e1"></line>
+      {% set slot = charts.requests_slot %}
+      {% for day in charts.days %}
+        {% set day_index = loop.index0 %}
+        {% for series in day.series_view %}
+        {% set height = series.pct * 1.4 %}
+        <rect x="{{ day_index * slot + 6 + loop.index0 * 12 }}" y="{{ 160 - height }}" width="8" height="{{ height }}" fill="{{ colors.get(series.provider, '#334155') }}">
+          <title>{{ day.date }} {{ series.provider }}: {{ series.count }}</title>
+        </rect>
+        {% endfor %}
+      {% endfor %}
+    </svg>
+  </div>
+  {% else %}
+  <p class="mt-3 text-sm text-slate-600">No hay solicitudes por proveedor en el período.</p>
+  {% endif %}
+  <details class="mt-2">
+    <summary class="cursor-pointer text-sm font-medium text-blue-800">Ver tabla accesible</summary>
+    <table class="mt-2 w-full text-sm">
+      <caption class="sr-only">Solicitudes y llamadas por día y proveedor</caption>
+      <thead><tr><th scope="col" class="text-left">Día</th>{% for provider in charts.providers %}<th scope="col" class="text-right">{{ provider }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for day in charts.days %}
+        <tr><th scope="row" class="text-left font-normal">{{ day.date }}</th>{% for series in day.series_view %}<td class="text-right">{{ series.count }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+{% endmacro %}
+
+{% macro tokens_chart(charts) %}
+<section class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="tokens-chart-title">
+  <h2 id="tokens-chart-title" class="text-base font-semibold text-slate-900">Tokens por día</h2>
+  <p class="mt-1 text-xs text-slate-600">Entrada y salida observadas o estimadas. No se imputan valores faltantes.</p>
+  <ul class="mt-2 flex flex-wrap gap-3 text-xs">
+    <li class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded bg-blue-700"></span>Entrada</li>
+    <li class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded bg-amber-500"></span>Salida</li>
+  </ul>
+  <div class="mt-3 w-full max-w-full overflow-x-auto">
+    <svg class="h-40 w-full" viewBox="0 0 {{ charts.width }} 180" preserveAspectRatio="none" role="img" aria-labelledby="tokens-chart-title">
+      <line x1="0" y1="160" x2="{{ charts.width }}" y2="160" stroke="#cbd5e1"></line>
+      {% for day in charts.days %}
+      {% set in_height = day.input_pct * 1.4 %}
+      {% set out_height = day.output_pct * 1.4 %}
+      <rect x="{{ loop.index0 * 30 + 5 }}" y="{{ 160 - in_height }}" width="9" height="{{ in_height }}" fill="#1d4ed8">
+        <title>{{ day.date }} entrada: {{ day.input_tokens }}</title>
+      </rect>
+      <rect x="{{ loop.index0 * 30 + 16 }}" y="{{ 160 - out_height }}" width="9" height="{{ out_height }}" fill="#f59e0b">
+        <title>{{ day.date }} salida: {{ day.output_tokens }}</title>
+      </rect>
+      {% endfor %}
+    </svg>
+  </div>
+  <details class="mt-2">
+    <summary class="cursor-pointer text-sm font-medium text-blue-800">Ver tabla accesible</summary>
+    <table class="mt-2 w-full text-sm">
+      <caption class="sr-only">Tokens de entrada y salida por día</caption>
+      <thead><tr><th scope="col" class="text-left">Día</th><th scope="col" class="text-right">Entrada</th><th scope="col" class="text-right">Salida</th></tr></thead>
+      <tbody>
+        {% for day in charts.days %}
+        <tr><th scope="row" class="text-left font-normal">{{ day.date }}</th><td class="text-right">{{ day.input_tokens }}</td><td class="text-right">{{ day.output_tokens }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</section>
+{% endmacro %}

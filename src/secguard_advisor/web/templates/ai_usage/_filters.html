@@ -1,0 +1,80 @@
+<form
+  class="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+  method="get"
+  action="/settings/ai/usage"
+  hx-get="/settings/ai/usage"
+  hx-target="#ai-usage-panel"
+  hx-swap="outerHTML"
+  hx-push-url="true"
+  aria-label="Filtros de uso de IA"
+>
+  <input type="hidden" name="tab" value="usage">
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="from">Desde</label>
+      <input class="mt-1 w-full rounded-lg border border-slate-400 px-3 py-2 text-sm" type="date" id="from" name="from" value="{{ usage.period.from_local }}">
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="to">Hasta</label>
+      <input class="mt-1 w-full rounded-lg border border-slate-400 px-3 py-2 text-sm" type="date" id="to" name="to" value="{{ usage.period.to_local }}">
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="provider">Proveedor</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="provider" name="provider">
+        <option value="">Todos</option>
+        {% for item in usage.options.providers %}
+        <option value="{{ item }}" {% if usage.filters.provider == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="model">Modelo</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="model" name="model">
+        <option value="">Todos</option>
+        {% for item in usage.options.models %}
+        <option value="{{ item }}" {% if usage.filters.model == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="operation">Tipo de operación</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="operation" name="operation">
+        <option value="">Todas</option>
+        {% for item in usage.options.operations %}
+        <option value="{{ item }}" {% if usage.filters.operation == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="status">Estado</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="status" name="status">
+        <option value="">Todos</option>
+        {% for item in usage.options.statuses %}
+        <option value="{{ item }}" {% if usage.filters.status == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="scope">Ámbito</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="scope" name="scope">
+        <option value="general" {% if usage.filters.scope == 'general' %}selected{% endif %}>Uso general</option>
+        <option value="evaluation" {% if usage.filters.scope == 'evaluation' %}selected{% endif %}>Evaluación comparativa</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="evaluation_id">Evaluación</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="evaluation_id" name="evaluation_id">
+        <option value="">Todas</option>
+        {% for item in usage.options.evaluations %}
+        <option value="{{ item.id }}" {% if usage.filters.evaluation_id == item.id %}selected{% endif %}>{{ item.version }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" type="submit">
+      Aplicar filtros
+    </button>
+    <a class="rounded-lg px-3 py-2 text-sm font-medium text-blue-800 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" href="{{ usage.urls.clear }}">Limpiar filtros</a>
+  </div>
+</form>

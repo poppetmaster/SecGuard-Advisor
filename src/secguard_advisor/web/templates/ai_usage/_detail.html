@@ -1,0 +1,80 @@
+{% macro detail_table(detail) %}
+{% if detail.total == 0 %}
+<p class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+  Sin consultas registradas en el período. Ajustá las fechas o limpiá los filtros.
+</p>
+{% else %}
+<div class="mt-3 space-y-3">
+  {% for item in detail.entries %}
+  <details class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <summary class="cursor-pointer">
+      <span class="font-mono text-xs text-slate-600">{{ item.run_id[:8] }}</span>
+      <span class="ml-2 font-medium text-slate-900">{{ item.provider }} / {{ item.model }}</span>
+      <span class="ml-2 text-sm text-slate-600">{{ item.started_local }}</span>
+      <span class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium {% if item.status == 'succeeded' %}bg-green-100 text-green-900{% else %}bg-amber-100 text-amber-900{% endif %}">{{ item.status }}</span>
+      <span class="ml-2 text-xs text-slate-600">
+        {% if item.duration_ms is not none %}{{ "{:,}".format(item.duration_ms) }} ms{% else %}duración no disponible{% endif %}
+        · {% if item.cost_status == 'calculated' %}{{ "%.6f"|format(item.cost_usd) }} USD{% elif item.cost_status == 'not_applicable' %}Sin cobro por API{% else %}Costo desconocido{% endif %}
+        · {% if item.model_calls is not none %}{{ item.model_calls }} {% if item.model_calls == 1 %}llamada{% else %}llamadas{% endif %}{% else %}sin detalle{% endif %}
+        {% if item.attempt_no > 1 %}· reintento {{ item.attempt_no }}{% endif %}
+      </span>
+    </summary>
+    <div class="mt-3">
+      {% if item.detailed %}
+      <div class="w-full max-w-full overflow-x-auto">
+        <table class="w-full min-w-[720px] text-left text-sm">
+          <caption class="sr-only">Operaciones de la ejecución {{ item.run_id }}</caption>
+          <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+            <tr>
+              <th scope="col" class="px-2 py-1">Operación</th>
+              <th scope="col" class="px-2 py-1">Estado</th>
+              <th scope="col" class="px-2 py-1 text-right">Duración</th>
+              <th scope="col" class="px-2 py-1 text-right">Entrada</th>
+              <th scope="col" class="px-2 py-1 text-right">Salida</th>
+              <th scope="col" class="px-2 py-1 text-right">Caché</th>
+              <th scope="col" class="px-2 py-1">Uso</th>
+              <th scope="col" class="px-2 py-1 text-right">Costo</th>
+              <th scope="col" class="px-2 py-1">Tarifa</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for request in item.requests %}
+            <tr>
+              <td class="px-2 py-1">{{ request.operation }}{% if request.scenario %} <span class="text-xs text-slate-600">{{ request.scenario }}</span>{% endif %}</td>
+              <td class="px-2 py-1">{{ request.status }}{% if request.error_code %} <span class="text-xs text-red-700">{{ request.error_code }}</span>{% endif %}</td>
+              <td class="px-2 py-1 text-right">{% if request.duration_ms is none %}—{% else %}{{ "{:,}".format(request.duration_ms) }} ms{% endif %}</td>
+              <td class="px-2 py-1 text-right">{{ request.input_tokens if request.input_tokens is not none else '—' }}</td>
+              <td class="px-2 py-1 text-right">{{ request.output_tokens if request.output_tokens is not none else '—' }}</td>
+              <td class="px-2 py-1 text-right">{{ request.cached_tokens if request.cached_tokens is not none else '—' }}</td>
+              <td class="px-2 py-1">{{ request.usage_source }}</td>
+              <td class="px-2 py-1 text-right">
+                {% if request.cost_status == 'calculated' %}{{ "%.6f"|format(request.cost_usd) }} USD
+                {% elif request.cost_status == 'not_applicable' %}Sin cobro por API
+                {% else %}Desconocido{% endif %}
+              </td>
+              <td class="px-2 py-1 text-xs">{{ request.tariff_version or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-amber-900" role="status">
+        Sin telemetría por solicitud para esta ejecución. Los totales provienen del registro de la
+        ejecución y se consideran históricos incompletos.
+      </p>
+      {% endif %}
+      <a class="mt-3 inline-block text-sm font-medium text-blue-800 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700" href="/cases/{{ item.case_id }}/runs/{{ item.run_id }}">Ver ejecución</a>
+    </div>
+  </details>
+  {% endfor %}
+</div>
+<div class="mt-3 flex items-center justify-between gap-2 text-sm">
+  <span class="text-slate-600">Página {{ detail.page }} de {{ detail.pages }} · {{ detail.total }} ejecuciones</span>
+  <span class="flex gap-2">
+    {% if detail.prev_url %}<a class="rounded-lg border border-slate-300 px-3 py-1 font-medium text-blue-800" href="{{ detail.prev_url }}" hx-get="{{ detail.prev_url }}" hx-target="#ai-usage-panel" hx-swap="outerHTML" hx-push-url="true">Anterior</a>{% endif %}
+    {% if detail.next_url %}<a class="rounded-lg border border-slate-300 px-3 py-1 font-medium text-blue-800" href="{{ detail.next_url }}" hx-get="{{ detail.next_url }}" hx-target="#ai-usage-panel" hx-swap="outerHTML" hx-push-url="true">Siguiente</a>{% endif %}
+  </span>
+</div>
+{% endif %}
+{% endmacro %}

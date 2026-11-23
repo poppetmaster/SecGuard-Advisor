@@ -1,0 +1,75 @@
+{% macro number(value) -%}
+{% if value is none %}No disponible{% else %}{{ "{:,}".format(value) }}{% endif %}
+{%- endmacro %}
+
+{% macro money(value) -%}
+{% if value is none %}No disponible{% else %}{{ "%.6f"|format(value) }} USD{% endif %}
+{%- endmacro %}
+
+{% macro cards(usage) %}
+{% set c = usage.cards %}
+<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Costo de API calculado</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">{% if c.calculated_queries %}{{ money(c.cost_calculated_usd) }}{% else %}Sin datos{% endif %}</p>
+    <p class="mt-1 text-xs text-slate-600">Solo solicitudes con costo calculado. No incluye reservas.</p>
+  </article>
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Solicitudes API externas</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ number(c.external_requests) }}</p>
+    <p class="mt-1 text-xs text-slate-600">Intentos enviados a DeepSeek o Anthropic.</p>
+  </article>
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Llamadas locales</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ number(c.local_calls) }}</p>
+    <p class="mt-1 text-xs text-slate-600">Ollama; no son solicitudes API externas. Sin cobro por API.</p>
+  </article>
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Tokens de entrada y salida</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ number(c.input_tokens) }} / {{ number(c.output_tokens) }}</p>
+    <p class="mt-1 text-xs text-slate-600">Caché: {{ number(c.cached_tokens) }}. No se suman otra vez a la entrada.</p>
+  </article>
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Consultas realizadas</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ number(c.queries) }}</p>
+    <p class="mt-1 text-xs text-slate-600">Turnos iniciados por el usuario en el período.</p>
+  </article>
+  <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-700">Latencia mediana del turno</h3>
+    <p class="mt-2 text-2xl font-semibold text-slate-900">
+      {% if c.median_turn_latency_ms is none %}No disponible{% else %}{{ "{:,}".format(c.median_turn_latency_ms) }} ms{% endif %}
+    </p>
+    <p class="mt-1 text-xs text-slate-600">Sobre turnos con duración registrada.</p>
+  </article>
+</div>
+
+<div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+  <h3 class="font-semibold text-slate-900">Cobertura de medición</h3>
+  <div class="mt-2 flex flex-wrap gap-2 text-xs">
+    <span class="rounded-full bg-green-100 px-2 py-1 font-medium text-green-900">Observado: {{ c.coverage.observed }}</span>
+    <span class="rounded-full bg-amber-100 px-2 py-1 font-medium text-amber-900">Estimado: {{ c.coverage.estimated }}</span>
+    <span class="rounded-full bg-slate-200 px-2 py-1 font-medium text-slate-800">No disponible: {{ c.coverage.unavailable }}</span>
+    <span class="rounded-full bg-red-100 px-2 py-1 font-medium text-red-900">Histórico sin detalle: {{ c.coverage.historical_runs }}</span>
+  </div>
+  {% if c.coverage.historical_runs %}
+  <p class="mt-2 text-amber-900" role="status">
+    Totales incompletos: {{ c.coverage.historical_runs }} consultas históricas no tienen telemetría
+    por solicitud. Sus tokens y costo se leen de la ejecución y no se presentan como consumo cero.
+  </p>
+  {% endif %}
+  <dl class="mt-3 grid gap-2 sm:grid-cols-2">
+    <div>
+      <dt class="text-slate-500">Reservas pendientes</dt>
+      <dd class="font-medium text-slate-900">{{ money(c.pending_reservations_usd) }} ({{ c.pending_reservations_count }})</dd>
+    </div>
+    <div>
+      <dt class="text-slate-500">Reservas inciertas comprometidas</dt>
+      <dd class="font-medium text-slate-900">{{ money(c.uncertain_committed_usd) }} ({{ c.uncertain_committed_count }})</dd>
+    </div>
+  </dl>
+  <p class="mt-2 text-xs text-slate-600">
+    Una reserva no es gasto realizado. Los costos desconocidos se muestran aparte y no se suman al
+    total calculado.
+  </p>
+</div>
+{% endmacro %}

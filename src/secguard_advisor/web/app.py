@@ -26,6 +26,7 @@ from secguard_advisor.retrieval.instance import InstanceLockBusy, lock_conflict_
 from secguard_advisor.web.errors import AppError, error_response, message_for
 from secguard_advisor.web.routes import (
     ai_settings,
+    ai_usage,
     cases,
     chat,
     documents,
@@ -147,6 +148,7 @@ def create_app(
     app.state.templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="static")
     app.include_router(ai_settings.router)
+    app.include_router(ai_usage.router)
     app.include_router(cases.router)
     app.include_router(documents.router)
     app.include_router(vulnerabilities.router)

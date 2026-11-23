@@ -1,0 +1,36 @@
+<section id="ai-usage-panel" class="mt-6">
+  <div class="flex flex-wrap items-center gap-2 border-b border-slate-200" role="tablist" aria-label="Secciones de uso de IA">
+    <a
+      href="{{ usage.urls.usage }}"
+      hx-get="{{ usage.urls.usage }}"
+      hx-target="#ai-usage-panel"
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      role="tab"
+      aria-selected="{{ 'true' if tab == 'usage' else 'false' }}"
+      class="rounded-t-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 {% if tab == 'usage' %}border-b-2 border-blue-700 text-blue-800{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+    >Uso registrado</a>
+    <a
+      href="{{ usage.urls.comparison }}"
+      hx-get="{{ usage.urls.comparison }}"
+      hx-target="#ai-usage-panel"
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      role="tab"
+      aria-selected="{{ 'true' if tab == 'comparison' else 'false' }}"
+      class="rounded-t-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 {% if tab == 'comparison' %}border-b-2 border-blue-700 text-blue-800{% else %}text-slate-600 hover:text-slate-900{% endif %}"
+    >Comparativo de pruebas</a>
+  </div>
+
+  {% if error %}
+  <p class="mt-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">
+    {{ error }}
+  </p>
+  {% endif %}
+
+  {% if tab == "comparison" %}
+  {% include "ai_usage/_comparison.html" %}
+  {% else %}
+  {% include "ai_usage/_usage.html" %}
+  {% endif %}
+</section>

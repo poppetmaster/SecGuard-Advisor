@@ -1,0 +1,158 @@
+{% if not comparison.evaluation %}
+<div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+  <h2 class="text-lg font-semibold text-slate-900">Sin evaluaciones importadas</h2>
+  <p class="mt-2 text-sm text-slate-600">
+    Todavía no hay una evaluación registrada. Importá el informe congelado con:
+  </p>
+  <code class="mt-2 block rounded bg-slate-100 p-2 text-xs">uv run python scripts/import_evaluation_005.py</code>
+</div>
+{% else %}
+<form
+  class="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+  method="get"
+  action="/settings/ai/usage"
+  hx-get="/settings/ai/usage"
+  hx-target="#ai-usage-panel"
+  hx-swap="outerHTML"
+  hx-push-url="true"
+  aria-label="Selector de evaluación"
+>
+  <input type="hidden" name="tab" value="comparison">
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="evaluation_id">Evaluación</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="evaluation_id" name="evaluation_id">
+        {% for item in comparison.evaluations %}
+        <option value="{{ item.id }}" {% if comparison.evaluation.id == item.id %}selected{% endif %}>{{ item.name }} ({{ item.version }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-slate-800" for="eval_provider">Proveedor</label>
+      <select class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm" id="eval_provider" name="eval_provider">
+        <option value="">Todos</option>
+        {% for item in comparison.providers %}
+        <option value="{{ item.provider }}" {% if provider_filter == item.provider %}selected{% endif %}>{{ item.provider }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <button class="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" type="submit">Ver comparativo</button>
+</form>
+
+<div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+  <h2 class="text-base font-semibold text-slate-900">{{ comparison.evaluation.name }}</h2>
+  <dl class="mt-2 grid gap-2 sm:grid-cols-3">
+    <div><dt class="text-slate-500">Versión</dt><dd class="font-mono text-xs text-slate-900">{{ comparison.evaluation.version }}</dd></div>
+    <div><dt class="text-slate-500">Congelada</dt><dd class="text-slate-900">{{ comparison.evaluation.frozen_at or '—' }}</dd></div>
+    <div><dt class="text-slate-500">Detalle</dt><dd class="text-slate-900">{% if comparison.evaluation.detail_level == 'aggregate' %}Histórico agregado{% else %}{{ comparison.evaluation.detail_level }}{% endif %}</dd></div>
+  </dl>
+  <p class="mt-2 text-xs text-slate-600">
+    Solo se comparan escenarios equivalentes. Las métricas automáticas no prueban respaldo
+    semántico y la calidad de contenido es asistida por IA, no una revisión humana independiente.
+  </p>
+</div>
+
+<div class="mt-4 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="w-full min-w-[920px] text-left text-sm">
+    <caption class="sr-only">Comparativo por proveedor y modelo</caption>
+    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+      <tr>
+        <th scope="col" class="px-3 py-2">Proveedor / modelo</th>
+        <th scope="col" class="px-3 py-2 text-right">Escenarios ejecutados</th>
+        <th scope="col" class="px-3 py-2 text-right">Éxito</th>
+        <th scope="col" class="px-3 py-2 text-right">Abstención / herramientas</th>
+        <th scope="col" class="px-3 py-2 text-right">Citas válidas</th>
+        <th scope="col" class="px-3 py-2 text-right">Latencia mediana</th>
+        <th scope="col" class="px-3 py-2 text-right">Tokens E/S</th>
+        <th scope="col" class="px-3 py-2 text-right">Solicitudes</th>
+        <th scope="col" class="px-3 py-2 text-right">Costo total / escenario</th>
+        <th scope="col" class="min-w-[150px] px-3 py-2 text-right">Calidad / revisión humana</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for item in comparison.providers %}
+      <tr>
+        <th scope="row" class="px-3 py-2 font-medium">
+          <span class="block">{{ item.provider }}</span>
+          <span class="block font-mono text-xs text-slate-600">{{ item.model }}</span>
+        </th>
+        <td class="px-3 py-2 text-right">{{ item.executed }} <span class="text-xs text-slate-600">({{ item.approved }} ap.)</span></td>
+        <td class="px-3 py-2 text-right"><span class="rounded bg-green-100 px-1 text-xs text-green-900">Automática</span> {% if item.success_rate is none %}—{% else %}{{ "%.2f"|format(item.success_rate * 100) }} %{% endif %}</td>
+        <td class="px-3 py-2 text-right">{{ item.abstention_correct }}/{{ item.abstention_runs }}<span class="block text-xs text-slate-600">herramientas {% if item.tool_accuracy is none %}—{% else %}{{ "%.2f"|format(item.tool_accuracy * 100) }} %{% endif %}</span></td>
+        <td class="px-3 py-2 text-right">{% if item.citation_validity is none %}—{% else %}{{ "%.2f"|format(item.citation_validity * 100) }} %{% endif %}</td>
+        <td class="px-3 py-2 text-right">{% if item.median_latency_ms is none %}—{% else %}{{ "{:,}".format(item.median_latency_ms) }} ms{% endif %}</td>
+        <td class="px-3 py-2 text-right">{{ "{:,}".format(item.input_tokens) }} / {{ "{:,}".format(item.output_tokens) }}</td>
+        <td class="px-3 py-2 text-right"><span class="rounded bg-amber-100 px-1 text-xs text-amber-900">{{ item.requests_label }}</span></td>
+        <td class="px-3 py-2 text-right">
+          {% if item.cost_status == 'calculated' %}{{ "%.6f"|format(item.cost_total_usd) }} USD
+            <span class="block text-xs text-slate-600">{{ "%.6f"|format(item.cost_per_scenario_usd) }} / escenario</span>
+          {% elif item.cost_status == 'not_applicable' %}Sin cobro por API{% else %}Costo desconocido{% endif %}
+        </td>
+        <td class="min-w-[150px] px-3 py-2 text-right">
+          {% if item.quality_avg is none %}—{% else %}{{ "%.2f"|format(item.quality_avg) }} / 2{% endif %}
+          {% if item.quality_method %}<span class="block text-xs text-slate-600">AI-assisted</span>{% endif %}
+          <span class="block text-xs text-slate-600">{% if item.manual_review == 'recorded' %}Revisión humana registrada{% else %}Revisión humana registrada: No{% endif %}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+  <section class="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-labelledby="common-title">
+    <h2 id="common-title" class="text-base font-semibold text-slate-900">Escenarios comunes</h2>
+    <p class="mt-1 text-sm text-slate-600">
+      {{ comparison.common_scenarios|length }} escenarios presentes en todos los proveedores;
+      {{ comparison.common_executed|length }} con ejecución completa.
+    </p>
+    <div class="mt-3 w-full max-w-full overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <caption class="sr-only">Resultado por escenario común y proveedor</caption>
+        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+          <tr>
+            <th scope="col" class="px-2 py-1">Escenario</th>
+            {% for item in comparison.providers %}<th scope="col" class="px-2 py-1">{{ item.provider }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          {% for row in comparison.matrix %}
+          <tr>
+            <th scope="row" class="px-2 py-1 font-medium">{{ row.scenario }}</th>
+            {% for cell in row.cells %}
+            <td class="px-2 py-1">
+              <span class="rounded px-1 text-xs {% if cell.result == 'approved' %}bg-green-100 text-green-900{% elif cell.result == 'blocked' %}bg-slate-200 text-slate-800{% else %}bg-amber-100 text-amber-900{% endif %}">{{ cell.result or '—' }}</span>
+              {% if not cell.executed %}<span class="ml-1 text-xs text-slate-600">sin ejecutar</span>{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm" aria-labelledby="missing-title">
+    <h2 id="missing-title" class="text-base font-semibold text-slate-900">Muestra incompleta</h2>
+    {% if comparison.missing %}
+    <ul class="mt-2 space-y-2">
+      {% for item in comparison.missing %}
+      <li><span class="font-medium">{{ item.provider }}</span>: faltan {{ item.scenarios|join(', ') }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="mt-2 text-slate-600">Todos los proveedores tienen los mismos escenarios.</p>
+    {% endif %}
+    {% if comparison.notes %}
+    <ul class="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-700">
+      {% for note in comparison.notes %}<li>{{ note }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <p class="mt-3 text-xs text-slate-600">
+      No se declara un ganador: la muestra es exploratoria y la evidencia no permite superioridad
+      estadística.
+    </p>
+  </section>
+</div>
+{% endif %}
