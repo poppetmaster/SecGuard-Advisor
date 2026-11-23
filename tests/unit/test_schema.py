@@ -48,6 +48,9 @@ EXPECTED_TABLES = {
     "provider_budget_ledger",
     "ai_configuration",
     "ai_provider_profiles",
+    "ai_requests",
+    "ai_evaluations",
+    "ai_evaluation_results",
 }
 
 

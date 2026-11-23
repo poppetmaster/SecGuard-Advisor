@@ -77,12 +77,14 @@ class DeepSeekGenerator:
             raise InvalidModelOutput("DeepSeek devolvió una respuesta sin contenido.") from exc
         parsed = parse_structured(content, schema)
         usage = data.get("usage") or {}
+        details = usage.get("completion_tokens_details") or {}
         self.last_usage = usage_dict(
             input_tokens=usage.get("prompt_tokens"),
             output_tokens=usage.get("completion_tokens"),
             cached_tokens=usage.get("prompt_cache_hit_tokens") or 0,
             cache_write_tokens=0,
             started=started,
+            reasoning_tokens=details.get("reasoning_tokens"),
         )
         return parsed
 

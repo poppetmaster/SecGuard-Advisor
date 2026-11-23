@@ -859,3 +859,145 @@ class QualysImportIssue(Base):
         Index("ix_qualys_import_issues_import", "import_id", "severity"),
         Index("ix_qualys_import_issues_row", "import_id", "row_number"),
     )
+
+
+class AiEvaluation(Base):
+    """Evaluación comparativa importada o registrada por la aplicación."""
+
+    __tablename__ = "ai_evaluations"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    import_key: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    version: Mapped[str] = mapped_column(String(60), nullable=False)
+    frozen_at: Mapped[str | None] = mapped_column(String(40))
+    dataset_sha256: Mapped[str | None] = mapped_column(String(64))
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default="report_import")
+    source_path: Mapped[str | None] = mapped_column(Text)
+    detail_level: Mapped[str] = mapped_column(String(20), nullable=False, default="aggregate")
+    provenance_json: Mapped[str | None] = mapped_column(Text)
+    imported_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        _status_check("source", ("report_import", "manual", "telemetry"), "ai_eval_source_valid"),
+        _status_check("detail_level", ("aggregate", "requests"), "ai_eval_detail_valid"),
+    )
+
+
+class AiEvaluationResult(Base):
+    """Resultado agregado por evaluación, proveedor y escenario."""
+
+    __tablename__ = "ai_evaluation_results"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    evaluation_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("ai_evaluations.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    scenario: Mapped[str] = mapped_column(String(20), nullable=False)
+    kind: Mapped[str | None] = mapped_column(String(40))
+    executed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    result: Mapped[str] = mapped_column(String(20), nullable=False)
+    outcome: Mapped[str | None] = mapped_column(String(40))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cached_tokens: Mapped[int | None] = mapped_column(Integer)
+    usage_source: Mapped[str | None] = mapped_column(String(20))
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 9))
+    cost_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    tariff_version: Mapped[str | None] = mapped_column(String(40))
+    citations_emitted: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    citations_valid: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    citations_resolvable: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    findings_match: Mapped[bool | None] = mapped_column(Boolean)
+    abstention_ok: Mapped[bool | None] = mapped_column(Boolean)
+    quality_score: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
+    quality_method: Mapped[str | None] = mapped_column(String(80))
+    manual_review: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
+    run_id: Mapped[str | None] = mapped_column(String(32), ForeignKey("runs.id"))
+    detail_level: Mapped[str] = mapped_column(String(20), nullable=False, default="aggregate")
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "evaluation_id", "provider", "scenario", name="uq_ai_eval_result_provider_scenario"
+        ),
+        Index("ix_ai_eval_results_eval", "evaluation_id"),
+        _status_check("provider", ("ollama", "deepseek", "anthropic"), "ai_eval_provider_valid"),
+        _status_check("result", ("approved", "failed", "blocked"), "ai_eval_result_valid"),
+        _status_check(
+            "usage_source", ("observed", "estimated", "unavailable"), "ai_eval_usage_source_valid"
+        ),
+        _status_check(
+            "cost_status", ("calculated", "unknown", "not_applicable"), "ai_eval_cost_status_valid"
+        ),
+        _status_check("manual_review", ("none", "recorded"), "ai_eval_manual_review_valid"),
+        _status_check("detail_level", ("aggregate", "linked"), "ai_eval_result_detail_valid"),
+    )
+
+
+class AiRequest(Base):
+    """Un intento de operación de modelo registrado por la aplicación."""
+
+    __tablename__ = "ai_requests"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    run_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False
+    )
+    operation: Mapped[str] = mapped_column(String(20), nullable=False)
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    retry_of_request_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("ai_requests.id")
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    started_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+    finished_at: Mapped[str | None] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="completed")
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cached_tokens: Mapped[int | None] = mapped_column(Integer)
+    cache_write_tokens: Mapped[int | None] = mapped_column(Integer)
+    reasoning_tokens: Mapped[int | None] = mapped_column(Integer)
+    reasoning_included_in_output: Mapped[bool | None] = mapped_column(Boolean)
+    usage_source: Mapped[str] = mapped_column(String(20), nullable=False, default="unavailable")
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 9))
+    cost_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    provider_reported_cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 9))
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    tariff_version: Mapped[str | None] = mapped_column(String(40))
+    tariff_effective_at: Mapped[str | None] = mapped_column(String(40))
+    evaluation_id: Mapped[str | None] = mapped_column(String(32))
+    scenario: Mapped[str | None] = mapped_column(String(20))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    created_at: Mapped[str] = mapped_column(String(40), nullable=False, default=utc_now_iso)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id", "operation", "attempt_no", name="uq_ai_requests_run_operation_attempt"
+        ),
+        Index("ix_ai_requests_started", "started_at"),
+        Index("ix_ai_requests_provider", "provider", "model"),
+        Index("ix_ai_requests_status", "status"),
+        Index("ix_ai_requests_evaluation", "evaluation_id", "scenario"),
+        _status_check(
+            "operation",
+            ("decide", "generate", "repair", "remote_count"),
+            "ai_request_operation_valid",
+        ),
+        _status_check(
+            "status", ("completed", "error", "timeout", "uncertain"), "ai_request_status_valid"
+        ),
+        _status_check(
+            "usage_source", ("observed", "estimated", "unavailable"), "ai_request_usage_valid"
+        ),
+        _status_check(
+            "cost_status", ("calculated", "unknown", "not_applicable"), "ai_request_cost_valid"
+        ),
+        CheckConstraint("attempt_no >= 1", name="ai_request_attempt_positive"),
+    )

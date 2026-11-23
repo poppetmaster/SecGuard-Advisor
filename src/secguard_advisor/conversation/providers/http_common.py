@@ -99,9 +99,10 @@ def usage_dict(
     cached_tokens: int | None,
     cache_write_tokens: int | None,
     started: float,
+    reasoning_tokens: int | None = None,
 ) -> dict[str, Any]:
     source = "observed" if input_tokens is not None and output_tokens is not None else "unknown"
-    return {
+    result = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cached_tokens": cached_tokens,
@@ -109,3 +110,7 @@ def usage_dict(
         "source": source,
         "duration_ms": int((time.perf_counter() - started) * 1000),
     }
+    if reasoning_tokens is not None:
+        result["reasoning_tokens"] = reasoning_tokens
+        result["reasoning_included_in_output"] = True
+    return result

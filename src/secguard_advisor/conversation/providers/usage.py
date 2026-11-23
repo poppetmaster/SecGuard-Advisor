@@ -6,6 +6,7 @@ import time
 from contextlib import contextmanager
 from decimal import Decimal
 
+from secguard_advisor.ai_usage.telemetry import record_ai_request, status_and_error
 from secguard_advisor.conversation.llm import elapsed_ms
 from secguard_advisor.conversation.providers.cost import TARIFF_VERSION, CostResult
 from secguard_advisor.db.models import ProviderUsage, Run, utc_now_iso
@@ -76,12 +77,14 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
                 max_output_tokens=settings.provider_max_output_tokens,
             )
             session.commit()
+    started_at = utc_now_iso()
     started = time.perf_counter()
     try:
         yield
-    except Exception:
+    except Exception as exc:
         duration = elapsed_ms(started)
         usage = getattr(generator, "last_usage", None) or {}
+        status, error_code = status_and_error(exc)
         with context.factory() as session:
             if reservation is not None:
                 reconcile_call(session, reservation)
@@ -110,6 +113,20 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
                     {"source": "unknown"},
                     CostResult("unknown", None, None, {"reason": "call_failed"}),
                 )
+            record_ai_request(
+                session,
+                run_id=context.run_id,
+                operation=operation,
+                attempt_no=context.attempt_no,
+                provider=provider,
+                model=model,
+                started_at=started_at,
+                duration_ms=duration,
+                usage=usage,
+                cost=None,
+                status=status,
+                error_code=error_code,
+            )
             session.commit()
         raise
     duration = elapsed_ms(started)
@@ -147,5 +164,18 @@ def provider_call(context, *, operation: str, admitted_tokens: int):
                     created_at=utc_now_iso(),
                 )
             )
+        record_ai_request(
+            session,
+            run_id=context.run_id,
+            operation=operation,
+            attempt_no=context.attempt_no,
+            provider=provider,
+            model=model,
+            started_at=started_at,
+            duration_ms=duration,
+            usage=usage,
+            cost=cost,
+            status="completed",
+        )
         _update_run(session, context.run_id, provider, usage, cost)
         session.commit()
