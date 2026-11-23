@@ -174,6 +174,13 @@ def test_comparison_tab_after_idempotent_import(tmp_path: Path) -> None:
     assert "S01" in text
     assert "Revisión humana registrada" in text
     assert "AI-assisted" in text
+    assert "Consumo completo por proveedor" in text
+    assert "Costo conocido parcial" in text
+    assert "0.006201" in text
+    assert "0.006150" in text
+    assert "Comparativo funcional" in text
+    assert "Muestra: 9 escenarios" in text
+    assert "6/9" in text
 
 
 def test_page_does_not_invoke_a_generator(tmp_path: Path) -> None:

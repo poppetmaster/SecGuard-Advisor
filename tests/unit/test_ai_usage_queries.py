@@ -432,9 +432,16 @@ def test_comparison_uses_common_scenarios_and_marks_blocked(tmp_path: Path) -> N
     }
     assert view["common_scenarios"] == ["S01", "S02", "S08"]
     assert view["common_executed"] == ["S01", "S02"]
+    assert view["comparison_sample"] == {"ids": ["S01", "S02"], "size": 2}
     deepseek = next(item for item in view["providers"] if item["provider"] == "deepseek")
     assert deepseek["executed"] == 2
     assert deepseek["successes"] == 2
     assert deepseek["blocked"] == 1
     assert deepseek["citation_validity"] == 1.0
     assert deepseek["requests_label"] == "Histórico agregado"
+    assert deepseek["consumption"]["records"] == 3
+    assert deepseek["consumption"]["blocked"] == 1
+    assert deepseek["consumption"]["known_cost_usd"] == Decimal("0.004")
+    assert deepseek["functional"]["scenario_ids"] == ["S01", "S02"]
+    assert deepseek["functional"]["success_denominator"] == 2
+    assert deepseek["functional"]["success_rate"] == 1.0

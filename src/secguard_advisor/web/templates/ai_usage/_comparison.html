@@ -53,45 +53,104 @@
   </p>
 </div>
 
-<div class="mt-4 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-  <table class="w-full min-w-[920px] text-left text-sm">
-    <caption class="sr-only">Comparativo por proveedor y modelo</caption>
+<h2 class="mt-6 text-lg font-semibold text-slate-900">Consumo completo por proveedor</h2>
+<p class="mt-1 text-sm text-slate-600">
+  Todos los escenarios e intentos registrados, incluidos los bloqueados. El costo es un subtotal
+  <strong>conocido</strong>: no es facturación completa y los registros desconocidos no se
+  presentan como cero. Los resultados importados son histórico agregado.
+</p>
+<div class="mt-3 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="w-full min-w-[960px] text-left text-sm">
+    <caption class="sr-only">Consumo completo por proveedor, incluidos bloqueados</caption>
     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
       <tr>
         <th scope="col" class="px-3 py-2">Proveedor / modelo</th>
-        <th scope="col" class="px-3 py-2 text-right">Escenarios ejecutados</th>
-        <th scope="col" class="px-3 py-2 text-right">Éxito</th>
-        <th scope="col" class="px-3 py-2 text-right">Abstención / herramientas</th>
-        <th scope="col" class="px-3 py-2 text-right">Citas válidas</th>
-        <th scope="col" class="px-3 py-2 text-right">Latencia mediana</th>
-        <th scope="col" class="px-3 py-2 text-right">Tokens E/S</th>
-        <th scope="col" class="px-3 py-2 text-right">Solicitudes</th>
-        <th scope="col" class="px-3 py-2 text-right">Costo total / escenario</th>
-        <th scope="col" class="min-w-[150px] px-3 py-2 text-right">Calidad / revisión humana</th>
+        <th scope="col" class="px-3 py-2 text-right">Registros</th>
+        <th scope="col" class="px-3 py-2 text-right">Bloqueados</th>
+        <th scope="col" class="px-3 py-2 text-right">Tokens E</th>
+        <th scope="col" class="px-3 py-2 text-right">Tokens S</th>
+        <th scope="col" class="px-3 py-2 text-right">Caché</th>
+        <th scope="col" class="px-3 py-2 text-right">Costo conocido</th>
+        <th scope="col" class="px-3 py-2 text-right">Cobertura de costo</th>
+        <th scope="col" class="px-3 py-2 text-right">Conocidos / desconocidos</th>
+        <th scope="col" class="px-3 py-2 text-right">Costo / registro</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-200">
       {% for item in comparison.providers %}
+      {% set consumption = item.consumption %}
       <tr>
         <th scope="row" class="px-3 py-2 font-medium">
           <span class="block">{{ item.provider }}</span>
           <span class="block font-mono text-xs text-slate-600">{{ item.model }}</span>
         </th>
-        <td class="px-3 py-2 text-right">{{ item.executed }} <span class="text-xs text-slate-600">({{ item.approved }} ap.)</span></td>
-        <td class="px-3 py-2 text-right"><span class="rounded bg-green-100 px-1 text-xs text-green-900">Automática</span> {% if item.success_rate is none %}—{% else %}{{ "%.2f"|format(item.success_rate * 100) }} %{% endif %}</td>
-        <td class="px-3 py-2 text-right">{{ item.abstention_correct }}/{{ item.abstention_runs }}<span class="block text-xs text-slate-600">herramientas {% if item.tool_accuracy is none %}—{% else %}{{ "%.2f"|format(item.tool_accuracy * 100) }} %{% endif %}</span></td>
-        <td class="px-3 py-2 text-right">{% if item.citation_validity is none %}—{% else %}{{ "%.2f"|format(item.citation_validity * 100) }} %{% endif %}</td>
-        <td class="px-3 py-2 text-right">{% if item.median_latency_ms is none %}—{% else %}{{ "{:,}".format(item.median_latency_ms) }} ms{% endif %}</td>
-        <td class="px-3 py-2 text-right">{{ "{:,}".format(item.input_tokens) }} / {{ "{:,}".format(item.output_tokens) }}</td>
-        <td class="px-3 py-2 text-right"><span class="rounded bg-amber-100 px-1 text-xs text-amber-900">{{ item.requests_label }}</span></td>
+        <td class="px-3 py-2 text-right">{{ consumption.records }}</td>
+        <td class="px-3 py-2 text-right">{{ consumption.blocked }}</td>
+        <td class="px-3 py-2 text-right">{{ "{:,}".format(consumption.input_tokens) }}</td>
+        <td class="px-3 py-2 text-right">{{ "{:,}".format(consumption.output_tokens) }}</td>
+        <td class="px-3 py-2 text-right">{{ "{:,}".format(consumption.cached_tokens) }}</td>
         <td class="px-3 py-2 text-right">
-          {% if item.cost_status == 'calculated' %}{{ "%.6f"|format(item.cost_total_usd) }} USD
-            <span class="block text-xs text-slate-600">{{ "%.6f"|format(item.cost_per_scenario_usd) }} / escenario</span>
-          {% elif item.cost_status == 'not_applicable' %}Sin cobro por API{% else %}Costo desconocido{% endif %}
+          {% if consumption.known_cost_records %}{{ "%.6f"|format(consumption.known_cost_usd) }} USD
+            <span class="block text-xs text-slate-600">Costo conocido parcial</span>
+          {% elif consumption.not_applicable_records == consumption.records %}Sin cobro por API
+          {% else %}Sin costo conocido{% endif %}
         </td>
+        <td class="px-3 py-2 text-right">
+          {% if consumption.cost_coverage is none %}—{% else %}
+          {{ "%.2f"|format(consumption.cost_coverage * 100) }} %
+          ({{ consumption.known_cost_records }}/{{ consumption.cost_denominator }})
+          {% endif %}
+        </td>
+        <td class="px-3 py-2 text-right">{{ consumption.known_cost_records }} / {{ consumption.unknown_cost_records }} <span class="block text-xs text-slate-600">N/A: {{ consumption.not_applicable_records }}</span></td>
+        <td class="px-3 py-2 text-right">{% if consumption.known_cost_records %}{{ "%.6f"|format(consumption.cost_per_record_usd) }} USD{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="mt-6 text-lg font-semibold text-slate-900">Comparativo funcional — muestra común</h2>
+<p class="mt-1 text-sm text-slate-600">
+  Muestra: {{ comparison.comparison_sample.size }} escenarios
+  ({{ comparison.comparison_sample.ids|join(', ') }}). Solo se comparan escenarios ejecutados por
+  todos los proveedores seleccionados; éxito, latencia y calidad se recalculan sobre esta
+  intersección.
+</p>
+<div class="mt-3 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="w-full min-w-[860px] text-left text-sm">
+    <caption class="sr-only">Comparativo funcional sobre la muestra común</caption>
+    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+      <tr>
+        <th scope="col" class="px-3 py-2">Proveedor / modelo</th>
+        <th scope="col" class="px-3 py-2 text-right">Muestra</th>
+        <th scope="col" class="px-3 py-2 text-right">Resultado</th>
+        <th scope="col" class="px-3 py-2 text-right">Latencia mediana</th>
+        <th scope="col" class="px-3 py-2 text-right">Estructura</th>
+        <th scope="col" class="px-3 py-2 text-right">Citas válidas</th>
+        <th scope="col" class="px-3 py-2 text-right">Herramientas / abstención</th>
+        <th scope="col" class="px-3 py-2 text-right">Calidad / revisión</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for item in comparison.providers %}
+      {% set functional = item.functional %}
+      <tr>
+        <th scope="row" class="px-3 py-2 font-medium">
+          <span class="block">{{ item.provider }}</span>
+          <span class="block font-mono text-xs text-slate-600">{{ item.model }}</span>
+        </th>
+        <td class="px-3 py-2 text-right">{{ functional.executed }}<span class="block text-xs text-slate-600">n={{ functional.success_denominator }}</span></td>
+        <td class="px-3 py-2 text-right">
+          <span class="rounded bg-green-100 px-1 text-xs text-green-900">Automática</span>
+          <span class="block">{{ functional.approved }} ap. / {{ functional.failed }} fall. · {{ functional.approved }}/{{ functional.success_denominator }}{% if functional.success_rate is not none %} ({{ "%.2f"|format(functional.success_rate * 100) }} %){% endif %}</span>
+        </td>
+        <td class="px-3 py-2 text-right">{% if functional.median_latency_ms is none %}—{% else %}{{ "{:,}".format(functional.median_latency_ms) }} ms<span class="block text-xs text-slate-600">n={{ functional.latency_denominator }}</span>{% endif %}</td>
+        <td class="px-3 py-2 text-right">{{ "%.2f"|format(functional.structure_rate * 100) }} %</td>
+        <td class="px-3 py-2 text-right">{% if functional.citation_validity is none %}—{% else %}{{ "%.2f"|format(functional.citation_validity * 100) }} %<span class="block text-xs text-slate-600">{{ functional.citation_denominator }} citas</span>{% endif %}</td>
+        <td class="px-3 py-2 text-right">{% if functional.tool_accuracy is none %}—{% else %}{{ "%.2f"|format(functional.tool_accuracy * 100) }} %<span class="block text-xs text-slate-600">n={{ functional.tool_denominator }}</span>{% endif %}<span class="block text-xs text-slate-600">abstención {{ functional.abstention_correct }}/{{ functional.abstention_denominator }}</span></td>
         <td class="min-w-[150px] px-3 py-2 text-right">
-          {% if item.quality_avg is none %}—{% else %}{{ "%.2f"|format(item.quality_avg) }} / 2{% endif %}
-          {% if item.quality_method %}<span class="block text-xs text-slate-600">AI-assisted</span>{% endif %}
+          {% if functional.quality_avg is none %}—{% else %}{{ "%.2f"|format(functional.quality_avg) }} / 2{% endif %}
+          <span class="block text-xs text-slate-600">n={{ functional.quality_denominator }} · AI-assisted</span>
           <span class="block text-xs text-slate-600">{% if item.manual_review == 'recorded' %}Revisión humana registrada{% else %}Revisión humana registrada: No{% endif %}</span>
         </td>
       </tr>

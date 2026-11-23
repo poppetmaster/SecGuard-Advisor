@@ -54,72 +54,105 @@ def _load(output: Path) -> tuple[list[dict], dict]:
     return rows, casos
 
 
-def _summary(rows: list[dict], provider: str) -> dict:
+def _summary(rows: list[dict], provider: str, common_ids: set[str]) -> dict:
     own = [row for row in rows if row["provider"] == provider]
     executed = [row for row in own if row["result"] != "blocked"]
-    approved = [row for row in own if row["result"] == "approved"]
-    failed = [row for row in own if row["result"] == "failed"]
+    functional = [row for row in executed if row["scenario"] in common_ids]
+    approved = [row for row in functional if row["result"] == "approved"]
+    failed = [row for row in functional if row["result"] == "failed"]
     blocked = [row for row in own if row["result"] == "blocked"]
-    timeouts = [row for row in executed if row["error_code"] == "run_timeout"]
-    durations = [row["duration_ms"] for row in executed if row["duration_ms"] is not None]
-    stable = [row["duration_ms"] for row in executed if row["error_code"] != "run_timeout"]
+    timeouts = [row for row in functional if row["error_code"] == "run_timeout"]
+    durations = [row["duration_ms"] for row in functional if row["duration_ms"] is not None]
+    stable = [
+        row["duration_ms"]
+        for row in functional
+        if row["error_code"] != "run_timeout" and row["duration_ms"] is not None
+    ]
     calculated = [
         Decimal(row["cost"]["usd"])
-        for row in executed
+        for row in own
         if row["cost"]["status"] == "calculated" and row["cost"]["usd"] is not None
     ]
-    unknown_cost = [row for row in executed if row["cost"]["status"] == "unknown"]
-    with_citations = [row for row in executed if row["citations"]]
+    unknown_cost = [row for row in own if row["cost"]["status"] == "unknown"]
+    not_applicable = [row for row in own if row["cost"]["status"] == "not_applicable"]
+    with_citations = [row for row in functional if row["citations"]]
     fully_valid = [
         row
         for row in with_citations
         if all(item["check_status"] == "valid" and item["resolvable"] for item in row["citations"])
     ]
-    query_rows = [row for row in executed if row["scenario"] in {"S07", "S08"}]
-    abstention_rows = [row for row in executed if row["scenario"] == "S09"]
+    query_rows = [row for row in functional if row["scenario"] in {"S07", "S08"}]
+    abstention_rows = [row for row in functional if row["scenario"] == "S09"]
     structure = [
         row
-        for row in executed
+        for row in functional
         if row["structure_ok"]
         and row["error_code"] not in {"invalid_model_output", "run_timeout"}
         and row["status"] == "succeeded"
     ]
+    known_total = sum(calculated) if calculated else None
+    cost_denominator = len(calculated) + len(unknown_cost)
+    quality_values = [_quality_avg(row) for row in functional]
     return {
         "provider": provider,
-        "executed": len(executed),
-        "approved": len(approved),
-        "failed": len(failed),
-        "blocked": len(blocked),
-        "timeouts": len(timeouts),
-        "success_rate": round(len(approved) / len(executed), 4) if executed else 0,
-        "success_rate_including_blocked": round(len(approved) / len(own), 4) if own else 0,
-        "median_latency_ms": int(statistics.median(durations)) if durations else None,
-        "median_latency_excluding_timeouts_ms": int(statistics.median(stable)) if stable else None,
-        "mean_latency_ms": int(sum(durations) / len(durations)) if durations else None,
-        "max_latency_ms": max(durations) if durations else None,
-        "input_tokens": sum(row["usage"]["input_tokens"] or 0 for row in executed),
-        "output_tokens": sum(row["usage"]["output_tokens"] or 0 for row in executed),
-        "cached_tokens": sum(row["usage"]["cached_tokens"] or 0 for row in executed),
-        "total_cost_usd": str(sum(calculated)) if calculated else None,
-        "avg_cost_usd": str(sum(calculated) / len(calculated)) if calculated else None,
-        "cost_unknown_runs": len(unknown_cost),
-        "structure_rate": round(len(structure) / len(executed), 4) if executed else 0,
-        "citation_rate": round(len(fully_valid) / len(with_citations), 4)
-        if with_citations
-        else None,
-        "citation_runs": len(with_citations),
-        "citation_runs_fully_valid": len(fully_valid),
-        "query_accuracy": round(
-            sum(1 for row in query_rows if row["findings_match"]) / len(query_rows), 4
-        )
-        if query_rows
-        else None,
-        "query_runs": len(query_rows),
-        "abstention_correct": sum(1 for row in abstention_rows if row["abstention_ok"] is True),
-        "abstention_runs": len(abstention_rows),
-        "quality_avg": round(sum(_quality_avg(row) for row in executed) / len(executed), 2)
-        if executed
-        else None,
+        "common_ids": sorted(common_ids),
+        "common_size": len(common_ids),
+        "consumption": {
+            "records": len(own),
+            "blocked": len(blocked),
+            "input_tokens": sum(row["usage"]["input_tokens"] or 0 for row in own),
+            "output_tokens": sum(row["usage"]["output_tokens"] or 0 for row in own),
+            "cached_tokens": sum(row["usage"]["cached_tokens"] or 0 for row in own),
+            "known_cost_usd": str(known_total) if known_total is not None else None,
+            "known_cost_records": len(calculated),
+            "unknown_cost_records": len(unknown_cost),
+            "not_applicable_records": len(not_applicable),
+            "cost_coverage": round(len(calculated) / cost_denominator, 4)
+            if cost_denominator
+            else None,
+            "cost_denominator": cost_denominator,
+            "cost_per_record_usd": str((known_total / len(own)).quantize(Decimal("0.000001")))
+            if known_total is not None and own
+            else None,
+        },
+        "functional": {
+            "sample_ids": sorted(common_ids),
+            "sample_size": len(common_ids),
+            "executed": len(functional),
+            "approved": len(approved),
+            "failed": len(failed),
+            "blocked": len(blocked),
+            "success_rate": round(len(approved) / len(functional), 4) if functional else None,
+            "success_denominator": len(functional),
+            "timeouts": len(timeouts),
+            "median_latency_ms": int(statistics.median(durations)) if durations else None,
+            "median_latency_excluding_timeouts_ms": int(statistics.median(stable))
+            if stable
+            else None,
+            "latency_denominator": len(durations),
+            "mean_latency_ms": int(sum(durations) / len(durations)) if durations else None,
+            "max_latency_ms": max(durations) if durations else None,
+            "input_tokens": sum(row["usage"]["input_tokens"] or 0 for row in functional),
+            "output_tokens": sum(row["usage"]["output_tokens"] or 0 for row in functional),
+            "structure_rate": round(len(structure) / len(functional), 4) if functional else 0,
+            "citation_rate": round(len(fully_valid) / len(with_citations), 4)
+            if with_citations
+            else None,
+            "citation_runs": len(with_citations),
+            "citation_runs_fully_valid": len(fully_valid),
+            "query_accuracy": round(
+                sum(1 for row in query_rows if row["findings_match"]) / len(query_rows), 4
+            )
+            if query_rows
+            else None,
+            "query_runs": len(query_rows),
+            "abstention_correct": sum(1 for row in abstention_rows if row["abstention_ok"] is True),
+            "abstention_runs": len(abstention_rows),
+            "quality_avg": round(sum(quality_values) / len(quality_values), 2)
+            if quality_values
+            else None,
+            "quality_denominator": len(quality_values),
+        },
     }
 
 
@@ -185,6 +218,14 @@ def _fmt(value, empty: str = "—") -> str:
     return str(value)
 
 
+def _coverage(value) -> str:
+    return "sin registros con costo" if value is None else f"{value:.2%}"
+
+
+def _percent(value, empty: str) -> str:
+    return empty if value is None else f"{value:.2%}"
+
+
 def _markdown(rows: list[dict], casos: dict, summaries: list[dict]) -> str:
     budget = casos["budget"]
     lines = [
@@ -197,71 +238,74 @@ def _markdown(rows: list[dict], casos: dict, summaries: list[dict]) -> str:
         "conclusión estadística. La calidad 0-2 es una evaluación asistida por IA, no una "
         "revisión humana independiente.",
         "",
-        "## Resumen por proveedor",
+        "## Consumo completo por proveedor",
         "",
-        "| Proveedor | Ejecutados | Aprobados | Fallidos | Bloqueados | Tasa de éxito | "
-        "Latencia mediana | Latencia media | Máxima |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "Todos los escenarios e intentos registrados, incluidos los bloqueados. El costo es el "
+        "subtotal **conocido**: no es facturación completa y los registros desconocidos no se "
+        "presentan como cero.",
+        "",
+        "| Proveedor | Registros | Bloqueados | Tokens E | Tokens S | Caché | "
+        "Costo conocido | Costo / registro | Registros con costo | Desconocidos | No aplica | "
+        "Cobertura de costo |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for summary in summaries:
+        consumption = summary["consumption"]
         lines.append(
-            f"| {LABELS[summary['provider']]} | {summary['executed']} | "
-            f"{summary['approved']} | {summary['failed']} | {summary['blocked']} | "
-            f"{summary['success_rate']:.2%} | "
-            f"{_fmt(summary['median_latency_ms'])} ms | "
-            f"{_fmt(summary['mean_latency_ms'])} ms | "
-            f"{_fmt(summary['max_latency_ms'])} ms |"
+            f"| {LABELS[summary['provider']]} | {consumption['records']} | "
+            f"{consumption['blocked']} | {consumption['input_tokens']} | "
+            f"{consumption['output_tokens']} | {consumption['cached_tokens']} | "
+            f"{_fmt(consumption['known_cost_usd'], 'sin cobro por API')} | "
+            f"{_fmt(consumption['cost_per_record_usd'], '—')} | "
+            f"{consumption['known_cost_records']} | "
+            f"{consumption['unknown_cost_records']} | "
+            f"{consumption['not_applicable_records']} | "
+            f"{_coverage(consumption['cost_coverage'])} |"
         )
     lines += [
         "",
-        "Latencia medida sobre las ejecuciones (los bloqueados no son llamadas completas). "
-        "Medianas sin tiempos agotados: "
-        + ", ".join(
-            f"{summary['provider']} {_fmt(summary['median_latency_excluding_timeouts_ms'])} ms"
-            for summary in summaries
-        )
-        + ".",
+        "Los tokens incluyen escenarios bloqueados cuando la llamada se registró. Ollama no "
+        "tiene cobro por API; no se declara costo operativo total cero.",
         "",
-        "## Tokens y costo",
+        "## Comparativo funcional — muestra común",
         "",
-        "| Proveedor | Entrada | Salida | Caché | Costo total | Costo medio | "
-        "Costos desconocidos |",
-        "|---|---|---|---|---|---|---|",
     ]
-    for summary in summaries:
-        lines.append(
-            f"| {summary['provider']} | {summary['input_tokens']} | "
-            f"{summary['output_tokens']} | {summary['cached_tokens']} | "
-            f"{_fmt(summary['total_cost_usd'], 'sin cobro por API')} | "
-            f"{_fmt(summary['avg_cost_usd'], 'sin cobro por API')} | "
-            f"{summary['cost_unknown_runs']} |"
-        )
+    sample_ids = summaries[0]["common_ids"] if summaries else []
+    lines.append(
+        f"Muestra común ejecutada: **{len(sample_ids)} escenarios** "
+        f"({', '.join(sample_ids) if sample_ids else 'sin muestra'}). "
+        "Éxito, latencia y calidad se recalculan solo sobre esta intersección."
+    )
     lines += [
         "",
-        "Ollama se ejecuta localmente: no hay cobro por API ni cuota comercial. "
-        "No se declara costo operativo total cero.",
-        "",
-        "## Calidad y validaciones automáticas",
-        "",
-        "| Proveedor | Estructura | Citas válidas (respuestas con citas) | "
-        "Consultas estructuradas | Abstención | Calidad IA 0-2 |",
-        "|---|---|---|---|---|---|",
+        "| Proveedor | Muestra | Aprobados | Fallidos | Éxito | Latencia mediana | "
+        "Estructura | Citas válidas | Herramientas | Abstención | Calidad IA |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for summary in summaries:
+        functional = summary["functional"]
         lines.append(
-            f"| {summary['provider']} | {summary['structure_rate']:.2%} | "
-            f"{_fmt(summary['citation_rate'], 'sin citas')} "
-            f"({summary['citation_runs_fully_valid']}/{summary['citation_runs']}) | "
-            f"{_fmt(summary['query_accuracy'])} "
-            f"({summary['query_runs']} consultas) | "
-            f"{summary['abstention_correct']}/{summary['abstention_runs']} | "
-            f"{_fmt(summary['quality_avg'])} |"
+            f"| {LABELS[summary['provider']]} | {functional['executed']} | "
+            f"{functional['approved']} | {functional['failed']} | "
+            f"{functional['approved']}/{functional['success_denominator']} "
+            f"({functional['success_rate']:.2%}) | "
+            f"{_fmt(functional['median_latency_ms'])} ms "
+            f"(n={functional['latency_denominator']}) | "
+            f"{functional['structure_rate']:.2%} | "
+            f"{_percent(functional['citation_rate'], 'sin citas')} "
+            f"({functional['citation_runs_fully_valid']}/{functional['citation_runs']}) | "
+            f"{_percent(functional['query_accuracy'], 'sin consultas')} "
+            f"(n={functional['query_runs']}) | "
+            f"{functional['abstention_correct']}/{functional['abstention_runs']} | "
+            f"{_fmt(functional['quality_avg'])} (n={functional['quality_denominator']}) |"
         )
     lines += [
         "",
         "«Citas válidas» usa el validador del producto (`check_citation`, comparación "
-        "normalizada) y exige cita resoluble. La columna `citations_byte_exact` de "
-        "`metricas.csv` es más estricta (igualdad byte a byte) y no representa un fallo.",
+        "normalizada) y exige cita resoluble. No prueba respaldo semántico. La columna "
+        "`citations_byte_exact` de `metricas.csv` es más estricta y no representa un fallo.",
+        "",
+        "La calidad 0-2 es asistida por IA, no una revisión humana independiente.",
         "",
         "## Detalle por escenario",
     ]
@@ -342,11 +386,19 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=list(csv_rows[0]))
         writer.writeheader()
         writer.writerows(csv_rows)
-    summaries = [
-        _summary(rows, provider)
-        for provider in PROVIDERS
-        if any(row["provider"] == provider for row in rows)
+    providers_present = [
+        provider for provider in PROVIDERS if any(row["provider"] == provider for row in rows)
     ]
+    executed_sets = [
+        {
+            row["scenario"]
+            for row in rows
+            if row["provider"] == provider and row["result"] != "blocked"
+        }
+        for provider in providers_present
+    ]
+    common_ids = set.intersection(*executed_sets) if executed_sets else set()
+    summaries = [_summary(rows, provider, common_ids) for provider in providers_present]
     (output / "resumen.json").write_text(
         json.dumps(summaries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

@@ -8,6 +8,7 @@ from pathlib import Path
 from sqlalchemy import func, select
 
 from secguard_advisor.ai_usage.evaluation_import import import_evaluation
+from secguard_advisor.ai_usage.evaluations import build_comparison_view
 from secguard_advisor.config import Settings
 from secguard_advisor.db.base import Base
 from secguard_advisor.db.engine import create_engine_for_url, create_session_factory
@@ -53,6 +54,32 @@ def test_import_reads_report_without_fabricating_requests(tmp_path: Path) -> Non
         assert blocked.quality_method.startswith("AI-assisted")
         calculated = [item for item in results if item.cost_status == "calculated"]
         assert sum(item.cost_usd for item in calculated) > Decimal("0")
+
+
+def test_comparison_counts_blocked_consumption_and_common_sample(tmp_path: Path) -> None:
+    factory = _factory(tmp_path)
+    with factory() as session:
+        import_evaluation(session, EVIDENCE)
+        session.commit()
+    with factory() as session:
+        view = build_comparison_view(session)
+
+    by_provider = {item["provider"]: item for item in view["providers"]}
+    deepseek = by_provider["deepseek"]
+    anthropic = by_provider["anthropic"]
+    assert deepseek["consumption"]["known_cost_usd"] == Decimal("0.006201")
+    assert deepseek["consumption"]["known_cost_records"] == 8
+    assert deepseek["consumption"]["unknown_cost_records"] == 2
+    assert deepseek["consumption"]["blocked"] == 1
+    assert anthropic["consumption"]["known_cost_usd"] == Decimal("0.006150")
+    assert anthropic["consumption"]["known_cost_records"] == 7
+    assert anthropic["consumption"]["unknown_cost_records"] == 3
+    assert view["comparison_sample"]["size"] == 9
+    assert "S08" not in view["comparison_sample"]["ids"]
+    assert deepseek["functional"]["success_denominator"] == 9
+    assert deepseek["functional"]["success_rate"] == round(6 / 9, 4)
+    assert anthropic["functional"]["success_rate"] == round(4 / 9, 4)
+    assert by_provider["ollama"]["functional"]["success_rate"] == round(5 / 9, 4)
 
 
 def test_import_is_idempotent(tmp_path: Path) -> None:
