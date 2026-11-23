@@ -140,6 +140,11 @@
 {% macro comparison_cost(charts) %}
 {% if charts.cost %}
 {{ chart_shell("chart-comparison-cost", "Costo conocido por escenario comparable", "USD por escenario sobre la muestra común. La cobertura indica cuántos escenarios tienen costo conocido. Ollama no se dibuja porque no tiene cobro por API.", "comparison-cost", charts.cost) }}
+<p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+  Cobertura visible:
+  {% for item in charts.cost %}{{ item.name }} {{ item.coverage }}{% if not loop.last %} · {% endif %}{% endfor %}.
+  Los escenarios sin costo conocido no se dibujan como cero.
+</p>
 <details class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
   <summary class="cursor-pointer text-sm font-medium text-blue-800">Ver tabla accesible del costo comparable</summary>
   <table class="mt-2 w-full text-left text-sm">
